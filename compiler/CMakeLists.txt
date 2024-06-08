@@ -25,7 +25,7 @@ else()
 	target_link_libraries(lucaria_compiler PRIVATE tinyobjloader)
 
 	target_include_directories(lucaria_compiler PRIVATE "${CMAKE_CURRENT_LIST_DIR}/source")
-	target_include_directories(lucaria_compiler PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../data/include")
+	target_include_directories(lucaria_compiler PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../common/include")
 
 	set_property(TARGET lucaria_compiler PROPERTY CXX_STANDARD 17)
 endif()

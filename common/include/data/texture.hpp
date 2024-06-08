@@ -2,8 +2,6 @@
 
 #include <vector>
 
-namespace lucaria {
-
 /// @brief Represents a texture for serialization
 struct texture_data {
     unsigned int channels;
@@ -11,5 +9,3 @@ struct texture_data {
     unsigned int height;
     std::vector<unsigned char> pixels;
 };
-
-}

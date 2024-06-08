@@ -2,8 +2,14 @@
 #include <glue/graphics.hpp>
 #include <glue/window.hpp>
 
+#include <core/program.hpp>
+#include <core/texture.hpp>
+
 int main()
 {
+    texture_ref _tex3(load_texture("3.bin"));
+    program_ref _prg(load_shader("unlit_vert.bin"), load_shader("unlit_frag.bin"));
+
     lucaria::set_perspective(60.f, 0.1f, 100.f);
     lucaria::load_unlit_shader();
     // lucaria::load_model_gltf("model.glb");

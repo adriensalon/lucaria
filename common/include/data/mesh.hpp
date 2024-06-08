@@ -23,8 +23,6 @@ void serialize(archive_t& archive, glm::vec3& vec)
 
 }
 
-namespace lucaria {
-
 /// @brief Represents a mesh for serialization
 struct mesh_data {
     unsigned int count;
@@ -32,5 +30,3 @@ struct mesh_data {
     std::vector<glm::vec2> texcoords;
     std::vector<unsigned int> indices;
 };
-
-}

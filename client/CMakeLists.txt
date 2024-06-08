@@ -15,6 +15,8 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 		"source/glue/graphics.cpp"
 		"source/glue/window.cpp"
 
+		"source/core/cubemap.cpp"
+		"source/core/program.cpp"
 		"source/core/texture.cpp"
 
 		"source/main.cpp")
@@ -25,6 +27,7 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 	target_link_libraries(lucaria PRIVATE tinygltf)
 
 	target_include_directories(lucaria PRIVATE "${CMAKE_CURRENT_LIST_DIR}/source")
+	target_include_directories(lucaria PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../common/include")
 
 	set_target_properties(lucaria PROPERTIES CXX_STANDARD 17)
 

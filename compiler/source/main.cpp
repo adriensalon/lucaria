@@ -156,15 +156,15 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
 {
     const std::string _extension = input_file.extension().generic_string();
     if (_extension == ".ttf") {
-        // lucaria::compile_font(lucaria::import_font(input_file), output_file);
+        // compile_font(import_font(input_file), output_file);
     } else if (_extension == ".obj") {
-        lucaria::compile_mesh(lucaria::import_mesh(input_file), output_file);
+        compile_mesh(import_mesh(input_file), output_file);
     } else if (_extension == ".glsl") {
-        lucaria::compile_shader(lucaria::import_shader(input_file), output_file);    
+        compile_shader(import_shader(input_file), output_file);    
     } else if (_extension == ".wav") {
-        // lucaria::compile_sound(lucaria::import_sound(input_file), output_file); 
+        // compile_sound(import_sound(input_file), output_file); 
     } else if (_extension == ".jpg") {
-        lucaria::compile_texture(lucaria::import_texture(input_file), output_file); 
+        compile_texture(import_texture(input_file), output_file); 
     } else {
         std::cerr << "Invalid input file with extension " << _extension << std::endl;
         std::terminate();
