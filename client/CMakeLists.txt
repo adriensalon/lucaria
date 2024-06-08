@@ -14,13 +14,20 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 		"source/glue/audio.cpp"
 		"source/glue/graphics.cpp"
 		"source/glue/window.cpp"
+
+		"source/core/texture.cpp"
+
 		"source/main.cpp")
 
+	target_link_libraries(lucaria PRIVATE cereal)
 	target_link_libraries(lucaria PRIVATE glm)
 	target_link_libraries(lucaria PRIVATE imgui)
 	target_link_libraries(lucaria PRIVATE tinygltf)
 
 	target_include_directories(lucaria PRIVATE "${CMAKE_CURRENT_LIST_DIR}/source")
+
+	set_target_properties(lucaria PROPERTIES CXX_STANDARD 17)
+
 
 	set(CMAKE_EXECUTABLE_SUFFIX ".html")
 	set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-O3 --shell-file ${CMAKE_CURRENT_LIST_DIR}/source/shell.html --std=c++17 --preload-file ${CMAKE_CURRENT_LIST_DIR}/../install/assets@/ --use-preload-cache")

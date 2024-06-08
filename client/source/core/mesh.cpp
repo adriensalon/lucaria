@@ -1,14 +1,12 @@
 #include <fstream>
-#include <filesystem>
-
-#include <cereal/archives/portable_binary.hpp>
 #include <cereal/cereal.hpp>
 #include <cereal/types/vector.hpp>
+#include <cereal/archives/portable_binary.hpp>
 #include <tiny_obj_loader.h>
+#include <core/mesh.hpp>
 
-#include <data/mesh.hpp>
-
-namespace detail {
+namespace lucaria {
+namespace detail {    
 
     bool obj_parse(const std::filesystem::path& mesh_path, tinyobj::ObjReader& mesh_reader, const tinyobj::ObjReaderConfig& mesh_reader_config)
     {
@@ -28,12 +26,9 @@ namespace detail {
     }
 }
 
-/// @brief Imports a mesh as data
-/// @param input the mesh path to load, containing text
-/// @return the mesh data as a string
-mesh_data import_mesh(const std::filesystem::path& input)
+mesh import_mesh(const std::filesystem::path& input)
 {
-    mesh_data _data;
+    mesh _data;
     tinyobj::ObjReaderConfig _mesh_reader_config;
     tinyobj::ObjReader _mesh_reader;
     detail::obj_parse(input, _mesh_reader, _mesh_reader_config);
@@ -74,14 +69,11 @@ mesh_data import_mesh(const std::filesystem::path& input)
             _index_offset += _face_vertices_count;
         }
     }
-
+    
     return _data;
 }
 
-/// @brief Compiles a mesh to a binary file
-/// @param data the mesh data to compile as binary
-/// @param output the binary path to save the mesh to
-void compile_mesh(const mesh_data& data, const std::filesystem::path& output)
+void compile_mesh(const mesh& data, const std::filesystem::path& output)
 {
     std::ofstream _fstream(output);
     cereal::PortableBinaryOutputArchive _archive(_fstream);
@@ -90,3 +82,16 @@ void compile_mesh(const mesh_data& data, const std::filesystem::path& output)
     _archive(data.texcoords);
     _archive(data.indices);
 }
+
+}
+
+
+
+
+
+
+
+
+
+
+

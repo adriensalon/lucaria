@@ -1,11 +1,21 @@
 #include <iostream>
+#include <filesystem>
 #include <functional>
 #include <unordered_map>
 #include <string>
 #include <vector>
-#include <core/mesh.hpp>
-#include <core/shader.hpp>
-#include <core/texture.hpp>
+
+#include <data/mesh.hpp>
+#include <data/shader.hpp>
+#include <data/texture.hpp>
+    
+extern mesh_data import_mesh(const std::filesystem::path& input);
+extern shader_data import_shader(const std::filesystem::path& input);
+extern texture_data import_texture(const std::filesystem::path& input);
+
+extern void compile_mesh(const mesh_data& data, const std::filesystem::path& output);
+extern void compile_shader(const shader_data& data, const std::filesystem::path& output);
+extern void compile_texture(const texture_data& data, const std::filesystem::path& output);
 
 /// @brief Represents a map containing every argument for each command
 using commands_map = std::unordered_map<std::string, std::vector<std::string>>;
