@@ -17,9 +17,7 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 
 		"source/core/cubemap.cpp"
 		"source/core/mesh.cpp"
-		"source/core/model.cpp"
 		"source/core/program.cpp"
-		"source/core/skybox.cpp"
 		"source/core/texture.cpp"
 
 		"source/main.cpp")

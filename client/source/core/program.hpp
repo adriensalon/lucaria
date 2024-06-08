@@ -4,6 +4,9 @@
 
 #include <GLES3/gl3.h>
 
+#include <core/cubemap.hpp>
+#include <core/mesh.hpp>
+#include <core/texture.hpp>
 #include <data/shader.hpp>
 
 /// @brief Represents a GPU program managed by the application
@@ -38,12 +41,33 @@ struct program_ref {
     /// @brief Destructor ensure managed data is released before destruction
     ~program_ref();
 
+    void use() const;
+
+    void bind(const cubemap_ref& cubemap, const GLuint slot = 0) const;
+
+    void bind(const std::vector<cubemap_ref>& cubemaps, const GLuint slot = 0) const;
+    
+    void bind(const mesh_ref& mesh) const;
+
+    void bind(const texture_ref& texture, const GLuint slot = 0) const;
+
+    void bind(const std::vector<texture_ref>& textures, const GLuint slot = 0) const;
+
+    template <typename value_t>
+    void bind(const std::string& name, const value_t& value);
+
+    void draw() const;
+
     /// @brief Gets the OpenGL id for this managed data
     /// @return the program id as a GLuint
     GLuint get_id() const;
 
 private:
     GLuint _program_id;
+    GLuint _vertices_count = 0;
+    std::unordered_map<std::string, GLuint> _program_attributes;
+    std::unordered_map<std::string, GLuint> _program_uniforms;
+    inline static GLuint _used_program_id = 0;
 };
 
 /// @brief

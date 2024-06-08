@@ -4,7 +4,6 @@
 
 #include <GLES3/gl3.h>
 
-#include <core/program.hpp>
 #include <data/mesh.hpp>
 
 struct mesh_ref {
@@ -36,10 +35,6 @@ struct mesh_ref {
 
     /// @brief Destructor ensure managed data is released before destruction
     ~mesh_ref();
-
-    /// @brief 
-    /// @param program 
-    void bind(const program_ref& program);
 
     /// @brief Gets the OpenGL id for this managed data
     /// @return the texture id as a GLuint
