@@ -7,8 +7,8 @@
 
 int main()
 {
-    texture_ref _tex3(load_texture("3.bin"));
-    program_ref _prg(load_shader("unlit_vert.bin"), load_shader("unlit_frag.bin"));
+    texture_ref _tex3(load_texture("texture/3.bin"));
+    program_ref _prg(load_shader("shader/unlit_vert.bin"), load_shader("shader/unlit_frag.bin"));
 
     lucaria::set_perspective(60.f, 0.1f, 100.f);
     lucaria::load_unlit_shader();

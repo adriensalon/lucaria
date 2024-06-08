@@ -4,6 +4,7 @@
 
 #include <GLES3/gl3.h>
 
+#include <core/program.hpp>
 #include <data/texture.hpp>
 
 /// @brief Represents a GPU texture managed by the application
@@ -36,6 +37,10 @@ struct texture_ref {
 
     /// @brief Destructor ensure managed data is released before destruction
     ~texture_ref();
+    
+    /// @brief 
+    /// @param program 
+    void bind(const program_ref& program, const GLuint slot = 0);
 
     /// @brief Gets the OpenGL id for this managed data
     /// @return the texture id as a GLuint

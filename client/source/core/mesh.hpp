@@ -1,46 +1,64 @@
 #pragma once
 
 #include <filesystem>
-#include <vector>
-#include <glm/glm.hpp>
 
-namespace glm {
+#include <GLES3/gl3.h>
 
-template <typename archive_t>
-void serialize(archive_t& archive, glm::vec2& vec)
-{
-    archive(vec.x);
-    archive(vec.y);
-}
+#include <core/program.hpp>
+#include <data/mesh.hpp>
 
-template <typename archive_t>
-void serialize(archive_t& archive, glm::vec3& vec)
-{
-    archive(vec.x);
-    archive(vec.y);
-    archive(vec.z);
-}
+struct mesh_ref {
+    
+    /// @brief Default constructor is not allowed because this object must be created from data
+    mesh_ref() = delete;
 
-}
+    /// @brief 
+    /// @param data 
+    mesh_ref(const mesh_data& data);
 
-namespace lucaria {
+    /// @brief Copy constructor is not allowed because this object represents managed data
+    /// @param other the other managed object
+    mesh_ref(const mesh_ref& other) = delete;
 
-/// @brief Represents a mesh for serialization
-struct mesh {
-    unsigned int count;
-    std::vector<glm::vec3> positions;
-    std::vector<glm::vec2> texcoords;
-    std::vector<unsigned int> indices;
+    /// @brief Copy assignment is not allowed because this object represents managed data
+    /// @param other the other managed object
+    /// @return the same object
+    mesh_ref& operator=(const mesh_ref& other) = delete;
+
+    /// @brief Move constructor transfers ownership of the managed data
+    /// @param other the other managed object
+    mesh_ref(mesh_ref&& other) = default;
+
+    /// @brief Move assignment transfers ownership of the managed data
+    /// @param other the other managed object
+    /// @return the same object
+    mesh_ref& operator=(mesh_ref&& other) = default;
+
+    /// @brief Destructor ensure managed data is released before destruction
+    ~mesh_ref();
+
+    /// @brief 
+    /// @param program 
+    void bind(const program_ref& program);
+
+    /// @brief Gets the OpenGL id for this managed data
+    /// @return the texture id as a GLuint
+    GLuint get_id() const;
+
+private:
+    enum struct vertex_attribute {
+        position,
+        normal,
+        texcoord,
+        color 
+    };
+    struct vertex_buffer {
+        vertex_attribute attribute;
+        GLuint size;
+        GLuint buffer_id;
+    };
+    std::vector<vertex_buffer> _vertex_buffers;
+    GLuint _vertices_count;
+    GLuint _vertex_array_id;
+    GLuint _elements_buffer_id;
 };
-
-/// @brief Imports a mesh as data
-/// @param input the mesh path to load, containing text
-/// @return the mesh data as a string
-mesh import_mesh(const std::filesystem::path& input);
-
-/// @brief Compiles a mesh to a binary file
-/// @param data the mesh data to compile as binary
-/// @param output the binary path to save the mesh to
-void compile_mesh(const mesh& data, const std::filesystem::path& output);
-
-}
