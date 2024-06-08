@@ -6,8 +6,17 @@
 
 #include <core/texture.hpp>
 
+namespace detail {
+
+    void validate_texture(const texture_data& data)
+    {
+
+    }
+}
+
 texture_ref::texture_ref(const texture_data& data)
 {
+    detail::validate_texture(data);
     glGenTextures(1, &_texture_id);
     glBindTexture(GL_TEXTURE_2D, _texture_id);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

@@ -1,11 +1,12 @@
+#include <filesystem>
 #include <iostream>
+
 #include <AL/al.h>
 #include <AL/alc.h>
 // #include <minimp3/minimp3.h>
 #include <emscripten/html5.h>
-#include <glue/audio.hpp>
+#include <glm/glm.hpp>
 
-namespace lucaria {
 namespace detail {
 
     extern void emscripten_assert(EMSCRIPTEN_RESULT result);
@@ -134,7 +135,5 @@ void set_audio_gain(const float gain, const float min, const float max)
 
 void set_audio_pitch(const float pitch)
 {
-
-}
 
 }

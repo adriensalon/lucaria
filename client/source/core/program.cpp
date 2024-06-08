@@ -29,6 +29,38 @@ namespace detail {
         return _shader_id;
     }
 
+    std::unordered_map<std::string, GLint> enumerate_attributes(const GLuint program_id)
+    {
+        GLint _attributes_count;
+        std::unordered_map<std::string, GLint> _attributes;
+        glGetProgramiv(program_id, GL_ACTIVE_ATTRIBUTES, &_attributes_count);
+        
+        for (GLint _index = 0; _index < _attributes_count; ++_index) {
+            char _name[256];
+            GLsizei length;
+            GLint size;
+            GLenum type;
+
+            glGetActiveAttrib(program_id, _index, sizeof(_name), &length, &size, &type, _name);
+
+            GLint location = glGetAttribLocation(program_id, _name);
+            
+            std::cout << "Attribute #" << _index << ": " << _name 
+                    << " (Location: " << location 
+                    << ", Type: " << type 
+                    << ", Size: " << size << ")" << std::endl;
+        }
+        return _attributes;
+    }
+
+    std::unordered_map<std::string, GLint> enumerate_uniforms(const GLuint program_id)
+    {
+        GLint _uniforms_count;
+        std::unordered_map<std::string, GLint> _uniforms;
+
+        return _uniforms;
+    }
+
 }
 
 program_ref::program_ref(const shader_data& vertex, const shader_data& fragment)
@@ -55,12 +87,127 @@ program_ref::program_ref(const shader_data& vertex, const shader_data& fragment)
     glDetachShader(_program_id, _fragment_id);
     glDeleteShader(_vertex_id);
     glDeleteShader(_fragment_id);
+    detail::enumerate_attributes(_program_id);
+    detail::enumerate_uniforms(_program_id);
 }
 
 program_ref::~program_ref()
 {
     glUseProgram(0);
     glDeleteProgram(_program_id);
+}
+
+
+
+
+
+void program_ref::use() const
+{
+    glUseProgram(_program_id);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+}
+
+void program_ref::bind(const mesh_ref& mesh, const std::string& name, const mesh_attribute attribute)
+{
+    _count = mesh.get_count();
+    _array_id = mesh.get_array_id();
+    std::unordered_map<mesh_attribute, GLuint> _buffer_ids = mesh.get_buffer_ids();
+    GLint _location = _program_attributes.at(name);
+    GLuint _size = mesh_attribute_sizes.at(attribute);
+    glBindVertexArray(_array_id);
+    glBindBuffer(GL_ARRAY_BUFFER, _buffer_ids.at(attribute));
+    glVertexAttribPointer(_location, _size, GL_FLOAT, GL_FALSE, _size * sizeof(GLfloat), (void*)0);
+    glEnableVertexAttribArray(_location);
+}
+
+void program_ref::bind(const cubemap_ref& cubemap, const std::string& name, const GLuint slot) const
+{
+    GLint _location = _program_uniforms.at(name);
+    glUniform1i(_location, slot);
+    glActiveTexture(GL_TEXTURE0 + slot);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.get_id());
+}
+
+void program_ref::bind(const texture_ref& texture, const std::string& name, const GLuint slot) const
+{
+    GLint _location = _program_uniforms.at(name);
+    glUniform1i(_location, slot);
+    glActiveTexture(GL_TEXTURE0 + slot);
+    glBindTexture(GL_TEXTURE_2D, texture.get_id());
+}
+
+template <> 
+void program_ref::bind<GLfloat>(const std::string& name, const GLfloat& value)
+{
+    const GLint _location = _program_uniforms.at(name);
+    glUniform1f(_location, value);
+}
+
+template <> 
+void program_ref::bind<std::vector<GLfloat>>(const std::string& name, const std::vector<GLfloat>& value)
+{
+    const GLint _location = _program_uniforms.at(name);
+    const GLuint _count = value.size();
+    const GLfloat* _ptr = const_cast<const GLfloat*>(value.data());
+    glUniform1fv(_location, _count, _ptr);
+}
+
+template <> 
+void program_ref::bind<glm::vec2>(const std::string& name, const glm::vec2& value)
+{
+    const GLint _location = _program_uniforms.at(name);
+    glUniform2f(_location, value.x, value.y);
+}
+
+template <> 
+void program_ref::bind<std::vector<glm::vec2>>(const std::string& name, const std::vector<glm::vec2>& value)
+{
+    const GLint _location = _program_uniforms.at(name);
+    const GLuint _count = value.size();
+    const GLfloat* _ptr = reinterpret_cast<const GLfloat*>(value.data());
+    glUniform2fv(_location, _count, _ptr);
+}
+
+template <> 
+void program_ref::bind<glm::vec3>(const std::string& name, const glm::vec3& value)
+{
+    const GLint _location = _program_uniforms.at(name);
+    glUniform3f(_location, value.x, value.y, value.z);
+}
+
+template <> 
+void program_ref::bind<std::vector<glm::vec3>>(const std::string& name, const std::vector<glm::vec3>& value)
+{
+    const GLint _location = _program_uniforms.at(name);
+    const GLuint _count = value.size();
+    const GLfloat* _ptr = reinterpret_cast<const GLfloat*>(value.data());
+    glUniform3fv(_location, _count, _ptr);
+}
+
+template <> 
+void program_ref::bind<glm::vec4>(const std::string& name, const glm::vec4& value)
+{
+    const GLint _location = _program_uniforms.at(name);
+    glUniform4f(_location, value.x, value.y, value.z, value.w);
+}
+
+template <> 
+void program_ref::bind<std::vector<glm::vec4>>(const std::string& name, const std::vector<glm::vec4>& value)
+{
+    const GLint _location = _program_uniforms.at(name);
+    const GLuint _count = value.size();
+    const GLfloat* _ptr = reinterpret_cast<const GLfloat*>(value.data());
+    glUniform4fv(_location, _count, _ptr);
+}
+
+// TODO MATRICES
+
+void program_ref::draw() const
+{
+    glBindVertexArray(_array_id);
+    glDrawElements(GL_TRIANGLES, _count, GL_UNSIGNED_INT, 0);
 }
 
 GLuint program_ref::get_id() const

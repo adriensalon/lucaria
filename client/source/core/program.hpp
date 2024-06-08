@@ -41,21 +41,35 @@ struct program_ref {
     /// @brief Destructor ensure managed data is released before destruction
     ~program_ref();
 
+    /// @brief 
     void use() const;
 
-    void bind(const cubemap_ref& cubemap, const GLuint slot = 0) const;
+    /// @brief 
+    /// @param mesh 
+    /// @param name 
+    /// @param attribute 
+    void bind(const mesh_ref& mesh, const std::string& name, const mesh_attribute attribute);
 
-    void bind(const std::vector<cubemap_ref>& cubemaps, const GLuint slot = 0) const;
-    
-    void bind(const mesh_ref& mesh) const;
+    /// @brief 
+    /// @param cubemap 
+    /// @param name 
+    /// @param slot 
+    void bind(const cubemap_ref& cubemap, const std::string& name, const GLuint slot = 0) const;
 
-    void bind(const texture_ref& texture, const GLuint slot = 0) const;
+    /// @brief 
+    /// @param texture 
+    /// @param name 
+    /// @param slot 
+    void bind(const texture_ref& texture, const std::string& name, const GLuint slot = 0) const;
 
-    void bind(const std::vector<texture_ref>& textures, const GLuint slot = 0) const;
-
+    /// @brief 
+    /// @tparam value_t 
+    /// @param name 
+    /// @param value 
     template <typename value_t>
     void bind(const std::string& name, const value_t& value);
 
+    /// @brief 
     void draw() const;
 
     /// @brief Gets the OpenGL id for this managed data
@@ -64,9 +78,10 @@ struct program_ref {
 
 private:
     GLuint _program_id;
-    GLuint _vertices_count = 0;
-    std::unordered_map<std::string, GLuint> _program_attributes;
-    std::unordered_map<std::string, GLuint> _program_uniforms;
+    GLuint _count;
+    GLuint _array_id;
+    std::unordered_map<std::string, GLint> _program_attributes;
+    std::unordered_map<std::string, GLint> _program_uniforms;
     inline static GLuint _used_program_id = 0;
 };
 

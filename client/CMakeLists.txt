@@ -20,6 +20,14 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 		"source/core/program.cpp"
 		"source/core/texture.cpp"
 
+		"source/scene/camera.cpp"
+		"source/scene/computer.cpp"
+		"source/scene/controller.cpp"
+		"source/scene/room.cpp"
+		"source/scene/screen.cpp"
+		"source/scene/skybox.cpp"
+		"source/scene/speaker.cpp"
+
 		"source/main.cpp")
 
 	target_link_libraries(lucaria PRIVATE cereal)
@@ -32,10 +40,18 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 
 	set_target_properties(lucaria PROPERTIES CXX_STANDARD 17)
 
-
+	set(CXX_STANDARD ".html")
 	set(CMAKE_EXECUTABLE_SUFFIX ".html")
-	set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-O3 --shell-file ${CMAKE_CURRENT_LIST_DIR}/source/shell.html --std=c++17 --preload-file ${CMAKE_CURRENT_LIST_DIR}/../install/assets@/ --use-preload-cache")
-	set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} "-s LLD_REPORT_UNDEFINED -s ALLOW_MEMORY_GROWTH=1 -s MAX_WEBGL_VERSION=2 -s USE_WEBGL2=1 -s GL_DEBUG=1 -lopenal")
+	set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "--use-preload-cache")
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
+		--shell-file ${CMAKE_CURRENT_LIST_DIR}/source/shell.html \
+		--preload-file ${CMAKE_CURRENT_LIST_DIR}/../install/assets@/ \
+		-s LLD_REPORT_UNDEFINED \
+		-s ALLOW_MEMORY_GROWTH=1 \
+		-s MAX_WEBGL_VERSION=2 \
+		-s USE_WEBGL2=1 \
+		-s GL_DEBUG=1 \
+		-lopenal")
 
 else()
 	message(FATAL_ERROR "CMake is being configured by Emscripten, aborting...")

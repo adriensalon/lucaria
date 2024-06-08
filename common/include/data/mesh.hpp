@@ -26,7 +26,11 @@ void serialize(archive_t& archive, glm::vec3& vec)
 /// @brief Represents a mesh for serialization
 struct mesh_data {
     unsigned int count;
-    std::vector<glm::vec3> positions;
-    std::vector<glm::vec2> texcoords;
+    std::vector<GLfloat> positions;
+    std::vector<GLfloat> colors;
+    std::vector<GLfloat> normals;
+    std::vector<GLfloat> tangents;
+    std::vector<GLfloat> bitangents;
+    std::vector<GLfloat> texcoords;
     std::vector<unsigned int> indices;
 };

@@ -1,11 +1,32 @@
 #pragma once
 
 #include <filesystem>
+#include <unordered_map>
 
 #include <GLES3/gl3.h>
 
 #include <data/mesh.hpp>
 
+/// @brief 
+enum struct mesh_attribute {
+    position,
+    color,
+    normal,
+    tangent,
+    bitangent,
+    texcoord,
+};
+
+inline static const std::unordered_map<mesh_attribute, GLuint> mesh_attribute_sizes = {
+    { mesh_attribute::position, 3 },
+    { mesh_attribute::color, 3 },
+    { mesh_attribute::normal, 3 },
+    { mesh_attribute::tangent, 3 },
+    { mesh_attribute::bitangent, 3 },
+    { mesh_attribute::texcoord, 2 },
+};
+
+/// @brief 
 struct mesh_ref {
     
     /// @brief Default constructor is not allowed because this object must be created from data
@@ -36,24 +57,26 @@ struct mesh_ref {
     /// @brief Destructor ensure managed data is released before destruction
     ~mesh_ref();
 
+    /// @brief 
+    /// @return 
+    std::unordered_map<mesh_attribute, GLuint> get_buffer_ids() const;
+
     /// @brief Gets the OpenGL id for this managed data
     /// @return the texture id as a GLuint
-    GLuint get_id() const;
+    GLuint get_array_id() const;
+
+    /// @brief 
+    /// @return 
+    GLuint get_count() const;
 
 private:
-    enum struct vertex_attribute {
-        position,
-        normal,
-        texcoord,
-        color 
-    };
-    struct vertex_buffer {
-        vertex_attribute attribute;
-        GLuint size;
-        GLuint buffer_id;
-    };
-    std::vector<vertex_buffer> _vertex_buffers;
-    GLuint _vertices_count;
-    GLuint _vertex_array_id;
-    GLuint _elements_buffer_id;
+    GLuint _count;
+    GLuint _array_id;
+    GLuint _elements_id;
+    std::unordered_map<mesh_attribute, GLuint> _attribute_ids;
 };
+
+/// @brief 
+/// @param file 
+/// @return
+mesh_data load_mesh(const std::filesystem::path& file);
