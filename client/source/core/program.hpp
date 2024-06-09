@@ -3,6 +3,7 @@
 #include <filesystem>
 
 #include <GLES3/gl3.h>
+#include <glm/glm.hpp>
 
 #include <core/cubemap.hpp>
 #include <core/mesh.hpp>
@@ -48,19 +49,19 @@ struct program_ref {
     /// @param mesh 
     /// @param name 
     /// @param attribute 
-    void bind(const mesh_ref& mesh, const std::string& name, const mesh_attribute attribute);
+    void bind(const std::string& name, const mesh_ref& mesh, const mesh_attribute attribute);
 
     /// @brief 
     /// @param cubemap 
     /// @param name 
     /// @param slot 
-    void bind(const cubemap_ref& cubemap, const std::string& name, const GLuint slot = 0) const;
+    void bind(const std::string& name, const cubemap_ref& cubemap, const GLuint slot = 0) const;
 
     /// @brief 
     /// @param texture 
     /// @param name 
     /// @param slot 
-    void bind(const texture_ref& texture, const std::string& name, const GLuint slot = 0) const;
+    void bind(const std::string& name, const texture_ref& texture, const GLuint slot = 0) const;
 
     /// @brief 
     /// @tparam value_t 

@@ -94,8 +94,8 @@ void draw_skybox()
     }
 #endif
     detail::skybox_program.value().use();
-    detail::skybox_program.value().bind(detail::skybox_mesh.value(), "vert_position", mesh_attribute::position);
-    detail::skybox_program.value().bind(detail::skybox_mesh.value(), "vert_texcoord", mesh_attribute::texcoord);
-    detail::skybox_program.value().bind(detail::skybox_cubemap.value(), "uniform_color", 0);
+    detail::skybox_program.value().bind("vert_position", detail::skybox_mesh.value(), mesh_attribute::position);
+    detail::skybox_program.value().bind("vert_texcoord", detail::skybox_mesh.value(), mesh_attribute::texcoord);
+    detail::skybox_program.value().bind("uniform_color", detail::skybox_cubemap.value(), 0);
     detail::skybox_program.value().draw();
 }

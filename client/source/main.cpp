@@ -35,24 +35,24 @@ extern void draw_room();
 
 int main()
 {
-    setup_skybox(
-        "texture/skybox_plus_x.bin",
-        "texture/skybox_plus_y.bin",
-        "texture/skybox_plus_z.bin",
-        "texture/skybox_minus_x.bin",
-        "texture/skybox_minus_y.bin",
-        "texture/skybox_minus_z.bin");
-    setup_room(
-        "mesh/room.bin",
-        "texture/room_color.bin");
+    // setup_skybox(
+    //     "texture/skybox_plus_x.bin",
+    //     "texture/skybox_plus_y.bin",
+    //     "texture/skybox_plus_z.bin",
+    //     "texture/skybox_minus_x.bin",
+    //     "texture/skybox_minus_y.bin",
+    //     "texture/skybox_minus_z.bin");
+    // setup_room(
+    //     "mesh/room.bin",
+    //     "texture/room_color.bin");
     // setup_screen();
     // setup_speaker();
 
     run([&]() {
         update_controller();
         clear_camera();
-        draw_skybox();
-        draw_room();
+        // draw_skybox();
+        // draw_room();
     });
     return 0;
 }

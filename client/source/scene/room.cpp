@@ -46,8 +46,8 @@ void setup_room(
 void draw_room()
 {
     detail::room_program.value().use();
-    detail::room_program.value().bind(detail::room_mesh.value(), "vert_position", mesh_attribute::position);
-    detail::room_program.value().bind(detail::room_mesh.value(), "vert_texcoord", mesh_attribute::texcoord);
-    detail::room_program.value().bind(detail::room_texture.value(), "uniform_color", 0);
+    detail::room_program.value().bind("vert_position", detail::room_mesh.value(), mesh_attribute::position);
+    detail::room_program.value().bind("vert_texcoord", detail::room_mesh.value(), mesh_attribute::texcoord);
+    detail::room_program.value().bind("uniform_color", detail::room_texture.value(), 0);
     detail::room_program.value().draw();
 }

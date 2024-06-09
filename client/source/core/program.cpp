@@ -109,7 +109,7 @@ void program_ref::use() const
     glCullFace(GL_BACK);
 }
 
-void program_ref::bind(const mesh_ref& mesh, const std::string& name, const mesh_attribute attribute)
+void program_ref::bind(const std::string& name, const mesh_ref& mesh, const mesh_attribute attribute)
 {
     _count = mesh.get_count();
     _array_id = mesh.get_array_id();
@@ -122,7 +122,7 @@ void program_ref::bind(const mesh_ref& mesh, const std::string& name, const mesh
     glEnableVertexAttribArray(_location);
 }
 
-void program_ref::bind(const cubemap_ref& cubemap, const std::string& name, const GLuint slot) const
+void program_ref::bind(const std::string& name, const cubemap_ref& cubemap, const GLuint slot) const
 {
     GLint _location = _program_uniforms.at(name);
     glUniform1i(_location, slot);
@@ -130,7 +130,7 @@ void program_ref::bind(const cubemap_ref& cubemap, const std::string& name, cons
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.get_id());
 }
 
-void program_ref::bind(const texture_ref& texture, const std::string& name, const GLuint slot) const
+void program_ref::bind(const std::string& name, const texture_ref& texture, const GLuint slot) const
 {
     GLint _location = _program_uniforms.at(name);
     glUniform1i(_location, slot);
