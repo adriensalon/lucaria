@@ -224,12 +224,11 @@ void emscripten_assert(EMSCRIPTEN_RESULT result)
             _brief = "Unknown emscripten result";
             break;
         }
-        std::cerr << "Invalid emscripten result '" << _brief << "'" << std::endl;
+        std::cout << "Invalid emscripten result '" << _brief << "'" << std::endl;
         std::terminate();
     }
 #endif
 }
-
 
 void run(std::function<void()> update)
 {

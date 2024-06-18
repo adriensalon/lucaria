@@ -3,6 +3,7 @@
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/cereal.hpp>
 #include <cereal/types/string.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <core/program.hpp>
 
@@ -22,7 +23,7 @@ namespace detail {
         if (!_result && _log_length > 0) {
             std::vector<GLchar> _result_error_msg(_log_length + 1);
             glGetShaderInfoLog(_shader_id, _log_length, NULL, &_result_error_msg[0]);
-            std::cerr << "Invalid shader '" << std::string(&_result_error_msg[0]) << "'" << std::endl;
+            std::cout << "Invalid shader '" << std::string(&_result_error_msg[0]) << "'" << std::endl;
             std::terminate();
         }
 #endif
@@ -79,7 +80,7 @@ program_ref::program_ref(const shader_data& vertex, const shader_data& fragment)
     if (!_result && _log_length > 0) {
         std::vector<char> _result_error_msg(_log_length + 1);
         glGetProgramInfoLog(_program_id, _log_length, NULL, &_result_error_msg[0]);
-        std::cerr << "Invalid program '" << std::string(&_result_error_msg[0]) << "'" << std::endl;
+        std::cout << "Invalid program '" << std::string(&_result_error_msg[0]) << "'" << std::endl;
         std::terminate();
     }
 #endif
@@ -204,6 +205,13 @@ void program_ref::bind<std::vector<glm::vec4>>(const std::string& name, const st
 
 // TODO MATRICES
 
+template <> 
+void program_ref::bind<glm::mat4x4>(const std::string& name, const glm::mat4x4& value)
+{
+    const GLint _location = _program_uniforms.at(name);
+    glUniformMatrix4fv(_location, 1, GL_FALSE, glm::value_ptr(value));
+}
+
 void program_ref::draw() const
 {
     glBindVertexArray(_array_id);
@@ -216,7 +224,13 @@ GLuint program_ref::get_id() const
 }
 
 shader_data load_shader(const std::filesystem::path& file)
-{
+{    
+#if DEBUG
+    if (!std::filesystem::is_regular_file(file)) {
+        std::cout << "Invalid shader path " << file << std::endl;
+        std::terminate();
+    }
+#endif
     shader_data _data;
     std::ofstream _fstream(file);
     cereal::PortableBinaryOutputArchive _archive(_fstream);

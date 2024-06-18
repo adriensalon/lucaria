@@ -33,7 +33,7 @@ texture_ref::texture_ref(const texture_data& data)
         break;
     default:
 #if DEBUG
-        std::cerr << "Invalid channels count, must be 3 or 4" << std::endl;
+        std::cout << "Invalid channels count, must be 3 or 4" << std::endl;
         std::terminate();
 #else
         break;
@@ -54,6 +54,12 @@ GLuint texture_ref::get_id() const
 
 texture_data load_texture(const std::filesystem::path& file)
 {
+#if DEBUG
+    if (!std::filesystem::is_regular_file(file)) {
+        std::cout << "Invalid texture path " << file << std::endl;
+        std::terminate();
+    }
+#endif
     texture_data _data;
     std::ifstream _fstream(file);
     cereal::PortableBinaryInputArchive _archive(_fstream);

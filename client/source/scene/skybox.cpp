@@ -1,3 +1,4 @@
+#include <iostream>
 
 #include <core/program.hpp>
 
@@ -89,7 +90,7 @@ void draw_skybox()
 {
 #if DEBUG
     if (!detail::is_skybox_setup) {
-        std::cerr << "Skybox must be setup before it can be drawn" << std::endl;
+        std::cout << "Skybox must be setup before it can be drawn" << std::endl;
         std::terminate();
     }
 #endif

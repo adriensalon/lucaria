@@ -22,27 +22,27 @@ namespace detail {
         }
         ALCdevice* _webaudio_device = alcOpenDevice(NULL);
         if (!_webaudio_device) {
-            std::cerr << "Impossible to create an OpenAL device" << std::endl;
+            std::cout << "Impossible to create an OpenAL device" << std::endl;
             has_webaudio = false;
             is_webaudio_setup = true;
             return;
         }
         ALCcontext* _webaudio_context = alcCreateContext(_webaudio_device, NULL);
         if (!_webaudio_context) {
-            std::cerr << "Impossible to create an OpenAL context" << std::endl;
+            std::cout << "Impossible to create an OpenAL context" << std::endl;
             has_webaudio = false;
             is_webaudio_setup = true;
             return;
         }
         if (!alcMakeContextCurrent(_webaudio_context)) {
-            std::cerr << "Impossible to use an OpenAL context" << std::endl;
+            std::cout << "Impossible to use an OpenAL context" << std::endl;
             has_webaudio = false;
             is_webaudio_setup = true;
             return;
         }
         bool _is_float32_supported = (alIsExtensionPresent("AL_EXT_float32") == AL_TRUE);
         if (!_is_float32_supported) {
-            std::cerr << "OpenAL extension 'AL_EXT_float32' is not supported" << std::endl;
+            std::cout << "OpenAL extension 'AL_EXT_float32' is not supported" << std::endl;
             return;
         }
         has_webaudio = true;
@@ -80,7 +80,7 @@ void audio_assert()
             _reason = " invalid operation";
         else if (_al_error == AL_OUT_OF_MEMORY)
             _reason = "out of memory";
-        std::cerr << "Invalid OpenAL result '" << _reason << "'" << std::endl;
+        std::cout << "Invalid OpenAL result '" << _reason << "'" << std::endl;
         std::terminate();
     }
 #endif

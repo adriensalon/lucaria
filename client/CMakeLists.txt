@@ -35,6 +35,8 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 	target_link_libraries(lucaria PRIVATE imgui)
 	target_link_libraries(lucaria PRIVATE tinygltf)
 
+	target_compile_definitions(lucaria PRIVATE DEBUG)
+
 	target_include_directories(lucaria PRIVATE "${CMAKE_CURRENT_LIST_DIR}/source")
 	target_include_directories(lucaria PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../common/include")
 

@@ -97,6 +97,12 @@ GLuint mesh_ref::get_count() const
 
 mesh_data load_mesh(const std::filesystem::path& file)
 {
+#if DEBUG
+    if (!std::filesystem::is_regular_file(file)) {
+        std::cout << "Invalid mesh path " << file << std::endl;
+        std::terminate();
+    }
+#endif
     mesh_data _data;
     std::ifstream _fstream(file);
     cereal::PortableBinaryInputArchive _archive(_fstream);

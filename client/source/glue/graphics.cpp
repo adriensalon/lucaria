@@ -28,7 +28,7 @@ static bool setup_opengl()
     _webgl_attributes.minorVersion = 0;
     EMSCRIPTEN_WEBGL_CONTEXT_HANDLE _webgl_context = emscripten_webgl_create_context("#canvas", &_webgl_attributes);
     if (_webgl_context < 0) {        
-        std::cerr << "WebGL2 context cannot be created on this device" << std::endl;
+        std::cout << "WebGL2 context cannot be created on this device" << std::endl;
         std::terminate();        
     }
     emscripten_assert(emscripten_webgl_make_context_current(_webgl_context));
@@ -76,7 +76,7 @@ void graphics_assert()
             _description = "This error hasn't been coded into glite yet, please sumbit an issue report on github.com/127Soft/glite :)";
             break;
         }
-        std::cerr << "Invalid OpenGL _compilation_result '" << _brief << "' (" << _description << ")" << std::endl;
+        std::cout << "Invalid OpenGL _compilation_result '" << _brief << "' (" << _description << ")" << std::endl;
         std::terminate();
     }
 #endif

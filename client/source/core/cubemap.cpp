@@ -1,4 +1,5 @@
 #include <fstream>
+#include <iostream>
 
 #include <core/cubemap.hpp>
 
@@ -50,7 +51,7 @@ cubemap_ref::cubemap_ref(
     } 
 #if DEBUG
     else {
-        std::cerr << "Invalid channels across cubemap textures or channels != 3 or channels != 4" << std::endl;
+        std::cout << "Invalid channels across cubemap textures or channels != 3 or channels != 4" << std::endl;
         std::terminate();
     }
 #endif

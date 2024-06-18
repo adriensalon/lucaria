@@ -17,7 +17,7 @@ extern void audio_assert();
 
 //scene
 extern void clear_camera(
-    const glm::vec4 color = { 0, 0, 0, 1 }, 
+    const glm::vec4& color = { 0, 0, 0, 1 }, 
     const bool depth = true);
 extern void update_controller();
 extern void setup_skybox(
@@ -42,9 +42,9 @@ int main()
     //     "texture/skybox_minus_x.bin",
     //     "texture/skybox_minus_y.bin",
     //     "texture/skybox_minus_z.bin");
-    // setup_room(
-    //     "mesh/room.bin",
-    //     "texture/room_color.bin");
+    setup_room(
+        "mesh/room.bin",
+        "texture/room_color.bin");
     // setup_screen();
     // setup_speaker();
 
@@ -52,7 +52,7 @@ int main()
         update_controller();
         clear_camera();
         // draw_skybox();
-        // draw_room();
+        draw_room();
     });
     return 0;
 }
