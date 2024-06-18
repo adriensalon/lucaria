@@ -76,7 +76,7 @@ std::filesystem::path process_input_command(const commands_map& commands)
         std::cerr << "The path provided with option -i must be an existing directory" << std::endl;
         std::terminate();
     }
-    // std::cout << "-- Assets input directory at " << _input_dir << std::endl;
+    std::cout << "-- Assets input directory at " << _input_dir << std::endl;
     return _input_dir;
 }
 
@@ -98,7 +98,7 @@ std::filesystem::path process_output_command(const commands_map& commands)
         std::cerr << "The path provided with option -o must be an existing directory" << std::endl;
         std::terminate();
     }
-    // std::cout << "-- Assets output directory at " << _output_dir << std::endl;
+    std::cout << "-- Assets output directory at " << _output_dir << std::endl;
     return _output_dir;
 }
 
@@ -111,6 +111,7 @@ void iterate_recursive(const std::filesystem::path base_dir, const std::function
         for (const std::filesystem::directory_entry& _entry : std::filesystem::recursive_directory_iterator(base_dir)) {
             if (std::filesystem::is_regular_file(_entry.status())) {
                 callback(_entry.path());
+                std::cout << "Compiled " << _entry.path() << std::endl;
             }
         }
     } catch (const std::filesystem::filesystem_error& e) {
@@ -149,6 +150,14 @@ std::filesystem::path substract_relative(const std::filesystem::path base_dir, c
     }
 }
 
+template <typename resource_data_t>
+void compile_binary(const resource_data_t& data, const std::filesystem::path& output)
+{
+    std::ofstream _fstream(output, std::ios::binary);
+    cereal::PortableBinaryOutputArchive _archive(_fstream);
+    _archive(data);
+}
+
 /// @brief 
 /// @param input_path 
 /// @param output_path 
@@ -158,13 +167,13 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
     if (_extension == ".ttf") {
         // compile_font(import_font(input_file), output_file);
     } else if (_extension == ".obj") {
-        compile_mesh(import_mesh(input_file), output_file);
+        compile_binary(import_mesh(input_file), output_file);
     } else if (_extension == ".glsl") {
-        compile_shader(import_shader(input_file), output_file);    
+        compile_binary(import_shader(input_file), output_file);    
     } else if (_extension == ".wav") {
         // compile_sound(import_sound(input_file), output_file); 
     } else if (_extension == ".jpg") {
-        compile_texture(import_texture(input_file), output_file); 
+        compile_binary(import_texture(input_file), output_file); 
     } else {
         std::cerr << "Invalid input file with extension " << _extension << std::endl;
         std::terminate();

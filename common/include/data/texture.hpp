@@ -8,4 +8,13 @@ struct texture_data {
     unsigned int width;
     unsigned int height;
     std::vector<unsigned char> pixels;
+    
+    template <typename archive_t>
+    void serialize(archive_t& archive)
+    {
+        archive(channels);
+        archive(width);
+        archive(height);
+        archive(pixels);
+    }
 };

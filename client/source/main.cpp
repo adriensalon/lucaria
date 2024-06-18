@@ -43,7 +43,7 @@ int main()
     //     "texture/skybox_minus_y.bin",
     //     "texture/skybox_minus_z.bin");
     setup_room(
-        "mesh/room.bin",
+        "mesh/room_mesh.bin",
         "texture/room_color.bin");
     // setup_screen();
     // setup_speaker();

@@ -12,4 +12,17 @@ struct mesh_data {
     std::vector<float> bitangents;
     std::vector<float> texcoords;
     std::vector<unsigned int> indices;
+
+    template <typename archive_t>
+    void serialize(archive_t& archive)
+    {
+        archive(count);
+        archive(positions);
+        archive(colors);
+        archive(normals);
+        archive(tangents);
+        archive(bitangents);
+        archive(texcoords);
+        archive(indices);
+    }
 };

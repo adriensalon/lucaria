@@ -104,15 +104,8 @@ mesh_data load_mesh(const std::filesystem::path& file)
     }
 #endif
     mesh_data _data;
-    std::ifstream _fstream(file);
+    std::ifstream _fstream(file, std::ios::binary);
     cereal::PortableBinaryInputArchive _archive(_fstream);
-    _archive(_data.count);
-    _archive(_data.positions);
-    _archive(_data.colors);
-    _archive(_data.normals);
-    _archive(_data.tangents);
-    _archive(_data.bitangents);
-    _archive(_data.texcoords);
-    _archive(_data.indices);
+    _archive(_data);
     return _data;
 }

@@ -35,39 +35,53 @@ namespace detail {
         GLint _attributes_count;
         std::unordered_map<std::string, GLint> _attributes;
         glGetProgramiv(program_id, GL_ACTIVE_ATTRIBUTES, &_attributes_count);
-        
         for (GLint _index = 0; _index < _attributes_count; ++_index) {
             char _name[256];
-            GLsizei length;
-            GLint size;
-            GLenum type;
-
-            glGetActiveAttrib(program_id, _index, sizeof(_name), &length, &size, &type, _name);
-
-            GLint location = glGetAttribLocation(program_id, _name);
-            
-            std::cout << "Attribute #" << _index << ": " << _name 
-                    << " (Location: " << location 
-                    << ", Type: " << type 
-                    << ", Size: " << size << ")" << std::endl;
+            GLsizei _length;
+            GLint _size;
+            GLenum _type;
+            glGetActiveAttrib(program_id, _index, sizeof(_name), &_length, &_size, &_type, _name);
+            _name[_length] = '\0';
+            GLint _location = glGetAttribLocation(program_id, _name);
+            _attributes[_name] = _location;
+#if DEBUG
+            std::cout << "Program has attribute '" << _name << "' at location " << _location << std::endl;
+#endif
         }
         return _attributes;
     }
 
     std::unordered_map<std::string, GLint> enumerate_uniforms(const GLuint program_id)
     {
-        GLint _uniforms_count;
+        GLint _uniform_count;
+        glGetProgramiv(program_id, GL_ACTIVE_UNIFORMS, &_uniform_count);
         std::unordered_map<std::string, GLint> _uniforms;
-
+        for (GLint _index = 0; _index < _uniform_count; ++_index) {
+            char _name[256];
+            GLsizei _length;
+            GLint _size;
+            GLenum _type;
+            glGetActiveUniform(program_id, _index, sizeof(_name), &_length, &_size, &_type, _name);
+            _name[_length] = '\0';
+            GLint _location = glGetUniformLocation(program_id, _name);
+            _uniforms[_name] = _location;
+#if DEBUG
+            std::cout << "Program has uniform '" << _name << "' at location " << _location << std::endl;
+#endif
+        }
         return _uniforms;
+
     }
 
 }
 
 program_ref::program_ref(const shader_data& vertex, const shader_data& fragment)
 {
+    std::cout << "VERT \n";
     GLuint _vertex_id = detail::create_shader(GL_VERTEX_SHADER, vertex.text);
+    std::cout << "FRAG \n";
     GLuint _fragment_id = detail::create_shader(GL_FRAGMENT_SHADER, fragment.text);
+    std::cout << "PROG \n";
     GLint _log_length;
     GLint _result = GL_FALSE;
     _program_id = glCreateProgram();
@@ -232,8 +246,8 @@ shader_data load_shader(const std::filesystem::path& file)
     }
 #endif
     shader_data _data;
-    std::ofstream _fstream(file);
-    cereal::PortableBinaryOutputArchive _archive(_fstream);
-    _archive(_data.text);
+    std::ifstream _fstream(file, std::ios::binary);
+    cereal::PortableBinaryInputArchive _archive(_fstream);
+    _archive(_data);
     return _data;
 }

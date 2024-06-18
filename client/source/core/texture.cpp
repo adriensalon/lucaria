@@ -61,11 +61,8 @@ texture_data load_texture(const std::filesystem::path& file)
     }
 #endif
     texture_data _data;
-    std::ifstream _fstream(file);
+    std::ifstream _fstream(file, std::ios::binary);
     cereal::PortableBinaryInputArchive _archive(_fstream);
-    _archive(_data.channels);
-    _archive(_data.width);
-    _archive(_data.height);
-    _archive(_data.pixels);
+    _archive(_data);
     return _data;
 }

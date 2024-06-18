@@ -27,16 +27,3 @@ texture_data import_texture(const std::filesystem::path& input)
     stbi_image_free(_pixels);
     return _data;
 }
-
-/// @brief Compiles a texture to a binary file
-/// @param data the texture data to compile as binary
-/// @param output the binary path to save the texture to
-void compile_texture(const texture_data& data, const std::filesystem::path& output)
-{
-    std::ofstream _fstream(output);
-    cereal::PortableBinaryOutputArchive _archive(_fstream);
-    _archive(data.channels);
-    _archive(data.width);
-    _archive(data.height);
-    _archive(data.pixels);
-}

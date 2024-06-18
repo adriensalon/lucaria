@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include <core/program.hpp>
 
 extern glm::mat4x4 get_view_projection_matrix();
@@ -16,7 +18,7 @@ const std::string room_vertex = "#version 300 es \n"
                                        "void main() { \n"
                                        "    frag_texcoord = vert_texcoord; \n"
                                        "    gl_Position = uniform_view * vec4(vert_position, 1); \n"
-                                       "};";
+                                       "}";
 
 const std::string room_fragment = "#version 300 es \n"
                                          "precision mediump float; \n"
@@ -25,27 +27,29 @@ const std::string room_fragment = "#version 300 es \n"
                                          "out vec4 output_color; \n"
                                          "void main() { \n"
                                          "    output_color = texture(uniform_color, frag_texcoord); \n"
-                                         "};";
+                                         "}";
 
 }
 
-/// @brief
-/// @param mesh_file
-/// @param texture_file
+/// @brief Setups the room singleton instance once for rendering
+/// @param mesh_file is the path to the binary mesh to use
+/// @param texture_file is the path to the binary texture to use
 void setup_room(
     const std::filesystem::path& mesh_file,
     const std::filesystem::path& texture_file)
 {
+    std::cout << "A" << std::endl;
     detail::room_mesh = mesh_ref(load_mesh(mesh_file));
+    std::cout << "B" << std::endl;
     detail::room_texture = texture_ref(load_texture(texture_file));
+    std::cout << "C" << std::endl;
     detail::room_program = program_ref(
         shader_data { detail::room_vertex },
         shader_data { detail::room_fragment });
+    std::cout << "D" << std::endl;
 }
 
-/// @brief 
-/// @param camera_position 
-/// @param camera_rotation 
+/// @brief Renders the room singleton instance once per frame
 void draw_room()
 {
     detail::room_program.value().use();

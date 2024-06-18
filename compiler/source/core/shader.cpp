@@ -23,13 +23,3 @@ shader_data import_shader(const std::filesystem::path& input)
     _data.text = _buffer.str();
     return _data;
 }
-
-/// @brief Compiles a shader to a binary file
-/// @param data the shader data to compile as binary
-/// @param output the binary path to save the shader to
-void compile_shader(const shader_data& data, const std::filesystem::path& output)
-{
-    std::ofstream _fstream(output);
-    cereal::PortableBinaryOutputArchive _archive(_fstream);
-    _archive(data.text);
-}

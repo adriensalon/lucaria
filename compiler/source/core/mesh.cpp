@@ -34,6 +34,7 @@ namespace detail {
 mesh_data import_mesh(const std::filesystem::path& input)
 {
     mesh_data _data;
+    _data.count = 0;
     tinyobj::ObjReaderConfig _mesh_reader_config;
     tinyobj::ObjReader _mesh_reader;
     detail::obj_parse(input, _mesh_reader, _mesh_reader_config);
@@ -76,17 +77,4 @@ mesh_data import_mesh(const std::filesystem::path& input)
     }
 
     return _data;
-}
-
-/// @brief Compiles a mesh to a binary file
-/// @param data the mesh data to compile as binary
-/// @param output the binary path to save the mesh to
-void compile_mesh(const mesh_data& data, const std::filesystem::path& output)
-{
-    std::ofstream _fstream(output);
-    cereal::PortableBinaryOutputArchive _archive(_fstream);
-    _archive(data.count);
-    _archive(data.positions);
-    _archive(data.texcoords);
-    _archive(data.indices);
 }
