@@ -7,6 +7,8 @@
 
 #include <core/program.hpp>
 
+extern void graphics_assert();
+
 namespace detail {    
 
     GLuint create_shader(const GLenum type, const std::string& text)
@@ -19,8 +21,8 @@ namespace detail {
         glCompileShader(_shader_id);
         glGetShaderiv(_shader_id, GL_COMPILE_STATUS, &_result);
         glGetShaderiv(_shader_id, GL_INFO_LOG_LENGTH, &_log_length);
-#if DEBUG
-        if (!_result && _log_length > 0) {
+#if LUCARIA_DEBUG
+        if (!_result || _log_length > 0) {
             std::vector<GLchar> _result_error_msg(_log_length + 1);
             glGetShaderInfoLog(_shader_id, _log_length, NULL, &_result_error_msg[0]);
             std::cout << "Invalid shader '" << std::string(&_result_error_msg[0]) << "'" << std::endl;
@@ -44,7 +46,7 @@ namespace detail {
             _name[_length] = '\0';
             GLint _location = glGetAttribLocation(program_id, _name);
             _attributes[_name] = _location;
-#if DEBUG
+#if LUCARIA_DEBUG
             std::cout << "Program has attribute '" << _name << "' at location " << _location << std::endl;
 #endif
         }
@@ -65,7 +67,7 @@ namespace detail {
             _name[_length] = '\0';
             GLint _location = glGetUniformLocation(program_id, _name);
             _uniforms[_name] = _location;
-#if DEBUG
+#if LUCARIA_DEBUG
             std::cout << "Program has uniform '" << _name << "' at location " << _location << std::endl;
 #endif
         }
@@ -77,11 +79,8 @@ namespace detail {
 
 program_ref::program_ref(const shader_data& vertex, const shader_data& fragment)
 {
-    std::cout << "VERT \n";
     GLuint _vertex_id = detail::create_shader(GL_VERTEX_SHADER, vertex.text);
-    std::cout << "FRAG \n";
     GLuint _fragment_id = detail::create_shader(GL_FRAGMENT_SHADER, fragment.text);
-    std::cout << "PROG \n";
     GLint _log_length;
     GLint _result = GL_FALSE;
     _program_id = glCreateProgram();
@@ -90,26 +89,29 @@ program_ref::program_ref(const shader_data& vertex, const shader_data& fragment)
     glLinkProgram(_program_id);
     glGetProgramiv(_program_id, GL_LINK_STATUS, &_result);
     glGetProgramiv(_program_id, GL_INFO_LOG_LENGTH, &_log_length);
-#if DEBUG
-    if (!_result && _log_length > 0) {
-        std::vector<char> _result_error_msg(_log_length + 1);
+#if LUCARIA_DEBUG
+    if (_log_length > 0) {
+        std::vector<GLchar> _result_error_msg(_log_length + 1);
         glGetProgramInfoLog(_program_id, _log_length, NULL, &_result_error_msg[0]);
-        std::cout << "Invalid program '" << std::string(&_result_error_msg[0]) << "'" << std::endl;
-        std::terminate();
+        std::cout << "While linking program '" << std::string(&_result_error_msg[0]) << "'" << std::endl;
+        if (!_result) {
+            std::terminate();
+        }
     }
 #endif
     glDetachShader(_program_id, _vertex_id);
     glDetachShader(_program_id, _fragment_id);
     glDeleteShader(_vertex_id);
     glDeleteShader(_fragment_id);
-    detail::enumerate_attributes(_program_id);
-    detail::enumerate_uniforms(_program_id);
+    _program_attributes = detail::enumerate_attributes(_program_id);
+    _program_uniforms = detail::enumerate_uniforms(_program_id);
+    graphics_assert();
 }
 
 program_ref::~program_ref()
 {
-    glUseProgram(0);
-    glDeleteProgram(_program_id);
+    // glUseProgram(0);
+    // glDeleteProgram(_program_id);
 }
 
 
@@ -129,6 +131,12 @@ void program_ref::bind(const std::string& name, const mesh_ref& mesh, const mesh
     _count = mesh.get_count();
     _array_id = mesh.get_array_id();
     std::unordered_map<mesh_attribute, GLuint> _buffer_ids = mesh.get_buffer_ids();
+    for (const auto jj : _program_attributes) {
+        std::cout << jj.first << "  " << jj.second << std::endl;
+    }
+    for (const auto jj : _buffer_ids) {
+        std::cout << (int)jj.first << "  " << jj.second << std::endl;
+    }
     GLint _location = _program_attributes.at(name);
     GLuint _size = mesh_attribute_sizes.at(attribute);
     glBindVertexArray(_array_id);
@@ -239,7 +247,7 @@ GLuint program_ref::get_id() const
 
 shader_data load_shader(const std::filesystem::path& file)
 {    
-#if DEBUG
+#if LUCARIA_DEBUG
     if (!std::filesystem::is_regular_file(file)) {
         std::cout << "Invalid shader path " << file << std::endl;
         std::terminate();

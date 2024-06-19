@@ -6,9 +6,13 @@ extern glm::mat4x4 get_view_projection_matrix();
 
 namespace detail {
 
-static std::optional<mesh_ref> room_mesh;
-static std::optional<texture_ref> room_texture;
-static std::optional<program_ref> room_program;
+struct room_ref {
+    mesh_ref mesh;
+    texture_ref color;
+    program_ref program;
+};
+
+static std::optional<room_ref> room = std::nullopt;
 
 const std::string room_vertex = "#version 300 es \n"
                                        "in vec3 vert_position; \n"
@@ -38,24 +42,29 @@ void setup_room(
     const std::filesystem::path& mesh_file,
     const std::filesystem::path& texture_file)
 {
-    std::cout << "A" << std::endl;
-    detail::room_mesh = mesh_ref(load_mesh(mesh_file));
-    std::cout << "B" << std::endl;
-    detail::room_texture = texture_ref(load_texture(texture_file));
-    std::cout << "C" << std::endl;
-    detail::room_program = program_ref(
-        shader_data { detail::room_vertex },
-        shader_data { detail::room_fragment });
-    std::cout << "D" << std::endl;
+    detail::room = detail::room_ref {
+        mesh_ref(load_mesh(mesh_file)),
+        texture_ref(load_texture(texture_file)),
+        program_ref(
+            shader_data { detail::room_vertex },
+            shader_data { detail::room_fragment })
+    };
 }
 
 /// @brief Renders the room singleton instance once per frame
 void draw_room()
 {
-    detail::room_program.value().use();
-    detail::room_program.value().bind("vert_position", detail::room_mesh.value(), mesh_attribute::position);
-    detail::room_program.value().bind("vert_texcoord", detail::room_mesh.value(), mesh_attribute::texcoord);
-    detail::room_program.value().bind("uniform_color", detail::room_texture.value(), 0);
-    detail::room_program.value().bind("uniform_view", get_view_projection_matrix());
-    detail::room_program.value().draw();
+#if LUCARIA_DEBUG
+    if (!detail::room.has_value()) {
+        std::cout << "Forgot to call setup_room() before draw_room()" << std::endl;
+        std::terminate();
+    }
+#endif
+    detail::room_ref& _room = detail::room.value();
+    _room.program.use();
+    _room.program.bind("vert_position", _room.mesh, mesh_attribute::position);
+    _room.program.bind("vert_texcoord", _room.mesh, mesh_attribute::texcoord);
+    _room.program.bind("uniform_color", _room.color, 0);
+    _room.program.bind("uniform_view", get_view_projection_matrix());
+    _room.program.draw();
 }

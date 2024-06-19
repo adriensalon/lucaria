@@ -66,7 +66,7 @@ namespace detail {
 
 void audio_assert()
 {
-#if DEBUG
+#if LUCARIA_DEBUG
     std::string _reason;
     ALenum _al_error = alGetError();
     if (_al_error != AL_NO_ERROR) {

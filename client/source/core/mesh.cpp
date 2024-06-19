@@ -1,4 +1,5 @@
 #include <fstream>
+#include <iostream>
 
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/cereal.hpp>
@@ -7,45 +8,48 @@
 #include <core/mesh.hpp>
 
 namespace detail {
-    
-    void validate_mesh(const mesh_data& data)
-    {
-        
-    }
 
-    GLuint create_vertex_array()
-    {
-        GLuint _array_id;
-        glGenVertexArrays(1, &_array_id);
-        glBindVertexArray(_array_id);
-        return _array_id;
-    }
+void validate_mesh(const mesh_data& data)
+{
+}
 
-    GLuint create_attribute_buffer(const std::vector<GLfloat>& attribute)
-    {
-        GLuint _attribute_id;
-        GLfloat* _attribute_ptr = const_cast<GLfloat*>(attribute.data());
-        glGenBuffers(1, &_attribute_id);
-        glBindBuffer(GL_ARRAY_BUFFER, _attribute_id);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * attribute.size(), _attribute_ptr, GL_STATIC_DRAW);
-        return _attribute_id;
-    }
+GLuint create_vertex_array()
+{
+    GLuint _array_id;
+    glGenVertexArrays(1, &_array_id);
+    glBindVertexArray(_array_id);
+    return _array_id;
+}
 
-    void emplace_attribute_buffer(GLuint& attribute, const std::vector<GLfloat>& data)
-    {
-        if (!data.empty()) {
-            attribute = create_attribute_buffer(data);
-        }
-    }
+GLuint create_attribute_buffer(const std::vector<GLfloat>& attribute)
+{
+    GLuint _attribute_id;
+    GLfloat* _attribute_ptr = const_cast<GLfloat*>(attribute.data());
+    glGenBuffers(1, &_attribute_id);
+    glBindBuffer(GL_ARRAY_BUFFER, _attribute_id);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * attribute.size(), _attribute_ptr, GL_STATIC_DRAW);
+#if LUCARIA_DEBUG
+    std::cout << "Created ARRAY_BUFFER buffer of size " << attribute.size()
+              << " with id " << _attribute_id << std::endl;
+#endif
+    return _attribute_id;
+}
 
-    GLuint create_elements_buffer(const std::vector<GLuint>& indices)
-    {
-        GLuint _elements_id;
-        glGenBuffers(1, &_elements_id);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _elements_id);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &(indices[0]), GL_STATIC_DRAW);
-        return _elements_id;
+void emplace_attribute_buffer(GLuint& attribute, const std::vector<GLfloat>& data)
+{
+    if (!data.empty()) {
+        attribute = create_attribute_buffer(data);
     }
+}
+
+GLuint create_elements_buffer(const std::vector<GLuint>& indices)
+{
+    GLuint _elements_id;
+    glGenBuffers(1, &_elements_id);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _elements_id);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &(indices[0]), GL_STATIC_DRAW);
+    return _elements_id;
+}
 
 }
 
@@ -77,7 +81,6 @@ mesh_ref::mesh_ref(const mesh_data& data)
 
 mesh_ref::~mesh_ref()
 {
-    
 }
 
 std::unordered_map<mesh_attribute, GLuint> mesh_ref::get_buffer_ids() const
@@ -86,7 +89,7 @@ std::unordered_map<mesh_attribute, GLuint> mesh_ref::get_buffer_ids() const
 }
 
 GLuint mesh_ref::get_array_id() const
-{    
+{
     return _array_id;
 }
 
@@ -97,7 +100,7 @@ GLuint mesh_ref::get_count() const
 
 mesh_data load_mesh(const std::filesystem::path& file)
 {
-#if DEBUG
+#if LUCARIA_DEBUG
     if (!std::filesystem::is_regular_file(file)) {
         std::cout << "Invalid mesh path " << file << std::endl;
         std::terminate();
@@ -107,5 +110,9 @@ mesh_data load_mesh(const std::filesystem::path& file)
     std::ifstream _fstream(file, std::ios::binary);
     cereal::PortableBinaryInputArchive _archive(_fstream);
     _archive(_data);
+#if LUCARIA_DEBUG
+    std::cout << "Loaded mesh data from " << file << " ("
+              << _data.count << " vertices)" << std::endl;
+#endif
     return _data;
 }

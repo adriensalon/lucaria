@@ -49,7 +49,7 @@ cubemap_ref::cubemap_ref(
                    4)) {
         _format = GL_RGBA;
     } 
-#if DEBUG
+#if LUCARIA_DEBUG
     else {
         std::cout << "Invalid channels across cubemap textures or channels != 3 or channels != 4" << std::endl;
         std::terminate();

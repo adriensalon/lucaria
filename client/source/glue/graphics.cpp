@@ -46,7 +46,7 @@ static bool is_graphics_setup = setup_opengl();
 
 void graphics_assert()
 {
-#if DEBUG
+#if LUCARIA_DEBUG
     GLenum _gl_err;
     while ((_gl_err = glGetError()) != GL_NO_ERROR) {
         std::string _brief, _description;
@@ -76,8 +76,8 @@ void graphics_assert()
             _description = "This error hasn't been coded into glite yet, please sumbit an issue report on github.com/127Soft/glite :)";
             break;
         }
-        std::cout << "Invalid OpenGL _compilation_result '" << _brief << "' (" << _description << ")" << std::endl;
-        std::terminate();
+        std::cout << "Invalid OpenGL result '" << _brief << "' (" << _description << ")" << std::endl;
+        // std::terminate();
     }
 #endif
 }

@@ -88,7 +88,7 @@ void setup_skybox(
 /// @brief Draw the GPU objects representing a singleton skybox
 void draw_skybox()
 {
-#if DEBUG
+#if LUCARIA_DEBUG
     if (!detail::is_skybox_setup) {
         std::cout << "Skybox must be setup before it can be drawn" << std::endl;
         std::terminate();

@@ -8,10 +8,9 @@
 
 namespace detail {
 
-    void validate_texture(const texture_data& data)
-    {
-
-    }
+void validate_texture(const texture_data& data)
+{
+}
 }
 
 texture_ref::texture_ref(const texture_data& data)
@@ -32,19 +31,22 @@ texture_ref::texture_ref(const texture_data& data)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data.width, data.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);
         break;
     default:
-#if DEBUG
+#if LUCARIA_DEBUG
         std::cout << "Invalid channels count, must be 3 or 4" << std::endl;
         std::terminate();
-#else
-        break;
 #endif
+        break;
     }
+#if LUCARIA_DEBUG
+    std::cout << "Created TEXTURE_2D buffer of size " << data.width << "x" << data.height
+              << " with id " << _texture_id << std::endl;
+#endif
 }
 
 texture_ref::~texture_ref()
 {
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glDeleteTextures(1, &_texture_id);
+    // glBindTexture(GL_TEXTURE_2D, 0);
+    // glDeleteTextures(1, &_texture_id);
 }
 
 GLuint texture_ref::get_id() const
@@ -54,7 +56,7 @@ GLuint texture_ref::get_id() const
 
 texture_data load_texture(const std::filesystem::path& file)
 {
-#if DEBUG
+#if LUCARIA_DEBUG
     if (!std::filesystem::is_regular_file(file)) {
         std::cout << "Invalid texture path " << file << std::endl;
         std::terminate();
@@ -64,5 +66,11 @@ texture_data load_texture(const std::filesystem::path& file)
     std::ifstream _fstream(file, std::ios::binary);
     cereal::PortableBinaryInputArchive _archive(_fstream);
     _archive(_data);
+#if LUCARIA_DEBUG
+    std::cout << "Loaded texture data from " << file << " ("
+              << _data.width << "x"
+              << _data.height << ", "
+              << _data.channels << " channels)" << std::endl;
+#endif
     return _data;
 }

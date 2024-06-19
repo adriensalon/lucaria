@@ -12,8 +12,6 @@ extern float get_aspect_ratio();
 extern glm::vec2 get_mouse_position();
 extern glm::vec2 get_mouse_position_delta();
 extern float get_time_delta();
-extern void graphics_assert();
-extern void audio_assert();
 
 //scene
 extern void clear_camera(
@@ -27,10 +25,10 @@ extern void setup_skybox(
     const std::filesystem::path& minus_x_file, 
     const std::filesystem::path& minus_y_file, 
     const std::filesystem::path& minus_z_file);
-extern void setup_room(
-    const std::filesystem::path& mesh_file, 
-    const std::filesystem::path& texture_file);
 extern void draw_skybox();
+
+// room
+extern void setup_room(const std::filesystem::path&, const std::filesystem::path&);
 extern void draw_room();
 
 int main()

@@ -175,7 +175,7 @@ void update()
 
     ImGui_ImplOpenGL3_Data* _backend_data = static_cast<ImGui_ImplOpenGL3_Data*>(io.BackendRendererUserData);
     const auto _projection_matrix_index = _backend_data->AttribLocationProjMtx;
-    std::cout << _projection_matrix_index << std::endl;
+    // std::cout << _projection_matrix_index << std::endl; location of proj mat
 
     update_callback();
 
@@ -192,7 +192,7 @@ void update()
 
 void emscripten_assert(EMSCRIPTEN_RESULT result)
 {
-#if DEBUG
+#if LUCARIA_DEBUG
     if (result != EMSCRIPTEN_RESULT_SUCCESS) {
         std::string _brief;
         switch (result) {
