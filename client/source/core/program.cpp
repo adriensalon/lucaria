@@ -131,12 +131,6 @@ void program_ref::bind(const std::string& name, const mesh_ref& mesh, const mesh
     _count = mesh.get_count();
     _array_id = mesh.get_array_id();
     std::unordered_map<mesh_attribute, GLuint> _buffer_ids = mesh.get_buffer_ids();
-    for (const auto jj : _program_attributes) {
-        std::cout << jj.first << "  " << jj.second << std::endl;
-    }
-    for (const auto jj : _buffer_ids) {
-        std::cout << (int)jj.first << "  " << jj.second << std::endl;
-    }
     GLint _location = _program_attributes.at(name);
     GLuint _size = mesh_attribute_sizes.at(attribute);
     glBindVertexArray(_array_id);

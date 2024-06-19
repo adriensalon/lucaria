@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <future>
 
 #include <GLES3/gl3.h>
 
@@ -49,3 +50,8 @@ private:
 /// @param file 
 /// @return 
 texture_data load_texture(const std::filesystem::path& file);
+
+/// @brief 
+/// @param file 
+/// @return 
+std::future<texture_data> fetch_texture(const std::filesystem::path& file);

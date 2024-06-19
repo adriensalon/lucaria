@@ -1,10 +1,12 @@
 
+#include <filesystem>
 #include <functional>
 #include <iostream>
 
 #include <GLES3/gl3.h>
 #include <backends/imgui_impl_opengl3.h>
 #include <emscripten.h>
+#include <emscripten/fetch.h>
 #include <emscripten/html5.h>
 #include <imgui.h>
 #include <glm/glm.hpp>
@@ -195,9 +197,11 @@ void emscripten_assert(EMSCRIPTEN_RESULT result)
 #if LUCARIA_DEBUG
     if (result != EMSCRIPTEN_RESULT_SUCCESS) {
         std::string _brief;
+        bool _is_fatal = true;
         switch (result) {
         case EMSCRIPTEN_RESULT_DEFERRED:
             _brief = "EMSCRIPTEN_RESULT_DEFERRED";
+            _is_fatal = false;
             break;
         case EMSCRIPTEN_RESULT_NOT_SUPPORTED:
             _brief = "EMSCRIPTEN_RESULT_NOT_SUPPORTED";
@@ -224,10 +228,17 @@ void emscripten_assert(EMSCRIPTEN_RESULT result)
             _brief = "Unknown emscripten result";
             break;
         }
-        std::cout << "Invalid emscripten result '" << _brief << "'" << std::endl;
-        std::terminate();
+        if (_is_fatal) {
+            std::cout << "Invalid emscripten result '" << _brief << "'" << std::endl;
+            std::terminate();
+        }
     }
 #endif
+}
+
+void fetch_file(const std::filesystem::path& file)
+{
+
 }
 
 void run(std::function<void()> update)

@@ -5,12 +5,16 @@
 #include <cereal/types/vector.hpp>
 
 #include <core/texture.hpp>
+#include <glue/fetch.hpp>
 
 namespace detail {
 
 void validate_texture(const texture_data& data)
 {
 }
+
+static std::unordered_map<std::string, std::promise<texture_data>> promises;
+
 }
 
 texture_ref::texture_ref(const texture_data& data)
@@ -73,4 +77,30 @@ texture_data load_texture(const std::filesystem::path& file)
               << _data.channels << " channels)" << std::endl;
 #endif
     return _data;
+}
+
+std::future<texture_data> fetch_texture(const std::filesystem::path& file)
+{
+#if LUCARIA_DEBUG
+    if (!std::filesystem::is_regular_file(file)) {
+        std::cout << "Invalid texture path " << file << std::endl;
+        std::terminate();
+    }
+#endif
+    std::promise<texture_data>& _promise = detail::promises[file.generic_string()];
+    fetch_file(file.generic_string(), [&_promise, file](std::istringstream& stream) {
+        texture_data _data;
+        {
+            cereal::PortableBinaryInputArchive _archive(stream);
+            _archive(_data);
+        }
+#if LUCARIA_DEBUG
+        std::cout << "Loaded texture data from " << file << " ("
+              << _data.width << "x"
+              << _data.height << ", "
+              << _data.channels << " channels)" << std::endl;
+#endif
+        _promise.set_value(std::move(_data));
+    });
+    return _promise.get_future();
 }

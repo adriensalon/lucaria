@@ -1,7 +1,12 @@
 #include <filesystem>
 #include <functional>
+#include <iostream>
 
 #include <glm/glm.hpp>
+
+#include <glue/fetch.hpp>
+#include <core/mesh.hpp>
+#include <core/texture.hpp>
 
 // glue
 extern void run(std::function<void()> update);
@@ -28,11 +33,15 @@ extern void setup_skybox(
 extern void draw_skybox();
 
 // room
-extern void setup_room(const std::filesystem::path&, const std::filesystem::path&);
-extern void draw_room();
+extern void update_room(std::future<mesh_data>&, std::future<texture_data>&);
 
 int main()
 {
+    std::future<mesh_data> _room_mesh = fetch_mesh("room_mesh.bin");
+    std::future<texture_data> _room_color = fetch_texture("room_color.bin");
+
+
+    // setup_room("room_mesh.bin", "room_color.bin");
     // setup_skybox(
     //     "texture/skybox_plus_x.bin",
     //     "texture/skybox_plus_y.bin",
@@ -40,17 +49,19 @@ int main()
     //     "texture/skybox_minus_x.bin",
     //     "texture/skybox_minus_y.bin",
     //     "texture/skybox_minus_z.bin");
-    setup_room(
-        "mesh/room_mesh.bin",
-        "texture/room_color.bin");
     // setup_screen();
     // setup_speaker();
 
     run([&]() {
+
         update_controller();
         clear_camera();
         // draw_skybox();
-        draw_room();
+
+
+        update_room(_room_mesh, _room_color);
+
+
     });
     return 0;
 }

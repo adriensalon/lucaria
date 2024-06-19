@@ -1,9 +1,15 @@
 #include <iostream>
+#include <fstream>
 #include <filesystem>
 #include <functional>
 #include <unordered_map>
 #include <string>
 #include <vector>
+
+#include <cereal/archives/portable_binary.hpp>
+#include <cereal/cereal.hpp>
+#include <cereal/types/string.hpp>
+#include <cereal/types/vector.hpp>
 
 #include <data/mesh.hpp>
 #include <data/shader.hpp>
@@ -111,7 +117,7 @@ void iterate_recursive(const std::filesystem::path base_dir, const std::function
         for (const std::filesystem::directory_entry& _entry : std::filesystem::recursive_directory_iterator(base_dir)) {
             if (std::filesystem::is_regular_file(_entry.status())) {
                 callback(_entry.path());
-                std::cout << "Compiled " << _entry.path() << std::endl;
+                std::cout << "   Compiled " << _entry.path() << std::endl;
             }
         }
     } catch (const std::filesystem::filesystem_error& e) {

@@ -6,6 +6,7 @@
 #include <cereal/types/vector.hpp>
 
 #include <core/mesh.hpp>
+#include <glue/fetch.hpp>
 
 namespace detail {
 
@@ -50,6 +51,8 @@ GLuint create_elements_buffer(const std::vector<GLuint>& indices)
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &(indices[0]), GL_STATIC_DRAW);
     return _elements_id;
 }
+
+static std::unordered_map<std::string, std::promise<mesh_data>> promises;
 
 }
 
@@ -115,4 +118,28 @@ mesh_data load_mesh(const std::filesystem::path& file)
               << _data.count << " vertices)" << std::endl;
 #endif
     return _data;
+}
+
+std::future<mesh_data> fetch_mesh(const std::filesystem::path& file)
+{
+#if LUCARIA_DEBUG
+    if (!std::filesystem::is_regular_file(file)) {
+        std::cout << "Invalid mesh path " << file << std::endl;
+        std::terminate();
+    }
+#endif
+    std::promise<mesh_data>& _promise = detail::promises[file.generic_string()];
+    fetch_file(file.generic_string(), [&_promise, file](std::istringstream& stream) {
+        mesh_data _data;
+        {
+            cereal::PortableBinaryInputArchive _archive(stream);
+            _archive(_data);
+        }
+#if LUCARIA_DEBUG
+        std::cout << "Loaded mesh data from " << file << " ("
+                  << _data.count << " vertices)" << std::endl;
+#endif
+        _promise.set_value(std::move(_data));
+    });
+    return _promise.get_future();
 }

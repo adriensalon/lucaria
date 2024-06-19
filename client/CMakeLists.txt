@@ -12,6 +12,7 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 
 	add_executable(lucaria
 		"source/glue/audio.cpp"
+		"source/glue/fetch.cpp"
 		"source/glue/graphics.cpp"
 		"source/glue/window.cpp"
 
@@ -53,6 +54,7 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 		-s MAX_WEBGL_VERSION=2 \
 		-s USE_WEBGL2=1 \
 		-s GL_DEBUG=1 \
+		-s FETCH \
 		-s NO_DISABLE_EXCEPTION_CATCHING \
 		-lopenal")
 

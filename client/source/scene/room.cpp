@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include <core/program.hpp>
+#include <glue/fetch.hpp>
 
 extern glm::mat4x4 get_view_projection_matrix();
 
@@ -33,38 +34,56 @@ const std::string room_fragment = "#version 300 es \n"
                                          "    output_color = texture(uniform_color, frag_texcoord); \n"
                                          "}";
 
-}
-
-/// @brief Setups the room singleton instance once for rendering
-/// @param mesh_file is the path to the binary mesh to use
-/// @param texture_file is the path to the binary texture to use
-void setup_room(
-    const std::filesystem::path& mesh_file,
-    const std::filesystem::path& texture_file)
+void setup_room(const mesh_data& mesh, const texture_data& texture)
 {
-    detail::room = detail::room_ref {
-        mesh_ref(load_mesh(mesh_file)),
-        texture_ref(load_texture(texture_file)),
+    room = room_ref {
+        mesh_ref(mesh),
+        texture_ref(texture),
         program_ref(
-            shader_data { detail::room_vertex },
-            shader_data { detail::room_fragment })
+            shader_data { room_vertex },
+            shader_data { room_fragment })
     };
 }
 
-/// @brief Renders the room singleton instance once per frame
+bool setup_room_async(std::future<mesh_data>& mesh, std::future<texture_data>& texture)
+{
+    if (is_future_ready(mesh) && is_future_ready(texture)) {
+        mesh_data _room_mesh_data = mesh.get();
+        texture_data _room_color_data = texture.get();
+        setup_room(_room_mesh_data, _room_color_data);
+        return true;
+    }
+    return false;
+}
+
 void draw_room()
 {
 #if LUCARIA_DEBUG
-    if (!detail::room.has_value()) {
+    if (!room.has_value()) {
         std::cout << "Forgot to call setup_room() before draw_room()" << std::endl;
         std::terminate();
     }
 #endif
-    detail::room_ref& _room = detail::room.value();
+    room_ref& _room = room.value();
     _room.program.use();
     _room.program.bind("vert_position", _room.mesh, mesh_attribute::position);
     _room.program.bind("vert_texcoord", _room.mesh, mesh_attribute::texcoord);
     _room.program.bind("uniform_color", _room.color, 0);
     _room.program.bind("uniform_view", get_view_projection_matrix());
     _room.program.draw();
+}
+
+}
+
+/// @brief 
+/// @param mesh 
+/// @param texture 
+void update_room(std::future<mesh_data>& mesh, std::future<texture_data>& texture)
+{
+    static bool _is_room_setup = false;
+    if (!_is_room_setup) {
+        _is_room_setup = detail::setup_room_async(mesh, texture);
+    } else {
+        detail::draw_room();
+    }
 }

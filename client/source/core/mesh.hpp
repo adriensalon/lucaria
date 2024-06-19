@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <future>
 #include <unordered_map>
 
 #include <GLES3/gl3.h>
@@ -80,3 +81,8 @@ private:
 /// @param file 
 /// @return
 mesh_data load_mesh(const std::filesystem::path& file);
+
+/// @brief 
+/// @param file 
+/// @return 
+std::future<mesh_data> fetch_mesh(const std::filesystem::path& file);
