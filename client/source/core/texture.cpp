@@ -81,12 +81,6 @@ texture_data load_texture(const std::filesystem::path& file)
 
 std::future<texture_data> fetch_texture(const std::filesystem::path& file)
 {
-#if LUCARIA_DEBUG
-    if (!std::filesystem::is_regular_file(file)) {
-        std::cout << "Invalid texture path " << file << std::endl;
-        std::terminate();
-    }
-#endif
     std::promise<texture_data>& _promise = detail::promises[file.generic_string()];
     fetch_file(file.generic_string(), [&_promise, file](std::istringstream& stream) {
         texture_data _data;

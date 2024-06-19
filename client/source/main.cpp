@@ -37,8 +37,8 @@ extern void update_room(std::future<mesh_data>&, std::future<texture_data>&);
 
 int main()
 {
-    std::future<mesh_data> _room_mesh = fetch_mesh("room_mesh.bin");
-    std::future<texture_data> _room_color = fetch_texture("room_color.bin");
+    std::future<mesh_data> _room_mesh = fetch_mesh("assets/room_mesh.bin");
+    std::future<texture_data> _room_color = fetch_texture("assets/room_color.bin");
 
 
     // setup_room("room_mesh.bin", "room_color.bin");

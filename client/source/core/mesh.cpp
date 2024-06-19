@@ -122,12 +122,6 @@ mesh_data load_mesh(const std::filesystem::path& file)
 
 std::future<mesh_data> fetch_mesh(const std::filesystem::path& file)
 {
-#if LUCARIA_DEBUG
-    if (!std::filesystem::is_regular_file(file)) {
-        std::cout << "Invalid mesh path " << file << std::endl;
-        std::terminate();
-    }
-#endif
     std::promise<mesh_data>& _promise = detail::promises[file.generic_string()];
     fetch_file(file.generic_string(), [&_promise, file](std::istringstream& stream) {
         mesh_data _data;

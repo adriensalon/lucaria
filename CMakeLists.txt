@@ -59,9 +59,11 @@ message(" ")
 
 # assets
 execute_process(
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${INSTALL_DIR}/client
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${INSTALL_DIR}/client/assets
     COMMAND ${COMPILER_EXECUTABLE} 
         -i ${CMAKE_CURRENT_LIST_DIR}/assets
-        -o ${INSTALL_DIR}/assets
+        -o ${INSTALL_DIR}/client/assets
     RESULT_VARIABLE configure_result
     OUTPUT_VARIABLE configure_output
     ERROR_VARIABLE configure_error)
@@ -84,9 +86,8 @@ add_custom_target(Lucaria
 add_custom_command(
     TARGET Lucaria
     POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${INSTALL_DIR}/client
     COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.html ${INSTALL_DIR}/client/index.html
+    # COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.data ${INSTALL_DIR}/client/lucaria.data
     COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.js ${INSTALL_DIR}/client/lucaria.js
-    COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.wasm ${INSTALL_DIR}/client/lucaria.wasm
-    COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.data ${INSTALL_DIR}/client/lucaria.data)
+    COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.wasm ${INSTALL_DIR}/client/lucaria.wasm)
 
