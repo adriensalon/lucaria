@@ -9,7 +9,6 @@
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/glm.hpp>
 #include <imgui.h>
-#include <tiny_gltf.h>
 
 extern glm::vec2 get_screen_size();
 extern void emscripten_assert(EMSCRIPTEN_RESULT result);
@@ -77,7 +76,7 @@ void graphics_assert()
             break;
         }
         std::cout << "Invalid OpenGL result '" << _brief << "' (" << _description << ")" << std::endl;
-        // std::terminate();
+        std::terminate();
     }
 #endif
 }

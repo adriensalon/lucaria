@@ -7,8 +7,6 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 	add_subdirectory(../external/cereal ${CMAKE_BINARY_DIR}/external/cereal)
 	add_subdirectory(../external/glm ${CMAKE_BINARY_DIR}/external/glm)
 	add_subdirectory(../external/imgui ${CMAKE_BINARY_DIR}/external/imgui)
-	add_subdirectory(../external/minimp3 ${CMAKE_BINARY_DIR}/external/minimp3)
-	add_subdirectory(../external/tinygltf ${CMAKE_BINARY_DIR}/external/tinygltf)
 
 	add_executable(lucaria
 		"source/glue/audio.cpp"
@@ -34,7 +32,6 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 	target_link_libraries(lucaria PRIVATE cereal)
 	target_link_libraries(lucaria PRIVATE glm)
 	target_link_libraries(lucaria PRIVATE imgui)
-	target_link_libraries(lucaria PRIVATE tinygltf)
 
 	target_compile_definitions(lucaria PRIVATE LUCARIA_DEBUG)
 

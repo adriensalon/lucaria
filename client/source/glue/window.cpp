@@ -236,11 +236,6 @@ void emscripten_assert(EMSCRIPTEN_RESULT result)
 #endif
 }
 
-void fetch_file(const std::filesystem::path& file)
-{
-
-}
-
 void run(std::function<void()> update)
 {
     detail::update_callback = update;
