@@ -5,9 +5,10 @@
 #include <GLES3/gl3.h>
 
 extern glm::vec2 get_screen_size();
-extern void graphics_assert();
 
 namespace detail {
+    
+extern void graphics_assert();
     
 static float perspective_fov = 60.f;
 static float perspective_near = 0.1f;
@@ -36,11 +37,11 @@ void clear_screen(const glm::vec4& color, const bool depth)
 /// @brief Clears the default framebuffer.
 /// @param color is the color to clear the color buffer with.
 /// @param depth specifies if we need to clear the depth buffer too.
-void clear_camera(const glm::vec4& color = { 0, 0, 0, 1 }, const bool depth = true)
+void update_camera(const glm::vec4& color = { 0, 0, 0, 1 }, const bool depth = true)
 {
     detail::update_projection();
     detail::clear_screen(color, depth);
-    graphics_assert();
+    detail::graphics_assert();
 }
 
 /// @brief Returns the current projection matrix defined by hardcoded values in camera.cpp

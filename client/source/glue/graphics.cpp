@@ -11,9 +11,10 @@
 #include <imgui.h>
 
 extern glm::vec2 get_screen_size();
-extern void emscripten_assert(EMSCRIPTEN_RESULT result);
 
 namespace detail {
+    
+extern void emscripten_assert(EMSCRIPTEN_RESULT result);
 
 static bool setup_opengl()
 {
@@ -40,8 +41,6 @@ static bool setup_opengl()
 }
 
 static bool is_graphics_setup = setup_opengl();
-
-}
 
 void graphics_assert()
 {
@@ -79,4 +78,6 @@ void graphics_assert()
         std::terminate();
     }
 #endif
+}
+
 }

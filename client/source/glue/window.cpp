@@ -1,17 +1,13 @@
 
-#include <filesystem>
-#include <functional>
 #include <iostream>
 
 #include <GLES3/gl3.h>
 #include <backends/imgui_impl_opengl3.h>
 #include <emscripten.h>
-#include <emscripten/fetch.h>
 #include <emscripten/html5.h>
 #include <imgui.h>
-#include <glm/glm.hpp>
 
-void emscripten_assert(EMSCRIPTEN_RESULT result);
+#include <glue/window.hpp>
 
 namespace detail {
 
@@ -62,6 +58,50 @@ EM_JS(int, canvas_get_height, (), {
     canvas.height = canvas.getBoundingClientRect().height;
     return canvas.getBoundingClientRect().height;
 });
+
+void emscripten_assert(EMSCRIPTEN_RESULT result)
+{
+#if LUCARIA_DEBUG
+    if (result != EMSCRIPTEN_RESULT_SUCCESS) {
+        std::string _brief;
+        bool _is_fatal = true;
+        switch (result) {
+        case EMSCRIPTEN_RESULT_DEFERRED:
+            _brief = "EMSCRIPTEN_RESULT_DEFERRED";
+            _is_fatal = false;
+            break;
+        case EMSCRIPTEN_RESULT_NOT_SUPPORTED:
+            _brief = "EMSCRIPTEN_RESULT_NOT_SUPPORTED";
+            break;
+        case EMSCRIPTEN_RESULT_FAILED_NOT_DEFERRED:
+            _brief = "EMSCRIPTEN_RESULT_FAILED_NOT_DEFERRED";
+            break;
+        case EMSCRIPTEN_RESULT_INVALID_TARGET:
+            _brief = "EMSCRIPTEN_RESULT_INVALID_TARGET";
+            break;
+        case EMSCRIPTEN_RESULT_UNKNOWN_TARGET:
+            _brief = "EMSCRIPTEN_RESULT_UNKNOWN_TARGET";
+            break;
+        case EMSCRIPTEN_RESULT_INVALID_PARAM:
+            _brief = "EMSCRIPTEN_RESULT_INVALID_PARAM";
+            break;
+        case EMSCRIPTEN_RESULT_FAILED:
+            _brief = "EMSCRIPTEN_RESULT_FAILED";
+            break;
+        case EMSCRIPTEN_RESULT_NO_DATA:
+            _brief = "EMSCRIPTEN_RESULT_NO_DATA";
+            break;
+        default:
+            _brief = "Unknown emscripten result";
+            break;
+        }
+        if (_is_fatal) {
+            std::cout << "Invalid emscripten result '" << _brief << "'" << std::endl;
+            std::terminate();
+        }
+    }
+#endif
+}
 
 EM_BOOL key_callback(int event_type, const EmscriptenKeyboardEvent* event, void* user_data)
 {
@@ -185,55 +225,11 @@ void update()
     detail::keys_changed.clear();
     detail::buttons_changed.clear();
 
-    ImGui::ShowDemoWindow();
+    // ImGui::ShowDemoWindow();
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-}
-
-void emscripten_assert(EMSCRIPTEN_RESULT result)
-{
-#if LUCARIA_DEBUG
-    if (result != EMSCRIPTEN_RESULT_SUCCESS) {
-        std::string _brief;
-        bool _is_fatal = true;
-        switch (result) {
-        case EMSCRIPTEN_RESULT_DEFERRED:
-            _brief = "EMSCRIPTEN_RESULT_DEFERRED";
-            _is_fatal = false;
-            break;
-        case EMSCRIPTEN_RESULT_NOT_SUPPORTED:
-            _brief = "EMSCRIPTEN_RESULT_NOT_SUPPORTED";
-            break;
-        case EMSCRIPTEN_RESULT_FAILED_NOT_DEFERRED:
-            _brief = "EMSCRIPTEN_RESULT_FAILED_NOT_DEFERRED";
-            break;
-        case EMSCRIPTEN_RESULT_INVALID_TARGET:
-            _brief = "EMSCRIPTEN_RESULT_INVALID_TARGET";
-            break;
-        case EMSCRIPTEN_RESULT_UNKNOWN_TARGET:
-            _brief = "EMSCRIPTEN_RESULT_UNKNOWN_TARGET";
-            break;
-        case EMSCRIPTEN_RESULT_INVALID_PARAM:
-            _brief = "EMSCRIPTEN_RESULT_INVALID_PARAM";
-            break;
-        case EMSCRIPTEN_RESULT_FAILED:
-            _brief = "EMSCRIPTEN_RESULT_FAILED";
-            break;
-        case EMSCRIPTEN_RESULT_NO_DATA:
-            _brief = "EMSCRIPTEN_RESULT_NO_DATA";
-            break;
-        default:
-            _brief = "Unknown emscripten result";
-            break;
-        }
-        if (_is_fatal) {
-            std::cout << "Invalid emscripten result '" << _brief << "'" << std::endl;
-            std::terminate();
-        }
-    }
-#endif
 }
 
 void run(std::function<void()> update)
@@ -242,12 +238,12 @@ void run(std::function<void()> update)
     emscripten_set_main_loop(detail::update, 0, EM_TRUE);
 }
 
-const std::unordered_map<std::string, bool>& get_keys()
+std::unordered_map<std::string, bool>& get_keys()
 {
     return detail::keys;
 }
 
-const std::unordered_map<int, bool>& get_buttons()
+std::unordered_map<int, bool>& get_buttons()
 {
     return detail::buttons;
 }

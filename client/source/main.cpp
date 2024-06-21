@@ -19,10 +19,10 @@ extern glm::vec2 get_mouse_position_delta();
 extern float get_time_delta();
 
 //scene
-extern void clear_camera(
-    const glm::vec4& color = { 0, 0, 0, 1 }, 
-    const bool depth = true);
+extern void update_camera(const glm::vec4& color = { 0, 0, 0, 1 }, const bool depth = true);
 extern void update_controller();
+extern void update_room(std::future<mesh_data>&, std::future<texture_data>&);
+
 extern void setup_skybox(
     const std::filesystem::path& plus_x_file, 
     const std::filesystem::path& plus_y_file, 
@@ -32,36 +32,16 @@ extern void setup_skybox(
     const std::filesystem::path& minus_z_file);
 extern void draw_skybox();
 
-// room
-extern void update_room(std::future<mesh_data>&, std::future<texture_data>&);
-
 int main()
 {
     std::future<mesh_data> _room_mesh = fetch_mesh("assets/room_mesh.bin");
     std::future<texture_data> _room_color = fetch_texture("assets/room_color.bin");
 
-
-    // setup_room("room_mesh.bin", "room_color.bin");
-    // setup_skybox(
-    //     "texture/skybox_plus_x.bin",
-    //     "texture/skybox_plus_y.bin",
-    //     "texture/skybox_plus_z.bin",
-    //     "texture/skybox_minus_x.bin",
-    //     "texture/skybox_minus_y.bin",
-    //     "texture/skybox_minus_z.bin");
-    // setup_screen();
-    // setup_speaker();
-
     run([&]() {
-
+        update_camera();
         update_controller();
-        clear_camera();
-        // draw_skybox();
-
-
         update_room(_room_mesh, _room_color);
-
-
     });
+    
     return 0;
 }
