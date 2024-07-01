@@ -3,6 +3,7 @@
 #include <array>
 #include <chrono>
 #include <future>
+#include <variant>
 
 #include <glm/glm.hpp>
 
@@ -15,7 +16,7 @@
 void update_camera(const glm::vec4& color = { 0, 0, 0, 1 }, const bool depth = true);
 
 /// @brief 
-void update_controller();
+void update_controller(std::vector<std::future<mesh_data>>& colliders);
 
 /// @brief
 /// @param mesh

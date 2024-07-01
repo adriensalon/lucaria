@@ -17,19 +17,20 @@ void setup_splash()
     start = std::chrono::system_clock::now();
 }
 
-void draw_splash(const std::unordered_map<std::string, std::pair<int, int>>& infos)
+void draw_splash(const std::size_t loaded, const std::size_t total)
 {
     if (ImGui::Begin("Lucaria splash")) {
-
-        for (const auto& ok : infos) {
-            const auto text = "Loading " + ok.first + " (" + std::to_string(ok.second.first) + "/" + std::to_string(ok.second.second) + ")";
+        // if (loaded < total) {
+            const std::string text = "Loading assets (" + std::to_string(loaded) + "/" + std::to_string(total) + ")";
             ImGui::Text(text.c_str());
-        }
+        // } else {
+            // ImGui::Text("Entering world");
+        // }
         ImGui::End();
     }
 }
 
-void update_splash(const std::chrono::seconds& duration, const std::unordered_map<std::string, std::pair<int, int>>& infos)
+void update_splash(const std::chrono::seconds& duration, const std::size_t loaded, const std::size_t total)
 {
     if (is_splash_done) {
         return;
@@ -39,7 +40,7 @@ void update_splash(const std::chrono::seconds& duration, const std::unordered_ma
     }
     const std::chrono::system_clock::duration _duration = std::chrono::system_clock::now() - start.value();
     if (!is_room_loaded || std::chrono::duration_cast<std::chrono::seconds>(_duration) < duration) {
-        draw_splash(infos);
+        draw_splash(loaded, total);
         return;
     }
     is_splash_done = true;

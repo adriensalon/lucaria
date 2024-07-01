@@ -8,23 +8,14 @@
 
 namespace detail {
 
-void update_splash(const std::chrono::seconds& duration, const std::unordered_map<std::string, std::pair<int, int>>& infos);
+void update_splash(const std::chrono::seconds& duration, const std::size_t loaded, const std::size_t total);
 
 template <typename resource_t>
-void emplace_resource(std::future<resource_t>& resource, std::unordered_map<std::string, std::pair<int, int>>& infos)
+void emplace_resource(std::future<resource_t>& resource, std::unordered_map<std::string, std::pair<std::size_t, std::size_t>>& infos)
 {
-    std::string _name;
-    if constexpr (std::is_same_v<resource_t, mesh_data>) {
-        _name = "meshes";
-    } else if constexpr (std::is_same_v<resource_t, texture_data>) {
-        _name = "textures";
-    } else if constexpr (std::is_same_v<resource_t, shader_data>) {
-        _name = "shaders";
-    } else {
-        _name = typeid(resource_t).name();
-    }
+    std::string _name = typeid(resource_t).name();
     if (infos.find(_name) == infos.end()) {
-        infos.emplace(_name, std::pair<int, int> { 0, 0 });
+        infos.emplace(_name, std::pair<std::size_t, std::size_t> { 0, 0 });
     }
     infos.at(_name).second++;
     if (is_future_ready(resource)) {
@@ -37,7 +28,13 @@ void emplace_resource(std::future<resource_t>& resource, std::unordered_map<std:
 template <typename... resources_t>
 void update_splash(const std::chrono::seconds& duration, std::future<resources_t>&... resources)
 {
-    std::unordered_map<std::string, std::pair<int, int>> _infos;
+    std::unordered_map<std::string, std::pair<std::size_t, std::size_t>> _infos;
     (detail::emplace_resource(resources, _infos), ...);
-    detail::update_splash(duration, _infos);
+    std::size_t _loaded = 0;
+    std::size_t _total = 0;
+    for (const std::pair<std::string, std::pair<std::size_t, std::size_t>> _info : _infos) {
+        _loaded += _info.second.first;
+        _total += _info.second.second;
+    }
+    detail::update_splash(duration, _loaded, _total);
 }
