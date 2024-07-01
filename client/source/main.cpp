@@ -2,28 +2,29 @@
 #include <glue/window.hpp>
 #include <scene/scene.hpp>
 
+#include <iostream>
+
 int main()
 {
-    std::future<mesh_data> _room_mesh = fetch_mesh("assets/room_mesh.bin");
-    std::future<texture_data> _room_color = fetch_texture("assets/room_color.bin");
-    // std::array<std::future<texture_data>, 6> _skybox_textures = {
-    //     fetch_texture("assets/room_color.bin"),
-    //     fetch_texture("assets/room_color.bin"),
-    //     fetch_texture("assets/room_color.bin"),
-    //     fetch_texture("assets/room_color.bin"),
-    //     fetch_texture("assets/room_color.bin"),
-    //     fetch_texture("assets/room_color.bin")
-    // };
-    std::vector<std::future<mesh_data>> _collision_meshes = {
-        
+    // room
+    std::future<mesh_data> room_mesh = fetch_mesh("assets/room_mesh.bin");
+    std::future<texture_data> room_color = fetch_texture("assets/room_color.bin");
+
+    // controller
+    std::vector<std::future<mesh_data>> controller_meshes = {
+        // fetch_mesh("assets/room_mesh.bin"),
+        // fetch_mesh("assets/room_mesh.bin"),
     };
 
+    const auto sr = get_samplerate();
+    std::cout << "samplerate = " << std::to_string(sr) << std::endl;
+
     run([&]() {
-        update_splash(std::chrono::seconds(3), _room_mesh, _room_color);
+        update_splash(std::chrono::seconds(3), room_mesh, room_color);
         update_camera({1, 1, 1, 1});
-        update_controller(_collision_meshes);
+        update_controller(controller_meshes);
         // update_skybox(_skybox_textures);
-        update_room(_room_mesh, _room_color);
+        update_room(room_mesh, room_color);
     });
 
     return 0;
