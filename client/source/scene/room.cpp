@@ -84,15 +84,15 @@ void update_room(std::future<mesh_data>& mesh, std::future<texture_data>& textur
 {
     if (!detail::is_room_loaded) {
         detail::is_room_loaded = detail::setup_room_async(mesh, texture);
-        if (ImGui::Begin("Room")) {
-            ImGui::Text("Loading room...");
-            ImGui::End();
-        }
+        // if (ImGui::Begin("Room")) {
+        //     ImGui::Text("Loading room...");
+        //     ImGui::End();
+        // }
     } else {
         detail::draw_room();
-        if (ImGui::Begin("Room")) {
-            ImGui::Text("Room loaded");
-            ImGui::End();
-        }
+        // if (ImGui::Begin("Room")) {
+        //     ImGui::Text("Room loaded");
+        //     ImGui::End();
+        // }
     }
 }

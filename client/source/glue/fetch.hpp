@@ -12,6 +12,6 @@ template <typename value_t>
 bool is_future_ready(const std::future<value_t>& future);
 
 /// @brief Alternative to preloading files
-void fetch_file(const std::string& url, const std::function<void(std::istringstream&)>& callback);
+void fetch_file(const std::string& url, const std::function<void(std::istringstream&)>& callback, const bool persist = true);
 
 #include <glue/fetch.inl>

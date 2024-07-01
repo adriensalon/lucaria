@@ -16,11 +16,11 @@ int main()
     // };
 
     run([&]() {
-        update_splash(std::chrono::seconds(3));
         update_camera({1, 1, 1, 1});
         update_controller();
         // update_skybox(_skybox_textures);
         update_room(_room_mesh, _room_color);
+        update_splash(std::chrono::seconds(3), _room_mesh, _room_color);
     });
 
     return 0;

@@ -30,13 +30,16 @@ void on_fetch_error(emscripten_fetch_t* fetch)
 
 }
 
-void fetch_file(const std::string& url, const fetch_callback& callback)
+void fetch_file(const std::string& url, const fetch_callback& callback, const bool persist)
 {
     detail::fetch_requests[url] = callback;
     emscripten_fetch_attr_t attr;
     emscripten_fetch_attr_init(&attr);
     strcpy(attr.requestMethod, "GET");
     attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+    if (persist) {
+        attr.attributes |= EMSCRIPTEN_FETCH_PERSIST_FILE;
+    }
     attr.onsuccess = detail::on_fetch_success;
     attr.onerror = detail::on_fetch_error;
     emscripten_fetch(&attr, url.c_str());
