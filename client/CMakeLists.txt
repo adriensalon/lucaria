@@ -26,6 +26,7 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 		"source/scene/screen.cpp"
 		"source/scene/skybox.cpp"
 		"source/scene/speaker.cpp"
+		"source/scene/splash.cpp"
 
 		"source/main.cpp")
 
@@ -54,6 +55,7 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 		-s NO_DISABLE_EXCEPTION_CATCHING \
 		-lopenal")
 
+		# -O3 \
 		# --preload-file ${CMAKE_CURRENT_LIST_DIR}/../install/assets@/ \
 else()
 	message(FATAL_ERROR "CMake is being configured by Emscripten, aborting...")

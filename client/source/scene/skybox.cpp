@@ -1,3 +1,4 @@
+#include <array>
 #include <iostream>
 
 #include <core/program.hpp>
@@ -99,4 +100,9 @@ void draw_skybox()
     detail::skybox_program.value().bind("vert_texcoord", detail::skybox_mesh.value(), mesh_attribute::texcoord);
     detail::skybox_program.value().bind("uniform_color", detail::skybox_cubemap.value(), 0);
     detail::skybox_program.value().draw();
+}
+
+void update_skybox(std::array<std::future<texture_data>, 6>& textures)
+{
+
 }

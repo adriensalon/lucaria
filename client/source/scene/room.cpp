@@ -14,7 +14,8 @@ struct room_ref {
     program_ref program;
 };
 
-static std::optional<room_ref> room = std::nullopt;
+std::optional<room_ref> room = std::nullopt;
+bool is_room_loaded = false;
 
 const std::string room_vertex = "#version 300 es \n"
                                        "in vec3 vert_position; \n"
@@ -81,9 +82,8 @@ void draw_room()
 /// @param texture 
 void update_room(std::future<mesh_data>& mesh, std::future<texture_data>& texture)
 {
-    static bool _is_room_setup = false;
-    if (!_is_room_setup) {
-        _is_room_setup = detail::setup_room_async(mesh, texture);
+    if (!detail::is_room_loaded) {
+        detail::is_room_loaded = detail::setup_room_async(mesh, texture);
         if (ImGui::Begin("Room")) {
             ImGui::Text("Loading room...");
             ImGui::End();
