@@ -10,6 +10,20 @@
 
 namespace detail {
 
+std::size_t compute_hash(std::size_t lhs, std::size_t rhs)
+{
+    return lhs ^ (rhs + 0x9e3779b9 + (lhs << 6) + (lhs >> 2));
+}
+
+std::size_t compute_hash_files(const std::vector<std::filesystem::path>& files)
+{
+    std::size_t _combined_hash = 0;
+    for (const std::filesystem::path& _file : files) {
+        _combined_hash = compute_hash(_combined_hash, std::hash<std::string> {}(_file));
+    }
+    return _combined_hash;
+}
+
 void validate_mesh(const mesh_data& data)
 {
 }
@@ -53,6 +67,7 @@ GLuint create_elements_buffer(const std::vector<GLuint>& indices)
 }
 
 static std::unordered_map<std::string, std::promise<mesh_data>> promises;
+static std::unordered_map<std::size_t, std::pair<std::vector<mesh_data>, std::promise<std::vector<mesh_data>>>> vector_promises;
 
 }
 
@@ -135,5 +150,30 @@ std::future<mesh_data> fetch_mesh(const std::filesystem::path& file)
 #endif
         _promise.set_value(std::move(_data));
     });
+    return _promise.get_future();
+}
+
+std::future<std::vector<mesh_data>> fetch_meshes(const std::vector<std::filesystem::path>& files)
+{
+    const std::size_t _hash = detail::compute_hash_files(files);
+    std::promise<std::vector<mesh_data>>& _promise = detail::vector_promises[_hash].second;
+    std::vector<mesh_data>& _data = detail::vector_promises[_hash].first;
+
+    fetch_files(files, [&_data, &_promise, files, _hash](const std::size_t index, const std::size_t size, std::istringstream& stream) {
+        {
+            cereal::PortableBinaryInputArchive _archive(stream);
+            _archive(_data.emplace_back());
+            
+        }
+#if LUCARIA_DEBUG
+        std::cout << "Loaded mesh data from " << files[index].generic_string() << " ("
+                  << _data[index].count << " vertices)" << std::endl;
+#endif
+        if (_data.size() == size) {
+            _promise.set_value(std::move(_data));
+        }
+    });
+
+    
     return _promise.get_future();
 }

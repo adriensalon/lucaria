@@ -16,7 +16,7 @@
 void update_camera(const glm::vec4& color = { 0, 0, 0, 1 }, const bool depth = true);
 
 /// @brief 
-void update_controller(std::vector<std::future<mesh_data>>& colliders);
+void update_controller(std::future<std::vector<mesh_data>>& colliders);
 
 /// @brief
 /// @param mesh
@@ -27,11 +27,6 @@ void update_room(std::future<mesh_data>& mesh, std::future<texture_data>& textur
 /// @param textures
 void update_skybox(std::array<std::future<texture_data>, 6>& textures);
 
-/// @brief 
-/// @tparam ...resources_t 
-/// @param duration 
-/// @param ...resources 
-template <typename... resources_t>
-void update_splash(const std::chrono::seconds& duration, std::future<resources_t>&... resources);
-
-#include <scene/splash.inl>
+/// @brief
+/// @param duration
+void update_splash(const std::chrono::seconds& duration);

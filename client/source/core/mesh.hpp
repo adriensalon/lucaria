@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <future>
 #include <unordered_map>
+#include <vector>
 
 #include <GLES3/gl3.h>
 
@@ -86,3 +87,6 @@ mesh_data load_mesh(const std::filesystem::path& file);
 /// @param file 
 /// @return 
 std::future<mesh_data> fetch_mesh(const std::filesystem::path& file);
+
+///
+std::future<std::vector<mesh_data>> fetch_meshes(const std::vector<std::filesystem::path>& files);

@@ -49,7 +49,7 @@ void setup_room(const mesh_data& mesh, const texture_data& texture)
 
 bool setup_room_async(std::future<mesh_data>& mesh, std::future<texture_data>& texture)
 {
-    if (is_future_ready(mesh) && is_future_ready(texture)) {
+    if (get_is_future_ready(mesh) && get_is_future_ready(texture)) {
         mesh_data _room_mesh_data = mesh.get();
         texture_data _room_color_data = texture.get();
         setup_room(_room_mesh_data, _room_color_data);
