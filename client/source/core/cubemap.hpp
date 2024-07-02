@@ -6,6 +6,10 @@
 
 #include <data/texture.hpp>
 
+struct cubemap_data {
+    
+};
+
 /// @brief Represents a GPU cubemap managed by the application
 struct cubemap_ref {
 
