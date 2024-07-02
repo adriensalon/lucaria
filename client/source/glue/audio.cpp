@@ -13,6 +13,14 @@ namespace detail {
 
     static bool has_webaudio;
     static bool is_webaudio_setup = false;
+    
+    EM_JS(int, browser_get_samplerate, (), {
+        var AudioContext = window.AudioContext || window.webkitAudioContext;
+        var ctx = new AudioContext();
+        var sr = ctx.sampleRate;
+        ctx.close();
+        return sr;
+    });
 
     void create_openal_context_if_needed()
     {
@@ -86,6 +94,10 @@ void audio_assert()
 #endif
 }
 
+std::size_t get_samplerate()
+{
+    return static_cast<std::size_t>(detail::browser_get_samplerate());
+}
 
 void load_audio_mp3(const std::filesystem::path& path)
 {

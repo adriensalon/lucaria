@@ -9,6 +9,7 @@
 
 #include <core/mesh.hpp>
 #include <core/texture.hpp>
+#include <core/volume.hpp>
 
 /// @brief
 /// @param color
@@ -16,7 +17,7 @@
 void update_camera(const glm::vec4& color = { 0, 0, 0, 1 }, const bool depth = true);
 
 /// @brief 
-void update_controller(std::future<std::vector<mesh_data>>& colliders);
+void update_controller(std::future<volume_data>& volume);
 
 /// @brief
 /// @param mesh

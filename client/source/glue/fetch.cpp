@@ -1,7 +1,8 @@
 #include <filesystem>
 #include <iostream>
-#include <vector>
 #include <unordered_map>
+#include <vector>
+
 
 #include <emscripten/fetch.h>
 
@@ -17,6 +18,11 @@ std::size_t fetch_completed = 0;
 std::size_t fetch_failed = 0;
 std::unordered_map<std::string, fetch_callback> fetch_requests;
 std::unordered_map<std::string, multiple_fetch_callback> multiple_fetch_requests;
+
+std::size_t compute_hash(std::size_t lhs, std::size_t rhs)
+{
+    return lhs ^ (rhs + 0x9e3779b9 + (lhs << 6) + (lhs >> 2));
+}
 
 void on_fetch_success(emscripten_fetch_t* fetch)
 {
@@ -59,6 +65,15 @@ void on_multiple_fetch_error(emscripten_fetch_t* fetch)
     emscripten_fetch_close(fetch);
 }
 
+}
+
+std::size_t compute_hash_files(const std::vector<std::filesystem::path>& files)
+{
+    std::size_t _combined_hash = 0;
+    for (const std::filesystem::path& _file : files) {
+        _combined_hash = detail::compute_hash(_combined_hash, std::hash<std::string> {}(_file));
+    }
+    return _combined_hash;
 }
 
 void fetch_file(const std::string& url, const fetch_callback& callback, const bool persist)

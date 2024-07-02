@@ -6,9 +6,9 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <data/mesh.hpp>
 #include <glue/fetch.hpp>
 #include <glue/window.hpp>
+#include <core/volume.hpp>
 
 extern glm::mat4x4 get_projection_matrix();
 
@@ -94,7 +94,7 @@ void compute_rotation()
 
 }
 
-void update_controller(std::future<std::vector<mesh_data>>& colliders)
+void update_controller(std::future<volume_data>& volume)
 {
     detail::compute_rotation();
     const glm::vec3 _new_position = detail::compute_position();

@@ -18,6 +18,7 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 		"source/core/mesh.cpp"
 		"source/core/program.cpp"
 		"source/core/texture.cpp"
+		"source/core/volume.cpp"
 
 		"source/scene/camera.cpp"
 		"source/scene/computer.cpp"

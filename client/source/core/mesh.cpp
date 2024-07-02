@@ -10,20 +10,6 @@
 
 namespace detail {
 
-std::size_t compute_hash(std::size_t lhs, std::size_t rhs)
-{
-    return lhs ^ (rhs + 0x9e3779b9 + (lhs << 6) + (lhs >> 2));
-}
-
-std::size_t compute_hash_files(const std::vector<std::filesystem::path>& files)
-{
-    std::size_t _combined_hash = 0;
-    for (const std::filesystem::path& _file : files) {
-        _combined_hash = compute_hash(_combined_hash, std::hash<std::string> {}(_file));
-    }
-    return _combined_hash;
-}
-
 void validate_mesh(const mesh_data& data)
 {
 }
@@ -66,8 +52,8 @@ GLuint create_elements_buffer(const std::vector<GLuint>& indices)
     return _elements_id;
 }
 
-static std::unordered_map<std::string, std::promise<mesh_data>> promises;
-static std::unordered_map<std::size_t, std::pair<std::vector<mesh_data>, std::promise<std::vector<mesh_data>>>> vector_promises;
+std::unordered_map<std::string, std::promise<mesh_data>> mesh_promises;
+std::unordered_map<std::size_t, std::pair<std::vector<mesh_data>, std::promise<std::vector<mesh_data>>>> mesh_vector_promises;
 
 }
 
@@ -137,7 +123,7 @@ mesh_data load_mesh(const std::filesystem::path& file)
 
 std::future<mesh_data> fetch_mesh(const std::filesystem::path& file)
 {
-    std::promise<mesh_data>& _promise = detail::promises[file.generic_string()];
+    std::promise<mesh_data>& _promise = detail::mesh_promises[file.generic_string()];
     fetch_file(file.generic_string(), [&_promise, file](std::istringstream& stream) {
         mesh_data _data;
         {
@@ -155,10 +141,9 @@ std::future<mesh_data> fetch_mesh(const std::filesystem::path& file)
 
 std::future<std::vector<mesh_data>> fetch_meshes(const std::vector<std::filesystem::path>& files)
 {
-    const std::size_t _hash = detail::compute_hash_files(files);
-    std::promise<std::vector<mesh_data>>& _promise = detail::vector_promises[_hash].second;
-    std::vector<mesh_data>& _data = detail::vector_promises[_hash].first;
-
+    const std::size_t _hash = compute_hash_files(files);
+    std::promise<std::vector<mesh_data>>& _promise = detail::mesh_vector_promises[_hash].second;
+    std::vector<mesh_data>& _data = detail::mesh_vector_promises[_hash].first;
     fetch_files(files, [&_data, &_promise, files, _hash](const std::size_t index, const std::size_t size, std::istringstream& stream) {
         {
             cereal::PortableBinaryInputArchive _archive(stream);
@@ -173,7 +158,5 @@ std::future<std::vector<mesh_data>> fetch_meshes(const std::vector<std::filesyst
             _promise.set_value(std::move(_data));
         }
     });
-
-    
     return _promise.get_future();
 }

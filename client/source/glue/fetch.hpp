@@ -6,6 +6,11 @@
 #include <future>
 #include <vector>
 
+/// @brief
+/// @param files
+/// @return
+std::size_t compute_hash_files(const std::vector<std::filesystem::path>& files);
+
 /// @brief Alternative to preloading files
 void fetch_file(const std::string& url, const std::function<void(std::istringstream&)>& callback, const bool persist = true);
 

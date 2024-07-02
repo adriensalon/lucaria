@@ -33,7 +33,3 @@ glm::vec2 get_mouse_position_delta();
 /// @brief 
 /// @return 
 float get_time_delta();
-
-/// @brief
-/// @return
-std::size_t get_samplerate();

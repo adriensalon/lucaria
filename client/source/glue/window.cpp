@@ -47,14 +47,6 @@ static glm::vec2 mouse_position_delta = { 0.f, 0.f };
 static float time_delta = 0.f;
 static std::function<void()> update_callback = nullptr;
 
-EM_JS(int, browser_get_samplerate, (), {
-    var AudioContext = window.AudioContext || window.webkitAudioContext;
-    var ctx = new AudioContext();
-    var sr = ctx.sampleRate;
-    ctx.close();
-    return sr;
-});
-
 EM_JS(int, canvas_get_width, (), {
     var canvas = document.getElementById('canvas');
     canvas.width = canvas.getBoundingClientRect().width;
@@ -274,9 +266,4 @@ glm::vec2 get_mouse_position_delta()
 float get_time_delta()
 {
     return detail::time_delta;
-}
-
-std::size_t get_samplerate()
-{
-    return static_cast<std::size_t>(detail::browser_get_samplerate());
 }
