@@ -29,8 +29,16 @@ static bool is_fetching_complete()
 
 static void draw_splash()
 {
-    ImGui::SetNextWindowSize({ 500, 800 });
-    if (ImGui::Begin("Lucaria splash")) {
+    ImGui::SetNextWindowPos(ImVec2(0, 0));
+    ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+    ImGuiWindowFlags _window_flags = ImGuiWindowFlags_NoTitleBar |
+                                        ImGuiWindowFlags_NoResize |
+                                        ImGuiWindowFlags_NoMove |
+                                        ImGuiWindowFlags_NoCollapse |
+                                        ImGuiWindowFlags_NoBringToFrontOnFocus |
+                                        ImGuiWindowFlags_NoNavFocus |
+                                        ImGuiWindowFlags_NoBackground;
+    if (ImGui::Begin("Lucaria splash", nullptr, _window_flags)) {
         const std::string text = "Loading assets (" + std::to_string(get_fetches_completed()) + "/" + std::to_string(get_fetches_total()) + ")";
         ImGui::Text(text.c_str());
         if (texture.has_value())

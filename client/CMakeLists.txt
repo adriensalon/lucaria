@@ -8,6 +8,7 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 	add_subdirectory(../external/entt ${CMAKE_BINARY_DIR}/external/entt)
 	add_subdirectory(../external/glm ${CMAKE_BINARY_DIR}/external/glm)
 	add_subdirectory(../external/imgui ${CMAKE_BINARY_DIR}/external/imgui)
+	add_subdirectory(../external/ozz ${CMAKE_BINARY_DIR}/external/ozz)
 
 	add_executable(lucaria
 		"source/glue/audio.cpp"
@@ -42,6 +43,7 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 	target_link_libraries(lucaria PRIVATE EnTT)
 	target_link_libraries(lucaria PRIVATE glm)
 	target_link_libraries(lucaria PRIVATE imgui)
+	target_link_libraries(lucaria PRIVATE ozz_animation)
 
 	target_compile_definitions(lucaria PRIVATE LUCARIA_DEBUG)
 

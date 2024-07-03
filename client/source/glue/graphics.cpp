@@ -35,7 +35,7 @@ static bool setup_opengl()
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui::GetIO().IniFilename = NULL;
-    ImGui::StyleColorsDark();
+    ImGui::StyleColorsLight();
     ImGui_ImplOpenGL3_Init("#version 300 es");
     return true;
 }
