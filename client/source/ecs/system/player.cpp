@@ -3,9 +3,11 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <ecs/system/player.hpp>
 #include <glue/fetch.hpp>
 #include <glue/window.hpp>
+
+#include <ecs/system/player.hpp>
+#include <ecs/system/splash.hpp>
 
 namespace detail {
 
@@ -80,11 +82,13 @@ void player_system::player_radius(const float radius)
 
 void player_system::update()
 {
-    detail::compute_rotation();
-    const glm::vec3 _new_position = detail::compute_position();
-    // if (!detail::test_position(_new_position)) {
+    if (is_mouse_locked() && !splash_system::is_splash_on()) {
+        detail::compute_rotation();
+        const glm::vec3 _new_position = detail::compute_position();
+        // if (!detail::test_position(_new_position)) {
         detail::player_position = _new_position;
-    // }
+        // }
+    }
 }
 
 glm::mat4x4 player_system::get_view()

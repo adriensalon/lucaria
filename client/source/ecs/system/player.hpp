@@ -2,10 +2,12 @@
 
 #include <future>
 
+#include <glue/update.hpp>
 #include <core/volume.hpp>
 
 /// @brief 
 struct player_system {
+    REGISTER_FOR_UPDATE(player_system)
 
     player_system() = delete;
     player_system(const player_system& other) = delete;

@@ -13,7 +13,7 @@
 int main()
 {
     splash_system::splash_texture(std::move(fetch_texture("assets/splash_texture.bin")));
-    splash_system::splash_duration(std::chrono::seconds(5));
+    splash_system::trigger_splash(true);
 
     player_system::player_position(glm::vec3(0.f, 1.8f, 3.f));
     player_system::player_direction(glm::vec3(0.f, 0.f, -1.f));
@@ -28,16 +28,6 @@ int main()
     world_system::register_level("001_room", register_level_001_room);
     world_system::add_level("001_room");
 
-    run([&]() {
-
-        player_system::update();
-        rendering_system::update();
-        splash_system::update();
-        // mixer_system::update();
-        // computer_system::update();
-        world_system::update();
-
-    });
-
+    run(update);
     return 0;
 }

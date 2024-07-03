@@ -33,3 +33,9 @@ glm::vec2 get_mouse_position_delta();
 /// @brief 
 /// @return 
 float get_time_delta();
+
+/// @brief 
+bool is_audio_locked();
+
+/// @brief 
+bool is_mouse_locked();

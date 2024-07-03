@@ -47,6 +47,9 @@ static glm::vec2 mouse_position_delta = { 0.f, 0.f };
 static float time_delta = 0.f;
 static std::function<void()> update_callback = nullptr;
 
+static bool is_audio_locked = false;
+static bool is_mouse_locked = false;
+
 EM_JS(int, canvas_get_width, (), {
     var canvas = document.getElementById('canvas');
     canvas.width = canvas.getBoundingClientRect().width;
@@ -103,14 +106,32 @@ void emscripten_assert(EMSCRIPTEN_RESULT result)
 #endif
 }
 
+void update_mouse_lock()
+{    
+    EmscriptenPointerlockChangeEvent _pointer_lock;
+    emscripten_assert(emscripten_get_pointerlock_status(&_pointer_lock));
+    is_mouse_locked = _pointer_lock.isActive;
+}
+
+void process_lock()
+{
+    if (!is_audio_locked) {
+        create_openal_context_if_needed();
+        is_audio_locked = true;
+    }
+    if (!is_mouse_locked) {
+        emscripten_assert(emscripten_request_pointerlock("#canvas", 1));
+        is_mouse_locked = true;
+    }
+}
+
 EM_BOOL key_callback(int event_type, const EmscriptenKeyboardEvent* event, void* user_data)
 {
-    // https://github.com/emscripten-core/emscripten/blob/main/test/test_html5_core.c
     if (event_type == EMSCRIPTEN_EVENT_KEYDOWN) {
-        create_openal_context_if_needed();
         std::string _key_down(event->key);
         detail::keys[_key_down] = true;
         detail::keys_changed.emplace_back(_key_down);
+        process_lock();
     } else if (event_type == EMSCRIPTEN_EVENT_KEYUP) {
         std::string _key_up(event->key);
         detail::keys[_key_up] = false;
@@ -121,36 +142,22 @@ EM_BOOL key_callback(int event_type, const EmscriptenKeyboardEvent* event, void*
 
 EM_BOOL mouse_callback(int event_type, const EmscriptenMouseEvent* event, void* user_data)
 {
-    // https://github.com/emscripten-core/emscripten/blob/main/test/test_html5_core.c
     if (event_type == EMSCRIPTEN_EVENT_MOUSEMOVE) {
         detail::mouse_position_delta = glm::vec2((float)event->movementX, (float)event->movementY);
         detail::mouse_position = glm::vec2((float)event->clientX, (float)event->clientY);
         ImGui::GetIO().AddMousePosEvent(mouse_position.x, mouse_position.y);
-    }
-    if (event_type == EMSCRIPTEN_EVENT_MOUSEDOWN) {
-        create_openal_context_if_needed();
+    } else if (event_type == EMSCRIPTEN_EVENT_MOUSEDOWN) {
         unsigned int _button = event->button;
         detail::buttons[_button] = true;
         detail::buttons_changed.emplace_back(_button);
+        ImGui::GetIO().AddMouseButtonEvent(_button, true);
+        process_lock();
     } else if (event_type == EMSCRIPTEN_EVENT_MOUSEUP) {
         unsigned int _button = event->button;
         detail::buttons[_button] = false;
         detail::buttons_changed.emplace_back(_button);
-    }
-    if (event_type == EMSCRIPTEN_EVENT_CLICK) // we lock / unlock the pointer on click
-    {
-        create_openal_context_if_needed();
-        EmscriptenPointerlockChangeEvent _pointer_lock;
-        emscripten_assert(emscripten_get_pointerlock_status(&_pointer_lock));
-        if (!_pointer_lock.isActive)
-            emscripten_assert(emscripten_request_pointerlock("#canvas", 1));
-        // else
-        // {
-        // 	emscripten_assert(emscripten_exit_pointerlock());
-        // 	emscripten_assert(emscripten_get_pointerlock_status(&_pointer_lock));
-        // 	if (_pointer_lock.isActive)
-        // 		throw "Error : pointer lock exit did not work";
-        // }
+        ImGui::GetIO().AddMouseButtonEvent(_button, false);
+    } else if (event_type == EMSCRIPTEN_EVENT_CLICK) {
     } else if (event_type == EMSCRIPTEN_EVENT_MOUSEOVER) {
     } else if (event_type == EMSCRIPTEN_EVENT_MOUSEOUT) {
     }
@@ -219,11 +226,16 @@ void update()
     const auto _projection_matrix_index = _backend_data->AttribLocationProjMtx;
     // std::cout << _projection_matrix_index << std::endl; location of proj mat
 
+    
+    update_mouse_lock();
+
+
     update_callback();
 
     detail::mouse_position_delta = { 0, 0 };
     detail::keys_changed.clear();
     detail::buttons_changed.clear();
+
 
     // ImGui::ShowDemoWindow();
     ImGui::Render();
@@ -266,4 +278,14 @@ glm::vec2 get_mouse_position_delta()
 float get_time_delta()
 {
     return detail::time_delta;
+}
+
+bool is_audio_locked()
+{
+    return detail::is_audio_locked;
+}
+
+bool is_mouse_locked()
+{
+    return detail::is_mouse_locked;
 }

@@ -1,41 +1,28 @@
 #pragma once
 
-#include <chrono>
 #include <future>
 
+#include <glue/update.hpp>
 #include <core/texture.hpp>
 
-/// @brief 
+/// @brief Splash system must be drawn above any rendering system.
 struct splash_system {
+    REGISTER_FOR_UPDATE(splash_system)
 
-    /// @brief 
     splash_system() = delete;
-
-    /// @brief 
-    /// @param other 
     splash_system(const splash_system& other) = delete;
-
-    /// @brief 
-    /// @param other 
-    /// @return 
     splash_system& operator=(const splash_system& other) = delete;
-    
-    /// @brief 
-    /// @param other 
     splash_system(splash_system&& other) = delete;
-
-    /// @brief 
-    /// @param other 
-    /// @return 
     splash_system& operator=(splash_system&& other) = delete;
 
-    /// @brief 
+    /// @brief Returns is the splash screen is currently showing.
+    static bool is_splash_on();
+
+    /// @brief Selects a future texture to use in the splashscreen
     static void splash_texture(std::future<texture_data>&& texture);
 
-    /// @brief 
-    static void splash_duration(const std::chrono::seconds& duration);
+    /// @brief Triggers the splash screen to be drawn from now on.
+    static void trigger_splash(const bool titlescreen);
 
-    /// @brief 
     static void update();
-
 };

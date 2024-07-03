@@ -4,15 +4,28 @@
 
 #include <ecs/system/splash.hpp>
 #include <glue/fetch.hpp>
+#include <glue/window.hpp>
 
 namespace detail {
 
-static bool is_setup = false;
-static bool is_splash_done;
-static std::chrono::system_clock::time_point start;
+static bool is_splash_on = false;
 static std::optional<std::future<texture_data>> future_texture;
 static std::optional<texture_ref> texture;
-static std::chrono::seconds duration;
+
+static void update_texture_if_needed()
+{
+    if (!texture.has_value() && get_is_future_ready(future_texture.value())) {
+        texture = texture_ref(future_texture.value().get());
+    }
+}
+
+static bool is_fetching_complete()
+{
+    const std::size_t _fetches_completed = get_fetches_completed();
+    const std::size_t _fetches_failed = get_fetches_failed();
+    const std::size_t _fetches_total = get_fetches_total();
+    return _fetches_completed + _fetches_failed == _fetches_total;
+}
 
 static void draw_splash()
 {
@@ -25,47 +38,33 @@ static void draw_splash()
         ImGui::End();
     }
 }
+
+}
+
+bool splash_system::is_splash_on()
+{
+    return detail::is_splash_on;
 }
 
 void splash_system::splash_texture(std::future<texture_data>&& texture)
 {
-    detail::is_setup = true;
-    detail::is_splash_done = false;
-    detail::start = std::chrono::system_clock::now();
     detail::future_texture = std::move(texture);
     detail::texture = std::nullopt;
 }
 
-void splash_system::splash_duration(const std::chrono::seconds& duration)
+void splash_system::trigger_splash(const bool titlescreen)
 {
-    detail::is_setup = true;
-    detail::is_splash_done = false;
-    detail::start = std::chrono::system_clock::now();
-    detail::duration = duration;
+    detail::is_splash_on = true;
 }
 
 void splash_system::update()
 {
-#if LUCARIA_DEBUG
-    if (!detail::is_setup) {
-        std::cout << "Splash system is not setup" << std::endl;
-    }
-#endif
-    // if (detail::is_splash_done) {
-    //     return;
-    // }
-    if (!detail::texture.has_value() && get_is_future_ready(detail::future_texture.value())) {
-        detail::texture = texture_ref(detail::future_texture.value().get());
-    }
-    const std::chrono::system_clock::duration _duration = std::chrono::system_clock::now() - detail::start;
-    const std::size_t _fetches_completed = get_fetches_completed();
-    const std::size_t _fetches_failed = get_fetches_failed();
-    const std::size_t _fetches_total = get_fetches_total();
-    const bool _all_fetches_ended = _fetches_completed + _fetches_failed == _fetches_total;
-    const bool _duration_over = std::chrono::duration_cast<std::chrono::seconds>(_duration) > detail::duration;
-    if (!_all_fetches_ended || !_duration_over) {
+    detail::update_texture_if_needed();
+    if (detail::is_splash_on) {
         detail::draw_splash();
-        return;
+        if (detail::is_fetching_complete() && is_audio_locked()) {
+            detail::is_splash_on = false;
+            // start timer fade out
+        }
     }
-    detail::is_splash_done = true;
 }

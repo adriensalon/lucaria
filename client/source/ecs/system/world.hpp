@@ -5,30 +5,17 @@
 
 #include <entt/entt.hpp>
 
+#include <glue/update.hpp>
 #include <core/texture.hpp>
 
 /// @brief 
 struct world_system {
-
-    /// @brief 
-    world_system() = delete;
-
-    /// @brief 
-    /// @param other 
-    world_system(const world_system& other) = delete;
-
-    /// @brief 
-    /// @param other 
-    /// @return 
-    world_system& operator=(const world_system& other) = delete;
+    REGISTER_FOR_UPDATE(world_system)
     
-    /// @brief 
-    /// @param other 
+    world_system() = delete;
+    world_system(const world_system& other) = delete;
+    world_system& operator=(const world_system& other) = delete;
     world_system(world_system&& other) = delete;
-
-    /// @brief 
-    /// @param other 
-    /// @return 
     world_system& operator=(world_system&& other) = delete;
 
     /// @brief 

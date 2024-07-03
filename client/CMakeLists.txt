@@ -13,6 +13,7 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 		"source/glue/audio.cpp"
 		"source/glue/fetch.cpp"
 		"source/glue/graphics.cpp"
+		"source/glue/update.cpp"
 		"source/glue/window.cpp"
 
 		"source/core/cubemap.cpp"
@@ -43,6 +44,8 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 	target_link_libraries(lucaria PRIVATE imgui)
 
 	target_compile_definitions(lucaria PRIVATE LUCARIA_DEBUG)
+
+	target_compile_options(lucaria PRIVATE -Wno-format-security)
 
 	target_include_directories(lucaria PRIVATE "${CMAKE_CURRENT_LIST_DIR}/source")
 	target_include_directories(lucaria PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../common/include")

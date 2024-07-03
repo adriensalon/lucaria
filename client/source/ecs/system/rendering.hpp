@@ -2,11 +2,13 @@
 
 #include <future>
 
+#include <glue/update.hpp>
 #include <core/cubemap.hpp>
 #include <core/program.hpp>
 
 /// @brief 
 struct rendering_system {
+    REGISTER_FOR_UPDATE(rendering_system)
 
     rendering_system() = delete;
     rendering_system(const rendering_system& other) = delete;
