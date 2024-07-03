@@ -92,6 +92,14 @@ std::unordered_map<mesh_attribute, GLuint> mesh_ref::get_buffer_ids() const
     return _attribute_ids;
 }
 
+void mesh_ref::update_buffer(const mesh_attribute attribute, const std::vector<float>& data)
+{
+    if (_attribute_ids.find(attribute) != _attribute_ids.end()) {
+        glDeleteBuffers(1, &_attribute_ids[attribute]);
+    }
+    _attribute_ids[attribute] = detail::create_attribute_buffer(data);
+}
+
 GLuint mesh_ref::get_array_id() const
 {
     return _array_id;

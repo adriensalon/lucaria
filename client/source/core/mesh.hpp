@@ -63,6 +63,11 @@ struct mesh_ref {
     /// @return 
     std::unordered_map<mesh_attribute, GLuint> get_buffer_ids() const;
 
+    /// @brief Destroys an existing buffer with this attribute and recreate it with new data.
+    /// @param attribute is the selected attribute.
+    /// @param data is the new data to upload to GPU.
+    void update_buffer(const mesh_attribute attribute, const std::vector<float>& data);
+
     /// @brief Gets the OpenGL id for this managed data
     /// @return the texture id as a GLuint
     GLuint get_array_id() const;
