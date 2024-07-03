@@ -5,6 +5,7 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 	set(JUST_INSTALL_CEREAL ON)
 	set(SKIP_PERFORMANCE_COMPARISON ON)
 	add_subdirectory(../external/cereal ${CMAKE_BINARY_DIR}/external/cereal)
+	add_subdirectory(../external/entt ${CMAKE_BINARY_DIR}/external/entt)
 	add_subdirectory(../external/glm ${CMAKE_BINARY_DIR}/external/glm)
 	add_subdirectory(../external/imgui ${CMAKE_BINARY_DIR}/external/imgui)
 
@@ -20,18 +21,24 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 		"source/core/texture.cpp"
 		"source/core/volume.cpp"
 
-		"source/scene/camera.cpp"
-		"source/scene/computer.cpp"
-		"source/scene/controller.cpp"
-		"source/scene/room.cpp"
-		"source/scene/screen.cpp"
-		"source/scene/skybox.cpp"
-		"source/scene/speaker.cpp"
-		"source/scene/splash.cpp"
+		"source/ecs/component/collider.cpp"
+		"source/ecs/component/model.cpp"
+		"source/ecs/component/portal.cpp"
+		"source/ecs/component/speaker.cpp"
+
+		"source/ecs/system/computer.cpp"
+		"source/ecs/system/mixer.cpp"
+		"source/ecs/system/player.cpp"
+		"source/ecs/system/rendering.cpp"
+		"source/ecs/system/splash.cpp"
+		"source/ecs/system/world.cpp"
+
+		"source/levels/room.cpp"
 
 		"source/main.cpp")
 
 	target_link_libraries(lucaria PRIVATE cereal)
+	target_link_libraries(lucaria PRIVATE EnTT)
 	target_link_libraries(lucaria PRIVATE glm)
 	target_link_libraries(lucaria PRIVATE imgui)
 

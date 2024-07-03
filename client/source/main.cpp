@@ -1,46 +1,42 @@
-#include <glue/fetch.hpp>
-#include <glue/audio.hpp>
-#include <glue/window.hpp>
-#include <scene/scene.hpp>
+#include <ecs/system/computer.hpp>
+#include <ecs/system/mixer.hpp>
+#include <ecs/system/player.hpp>
+#include <ecs/system/rendering.hpp>
+#include <ecs/system/splash.hpp>
+#include <ecs/system/world.hpp>
 
-#include <iostream>
+#include <glue/window.hpp>
+#include <glue/fetch.hpp>
+
+#include <levels/levels.hpp>
 
 int main()
 {
-    // controller
-    std::future<volume_data> collision_volume = fetch_volume({
-        "assets/collision_mesh_1.bin",
-        "assets/collision_mesh_2.bin"
-    });
+    splash_system::splash_texture(std::move(fetch_texture("assets/splash_texture.bin")));
+    splash_system::splash_duration(std::chrono::seconds(5));
 
-    // skybox
-    // std::future<cubemap_data> skybox_cubemap = fetch_cubemap(
-    //     "assets/skybox_texture_posx.bin",
-    //     "assets/skybox_texture_posy.bin",
-    //     "assets/skybox_texture_posz.bin",
-    //     "assets/skybox_texture_negx.bin",
-    //     "assets/skybox_texture_negy.bin",
-    //     "assets/skybox_texture_negz.bin"
-    // );
+    player_system::player_position(glm::vec3(0.f, 1.8f, 3.f));
+    player_system::player_direction(glm::vec3(0.f, 0.f, -1.f));
+    player_system::player_height(1.83f);
+    player_system::player_radius(0.2f);
 
-    // room
-    std::future<mesh_data> room_mesh = fetch_mesh("assets/room_mesh.bin");
-    std::future<texture_data> room_color = fetch_texture("assets/room_color.bin");
+    // rendering_system::cubemap_skybox(std::move(fetch_cubemap(
+    //     "",
+    //     "",
+    //     "")));
 
-    // computer
-    std::future<mesh_data> screen_mesh = fetch_mesh("assets/screen_mesh.bin");
-    std::future<mesh_data> speakers_mesh = fetch_mesh("assets/speaker_mesh.bin");
-    std::future<texture_data> speakers_texture = fetch_texture("assets/speaker_texture.bin");
-    std::future<texture_data> pointer_texture = fetch_texture("assets/pointer_texture.bin");
-    // music
+    world_system::register_level("001_room", register_level_001_room);
+    world_system::add_level("001_room");
 
     run([&]() {
-        update_splash(std::chrono::seconds(3));
-        update_camera({1, 1, 1, 1});
-        update_controller(collision_volume);
-        // update_skybox(skybox_cubemap);
-        update_room(room_mesh, room_color);
-        // update_computer();
+
+        player_system::update();
+        rendering_system::update();
+        splash_system::update();
+        // mixer_system::update();
+        // computer_system::update();
+        world_system::update();
+
     });
 
     return 0;

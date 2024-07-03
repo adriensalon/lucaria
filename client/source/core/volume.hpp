@@ -14,12 +14,12 @@ struct volume_data {
     volume_data() = delete;
 
     /// @brief 
-    /// @param aabb 
-    volume_data(const std::pair<glm::vec3, glm::vec3>& aabb);
+    /// @param box 
+    volume_data(const std::pair<glm::vec3, glm::vec3>& box);
 
     /// @brief 
-    /// @param aabbs 
-    volume_data(const std::vector<std::pair<glm::vec3, glm::vec3>>& aabbs);
+    /// @param boxes 
+    volume_data(const std::vector<std::pair<glm::vec3, glm::vec3>>& boxes);
 
     /// @brief 
     /// @param mesh 
@@ -54,13 +54,7 @@ struct volume_data {
 /// @brief 
 /// @param point 
 /// @return 
-bool get_is_contained(const glm::vec3& point);
-
-/// @brief 
-/// @param axis 
-/// @param point 
-/// @return 
-std::optional<float> get_distance(const glm::vec3& axis, const glm::vec3& point);
+bool get_is_contained(const volume_data& volume, const glm::vec3& position);
 
 /// @brief 
 /// @param files 
