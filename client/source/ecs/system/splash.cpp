@@ -9,12 +9,12 @@
 namespace detail {
 
 static bool is_splash_on = false;
-static std::optional<std::future<texture_data>> future_texture;
-static std::optional<texture_ref> texture;
+static std::optional<std::future<texture_data>> future_texture = std::nullopt;
+static std::optional<texture_ref> texture = std::nullopt;
 
 static void update_texture_if_needed()
 {
-    if (!texture.has_value() && get_is_future_ready(future_texture.value())) {
+    if (!texture.has_value() && future_texture.has_value() && get_is_future_ready(future_texture.value())) {
         texture = texture_ref(future_texture.value().get());
     }
 }

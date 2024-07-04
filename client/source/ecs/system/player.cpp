@@ -61,12 +61,12 @@ static void compute_rotation()
 
 void player_system::player_position(const glm::vec3& position)
 {
-
+    detail::player_position = position;
 }
 
 void player_system::player_direction(const glm::vec3& direction)
 {
-
+    detail::player_forward = direction;
 }
 
 void player_system::player_height(const float height)
