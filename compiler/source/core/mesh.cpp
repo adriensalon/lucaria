@@ -9,6 +9,7 @@
 #include <cereal/types/vector.hpp>
 
 
+#include <data/armature.hpp>
 #include <data/mesh.hpp>
 
 /// @brief Imports a mesh as data

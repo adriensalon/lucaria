@@ -8,7 +8,6 @@ struct texture_data {
     unsigned int width;
     unsigned int height;
     std::vector<unsigned char> pixels;
-    bool is_compressed;
     
     template <typename archive_t>
     void serialize(archive_t& archive)
@@ -17,6 +16,5 @@ struct texture_data {
         archive(width);
         archive(height);
         archive(pixels);
-        // archive(is_compressed);
     }
 };

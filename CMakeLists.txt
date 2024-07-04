@@ -3,8 +3,10 @@ project(lucaria)
 
 function(find_program_recursive OUTPUT_VARIABLE DIRECTORY EXECUTABLE_NAME)
     file(GLOB_RECURSE EXECUTABLE_PATHS "${DIRECTORY}/*${EXECUTABLE_NAME}*")
+
     foreach(EXECUTABLE_PATH ${EXECUTABLE_PATHS})
         get_filename_component(EXECUTABLE_NAME ${EXECUTABLE_PATH} NAME_WLE)
+
         if(EXECUTABLE_NAME STREQUAL "${EXECUTABLE_NAME}")
             set(${OUTPUT_VARIABLE} ${EXECUTABLE_PATH} PARENT_SCOPE)
             break()
@@ -18,38 +20,40 @@ if(DEFINED ENV{EMSDK})
 elseif(DEFINED ENV{EMSCRIPTEN})
     set(EMSDK $ENV{EMSCRIPTEN})
 endif()
+
 if(EMSDK AND EXISTS "${EMSDK}")
     message(STATUS "Found Emsdk at ${EMSDK}")
     set(EMSDK_FOUND TRUE)
 else()
     find_program(EMCC_EXECUTABLE NAMES emcc PATHS ENV PATH)
+
     if(EMCC_EXECUTABLE)
         get_filename_component(EMSDK_DIR "${EMCC_EXECUTABLE}" DIRECTORY)
         get_filename_component(EMSDK "${EMSDK_DIR}/../../" ABSOLUTE)
+
         if(EXISTS "${EMSDK}")
             message(STATUS "Found Emscripten SDK using emcc at ${EMSDK}")
             set(EMSDK_FOUND TRUE)
         endif()
     endif()
 endif()
+
 if(EMSDK_FOUND)
     set(EMSDK_TOOLCHAIN "${EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake")
     message(STATUS "Found Emscripten toolchain file at ${EMSDK_TOOLCHAIN}\n")
 else()
     message(FATAL_ERROR "Emscripten SDK could not be located")
 endif()
-# message(" ")
-
 
 # compiler
 set(COMPILER_BUILD_DIR ${CMAKE_BINARY_DIR}/compiler)
 set(INSTALL_DIR ${CMAKE_CURRENT_LIST_DIR}/install)
 execute_process(
     COMMAND ${CMAKE_COMMAND} -E make_directory ${COMPILER_BUILD_DIR}
-    COMMAND ${CMAKE_COMMAND} 
-        -S ${CMAKE_CURRENT_LIST_DIR}/compiler 
-        -B ${COMPILER_BUILD_DIR} 
-        -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+    COMMAND ${CMAKE_COMMAND}
+    -S ${CMAKE_CURRENT_LIST_DIR}/compiler
+    -B ${COMPILER_BUILD_DIR}
+    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
     COMMAND ${CMAKE_COMMAND} --build ${COMPILER_BUILD_DIR})
 message(" ")
 find_program_recursive(GLTF2OZZ_EXECUTABLE "${COMPILER_BUILD_DIR}" "gltf2ozz")
@@ -69,9 +73,9 @@ message(" ")
 execute_process(
     COMMAND ${CMAKE_COMMAND} -E make_directory ${INSTALL_DIR}/client
     COMMAND ${CMAKE_COMMAND} -E make_directory ${INSTALL_DIR}/client/assets
-    COMMAND ${COMPILER_EXECUTABLE} 
-        -i ${CMAKE_CURRENT_LIST_DIR}/assets
-        -o ${INSTALL_DIR}/client/assets
+    COMMAND ${COMPILER_EXECUTABLE}
+    -i ${CMAKE_CURRENT_LIST_DIR}/assets
+    -o ${INSTALL_DIR}/client/assets
     WORKING_DIRECTORY ${INSTALL_DIR}
     RESULT_VARIABLE configure_result
     OUTPUT_VARIABLE configure_output
@@ -81,22 +85,22 @@ message("${configure_output}")
 # client
 set(CLIENT_BUILD_DIR ${CMAKE_BINARY_DIR}/client)
 execute_process(
-    COMMAND ${CMAKE_COMMAND} 
-        -S ${CMAKE_CURRENT_LIST_DIR}/client 
-        -B ${CLIENT_BUILD_DIR}
-        -DCMAKE_TOOLCHAIN_FILE=${EMSDK_TOOLCHAIN}
-        -G Ninja)
+    COMMAND ${CMAKE_COMMAND}
+    -S ${CMAKE_CURRENT_LIST_DIR}/client
+    -B ${CLIENT_BUILD_DIR}
+    -DCMAKE_TOOLCHAIN_FILE=${EMSDK_TOOLCHAIN}
+    -G Ninja)
 add_custom_command(
     OUTPUT ${CLIENT_BUILD_DIR}/lucaria.html
     COMMAND ${CMAKE_COMMAND} --build ${CLIENT_BUILD_DIR})
-add_custom_target(Lucaria 
-    ALL 
+add_custom_target(Lucaria
+    ALL
     DEPENDS ${CLIENT_BUILD_DIR}/lucaria.html)
 add_custom_command(
     TARGET Lucaria
     POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.html ${INSTALL_DIR}/client/index.html
+
     # COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.data ${INSTALL_DIR}/client/lucaria.data
     COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.js ${INSTALL_DIR}/client/lucaria.js
     COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.wasm ${INSTALL_DIR}/client/lucaria.wasm)
-

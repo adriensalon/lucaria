@@ -2,75 +2,47 @@ cmake_minimum_required(VERSION 3.0)
 project(lucaria)
 
 function(message)
-    if (NOT MESSAGE_QUIET)
-        _message(${ARGN})
-    endif()
+	if(NOT MESSAGE_QUIET)
+		_message(${ARGN})
+	endif()
 endfunction()
 
 if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
-	set(JUST_INSTALL_CEREAL ON)
-	set(SKIP_PERFORMANCE_COMPARISON ON)
-
-
 	set(MESSAGE_QUIET ON)
-	add_subdirectory(../external/cereal ${CMAKE_BINARY_DIR}/external/cereal)
-	add_subdirectory(../external/entt ${CMAKE_BINARY_DIR}/external/entt)
-	add_subdirectory(../external/glm ${CMAKE_BINARY_DIR}/external/glm)
-	add_subdirectory(../external/imgui ${CMAKE_BINARY_DIR}/external/imgui)
-	
-	set(ozz_build_tools OFF)
-	set(ozz_build_fbx OFF)
-	set(ozz_build_gltf OFF)
-	set(ozz_build_data OFF)
-	set(ozz_build_postfix OFF)
-	set(ozz_run_tests_headless OFF)
-	add_subdirectory(../external/ozz ${CMAKE_BINARY_DIR}/external/ozz)
+		add_subdirectory(../external/entt ${CMAKE_BINARY_DIR}/external/entt)
+		add_subdirectory(../external/glm ${CMAKE_BINARY_DIR}/external/glm)
+		add_subdirectory(../external/imgui ${CMAKE_BINARY_DIR}/external/imgui)
+
+		set(JUST_INSTALL_CEREAL ON)
+		set(SKIP_PERFORMANCE_COMPARISON ON)
+		add_subdirectory(../external/cereal ${CMAKE_BINARY_DIR}/external/cereal)
+
+		set(ozz_build_tools OFF)
+		set(ozz_build_fbx OFF)
+		set(ozz_build_gltf OFF)
+		set(ozz_build_data OFF)
+		set(ozz_build_postfix OFF)
+		set(ozz_run_tests_headless OFF)
+		add_subdirectory(../external/ozz ${CMAKE_BINARY_DIR}/external/ozz)
+		target_compile_options(ozz_base PRIVATE "-Wno-#pragma-messages")
 	set(MESSAGE_QUIET OFF)
 
-	add_executable(lucaria
-		"source/glue/audio.cpp"
-		"source/glue/fetch.cpp"
-		"source/glue/graphics.cpp"
-		"source/glue/update.cpp"
-		"source/glue/window.cpp"
+	file(GLOB_RECURSE lucaria_sources "${CMAKE_CURRENT_LIST_DIR}/source/*.cpp")
+	add_executable(lucaria ${lucaria_sources})
 
-		"source/core/cubemap.cpp"
-		"source/core/mesh.cpp"
-		"source/core/program.cpp"
-		"source/core/texture.cpp"
-		"source/core/volume.cpp"
-
-		"source/ecs/component/collider.cpp"
-		"source/ecs/component/model.cpp"
-		"source/ecs/component/portal.cpp"
-		"source/ecs/component/speaker.cpp"
-
-		"source/ecs/system/computer.cpp"
-		"source/ecs/system/mixer.cpp"
-		"source/ecs/system/player.cpp"
-		"source/ecs/system/rendering.cpp"
-		"source/ecs/system/splash.cpp"
-		"source/ecs/system/world.cpp"
-
-		"source/levels/room.cpp"
-
-		"source/main.cpp")
+	target_include_directories(lucaria PRIVATE ${CMAKE_CURRENT_LIST_DIR}/source)
+	target_include_directories(lucaria PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../common/include)
 
 	target_link_libraries(lucaria PRIVATE cereal)
 	target_link_libraries(lucaria PRIVATE EnTT)
 	target_link_libraries(lucaria PRIVATE glm)
 	target_link_libraries(lucaria PRIVATE imgui)
-	# target_link_libraries(lucaria PRIVATE ozz_animation)
+	target_link_libraries(lucaria PRIVATE ozz_animation)
 
 	target_compile_definitions(lucaria PRIVATE LUCARIA_DEBUG)
+
 	# target_compile_definitions(lucaria PRIVATE LUCARIA_JSON)
-
 	target_compile_options(lucaria PRIVATE -Wno-format-security)
-	target_compile_options(lucaria PRIVATE -Wno-unknown-pragmas)
-	
-
-	target_include_directories(lucaria PRIVATE "${CMAKE_CURRENT_LIST_DIR}/source")
-	target_include_directories(lucaria PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../common/include")
 
 	set_target_properties(lucaria PROPERTIES CXX_STANDARD 17)
 
@@ -88,9 +60,9 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 		-s NO_DISABLE_EXCEPTION_CATCHING \
 		-lopenal")
 
-		# -O3 \
-		# --preload-file ${CMAKE_CURRENT_LIST_DIR}/../install/assets@/ \
+# -O3 \
+# --preload-file ${CMAKE_CURRENT_LIST_DIR}/../install/assets@/ \
 else()
-	message(FATAL_ERROR "CMake is being configured by Emscripten, aborting...")
+	message(FATAL_ERROR "CMake is being configured by host platform but we require Emscripten, aborting...")
 	return()
 endif()
