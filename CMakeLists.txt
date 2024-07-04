@@ -4,7 +4,7 @@ project(lucaria)
 function(find_program_recursive OUTPUT_VARIABLE DIRECTORY EXECUTABLE_NAME)
     file(GLOB_RECURSE EXECUTABLE_PATHS "${DIRECTORY}/*${EXECUTABLE_NAME}*")
     foreach(EXECUTABLE_PATH ${EXECUTABLE_PATHS})
-        get_filename_component(EXECUTABLE_NAME ${EXECUTABLE_PATH} NAME_WE)
+        get_filename_component(EXECUTABLE_NAME ${EXECUTABLE_PATH} NAME_WLE)
         if(EXECUTABLE_NAME STREQUAL "${EXECUTABLE_NAME}")
             set(${OUTPUT_VARIABLE} ${EXECUTABLE_PATH} PARENT_SCOPE)
             break()
@@ -49,10 +49,15 @@ execute_process(
         -B ${COMPILER_BUILD_DIR} 
         -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
     COMMAND ${CMAKE_COMMAND} --build ${COMPILER_BUILD_DIR})
+find_program_recursive(GLTF2OZZ_EXECUTABLE "${COMPILER_BUILD_DIR}" "gltf2ozz")
+message(STATUS "Found gltf2ozz at ${GLTF2OZZ_EXECUTABLE}")
 find_program_recursive(COMPILER_EXECUTABLE "${COMPILER_BUILD_DIR}" "lucaria_compiler")
+message(STATUS "Found compiler at ${COMPILER_EXECUTABLE}")
+get_filename_component(GLTF2OZZ_NAME ${GLTF2OZZ_EXECUTABLE} NAME)
 get_filename_component(COMPILER_NAME ${COMPILER_EXECUTABLE} NAME)
 execute_process(
     COMMAND ${CMAKE_COMMAND} -E make_directory ${INSTALL_DIR}/compiler
+    COMMAND ${CMAKE_COMMAND} -E rename ${GLTF2OZZ_EXECUTABLE} ${INSTALL_DIR}/compiler/${GLTF2OZZ_NAME}
     COMMAND ${CMAKE_COMMAND} -E rename ${COMPILER_EXECUTABLE} ${INSTALL_DIR}/compiler/${COMPILER_NAME})
 set(COMPILER_EXECUTABLE ${INSTALL_DIR}/compiler/${COMPILER_NAME})
 message(" ")
@@ -64,6 +69,7 @@ execute_process(
     COMMAND ${COMPILER_EXECUTABLE} 
         -i ${CMAKE_CURRENT_LIST_DIR}/assets
         -o ${INSTALL_DIR}/client/assets
+    WORKING_DIRECTORY ${INSTALL_DIR}
     RESULT_VARIABLE configure_result
     OUTPUT_VARIABLE configure_output
     ERROR_VARIABLE configure_error)

@@ -17,7 +17,7 @@
 #include <data/shader.hpp>
 #include <data/texture.hpp>
     
-extern mesh_data import_mesh(const std::filesystem::path& input);
+extern mesh_data import_mesh(const std::filesystem::path& input, const std::filesystem::path& output_directory);
 extern shader_data import_shader(const std::filesystem::path& input);
 extern texture_data import_texture(const std::filesystem::path& input);
 
@@ -180,7 +180,7 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
     if (_extension == ".ttf") {
         // compile_binary_or_json(import_font(input_file), output_file);
     } else if (_extension == ".obj" || _extension == ".glb" || _extension == ".gltf" || _extension == ".fbx") {
-        compile_binary_or_json(import_mesh(input_file), output_file);
+        compile_binary_or_json(import_mesh(input_file, output_file.parent_path()), output_file);
     } else if (_extension == ".glsl") {
         compile_binary_or_json(import_shader(input_file), output_file);    
     } else if (_extension == ".wav") {

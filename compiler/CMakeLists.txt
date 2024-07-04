@@ -26,6 +26,14 @@ else()
 	set(ASSIMP_INJECT_DEBUG_POSTFIX OFF)
 	set(BUILD_SHARED_LIBS OFF)
 	add_subdirectory(../external/assimp ${CMAKE_BINARY_DIR}/external/assimp)
+	
+	set(ozz_build_tools ON)
+	set(ozz_build_fbx OFF)
+	set(ozz_build_gltf ON)
+	set(ozz_build_data OFF)
+	set(ozz_build_postfix OFF)
+	set(ozz_run_tests_headless OFF)
+	add_subdirectory(../external/ozz ${CMAKE_BINARY_DIR}/external/ozz)
 
 	add_executable(lucaria_compiler 
 		"source/core/mesh.cpp"
@@ -37,6 +45,7 @@ else()
 	target_link_libraries(lucaria_compiler PRIVATE glm)
 	target_link_libraries(lucaria_compiler PRIVATE stb_image)
 	target_link_libraries(lucaria_compiler PRIVATE assimp)
+	target_link_libraries(lucaria_compiler PRIVATE ozz_animation)
 
 	target_include_directories(lucaria_compiler PRIVATE "${CMAKE_CURRENT_LIST_DIR}/source")
 	target_include_directories(lucaria_compiler PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../common/include")
@@ -44,4 +53,14 @@ else()
 	# target_compile_definitions(lucaria_compiler PRIVATE LUCARIA_JSON)
 
 	set_property(TARGET lucaria_compiler PROPERTY CXX_STANDARD 17)
+
+
+
+    add_custom_command(TARGET lucaria_compiler POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<TARGET_FILE_DIR:gltf2ozz>/gltf2ozz.exe"
+                "$<TARGET_FILE_DIR:lucaria_compiler>/gltf2ozz.exe"
+        # COMMENT "Copying gltf2ozz executable to build directory"
+    )
+
 endif()

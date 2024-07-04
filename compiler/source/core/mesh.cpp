@@ -2,11 +2,12 @@
 #include <fstream>
 
 #include <assimp/Importer.hpp>
-#include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <assimp/scene.h>
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/cereal.hpp>
 #include <cereal/types/vector.hpp>
+
 
 #include <data/mesh.hpp>
 
@@ -36,9 +37,9 @@
 //         0.0f, 0.0f, 0.0f, 1.0f
 //     );
 //     const std::string _extension = input.extension().string();
-    
+
 //     std::vector<std::vector<unsigned int>> vertex_bones(mesh->mNumVertices);
-//     std::vector<std::vector<float>> vertex_weights(mesh->mNumVertices);    
+//     std::vector<std::vector<float>> vertex_weights(mesh->mNumVertices);
 //     for (unsigned int b = 0; b < mesh->mNumBones; ++b) {
 //         aiBone* bone = mesh->mBones[b];
 //         for (unsigned int w = 0; w < bone->mNumWeights; ++w) {
@@ -48,7 +49,7 @@
 //             vertex_weights[vertex_id].push_back(weight);
 //         }
 //     }
-    
+
 //     for (unsigned int i = 0; i < mesh->mNumVertices; ++i) {
 //         aiVector3D rotated_vertex = mesh->mVertices[i];
 //         rotated_vertex = rootTransform * rotated_vertex;
@@ -57,7 +58,7 @@
 //         }
 //         _data.positions.push_back(rotated_vertex.x);
 //         _data.positions.push_back(rotated_vertex.y);
-//         _data.positions.push_back(rotated_vertex.z);     
+//         _data.positions.push_back(rotated_vertex.z);
 
 //         if (mesh->HasVertexColors(0)) {
 //             aiColor4D color = mesh->mColors[0][i];
@@ -83,7 +84,7 @@
 //             _data.bitangents.push_back(bitangent.x);
 //             _data.bitangents.push_back(bitangent.y);
 //             _data.bitangents.push_back(bitangent.z);
-//         }   
+//         }
 
 //         if (mesh->mTextureCoords[0]) {
 //             _data.texcoords.push_back(mesh->mTextureCoords[0][i].x);
@@ -108,7 +109,47 @@
 //     return _data;
 // }
 
-mesh_data import_mesh(const std::filesystem::path& input)
+void copy_ozz_files(const std::filesystem::path& input, const std::filesystem::path& output_directory)
+{
+    std::filesystem::path currentPath = std::filesystem::current_path();
+    for (const auto& _entry : std::filesystem::directory_iterator(currentPath)) {
+        if (std::filesystem::is_regular_file(_entry.path()) && _entry.path().extension().string() == ".ozz") {
+            std::filesystem::path destinationFile;
+            if (_entry.path().filename().string() == "skeleton.ozz") {
+                destinationFile = output_directory / (input.stem().string() + "_skeleton.bin");
+            } else {
+                destinationFile = output_directory / (input.stem().string() + "_animation_" + _entry.path().stem().string() + ".bin");
+            }
+            std::filesystem::rename(_entry.path(), destinationFile);
+        }
+    }
+}
+
+void executeGltf2Ozz(const std::filesystem::path& input, const std::filesystem::path& output_directory)
+{
+
+    std::string command = std::filesystem::current_path().string() + "/compiler/gltf2ozz.exe --file=" + input.string();
+    // std::cout << command << std::endl;
+    int result = std::system(command.c_str());
+    if (result != 0) {
+        std::cerr << "Error: gltf2ozz command failed with exit code " << result << std::endl;
+    }  
+
+    copy_ozz_files(input, output_directory);
+
+    // try {
+    //     std::filesystem::path currentPath = std::filesystem::current_path();
+    //     std::filesystem::path sourceFile = currentPath / "skeleton.ozz";
+    //     if (std::filesystem::exists(sourceFile)) {
+    //         std::filesystem::path destinationFile = output_directory / (input.stem().string() + "_skeleton.bin");
+    //         std::filesystem::rename(sourceFile, destinationFile);
+    //     }
+    // } catch (const std::filesystem::filesystem_error& e) {
+    //     std::cout << "Error: " << e.what() << std::endl;
+    // }
+}
+
+mesh_data import_mesh(const std::filesystem::path& input, const std::filesystem::path& output_directory)
 {
     mesh_data _data;
     _data.count = 0;
@@ -128,8 +169,7 @@ mesh_data import_mesh(const std::filesystem::path& input)
         1.0f, 0.0f, 0.0f, 0.0f,
         0.0f, 0.0f, 1.0f, 0.0f,
         0.0f, -1.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 1.0f
-    );
+        0.0f, 0.0f, 0.0f, 1.0f);
 
     const std::string _extension = input.extension().string();
 
@@ -242,11 +282,13 @@ mesh_data import_mesh(const std::filesystem::path& input)
     // Debug: Log some vertices to check their final transformed positions
     // std::cout << "Sample Transformed Vertex Positions:" << std::endl;
     // for (unsigned int i = 0; i < std::min(_data.positions.size() / 3, 5u); ++i) {
-    //     std::cout << "Vertex " << i << ": (" 
-    //               << _data.positions[i * 3] << ", " 
-    //               << _data.positions[i * 3 + 1] << ", " 
+    //     std::cout << "Vertex " << i << ": ("
+    //               << _data.positions[i * 3] << ", "
+    //               << _data.positions[i * 3 + 1] << ", "
     //               << _data.positions[i * 3 + 2] << ")" << std::endl;
     // }
-    
+
+    executeGltf2Ozz(input, output_directory);
+
     return _data;
 }
