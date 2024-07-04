@@ -111,42 +111,29 @@
 
 void copy_ozz_files(const std::filesystem::path& input, const std::filesystem::path& output_directory)
 {
-    std::filesystem::path currentPath = std::filesystem::current_path();
-    for (const auto& _entry : std::filesystem::directory_iterator(currentPath)) {
+    std::filesystem::path _current_path = std::filesystem::current_path();
+    for (const std::filesystem::directory_entry& _entry : std::filesystem::directory_iterator(_current_path)) {
         if (std::filesystem::is_regular_file(_entry.path()) && _entry.path().extension().string() == ".ozz") {
-            std::filesystem::path destinationFile;
+            std::filesystem::path _destination_file;
             if (_entry.path().filename().string() == "skeleton.ozz") {
-                destinationFile = output_directory / (input.stem().string() + "_skeleton.bin");
+                _destination_file = output_directory / (input.stem().string() + "_skeleton.bin");
             } else {
-                destinationFile = output_directory / (input.stem().string() + "_animation_" + _entry.path().stem().string() + ".bin");
+                _destination_file = output_directory / (input.stem().string() + "_animation_" + _entry.path().stem().string() + ".bin");
             }
-            std::filesystem::rename(_entry.path(), destinationFile);
+            std::filesystem::rename(_entry.path(), _destination_file);
         }
     }
 }
 
-void executeGltf2Ozz(const std::filesystem::path& input, const std::filesystem::path& output_directory)
+void compute_ozz_files(const std::filesystem::path& input, const std::filesystem::path& output_directory)
 {
-
-    std::string command = std::filesystem::current_path().string() + "/compiler/gltf2ozz.exe --file=" + input.string();
-    // std::cout << command << std::endl;
-    int result = std::system(command.c_str());
-    if (result != 0) {
-        std::cerr << "Error: gltf2ozz command failed with exit code " << result << std::endl;
-    }  
-
+    const std::string _command = std::filesystem::current_path().string() + "/compiler/gltf2ozz.exe --file=" + input.string();
+    const int _result = std::system(_command.c_str());
+    if (_result != 0) {
+        std::cout << "Error: gltf2ozz command failed with exit code " << _result << std::endl;
+        std::terminate();
+    }
     copy_ozz_files(input, output_directory);
-
-    // try {
-    //     std::filesystem::path currentPath = std::filesystem::current_path();
-    //     std::filesystem::path sourceFile = currentPath / "skeleton.ozz";
-    //     if (std::filesystem::exists(sourceFile)) {
-    //         std::filesystem::path destinationFile = output_directory / (input.stem().string() + "_skeleton.bin");
-    //         std::filesystem::rename(sourceFile, destinationFile);
-    //     }
-    // } catch (const std::filesystem::filesystem_error& e) {
-    //     std::cout << "Error: " << e.what() << std::endl;
-    // }
 }
 
 mesh_data import_mesh(const std::filesystem::path& input, const std::filesystem::path& output_directory)
@@ -254,8 +241,8 @@ mesh_data import_mesh(const std::filesystem::path& input, const std::filesystem:
                 }
 
                 // Store bone indices and weights for the current vertex
-                _data.bones.insert(_data.bones.end(), vertex_bones[v].begin(), vertex_bones[v].end());
-                _data.weights.insert(_data.weights.end(), vertex_weights[v].begin(), vertex_weights[v].end());
+                // _data.bones.insert(_data.bones.end(), vertex_bones[v].begin(), vertex_bones[v].end());
+                // _data.weights.insert(_data.weights.end(), vertex_weights[v].begin(), vertex_weights[v].end());
             }
 
             for (unsigned int f = 0; f < mesh->mNumFaces; ++f) {
@@ -288,7 +275,7 @@ mesh_data import_mesh(const std::filesystem::path& input, const std::filesystem:
     //               << _data.positions[i * 3 + 2] << ")" << std::endl;
     // }
 
-    executeGltf2Ozz(input, output_directory);
+    compute_ozz_files(input, output_directory);
 
     return _data;
 }

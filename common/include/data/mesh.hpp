@@ -12,8 +12,6 @@ struct mesh_data {
     std::vector<float> bitangents = {};
     std::vector<float> texcoords = {};
     std::vector<unsigned int> indices = {};
-    std::vector<unsigned int> bones = {};
-    std::vector<float> weights = {};
 
     template <typename archive_t>
     void serialize(archive_t& archive)
@@ -26,7 +24,19 @@ struct mesh_data {
         archive(bitangents);
         archive(texcoords);
         archive(indices);
-        // archive(bones);
-        // archive(weights);
+    }
+};
+
+/// @brief Represents an armature for serialization
+struct armature_data {
+    unsigned int count;
+    std::vector<float> weights = {};
+    std::vector<unsigned int> bones = {};
+
+    template <typename archive_t>
+    void serialize(archive_t& archive)
+    {
+        archive(weights);
+        archive(bones);
     }
 };
