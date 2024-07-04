@@ -29,7 +29,11 @@ void on_fetch_success(emscripten_fetch_t* fetch)
     fetch_completed++;
     std::cout << "Successfully fetched " << fetch->numBytes << " bytes from " << fetch->url << std::endl;
     std::vector<char> _data(fetch->data, fetch->data + fetch->numBytes);
+// #if LUCARIA_JSON
+//     std::istringstream _stream(std::string(_data.begin(), _data.end()));
+// #else
     std::istringstream _stream(std::string(_data.begin(), _data.end()), std::ios::binary);
+// #endif
     fetch_requests[fetch->url](_stream);
     emscripten_fetch_close(fetch);
 }
@@ -39,7 +43,11 @@ void on_multiple_fetch_success(emscripten_fetch_t* fetch)
     fetch_completed++;
     std::cout << "Successfully fetched MULTI " << fetch->numBytes << " bytes from " << fetch->url << std::endl;
     std::vector<char> _data(fetch->data, fetch->data + fetch->numBytes);
+// #if LUCARIA_JSON
+//     std::istringstream _stream(std::string(_data.begin(), _data.end()));
+// #else
     std::istringstream _stream(std::string(_data.begin(), _data.end()), std::ios::binary);
+// #endif
     std::pair<std::size_t, std::size_t>* _user_data = static_cast<std::pair<std::size_t, std::size_t>*>(fetch->userData);
     const std::size_t _index = _user_data->first;
     const std::size_t _total = _user_data->second;

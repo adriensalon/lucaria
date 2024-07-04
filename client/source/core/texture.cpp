@@ -1,6 +1,7 @@
 #include <fstream>
 
 #include <cereal/archives/portable_binary.hpp>
+#include <cereal/archives/json.hpp>
 #include <cereal/cereal.hpp>
 #include <cereal/types/vector.hpp>
 
@@ -67,8 +68,13 @@ texture_data load_texture(const std::filesystem::path& file)
     }
 #endif
     texture_data _data;
+#if LUCARIA_JSON
+    std::ifstream _fstream(file);
+    cereal::JSONInputArchive _archive(_fstream);
+#else
     std::ifstream _fstream(file, std::ios::binary);
     cereal::PortableBinaryInputArchive _archive(_fstream);
+#endif
     _archive(_data);
 #if LUCARIA_DEBUG
     std::cout << "Loaded texture data from " << file << " ("
@@ -85,7 +91,11 @@ std::future<texture_data> fetch_texture(const std::filesystem::path& file)
     fetch_file(file.generic_string(), [&_promise, file](std::istringstream& stream) {
         texture_data _data;
         {
+#if LUCARIA_JSON
+            cereal::JSONInputArchive _archive(stream);
+#else
             cereal::PortableBinaryInputArchive _archive(stream);
+#endif
             _archive(_data);
         }
 #if LUCARIA_DEBUG

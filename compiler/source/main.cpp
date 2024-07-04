@@ -7,6 +7,7 @@
 #include <vector>
 
 #include <cereal/archives/portable_binary.hpp>
+#include <cereal/archives/json.hpp>
 #include <cereal/cereal.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
@@ -157,10 +158,15 @@ std::filesystem::path substract_relative(const std::filesystem::path base_dir, c
 }
 
 template <typename resource_data_t>
-void compile_binary(const resource_data_t& data, const std::filesystem::path& output)
+void compile_binary_or_json(const resource_data_t& data, const std::filesystem::path& output)
 {
+#if LUCARIA_JSON
+    std::ofstream _fstream(output);
+    cereal::JSONOutputArchive _archive(_fstream);
+#else
     std::ofstream _fstream(output, std::ios::binary);
     cereal::PortableBinaryOutputArchive _archive(_fstream);
+#endif
     _archive(data);
 }
 
@@ -171,15 +177,15 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
 {
     const std::string _extension = input_file.extension().generic_string();
     if (_extension == ".ttf") {
-        // compile_font(import_font(input_file), output_file);
-    } else if (_extension == ".obj") {
-        compile_binary(import_mesh(input_file), output_file);
+        // compile_binary_or_json(import_font(input_file), output_file);
+    } else if (_extension == ".obj" || _extension == ".glb" || _extension == ".gltf") {
+        compile_binary_or_json(import_mesh(input_file), output_file);
     } else if (_extension == ".glsl") {
-        compile_binary(import_shader(input_file), output_file);    
+        compile_binary_or_json(import_shader(input_file), output_file);    
     } else if (_extension == ".wav") {
-        // compile_sound(import_sound(input_file), output_file); 
+        // compile_binary_or_json(import_sound(input_file), output_file); 
     } else if (_extension == ".jpg") {
-        compile_binary(import_texture(input_file), output_file); 
+        compile_binary_or_json(import_texture(input_file), output_file); 
     } else {
         std::cerr << "Invalid input file with extension " << _extension << std::endl;
         std::terminate();

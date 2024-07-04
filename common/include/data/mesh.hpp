@@ -5,13 +5,15 @@
 /// @brief Represents a mesh for serialization
 struct mesh_data {
     unsigned int count;
-    std::vector<float> positions;
-    std::vector<float> colors;
-    std::vector<float> normals;
-    std::vector<float> tangents;
-    std::vector<float> bitangents;
-    std::vector<float> texcoords;
-    std::vector<unsigned int> indices;
+    std::vector<float> positions = {};
+    std::vector<float> colors = {};
+    std::vector<float> normals = {};
+    std::vector<float> tangents = {};
+    std::vector<float> bitangents = {};
+    std::vector<float> texcoords = {};
+    std::vector<unsigned int> indices = {};
+    std::vector<unsigned short> bones = {};
+    std::vector<float> weights = {};
 
     template <typename archive_t>
     void serialize(archive_t& archive)
@@ -24,5 +26,7 @@ struct mesh_data {
         archive(bitangents);
         archive(texcoords);
         archive(indices);
+        // archive(bones);
+        // archive(weights);
     }
 };

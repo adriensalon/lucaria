@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include <cereal/archives/portable_binary.hpp>
+#include <cereal/archives/json.hpp>
 #include <cereal/cereal.hpp>
 #include <cereal/types/vector.hpp>
 
@@ -119,8 +120,13 @@ mesh_data load_mesh(const std::filesystem::path& file)
     }
 #endif
     mesh_data _data;
+#if LUCARIA_JSON
+    std::ifstream _fstream(file);
+    cereal::JSONInputArchive _archive(_fstream);
+#else
     std::ifstream _fstream(file, std::ios::binary);
     cereal::PortableBinaryInputArchive _archive(_fstream);
+#endif
     _archive(_data);
 #if LUCARIA_DEBUG
     std::cout << "Loaded mesh data from " << file << " ("
@@ -132,12 +138,23 @@ mesh_data load_mesh(const std::filesystem::path& file)
 std::future<mesh_data> fetch_mesh(const std::filesystem::path& file)
 {
     std::promise<mesh_data>& _promise = detail::mesh_promises[file.generic_string()];
-    fetch_file(file.generic_string(), [&_promise, file](std::istringstream& stream) {
+    fetch_file(file.string(), [&_promise, file](std::istringstream& stream) {
+        
         mesh_data _data;
+        try
         {
+#if LUCARIA_JSON
+            cereal::JSONInputArchive _archive(stream);
+#else
             cereal::PortableBinaryInputArchive _archive(stream);
+#endif
             _archive(_data);
         }
+        catch (const cereal::Exception& e)
+        {
+            std::cout << e.what() << '\n';
+        }
+        
 #if LUCARIA_DEBUG
         std::cout << "Loaded mesh data from " << file << " ("
                   << _data.count << " vertices)" << std::endl;
@@ -154,7 +171,11 @@ std::future<std::vector<mesh_data>> fetch_meshes(const std::vector<std::filesyst
     std::vector<mesh_data>& _data = detail::mesh_vector_promises[_hash].first;
     fetch_files(files, [&_data, &_promise, files, _hash](const std::size_t index, const std::size_t size, std::istringstream& stream) {
         {
+#if LUCARIA_JSON
+            cereal::JSONInputArchive _archive(stream);
+#else
             cereal::PortableBinaryInputArchive _archive(stream);
+#endif
             _archive(_data.emplace_back());
             
         }

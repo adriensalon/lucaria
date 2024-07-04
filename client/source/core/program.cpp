@@ -1,6 +1,7 @@
 #include <fstream>
 
 #include <cereal/archives/portable_binary.hpp>
+#include <cereal/archives/json.hpp>
 #include <cereal/cereal.hpp>
 #include <cereal/types/string.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -262,8 +263,13 @@ shader_data load_shader(const std::filesystem::path& file)
     }
 #endif
     shader_data _data;
+#if LUCARIA_JSON
+    std::ifstream _fstream(file);
+    cereal::JSONInputArchive _archive(_fstream);
+#else
     std::ifstream _fstream(file, std::ios::binary);
     cereal::PortableBinaryInputArchive _archive(_fstream);
+#endif
     _archive(_data);
     return _data;
 }

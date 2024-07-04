@@ -1,0 +1,1 @@
+install/compiler/lucaria_compiler.exe -i assets -o install/client/assets
