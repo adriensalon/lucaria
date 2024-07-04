@@ -178,7 +178,7 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
     const std::string _extension = input_file.extension().generic_string();
     if (_extension == ".ttf") {
         // compile_binary_or_json(import_font(input_file), output_file);
-    } else if (_extension == ".obj" || _extension == ".glb" || _extension == ".gltf") {
+    } else if (_extension == ".obj" || _extension == ".glb" || _extension == ".gltf" || _extension == ".fbx") {
         compile_binary_or_json(import_mesh(input_file), output_file);
     } else if (_extension == ".glsl") {
         compile_binary_or_json(import_shader(input_file), output_file);    
