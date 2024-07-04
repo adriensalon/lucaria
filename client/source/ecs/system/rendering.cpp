@@ -159,24 +159,9 @@ void rendering_system::update()
     glm::mat4x4 _view_projection = detail::camera_projection * player_system::get_view();
     world_system::for_each([&_view_projection](entt::registry& _registry) {
         _registry.view<model_component>().each([&_view_projection](model_component& _model) {
-            if (_model._future_mesh.has_value()) {
-                std::future<mesh_data>& _future_mesh = _model._future_mesh.value();
-                if (get_is_future_ready(_future_mesh)) {
-                    mesh_data _mesh_data = _future_mesh.get();
-                    _model._mesh = mesh_ref(_mesh_data);
-                    _model._future_mesh = std::nullopt;
-                }
-            }
-            if (_model._future_color.has_value()) {
-                std::future<texture_data>& _future_color = _model._future_color.value();
-                if (get_is_future_ready(_future_color)) {
-                    texture_data _color_data = _future_color.get();
-                    _model._color = texture_ref(_color_data);
-                    _model._future_color = std::nullopt;
-                }
-            }
-            if (_model._mesh.has_value() && _model._color.has_value()) {
-                detail::draw_unlit(_model._mesh.value(), _model._color.value(), _view_projection);
+            _model._update_futures();
+            if (_model._mesh.has_value() && _model._textures[model_texture::color].has_value()) {
+                detail::draw_unlit(_model._mesh.value(), _model._textures[model_texture::color].value(), _view_projection);
             }
         });
     });

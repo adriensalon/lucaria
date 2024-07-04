@@ -37,13 +37,6 @@ GLuint create_attribute_buffer(const std::vector<GLfloat>& attribute)
     return _attribute_id;
 }
 
-void emplace_attribute_buffer(GLuint& attribute, const std::vector<GLfloat>& data)
-{
-    if (!data.empty()) {
-        attribute = create_attribute_buffer(data);
-    }
-}
-
 GLuint create_elements_buffer(const std::vector<GLuint>& indices)
 {
     GLuint _elements_id;
@@ -53,9 +46,32 @@ GLuint create_elements_buffer(const std::vector<GLuint>& indices)
     return _elements_id;
 }
 
-std::unordered_map<std::string, std::promise<mesh_data>> mesh_promises;
-std::unordered_map<std::size_t, std::pair<std::vector<mesh_data>, std::promise<std::vector<mesh_data>>>> mesh_vector_promises;
+static std::unordered_map<std::string, std::promise<mesh_ref>> mesh_promises;
+static std::unordered_map<std::size_t, std::pair<std::vector<mesh_ref>, std::promise<std::vector<mesh_data>>>> mesh_vector_promises;
 
+}
+
+mesh_ref::mesh_ref(mesh_ref&& other)
+{
+    *this = std::move(other);
+}
+
+mesh_ref& mesh_ref::operator=(mesh_ref&& other)
+{
+    _count = other._count;
+    _array_id = other._array_id;
+    _elements_id = other._elements_id;
+    _attribute_ids = std::move(other._attribute_ids);
+    _must_destroy = true;
+    other._must_destroy = false;
+    return *this;
+}
+
+mesh_ref::~mesh_ref()
+{
+    if (_must_destroy) {
+        // TODO
+    }
 }
 
 mesh_ref::mesh_ref(const mesh_data& data)
@@ -82,10 +98,7 @@ mesh_ref::mesh_ref(const mesh_data& data)
     if (!data.texcoords.empty()) {
         _attribute_ids[mesh_attribute::texcoord] = detail::create_attribute_buffer(data.texcoords);
     }
-}
-
-mesh_ref::~mesh_ref()
-{
+    _must_destroy = true;
 }
 
 std::unordered_map<mesh_attribute, GLuint> mesh_ref::get_buffer_ids() const
@@ -111,7 +124,7 @@ GLuint mesh_ref::get_count() const
     return _count;
 }
 
-mesh_data load_mesh(const std::filesystem::path& file)
+mesh_ref load_mesh(const std::filesystem::path& file)
 {
 #if LUCARIA_DEBUG
     if (!std::filesystem::is_regular_file(file)) {
@@ -120,28 +133,29 @@ mesh_data load_mesh(const std::filesystem::path& file)
     }
 #endif
     mesh_data _data;
+    {
 #if LUCARIA_JSON
-    std::ifstream _fstream(file);
-    cereal::JSONInputArchive _archive(_fstream);
+        std::ifstream _fstream(file);
+            
+        cereal::JSONInputArchive _archive(_fstream);
 #else
-    std::ifstream _fstream(file, std::ios::binary);
-    cereal::PortableBinaryInputArchive _archive(_fstream);
+        std::ifstream _fstream(file, std::ios::binary);
+        cereal::PortableBinaryInputArchive _archive(_fstream);
 #endif
-    _archive(_data);
+        _archive(_data);
+    }
 #if LUCARIA_DEBUG
     std::cout << "Loaded mesh data from " << file << " ("
               << _data.count << " vertices)" << std::endl;
 #endif
-    return _data;
+    return mesh_ref(_data);
 }
 
-std::future<mesh_data> fetch_mesh(const std::filesystem::path& file)
+std::future<mesh_ref> fetch_mesh(const std::filesystem::path& file)
 {
-    std::promise<mesh_data>& _promise = detail::mesh_promises[file.generic_string()];
+    std::promise<mesh_ref>& _promise = detail::mesh_promises[file.generic_string()];
     fetch_file(file.string(), [&_promise, file](std::istringstream& stream) {
-        
         mesh_data _data;
-        try
         {
 #if LUCARIA_JSON
             cereal::JSONInputArchive _archive(stream);
@@ -150,42 +164,38 @@ std::future<mesh_data> fetch_mesh(const std::filesystem::path& file)
 #endif
             _archive(_data);
         }
-        catch (const cereal::Exception& e)
-        {
-            std::cout << e.what() << '\n';
-        }
         
 #if LUCARIA_DEBUG
         std::cout << "Loaded mesh data from " << file << " ("
                   << _data.count << " vertices)" << std::endl;
 #endif
-        _promise.set_value(std::move(_data));
+        _promise.set_value(std::move(mesh_ref(_data)));
     });
     return _promise.get_future();
 }
 
-std::future<std::vector<mesh_data>> fetch_meshes(const std::vector<std::filesystem::path>& files)
-{
-    const std::size_t _hash = compute_hash_files(files);
-    std::promise<std::vector<mesh_data>>& _promise = detail::mesh_vector_promises[_hash].second;
-    std::vector<mesh_data>& _data = detail::mesh_vector_promises[_hash].first;
-    fetch_files(files, [&_data, &_promise, files, _hash](const std::size_t index, const std::size_t size, std::istringstream& stream) {
-        {
-#if LUCARIA_JSON
-            cereal::JSONInputArchive _archive(stream);
-#else
-            cereal::PortableBinaryInputArchive _archive(stream);
-#endif
-            _archive(_data.emplace_back());
+// std::future<std::vector<mesh_data>> fetch_meshes(const std::vector<std::filesystem::path>& files)
+// {
+//     const std::size_t _hash = compute_hash_files(files);
+//     std::promise<std::vector<mesh_data>>& _promise = detail::mesh_vector_promises[_hash].second;
+//     std::vector<mesh_data>& _data = detail::mesh_vector_promises[_hash].first;
+//     fetch_files(files, [&_data, &_promise, files, _hash](const std::size_t index, const std::size_t size, std::istringstream& stream) {
+//         {
+// #if LUCARIA_JSON
+//             cereal::JSONInputArchive _archive(stream);
+// #else
+//             cereal::PortableBinaryInputArchive _archive(stream);
+// #endif
+//             _archive(_data.emplace_back());
             
-        }
-#if LUCARIA_DEBUG
-        std::cout << "Loaded mesh data from " << files[index].generic_string() << " ("
-                  << _data[index].count << " vertices)" << std::endl;
-#endif
-        if (_data.size() == size) {
-            _promise.set_value(std::move(_data));
-        }
-    });
-    return _promise.get_future();
-}
+//         }
+// #if LUCARIA_DEBUG
+//         std::cout << "Loaded mesh data from " << files[index].generic_string() << " ("
+//                   << _data[index].count << " vertices)" << std::endl;
+// #endif
+//         if (_data.size() == size) {
+//             _promise.set_value(std::move(_data));
+//         }
+//     });
+//     return _promise.get_future();
+// }

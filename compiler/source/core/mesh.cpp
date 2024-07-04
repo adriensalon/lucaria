@@ -136,9 +136,18 @@ void compute_ozz_files(const std::filesystem::path& input, const std::filesystem
     copy_ozz_files(input, output_directory);
 }
 
+void save_armature_file(const armature_data& armature, const std::filesystem::path& input, const std::filesystem::path& output_directory)
+{
+    std::ofstream _fstream(output_directory / (input.stem().string() + "_armature.bin"), std::ios::binary);
+    cereal::PortableBinaryOutputArchive _archive(_fstream);
+    _archive(armature);
+}
+
 mesh_data import_mesh(const std::filesystem::path& input, const std::filesystem::path& output_directory)
 {
     mesh_data _data;
+    armature_data _armature_data;
+
     _data.count = 0;
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(input.string(), aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType);
@@ -241,8 +250,8 @@ mesh_data import_mesh(const std::filesystem::path& input, const std::filesystem:
                 }
 
                 // Store bone indices and weights for the current vertex
-                // _data.bones.insert(_data.bones.end(), vertex_bones[v].begin(), vertex_bones[v].end());
-                // _data.weights.insert(_data.weights.end(), vertex_weights[v].begin(), vertex_weights[v].end());
+                _armature_data.bones.insert(_armature_data.bones.end(), vertex_bones[v].begin(), vertex_bones[v].end());
+                _armature_data.weights.insert(_armature_data.weights.end(), vertex_weights[v].begin(), vertex_weights[v].end());
             }
 
             for (unsigned int f = 0; f < mesh->mNumFaces; ++f) {
@@ -254,6 +263,7 @@ mesh_data import_mesh(const std::filesystem::path& input, const std::filesystem:
                 for (unsigned int j = 0; j < face.mNumIndices; ++j) {
                     _data.indices.push_back(face.mIndices[j]);
                     _data.count++;
+                    _armature_data.count++;
                 }
             }
         }
@@ -276,6 +286,7 @@ mesh_data import_mesh(const std::filesystem::path& input, const std::filesystem:
     // }
 
     compute_ozz_files(input, output_directory);
+    save_armature_file(_armature_data, input, output_directory);
 
     return _data;
 }

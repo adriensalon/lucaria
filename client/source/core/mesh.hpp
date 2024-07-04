@@ -19,7 +19,7 @@ enum struct mesh_attribute {
     texcoord,
 };
 
-inline static const std::unordered_map<mesh_attribute, GLuint> mesh_attribute_sizes = {
+inline const std::unordered_map<mesh_attribute, GLuint> mesh_attribute_sizes = {
     { mesh_attribute::position, 3 },
     { mesh_attribute::color, 3 },
     { mesh_attribute::normal, 3 },
@@ -30,34 +30,16 @@ inline static const std::unordered_map<mesh_attribute, GLuint> mesh_attribute_si
 
 /// @brief 
 struct mesh_ref {
-    
-    /// @brief Default constructor is not allowed because this object must be created from data
     mesh_ref() = delete;
+    mesh_ref(const mesh_ref& other) = delete;
+    mesh_ref& operator=(const mesh_ref& other) = delete;
+    mesh_ref(mesh_ref&& other);
+    mesh_ref& operator=(mesh_ref&& other);
+    ~mesh_ref();
 
     /// @brief 
     /// @param data 
     mesh_ref(const mesh_data& data);
-
-    /// @brief Copy constructor is not allowed because this object represents managed data
-    /// @param other the other managed object
-    mesh_ref(const mesh_ref& other) = delete;
-
-    /// @brief Copy assignment is not allowed because this object represents managed data
-    /// @param other the other managed object
-    /// @return the same object
-    mesh_ref& operator=(const mesh_ref& other) = delete;
-
-    /// @brief Move constructor transfers ownership of the managed data
-    /// @param other the other managed object
-    mesh_ref(mesh_ref&& other) = default;
-
-    /// @brief Move assignment transfers ownership of the managed data
-    /// @param other the other managed object
-    /// @return the same object
-    mesh_ref& operator=(mesh_ref&& other) = default;
-
-    /// @brief Destructor ensure managed data is released before destruction
-    ~mesh_ref();
 
     /// @brief 
     /// @return 
@@ -81,17 +63,18 @@ private:
     GLuint _array_id;
     GLuint _elements_id;
     std::unordered_map<mesh_attribute, GLuint> _attribute_ids;
+    bool _must_destroy;
 };
 
 /// @brief 
 /// @param file 
 /// @return
-mesh_data load_mesh(const std::filesystem::path& file);
+mesh_ref load_mesh(const std::filesystem::path& file);
 
 /// @brief 
 /// @param file 
 /// @return 
-std::future<mesh_data> fetch_mesh(const std::filesystem::path& file);
+std::future<mesh_ref> fetch_mesh(const std::filesystem::path& file);
 
 ///
-std::future<std::vector<mesh_data>> fetch_meshes(const std::vector<std::filesystem::path>& files);
+// std::future<std::vector<mesh_data>> fetch_meshes(const std::vector<std::filesystem::path>& files);

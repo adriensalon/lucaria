@@ -1,51 +1,48 @@
 #pragma once
 
 #include <future>
+#include <unordered_map>
 
 #include <core/mesh.hpp>
 #include <core/texture.hpp>
 
+enum struct model_texture {
+    color,
+    normal
+};
+
 /// @brief 
 struct model_component {
-
-    /// @brief 
-    model_component() = delete;
-
-    /// @brief 
-    /// @param mesh 
-    /// @param color 
-    model_component(const mesh_data& mesh, const texture_data& color);
-
-    /// @brief 
-    /// @param mesh 
-    /// @param color 
-    model_component(std::future<mesh_data>&& mesh, std::future<texture_data>&& color);
-
-    /// @brief 
-    /// @param other 
+    model_component() = default;
     model_component(const model_component& other) = delete;
-    
-    /// @brief 
-    /// @param other 
-    /// @return 
     model_component& operator=(const model_component& other) = delete;
-
-    /// @brief 
-    /// @param other 
     model_component(model_component&& other) = default;
-
-    /// @brief 
-    /// @param other 
-    /// @return 
     model_component& operator=(model_component&& other) = default;
 
-    /// @brief When set to false this renderer will not be picked up by the rendering system.
-    bool is_enabled = true;
+    /// @brief 
+    /// @param value 
+    model_component& mesh(mesh_ref&& value);
+
+    /// @brief 
+    /// @param value 
+    model_component& mesh(std::future<mesh_ref>&& value);
+
+    /// @brief 
+    /// @param type 
+    /// @param value 
+    model_component& texture(const model_texture type, texture_ref&& value);
+
+    /// @brief 
+    /// @param type 
+    /// @param value 
+    model_component& texture(const model_texture type, std::future<texture_ref>&& value);
 
 private:
-    friend struct rendering_system;
-    std::optional<std::future<mesh_data>> _future_mesh = std::nullopt;
-    std::optional<std::future<texture_data>> _future_color = std::nullopt;
+    void _update_futures();
+
+    std::optional<std::future<mesh_ref>> _future_mesh = std::nullopt;
     std::optional<mesh_ref> _mesh = std::nullopt;
-    std::optional<texture_ref> _color = std::nullopt;
+    std::unordered_map<model_texture, std::optional<std::future<texture_ref>>> _future_textures = {};
+    std::unordered_map<model_texture, std::optional<texture_ref>> _textures = {};
+    friend struct rendering_system;
 };

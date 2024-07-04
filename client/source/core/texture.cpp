@@ -14,8 +14,29 @@ void validate_texture(const texture_data& data)
 {
 }
 
-static std::unordered_map<std::string, std::promise<texture_data>> promises;
+static std::unordered_map<std::string, std::promise<texture_ref>> promises;
 
+}
+
+texture_ref::texture_ref(texture_ref&& other)
+{
+    *this = std::move(other);
+}
+
+texture_ref& texture_ref::operator=(texture_ref&& other)
+{
+    _texture_id = other._texture_id;
+    _must_destroy = true;
+    other._must_destroy = false;
+    return *this;
+}
+
+texture_ref::~texture_ref()
+{
+    if (_must_destroy) {
+        // glBindTexture(GL_TEXTURE_2D, 0);
+        // glDeleteTextures(1, &_texture_id);
+    }
 }
 
 texture_ref::texture_ref(const texture_data& data)
@@ -46,12 +67,7 @@ texture_ref::texture_ref(const texture_data& data)
     std::cout << "Created TEXTURE_2D buffer of size " << data.width << "x" << data.height
               << " with id " << _texture_id << std::endl;
 #endif
-}
-
-texture_ref::~texture_ref()
-{
-    // glBindTexture(GL_TEXTURE_2D, 0);
-    // glDeleteTextures(1, &_texture_id);
+    _must_destroy = true;
 }
 
 GLuint texture_ref::get_id() const
@@ -59,7 +75,7 @@ GLuint texture_ref::get_id() const
     return _texture_id;
 }
 
-texture_data load_texture(const std::filesystem::path& file)
+texture_ref load_texture(const std::filesystem::path& file)
 {
 #if LUCARIA_DEBUG
     if (!std::filesystem::is_regular_file(file)) {
@@ -68,26 +84,28 @@ texture_data load_texture(const std::filesystem::path& file)
     }
 #endif
     texture_data _data;
+    {
 #if LUCARIA_JSON
-    std::ifstream _fstream(file);
-    cereal::JSONInputArchive _archive(_fstream);
+        std::ifstream _fstream(file);
+        cereal::JSONInputArchive _archive(_fstream);
 #else
-    std::ifstream _fstream(file, std::ios::binary);
-    cereal::PortableBinaryInputArchive _archive(_fstream);
+        std::ifstream _fstream(file, std::ios::binary);
+        cereal::PortableBinaryInputArchive _archive(_fstream);
 #endif
-    _archive(_data);
+        _archive(_data);
+    }
 #if LUCARIA_DEBUG
     std::cout << "Loaded texture data from " << file << " ("
               << _data.width << "x"
               << _data.height << ", "
               << _data.channels << " channels)" << std::endl;
 #endif
-    return _data;
+    return texture_ref(_data);
 }
 
-std::future<texture_data> fetch_texture(const std::filesystem::path& file)
+std::future<texture_ref> fetch_texture(const std::filesystem::path& file)
 {
-    std::promise<texture_data>& _promise = detail::promises[file.generic_string()];
+    std::promise<texture_ref>& _promise = detail::promises[file.generic_string()];
     fetch_file(file.generic_string(), [&_promise, file](std::istringstream& stream) {
         texture_data _data;
         {
@@ -104,7 +122,7 @@ std::future<texture_data> fetch_texture(const std::filesystem::path& file)
               << _data.height << ", "
               << _data.channels << " channels)" << std::endl;
 #endif
-        _promise.set_value(std::move(_data));
+        _promise.set_value(std::move(texture_ref(_data)));
     });
     return _promise.get_future();
 }

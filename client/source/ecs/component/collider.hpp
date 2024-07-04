@@ -5,35 +5,15 @@
 #include <core/volume.hpp>
 
 struct collider_component {
-
-    /// @brief 
-    collider_component() = delete;
-
-    /// @brief 
-    /// @param volume 
-    collider_component(const volume_data& volume);
-
-    /// @brief 
-    /// @param volume 
-    collider_component(std::future<volume_data>&& volume);
-
-    /// @brief 
-    /// @param other 
+    collider_component() = default;
     collider_component(const collider_component& other) = delete;
-    
-    /// @brief 
-    /// @param other 
-    /// @return 
     collider_component& operator=(const collider_component& other) = delete;
-
-    /// @brief 
-    /// @param other 
     collider_component(collider_component&& other) = default;
+    collider_component& operator=(collider_component&& other) = default;
 
     /// @brief 
-    /// @param other 
-    /// @return 
-    collider_component& operator=(collider_component&& other) = default;
+    /// @param volume 
+    collider_component& volume(std::future<volume_data>&& volume);
 
 private:
     std::optional<std::reference_wrapper<std::future<volume_data>>> _future_volume = std::nullopt;

@@ -1,5 +1,6 @@
 #pragma once
 
-struct skeleton {
-    
+struct skeleton_ref {
+
 };
+
