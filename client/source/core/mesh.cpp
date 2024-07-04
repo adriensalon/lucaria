@@ -46,8 +46,8 @@ GLuint create_elements_buffer(const std::vector<GLuint>& indices)
     return _elements_id;
 }
 
-static std::unordered_map<std::string, std::promise<mesh_ref>> mesh_promises;
-static std::unordered_map<std::size_t, std::pair<std::vector<mesh_ref>, std::promise<std::vector<mesh_data>>>> mesh_vector_promises;
+static std::unordered_map<std::string, std::promise<mesh_ref>> promises;
+static std::unordered_map<std::size_t, std::pair<std::vector<mesh_ref>, std::promise<std::vector<mesh_data>>>> vector_promises;
 
 }
 
@@ -153,7 +153,7 @@ mesh_ref load_mesh(const std::filesystem::path& file)
 
 std::future<mesh_ref> fetch_mesh(const std::filesystem::path& file)
 {
-    std::promise<mesh_ref>& _promise = detail::mesh_promises[file.generic_string()];
+    std::promise<mesh_ref>& _promise = detail::promises[file.generic_string()];
     fetch_file(file.string(), [&_promise, file](std::istringstream& stream) {
         mesh_data _data;
         {
@@ -177,8 +177,8 @@ std::future<mesh_ref> fetch_mesh(const std::filesystem::path& file)
 // std::future<std::vector<mesh_data>> fetch_meshes(const std::vector<std::filesystem::path>& files)
 // {
 //     const std::size_t _hash = compute_hash_files(files);
-//     std::promise<std::vector<mesh_data>>& _promise = detail::mesh_vector_promises[_hash].second;
-//     std::vector<mesh_data>& _data = detail::mesh_vector_promises[_hash].first;
+//     std::promise<std::vector<mesh_data>>& _promise = detail::vector_promises[_hash].second;
+//     std::vector<mesh_data>& _data = detail::vector_promises[_hash].first;
 //     fetch_files(files, [&_data, &_promise, files, _hash](const std::size_t index, const std::size_t size, std::istringstream& stream) {
 //         {
 // #if LUCARIA_JSON

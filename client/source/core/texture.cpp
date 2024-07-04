@@ -34,8 +34,8 @@ texture_ref& texture_ref::operator=(texture_ref&& other)
 texture_ref::~texture_ref()
 {
     if (_must_destroy) {
-        // glBindTexture(GL_TEXTURE_2D, 0);
-        // glDeleteTextures(1, &_texture_id);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glDeleteTextures(1, &_texture_id);
     }
 }
 

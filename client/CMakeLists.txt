@@ -1,14 +1,31 @@
 cmake_minimum_required(VERSION 3.0)
 project(lucaria)
 
+function(message)
+    if (NOT MESSAGE_QUIET)
+        _message(${ARGN})
+    endif()
+endfunction()
+
 if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 	set(JUST_INSTALL_CEREAL ON)
 	set(SKIP_PERFORMANCE_COMPARISON ON)
+
+
+	set(MESSAGE_QUIET ON)
 	add_subdirectory(../external/cereal ${CMAKE_BINARY_DIR}/external/cereal)
 	add_subdirectory(../external/entt ${CMAKE_BINARY_DIR}/external/entt)
 	add_subdirectory(../external/glm ${CMAKE_BINARY_DIR}/external/glm)
 	add_subdirectory(../external/imgui ${CMAKE_BINARY_DIR}/external/imgui)
+	
+	set(ozz_build_tools OFF)
+	set(ozz_build_fbx OFF)
+	set(ozz_build_gltf OFF)
+	set(ozz_build_data OFF)
+	set(ozz_build_postfix OFF)
+	set(ozz_run_tests_headless OFF)
 	add_subdirectory(../external/ozz ${CMAKE_BINARY_DIR}/external/ozz)
+	set(MESSAGE_QUIET OFF)
 
 	add_executable(lucaria
 		"source/glue/audio.cpp"
@@ -43,12 +60,14 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 	target_link_libraries(lucaria PRIVATE EnTT)
 	target_link_libraries(lucaria PRIVATE glm)
 	target_link_libraries(lucaria PRIVATE imgui)
-	target_link_libraries(lucaria PRIVATE ozz_animation)
+	# target_link_libraries(lucaria PRIVATE ozz_animation)
 
 	target_compile_definitions(lucaria PRIVATE LUCARIA_DEBUG)
 	# target_compile_definitions(lucaria PRIVATE LUCARIA_JSON)
 
 	target_compile_options(lucaria PRIVATE -Wno-format-security)
+	target_compile_options(lucaria PRIVATE -Wno-unknown-pragmas)
+	
 
 	target_include_directories(lucaria PRIVATE "${CMAKE_CURRENT_LIST_DIR}/source")
 	target_include_directories(lucaria PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../common/include")

@@ -34,10 +34,12 @@ else()
 endif()
 if(EMSDK_FOUND)
     set(EMSDK_TOOLCHAIN "${EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake")
-    message(STATUS "Found Emscripten toolchain file at ${EMSDK_TOOLCHAIN}")
+    message(STATUS "Found Emscripten toolchain file at ${EMSDK_TOOLCHAIN}\n")
 else()
     message(FATAL_ERROR "Emscripten SDK could not be located")
 endif()
+# message(" ")
+
 
 # compiler
 set(COMPILER_BUILD_DIR ${CMAKE_BINARY_DIR}/compiler)
@@ -49,6 +51,7 @@ execute_process(
         -B ${COMPILER_BUILD_DIR} 
         -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
     COMMAND ${CMAKE_COMMAND} --build ${COMPILER_BUILD_DIR})
+message(" ")
 find_program_recursive(GLTF2OZZ_EXECUTABLE "${COMPILER_BUILD_DIR}" "gltf2ozz")
 message(STATUS "Found gltf2ozz at ${GLTF2OZZ_EXECUTABLE}")
 find_program_recursive(COMPILER_EXECUTABLE "${COMPILER_BUILD_DIR}" "lucaria_compiler")

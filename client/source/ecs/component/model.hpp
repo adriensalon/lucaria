@@ -11,6 +11,11 @@ enum struct model_texture {
     normal
 };
 
+enum struct model_shader {
+    unlit,
+    triplanar
+};
+
 /// @brief 
 struct model_component {
     model_component() = default;

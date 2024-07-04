@@ -1,11 +1,18 @@
 cmake_minimum_required(VERSION 3.0)
 project(lucaria_compiler)
 
+function(message)
+    if (NOT MESSAGE_QUIET)
+        _message(${ARGN})
+    endif()
+endfunction()
+
 if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 	message(FATAL_ERROR "CMake is being configured by Emscripten, aborting...")
 	return()
 	
 else()
+	set(MESSAGE_QUIET ON)
 	set(JUST_INSTALL_CEREAL ON)
 	set(SKIP_PERFORMANCE_COMPARISON ON)
 	add_subdirectory(../external/cereal ${CMAKE_BINARY_DIR}/external/cereal)
@@ -27,6 +34,7 @@ else()
 	set(BUILD_SHARED_LIBS OFF)
 	add_subdirectory(../external/assimp ${CMAKE_BINARY_DIR}/external/assimp)
 	
+	# set(MESSAGE_QUIET ON)
 	set(ozz_build_tools ON)
 	set(ozz_build_fbx OFF)
 	set(ozz_build_gltf ON)
@@ -34,6 +42,7 @@ else()
 	set(ozz_build_postfix OFF)
 	set(ozz_run_tests_headless OFF)
 	add_subdirectory(../external/ozz ${CMAKE_BINARY_DIR}/external/ozz)
+	set(MESSAGE_QUIET OFF)
 
 	add_executable(lucaria_compiler 
 		"source/core/mesh.cpp"
@@ -57,10 +66,11 @@ else()
 
 
     add_custom_command(TARGET lucaria_compiler POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        COMMAND ${CMAKE_COMMAND} -E copy
                 "$<TARGET_FILE_DIR:gltf2ozz>/gltf2ozz.exe"
                 "$<TARGET_FILE_DIR:lucaria_compiler>/gltf2ozz.exe"
-        # COMMENT "Copying gltf2ozz executable to build directory"
+		MAIN_DEPENDENCY gltf2ozz
+		DEPENDS lucaria_compiler, gltf2ozz
     )
 
 endif()
