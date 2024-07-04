@@ -18,11 +18,11 @@ else()
 	set(ASSIMP_BUILD_OBJ_IMPORTER ON)       # OBJ importer
 	set(ASSIMP_BUILD_FBX_IMPORTER ON)       # FBX importer
 	set(ASSIMP_BUILD_GLTF_IMPORTER ON)      # GLTF importer
+	set(ASSIMP_BUILD_GLTF_EXPORTER ON)      # GLTF exporter
 	set(ASSIMP_BUILD_ASSIMP_TOOLS OFF)
 	set(ASSIMP_BUILD_TESTS OFF)
 	set(ASSIMP_BUILD_ASSIMP_TOOLS OFF)
 	set(ASSIMP_BUILD_SAMPLES OFF)
-	set(ASSIMP_NO_EXPORT ON)                # Disable all exporting functionality
 	set(ASSIMP_INJECT_DEBUG_POSTFIX OFF)
 	set(BUILD_SHARED_LIBS OFF)
 	add_subdirectory(../external/assimp ${CMAKE_BINARY_DIR}/external/assimp)

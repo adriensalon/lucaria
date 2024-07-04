@@ -154,7 +154,6 @@ void rendering_system::cubemap_skybox(std::future<cubemap_data>&& cubemap)
 
 void rendering_system::update()
 {
-    std::cout << "updatting rendering \n";
     detail::camera_projection = detail::compute_projection();
     detail::clear_screen(detail::clear_color, detail::clear_depth);
     glm::mat4x4 _view_projection = detail::camera_projection * player_system::get_view();
@@ -177,7 +176,6 @@ void rendering_system::update()
                 }
             }
             if (_model._mesh.has_value() && _model._color.has_value()) {
-                std::cout << "drawing unlit \n";
                 detail::draw_unlit(_model._mesh.value(), _model._color.value(), _view_projection);
             }
         });

@@ -12,8 +12,8 @@ struct mesh_data {
     std::vector<float> bitangents = {};
     std::vector<float> texcoords = {};
     std::vector<unsigned int> indices = {};
-    // std::vector<unsigned short> bones = {};
-    // std::vector<float> weights = {};
+    std::vector<unsigned int> bones = {};
+    std::vector<float> weights = {};
 
     template <typename archive_t>
     void serialize(archive_t& archive)
