@@ -9,17 +9,12 @@
 #include <core/texture.hpp>
 
 /// @brief 
-struct world_system {
-    REGISTER_FOR_UPDATE(world_system)
-    
+struct world_system {    
     world_system() = delete;
     world_system(const world_system& other) = delete;
     world_system& operator=(const world_system& other) = delete;
     world_system(world_system&& other) = delete;
     world_system& operator=(world_system&& other) = delete;
-
-    /// @brief 
-    static void update();
 
     /// @brief 
     /// @param name 
@@ -38,4 +33,8 @@ struct world_system {
     /// @param callback
     static void for_each(const std::function<void(entt::registry&)>& callback);
 
+    static void update();
+
+private:
+    REGISTER_FOR_UPDATE(world_system)
 };

@@ -2,14 +2,12 @@
 
 #include <future>
 
-#include <glue/update.hpp>
 #include <core/cubemap.hpp>
 #include <core/program.hpp>
+#include <glue/update.hpp>
 
-/// @brief 
+/// @brief
 struct rendering_system {
-    REGISTER_FOR_UPDATE(rendering_system)
-
     rendering_system() = delete;
     rendering_system(const rendering_system& other) = delete;
     rendering_system& operator=(const rendering_system& other) = delete;
@@ -30,14 +28,16 @@ struct rendering_system {
     /// @param clear
     static void clear_depth(const bool clear);
 
-    /// @brief 
+    /// @brief
     /// @param cubemap
     static void cubemap_skybox(std::future<cubemap_data>&& cubemap);
 
-    /// @brief 
+    /// @brief
+    /// @return
+    static glm::mat4x4 get_projection();
+    
     static void update();
 
-    /// @brief 
-    /// @return 
-    static glm::mat4x4 get_projection();
+private:
+    REGISTER_FOR_UPDATE(rendering_system)
 };
