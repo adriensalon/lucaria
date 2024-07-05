@@ -1,8 +1,10 @@
 #include <entt/entt.hpp>
 
+#include <ecs/component/animator.hpp>
 #include <ecs/component/collider.hpp>
 #include <ecs/component/model.hpp>
 #include <ecs/component/speaker.hpp>
+#include <ecs/system/motion.hpp>
 #include <ecs/system/world.hpp>
 
 #include <levels/levels.hpp>
@@ -13,6 +15,8 @@ void register_level_001_room(entt::registry& registry)
     registry.emplace<model_component>(_room_entity)
         .mesh(std::move(fetch_mesh("assets/decimategltf.bin")))
         .texture(model_texture::color, std::move(fetch_texture("assets/room_color.bin")));
+    
+    std::future<animation_ref> _anim = fetch_animation("assets/eolienne_animation_wind_rotation.bin");
     // registry.emplace<collider_component>(_room_entity)
     //     .volume(std::move(fetch_volume("assets/decimategltf.bin")));
 
