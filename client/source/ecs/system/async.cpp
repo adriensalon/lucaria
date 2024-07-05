@@ -7,7 +7,7 @@
 namespace detail {
 
     template <typename ref_t>
-    void update_ref(std::optional<std::future<ref_t>>& future, std::optional<ref_t>& value)
+    static void update_ref(std::optional<std::future<ref_t>>& future, std::optional<ref_t>& value)
     {
         bool _must_erase = false;
         if (future.has_value()) {
@@ -23,7 +23,7 @@ namespace detail {
     }
 
     template <typename key_t, typename ref_t>
-    void update_refmap(std::unordered_map<key_t, std::optional<std::future<ref_t>>>& futures, std::unordered_map<key_t, std::optional<ref_t>>& values)
+    static void update_refmap(std::unordered_map<key_t, std::optional<std::future<ref_t>>>& futures, std::unordered_map<key_t, std::optional<ref_t>>& values)
     {
         std::vector<key_t> _to_erase = {};
         for (std::pair<const key_t, std::optional<std::future<ref_t>>>& _pair : futures) {
