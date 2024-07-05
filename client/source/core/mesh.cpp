@@ -112,6 +112,7 @@ mesh_ref::mesh_ref(const mesh_data& data, const bool keep_positions)
         _attribute_ids[mesh_attribute::position] = detail::create_attribute_buffer(data.positions);
         if (keep_positions) {
             _positions = data.positions;
+            _skinned_positions.resize(_count);
         }
     }
     if (!data.colors.empty()) {
@@ -137,14 +138,6 @@ std::unordered_map<mesh_attribute, glm::uint> mesh_ref::get_buffer_ids() const
     return _attribute_ids;
 }
 
-// void mesh_ref::update_buffer(const mesh_attribute attribute, const std::vector<glm::float32>& data)
-// {
-//     if (_attribute_ids.find(attribute) != _attribute_ids.end()) {
-//         glDeleteBuffers(1, &_attribute_ids[attribute]);
-//     }
-//     _attribute_ids[attribute] = detail::create_attribute_buffer(data);
-// }
-
 glm::uint mesh_ref::get_array_id() const
 {
     return _array_id;
@@ -158,6 +151,19 @@ glm::uint mesh_ref::get_count() const
 const std::vector<glm::vec3>& mesh_ref::get_positions() const
 {
     return _positions;
+}
+
+std::vector<glm::vec3>& mesh_ref::get_skinned_positions()
+{
+    return _skinned_positions;
+}
+
+void mesh_ref::upload_skinned_positions()
+{
+    glm::uint _attribute_id = _attribute_ids[mesh_attribute::position];
+    glm::float32* _attribute_ptr = reinterpret_cast<glm::float32*>(const_cast<glm::vec3*>(_positions.data()));
+    glBindBuffer(GL_ARRAY_BUFFER, _attribute_id);
+    glBufferData(GL_ARRAY_BUFFER, 3 * sizeof(glm::float32) * _count, _attribute_ptr, GL_STATIC_DRAW);
 }
 
 mesh_ref load_mesh(const std::filesystem::path& file, const bool keep_positions)

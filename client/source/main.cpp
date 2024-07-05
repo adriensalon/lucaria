@@ -9,21 +9,16 @@
 #include <glue/fetch.hpp>
 
 #include <levels/levels.hpp>
+#include <ozz/base/maths/soa_transform.h>
 
 int main()
 {
-    // splash_system::splash_texture(std::move(fetch_texture("assets/splash_texture.bin")));
     splash_system::trigger_splash(true);
 
     player_system::player_position(glm::vec3(0.f, 0.f, 0.f));
     player_system::player_direction(glm::vec3(-1.f, 0.f, 0.f));
     player_system::player_height(1.83f);
     player_system::player_radius(0.2f);
-
-    // rendering_system::cubemap_skybox(std::move(fetch_cubemap(
-    //     "",
-    //     "",
-    //     "")));
 
     world_system::register_level("001_room", register_level_001_room);
     world_system::add_level("001_room");

@@ -5,14 +5,20 @@
 #include <core/mesh.hpp>
 #include <core/texture.hpp>
 
-enum struct model_texture {
-    color,
-    normal
+/// @brief
+enum struct model_shader {
+    blockout,
+    unlit,
+    pbr
 };
 
-enum struct model_shader {
-    unlit,
-    triplanar
+/// @brief
+enum struct model_texture {
+    color,
+    normal,
+    occlusion,
+    roughness,
+    metallic
 };
 
 /// @brief 
@@ -42,13 +48,11 @@ struct model_component {
     model_component& texture(const model_texture type, std::future<texture_ref>&& value);
 
 private:
-    void _update_futures();
-
     std::optional<std::future<mesh_ref>> _future_mesh = std::nullopt;
     std::optional<mesh_ref> _mesh = std::nullopt;
     std::unordered_map<model_texture, std::optional<std::future<texture_ref>>> _future_textures = {};
     std::unordered_map<model_texture, std::optional<texture_ref>> _textures = {};
-    friend struct rendering_system;
+    friend struct async_system;
     friend struct motion_system;
-    friend struct splash_system;
+    friend struct rendering_system;
 };

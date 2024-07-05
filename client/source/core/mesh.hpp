@@ -57,12 +57,20 @@ struct mesh_ref {
     /// @return 
     const std::vector<glm::vec3>& get_positions() const;
 
+    /// @brief 
+    /// @return 
+    std::vector<glm::vec3>& get_skinned_positions();
+
+    /// @brief 
+    void upload_skinned_positions();
+
 private:
     glm::uint _count;
     glm::uint _array_id;
     glm::uint _elements_id;
     std::unordered_map<mesh_attribute, glm::uint> _attribute_ids;
     std::vector<glm::vec3> _positions;
+    std::vector<glm::vec3> _skinned_positions;
     bool _must_destroy;
 };
 

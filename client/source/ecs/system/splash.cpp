@@ -85,12 +85,4 @@ void splash_system::update()
             // start timer fade out
         }
     }
-    world_system::for_each([](entt::registry& _registry) {
-        _registry.view<model_component>().each([](model_component& _model) {
-            _model._update_futures();
-        });
-        _registry.view<animator_component>().each([](animator_component& _animator) {
-            _animator._update_futures();
-        });
-    });
 }
