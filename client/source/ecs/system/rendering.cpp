@@ -161,7 +161,6 @@ void rendering_system::update()
     glm::mat4x4 _view_projection = detail::camera_projection * player_system::get_view();
     world_system::for_each([&_view_projection](entt::registry& _registry) {
         _registry.view<model_component>().each([&_view_projection](model_component& _model) {
-            _model._update_futures();
             if (_model._mesh.has_value() && _model._textures[model_texture::color].has_value()) {
                 detail::draw_unlit(_model._mesh.value(), _model._textures[model_texture::color].value(), _view_projection);
             }

@@ -49,4 +49,6 @@ private:
     std::unordered_map<model_texture, std::optional<std::future<texture_ref>>> _future_textures = {};
     std::unordered_map<model_texture, std::optional<texture_ref>> _textures = {};
     friend struct rendering_system;
+    friend struct motion_system;
+    friend struct splash_system;
 };

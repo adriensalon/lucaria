@@ -9,6 +9,8 @@ struct motion_system {
     motion_system& operator=(const motion_system& other) = delete;
     motion_system(motion_system&& other) = delete;
     motion_system& operator=(motion_system&& other) = delete;
+
+    
     
     static void update();
 

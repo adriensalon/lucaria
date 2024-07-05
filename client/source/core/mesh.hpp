@@ -39,7 +39,7 @@ struct mesh_ref {
 
     /// @brief 
     /// @param data 
-    mesh_ref(const mesh_data& data);
+    mesh_ref(const mesh_data& data, const bool keep_positions = false);
 
     /// @brief 
     /// @return 
@@ -53,20 +53,25 @@ struct mesh_ref {
     /// @return 
     glm::uint get_count() const;
 
+    /// @brief 
+    /// @return 
+    const std::vector<glm::vec3>& get_positions() const;
+
 private:
     glm::uint _count;
     glm::uint _array_id;
     glm::uint _elements_id;
     std::unordered_map<mesh_attribute, glm::uint> _attribute_ids;
+    std::vector<glm::vec3> _positions;
     bool _must_destroy;
 };
 
 /// @brief 
 /// @param file 
 /// @return
-mesh_ref load_mesh(const std::filesystem::path& file);
+mesh_ref load_mesh(const std::filesystem::path& file, const bool keep_positions = false);
 
 /// @brief 
 /// @param file 
 /// @return 
-std::future<mesh_ref> fetch_mesh(const std::filesystem::path& file);
+std::future<mesh_ref> fetch_mesh(const std::filesystem::path& file, const bool keep_positions = false);

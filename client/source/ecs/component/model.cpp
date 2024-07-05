@@ -1,6 +1,5 @@
-#include <glue/fetch.hpp>
-
 #include <ecs/component/model.hpp>
+#include <glue/fetch.hpp>
 
 model_component& model_component::mesh(mesh_ref&& value)
 {

@@ -12,14 +12,15 @@
 void register_level_001_room(entt::registry& registry)
 {
     const entt::entity _room_entity = registry.create();
+    
     registry.emplace<model_component>(_room_entity)
-        .mesh(std::move(fetch_mesh("assets/decimategltf.bin")))
+        .mesh(std::move(fetch_mesh("assets/decimategltf.bin", true)))
         .texture(model_texture::color, std::move(fetch_texture("assets/room_color.bin")));
     
-    std::future<animation_ref> _anim = fetch_animation("assets/eolienne_animation_wind_rotation.bin");
-    std::future<skeleton_ref> _skeleton = fetch_skeleton("assets/decimategltf_skeleton.bin");
-    // registry.emplace<collider_component>(_room_entity)
-    //     .volume(std::move(fetch_volume("assets/decimategltf.bin")));
+    registry.emplace<animator_component>(_room_entity)
+        .skeleton(std::move(fetch_skeleton("assets/eolienne_skeleton.bin")))
+        .animation("wind", std::move(fetch_animation("assets/eolienne_animation_wind_rotation.bin")));
+        
 
     // const entt::entity _speakers_entity = registry.create();
     // std::future<mesh_data> _speakers_mesh = fetch_mesh_data("assets/speakers_mesh.bin");

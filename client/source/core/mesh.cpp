@@ -102,7 +102,7 @@ mesh_ref::~mesh_ref()
     }
 }
 
-mesh_ref::mesh_ref(const mesh_data& data)
+mesh_ref::mesh_ref(const mesh_data& data, const bool keep_positions)
 {
     detail::validate_mesh(data);
     _count = data.count;
@@ -110,6 +110,9 @@ mesh_ref::mesh_ref(const mesh_data& data)
     _elements_id = detail::create_elements_buffer(data.indices);
     if (!data.positions.empty()) {
         _attribute_ids[mesh_attribute::position] = detail::create_attribute_buffer(data.positions);
+        if (keep_positions) {
+            _positions = data.positions;
+        }
     }
     if (!data.colors.empty()) {
         _attribute_ids[mesh_attribute::color] = detail::create_attribute_buffer(data.colors);
@@ -152,7 +155,12 @@ glm::uint mesh_ref::get_count() const
     return _count;
 }
 
-mesh_ref load_mesh(const std::filesystem::path& file)
+const std::vector<glm::vec3>& mesh_ref::get_positions() const
+{
+    return _positions;
+}
+
+mesh_ref load_mesh(const std::filesystem::path& file, const bool keep_positions)
 {
 #if LUCARIA_DEBUG
     if (!std::filesystem::is_regular_file(file)) {
@@ -176,13 +184,13 @@ mesh_ref load_mesh(const std::filesystem::path& file)
     std::cout << "Loaded mesh data from " << file << " ("
               << _data.count << " vertices)" << std::endl;
 #endif
-    return mesh_ref(_data);
+    return mesh_ref(_data, keep_positions);
 }
 
-std::future<mesh_ref> fetch_mesh(const std::filesystem::path& file)
+std::future<mesh_ref> fetch_mesh(const std::filesystem::path& file, const bool keep_positions)
 {
     std::promise<mesh_ref>& _promise = detail::promises[file.generic_string()];
-    fetch_file(file.string(), [&_promise, file](std::istringstream& stream) {
+    fetch_file(file.string(), [&_promise, file, keep_positions](std::istringstream& stream) {
         mesh_data _data;
         {
 #if LUCARIA_JSON
@@ -197,7 +205,7 @@ std::future<mesh_ref> fetch_mesh(const std::filesystem::path& file)
         std::cout << "Loaded mesh data from " << file << " ("
                   << _data.count << " vertices)" << std::endl;
 #endif
-        _promise.set_value(std::move(mesh_ref(_data)));
+        _promise.set_value(std::move(mesh_ref(_data, keep_positions)));
     });
     return _promise.get_future();
 }
