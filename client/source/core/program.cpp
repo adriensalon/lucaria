@@ -1,90 +1,115 @@
 #include <fstream>
 
-#include <cereal/archives/portable_binary.hpp>
+#include <GLES3/gl3.h>
 #include <cereal/archives/json.hpp>
+#include <cereal/archives/portable_binary.hpp>
 #include <cereal/cereal.hpp>
 #include <cereal/types/string.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+
 #include <core/program.hpp>
 
+namespace detail {
 
-namespace detail {    
+extern void graphics_assert();
 
-    extern void graphics_assert();
-
-    GLuint create_shader(const GLenum type, const std::string& text)
-    {
-        GLint _log_length;
-        GLint _result = GL_FALSE;
-        GLuint _shader_id = glCreateShader(type);
-        const GLchar* _source_ptr = text.c_str();
-        glShaderSource(_shader_id, 1, &_source_ptr, NULL);
-        glCompileShader(_shader_id);
-        glGetShaderiv(_shader_id, GL_COMPILE_STATUS, &_result);
-        glGetShaderiv(_shader_id, GL_INFO_LOG_LENGTH, &_log_length);
+glm::uint create_shader(const GLenum type, const std::string& text)
+{
+    glm::int32 _log_length;
+    glm::int32 _result = GL_FALSE;
+    glm::uint _shader_id = glCreateShader(type);
+    const GLchar* _source_ptr = text.c_str();
+    glShaderSource(_shader_id, 1, &_source_ptr, NULL);
+    glCompileShader(_shader_id);
+    glGetShaderiv(_shader_id, GL_COMPILE_STATUS, &_result);
+    glGetShaderiv(_shader_id, GL_INFO_LOG_LENGTH, &_log_length);
 #if LUCARIA_DEBUG
-        if (!_result || _log_length > 0) {
-            std::vector<GLchar> _result_error_msg(_log_length + 1);
-            glGetShaderInfoLog(_shader_id, _log_length, NULL, &_result_error_msg[0]);
-            std::cout << "Invalid shader '" << std::string(&_result_error_msg[0]) << "'" << std::endl;
-            std::terminate();
-        }
-#endif
-        return _shader_id;
+    if (!_result || _log_length > 0) {
+        std::vector<GLchar> _result_error_msg(_log_length + 1);
+        glGetShaderInfoLog(_shader_id, _log_length, NULL, &_result_error_msg[0]);
+        std::cout << "Invalid shader '" << std::string(&_result_error_msg[0]) << "'" << std::endl;
+        std::terminate();
     }
+#endif
+    return _shader_id;
+}
 
-    std::unordered_map<std::string, GLint> enumerate_attributes(const GLuint program_id)
-    {
-        GLint _attributes_count;
-        std::unordered_map<std::string, GLint> _attributes;
-        glGetProgramiv(program_id, GL_ACTIVE_ATTRIBUTES, &_attributes_count);
-        for (GLint _index = 0; _index < _attributes_count; ++_index) {
-            char _name[256];
-            GLsizei _length;
-            GLint _size;
-            GLenum _type;
-            glGetActiveAttrib(program_id, _index, sizeof(_name), &_length, &_size, &_type, _name);
-            _name[_length] = '\0';
-            GLint _location = glGetAttribLocation(program_id, _name);
-            _attributes[_name] = _location;
+std::unordered_map<std::string, glm::int32> enumerate_attributes(const glm::uint program_id)
+{
+    glm::int32 _attributes_count;
+    std::unordered_map<std::string, glm::int32> _attributes;
+    glGetProgramiv(program_id, GL_ACTIVE_ATTRIBUTES, &_attributes_count);
+    for (glm::int32 _index = 0; _index < _attributes_count; ++_index) {
+        char _name[256];
+        GLsizei _length;
+        glm::int32 _size;
+        GLenum _type;
+        glGetActiveAttrib(program_id, _index, sizeof(_name), &_length, &_size, &_type, _name);
+        _name[_length] = '\0';
+        glm::int32 _location = glGetAttribLocation(program_id, _name);
+        _attributes[_name] = _location;
 #if LUCARIA_DEBUG
-            std::cout << "Program has attribute '" << _name << "' at location " << _location << std::endl;
+        std::cout << "Program has attribute '" << _name << "' at location " << _location << std::endl;
 #endif
-        }
-        return _attributes;
     }
+    return _attributes;
+}
 
-    std::unordered_map<std::string, GLint> enumerate_uniforms(const GLuint program_id)
-    {
-        GLint _uniform_count;
-        glGetProgramiv(program_id, GL_ACTIVE_UNIFORMS, &_uniform_count);
-        std::unordered_map<std::string, GLint> _uniforms;
-        for (GLint _index = 0; _index < _uniform_count; ++_index) {
-            char _name[256];
-            GLsizei _length;
-            GLint _size;
-            GLenum _type;
-            glGetActiveUniform(program_id, _index, sizeof(_name), &_length, &_size, &_type, _name);
-            _name[_length] = '\0';
-            GLint _location = glGetUniformLocation(program_id, _name);
-            _uniforms[_name] = _location;
+std::unordered_map<std::string, glm::int32> enumerate_uniforms(const glm::uint program_id)
+{
+    glm::int32 _uniform_count;
+    glGetProgramiv(program_id, GL_ACTIVE_UNIFORMS, &_uniform_count);
+    std::unordered_map<std::string, glm::int32> _uniforms;
+    for (glm::int32 _index = 0; _index < _uniform_count; ++_index) {
+        char _name[256];
+        GLsizei _length;
+        glm::int32 _size;
+        GLenum _type;
+        glGetActiveUniform(program_id, _index, sizeof(_name), &_length, &_size, &_type, _name);
+        _name[_length] = '\0';
+        glm::int32 _location = glGetUniformLocation(program_id, _name);
+        _uniforms[_name] = _location;
 #if LUCARIA_DEBUG
-            std::cout << "Program has uniform '" << _name << "' at location " << _location << std::endl;
+        std::cout << "Program has uniform '" << _name << "' at location " << _location << std::endl;
 #endif
-        }
-        return _uniforms;
-
     }
+    return _uniforms;
+}
 
+}
+
+program_ref::program_ref(program_ref&& other)
+{
+    *this = std::move(other);
+}
+
+program_ref& program_ref::operator=(program_ref&& other)
+{
+    _program_id = other._program_id;
+    _array_id = other._array_id;
+    _count = other._count;
+    _program_attributes = std::move(other._program_attributes);
+    _program_uniforms = std::move(other._program_uniforms);
+    _must_destroy = true;
+    other._must_destroy = false;
+    return *this;
+}
+
+program_ref::~program_ref()
+{
+    if (_must_destroy) {
+        glUseProgram(0);
+        glDeleteProgram(_program_id);
+    }
 }
 
 program_ref::program_ref(const shader_data& vertex, const shader_data& fragment)
 {
-    GLuint _vertex_id = detail::create_shader(GL_VERTEX_SHADER, vertex.text);
-    GLuint _fragment_id = detail::create_shader(GL_FRAGMENT_SHADER, fragment.text);
-    GLint _log_length;
-    GLint _result = GL_FALSE;
+    glm::uint _vertex_id = detail::create_shader(GL_VERTEX_SHADER, vertex.text);
+    glm::uint _fragment_id = detail::create_shader(GL_FRAGMENT_SHADER, fragment.text);
+    glm::int32 _log_length;
+    glm::int32 _result = GL_FALSE;
     _program_id = glCreateProgram();
     glAttachShader(_program_id, _vertex_id);
     glAttachShader(_program_id, _fragment_id);
@@ -110,16 +135,6 @@ program_ref::program_ref(const shader_data& vertex, const shader_data& fragment)
     detail::graphics_assert();
 }
 
-program_ref::~program_ref()
-{
-    // glUseProgram(0);
-    // glDeleteProgram(_program_id);
-}
-
-
-
-
-
 void program_ref::use() const
 {
     glUseProgram(_program_id);
@@ -132,9 +147,9 @@ void program_ref::bind(const std::string& name, const mesh_ref& mesh, const mesh
 {
     _count = mesh.get_count();
     _array_id = mesh.get_array_id();
-    std::unordered_map<mesh_attribute, GLuint> _buffer_ids = mesh.get_buffer_ids();
-    GLint _location = _program_attributes.at(name);
-    GLuint _size = mesh_attribute_sizes.at(attribute);
+    std::unordered_map<mesh_attribute, glm::uint> _buffer_ids = mesh.get_buffer_ids();
+    glm::int32 _location = _program_attributes.at(name);
+    glm::uint _size = mesh_attribute_sizes.at(attribute);
     glBindVertexArray(_array_id);
     glBindBuffer(GL_ARRAY_BUFFER, _buffer_ids.at(attribute));
     glVertexAttribPointer(_location, _size, GL_FLOAT, GL_FALSE, _size * sizeof(GLfloat), (void*)0);
@@ -142,91 +157,91 @@ void program_ref::bind(const std::string& name, const mesh_ref& mesh, const mesh
     detail::graphics_assert();
 }
 
-void program_ref::bind(const std::string& name, const cubemap_ref& cubemap, const GLuint slot) const
+void program_ref::bind(const std::string& name, const cubemap_ref& cubemap, const glm::uint slot) const
 {
-    GLint _location = _program_uniforms.at(name);
+    glm::int32 _location = _program_uniforms.at(name);
     glUniform1i(_location, slot);
     glActiveTexture(GL_TEXTURE0 + slot);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.get_id());
     detail::graphics_assert();
 }
 
-void program_ref::bind(const std::string& name, const texture_ref& texture, const GLuint slot) const
+void program_ref::bind(const std::string& name, const texture_ref& texture, const glm::uint slot) const
 {
-    GLint _location = _program_uniforms.at(name);
+    glm::int32 _location = _program_uniforms.at(name);
     glUniform1i(_location, slot);
     glActiveTexture(GL_TEXTURE0 + slot);
     glBindTexture(GL_TEXTURE_2D, texture.get_id());
     detail::graphics_assert();
 }
 
-template <> 
+template <>
 void program_ref::bind<GLfloat>(const std::string& name, const GLfloat& value)
 {
-    const GLint _location = _program_uniforms.at(name);
+    const glm::int32 _location = _program_uniforms.at(name);
     glUniform1f(_location, value);
     detail::graphics_assert();
 }
 
-template <> 
+template <>
 void program_ref::bind<std::vector<GLfloat>>(const std::string& name, const std::vector<GLfloat>& value)
 {
-    const GLint _location = _program_uniforms.at(name);
-    const GLuint _count = value.size();
+    const glm::int32 _location = _program_uniforms.at(name);
+    const glm::uint _count = value.size();
     const GLfloat* _ptr = const_cast<const GLfloat*>(value.data());
     glUniform1fv(_location, _count, _ptr);
     detail::graphics_assert();
 }
 
-template <> 
+template <>
 void program_ref::bind<glm::vec2>(const std::string& name, const glm::vec2& value)
 {
-    const GLint _location = _program_uniforms.at(name);
+    const glm::int32 _location = _program_uniforms.at(name);
     glUniform2f(_location, value.x, value.y);
     detail::graphics_assert();
 }
 
-template <> 
+template <>
 void program_ref::bind<std::vector<glm::vec2>>(const std::string& name, const std::vector<glm::vec2>& value)
 {
-    const GLint _location = _program_uniforms.at(name);
-    const GLuint _count = value.size();
+    const glm::int32 _location = _program_uniforms.at(name);
+    const glm::uint _count = value.size();
     const GLfloat* _ptr = reinterpret_cast<const GLfloat*>(value.data());
     glUniform2fv(_location, _count, _ptr);
     detail::graphics_assert();
 }
 
-template <> 
+template <>
 void program_ref::bind<glm::vec3>(const std::string& name, const glm::vec3& value)
 {
-    const GLint _location = _program_uniforms.at(name);
+    const glm::int32 _location = _program_uniforms.at(name);
     glUniform3f(_location, value.x, value.y, value.z);
     detail::graphics_assert();
 }
 
-template <> 
+template <>
 void program_ref::bind<std::vector<glm::vec3>>(const std::string& name, const std::vector<glm::vec3>& value)
 {
-    const GLint _location = _program_uniforms.at(name);
-    const GLuint _count = value.size();
+    const glm::int32 _location = _program_uniforms.at(name);
+    const glm::uint _count = value.size();
     const GLfloat* _ptr = reinterpret_cast<const GLfloat*>(value.data());
     glUniform3fv(_location, _count, _ptr);
     detail::graphics_assert();
 }
 
-template <> 
+template <>
 void program_ref::bind<glm::vec4>(const std::string& name, const glm::vec4& value)
 {
-    const GLint _location = _program_uniforms.at(name);
+    const glm::int32 _location = _program_uniforms.at(name);
     glUniform4f(_location, value.x, value.y, value.z, value.w);
     detail::graphics_assert();
 }
 
-template <> 
+template <>
 void program_ref::bind<std::vector<glm::vec4>>(const std::string& name, const std::vector<glm::vec4>& value)
 {
-    const GLint _location = _program_uniforms.at(name);
-    const GLuint _count = value.size();
+    const glm::int32 _location = _program_uniforms.at(name);
+    const glm::uint _count = value.size();
     const GLfloat* _ptr = reinterpret_cast<const GLfloat*>(value.data());
     glUniform4fv(_location, _count, _ptr);
     detail::graphics_assert();
@@ -234,10 +249,10 @@ void program_ref::bind<std::vector<glm::vec4>>(const std::string& name, const st
 
 // TODO MATRICES
 
-template <> 
+template <>
 void program_ref::bind<glm::mat4x4>(const std::string& name, const glm::mat4x4& value)
 {
-    const GLint _location = _program_uniforms.at(name);
+    const glm::int32 _location = _program_uniforms.at(name);
     glUniformMatrix4fv(_location, 1, GL_FALSE, glm::value_ptr(value));
     detail::graphics_assert();
 }
@@ -249,13 +264,13 @@ void program_ref::draw() const
     detail::graphics_assert();
 }
 
-GLuint program_ref::get_id() const
+glm::uint program_ref::get_id() const
 {
     return _program_id;
 }
 
 shader_data load_shader(const std::filesystem::path& file)
-{    
+{
 #if LUCARIA_DEBUG
     if (!std::filesystem::is_regular_file(file)) {
         std::cout << "Invalid shader path " << file << std::endl;

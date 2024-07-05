@@ -53,42 +53,45 @@ mesh_data import_mesh(const std::filesystem::path& input)
         if (_extension == ".glb" || _extension == ".gltf") {
             rotated_vertex = gltf_rotationMatrix * rotated_vertex;
         }
-        _data.positions.push_back(rotated_vertex.x);
-        _data.positions.push_back(rotated_vertex.y);
-        _data.positions.push_back(rotated_vertex.z);
-        _data.bones.insert(_data.bones.end(), vertex_bones[i].begin(), vertex_bones[i].end());
-        _data.weights.insert(_data.weights.end(), vertex_weights[i].begin(), vertex_weights[i].end());
+        _data.positions.push_back(glm::vec3(rotated_vertex.x, rotated_vertex.y, rotated_vertex.z));
+        // _data.positions.push_back(rotated_vertex.y);
+        // _data.positions.push_back(rotated_vertex.z);
 
         if (mesh->HasVertexColors(0)) {
             aiColor4D color = mesh->mColors[0][i];
-            _data.colors.push_back(color.r);
-            _data.colors.push_back(color.g);
-            _data.colors.push_back(color.b);
-            _data.colors.push_back(color.a);
+            _data.colors.push_back(glm::vec4(color.r, color.g, color.b, color.a));
+            // _data.colors.push_back(color.g);
+            // _data.colors.push_back(color.b);
+            // _data.colors.push_back(color.a);
         }
 
         if (mesh->HasNormals()) {
             aiVector3D normal = mesh->mNormals[i];
-            _data.normals.push_back(normal.x);
-            _data.normals.push_back(normal.y);
-            _data.normals.push_back(normal.z);
+            _data.normals.push_back(glm::vec3(normal.x, normal.y, normal.z));
+            // _data.normals.push_back(normal.y);
+            // _data.normals.push_back(normal.z);
         }
 
         if (mesh->HasTangentsAndBitangents()) {
             aiVector3D tangent = mesh->mTangents[i];
             aiVector3D bitangent = mesh->mBitangents[i];
-            _data.tangents.push_back(tangent.x);
-            _data.tangents.push_back(tangent.y);
-            _data.tangents.push_back(tangent.z);
-            _data.bitangents.push_back(bitangent.x);
-            _data.bitangents.push_back(bitangent.y);
-            _data.bitangents.push_back(bitangent.z);
+            _data.tangents.push_back(glm::vec3(tangent.x, tangent.y, tangent.z));
+            // _data.tangents.push_back(tangent.y);
+            // _data.tangents.push_back(tangent.z);
+            _data.bitangents.push_back(glm::vec3(bitangent.x, bitangent.y, bitangent.z));
+            // _data.bitangents.push_back(bitangent.y);
+            // _data.bitangents.push_back(bitangent.z);
         }
 
         if (mesh->mTextureCoords[0]) {
-            _data.texcoords.push_back(mesh->mTextureCoords[0][i].x);
-            _data.texcoords.push_back(1.f - mesh->mTextureCoords[0][i].y);
+            // _data.texcoords.push_back(mesh->mTextureCoords[0][i].x);
+            // _data.texcoords.push_back(1.f - mesh->mTextureCoords[0][i].y);
+            
+            _data.texcoords.push_back(glm::vec2(mesh->mTextureCoords[0][i].x, 1.f - mesh->mTextureCoords[0][i].y));
         }
+        
+        _data.weights.insert(_data.weights.end(), vertex_weights[i].begin(), vertex_weights[i].end());
+        _data.bones.insert(_data.bones.end(), vertex_bones[i].begin(), vertex_bones[i].end());
     }
     for (unsigned int i = 0; i < mesh->mNumFaces; ++i) {
         const aiFace& face = mesh->mFaces[i];
@@ -96,10 +99,13 @@ mesh_data import_mesh(const std::filesystem::path& input)
             std::cout << "Non-triangle face encountered. Only triangles are supported." << std::endl;
             std::terminate();
         }
-        for (unsigned int j = 0; j < face.mNumIndices; ++j) {
-            _data.indices.push_back(face.mIndices[j]);
-            _data.count++;
-        }
+        _data.indices.push_back(glm::uvec3(face.mIndices[0], face.mIndices[1], face.mIndices[2]));
+        _data.count +=3;
+
+        // for (unsigned int j = 0; j < face.mNumIndices; ++j) {
+        //     _data.indices.push_back(face.mIndices[j]);
+        //     _data.count++;
+        // }
     }
     return _data;
 }

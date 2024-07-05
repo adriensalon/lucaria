@@ -2,19 +2,21 @@
 
 #include <vector>
 
-/// @brief Represents a texture for serialization
+#include <cereal/types/vector.hpp>
+#include <glm/glm.hpp>
+
 struct texture_data {
-    unsigned int channels;
-    unsigned int width;
-    unsigned int height;
-    std::vector<unsigned char> pixels;
+    glm::uint channels;
+    glm::uint width;
+    glm::uint height;
+    std::vector<glm::uint8> pixels;
     
     template <typename archive_t>
     void serialize(archive_t& archive)
     {
-        archive(channels);
-        archive(width);
-        archive(height);
-        archive(pixels);
+        archive(cereal::make_nvp("channels", channels));
+        archive(cereal::make_nvp("width", width));
+        archive(cereal::make_nvp("height", height));
+        archive(cereal::make_nvp("pixels", pixels));
     }
 };

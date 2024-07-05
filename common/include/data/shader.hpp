@@ -2,13 +2,14 @@
 
 #include <string>
 
-/// @brief Represents a shader for serialization
+#include <cereal/cereal.hpp>
+
 struct shader_data {
     std::string text;
     
     template <typename archive_t>
     void serialize(archive_t& archive)
     {
-        archive(text);
+        archive(cereal::make_nvp("text", text));
     }
 };

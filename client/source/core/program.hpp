@@ -2,7 +2,6 @@
 
 #include <filesystem>
 
-#include <GLES3/gl3.h>
 #include <glm/glm.hpp>
 
 #include <core/cubemap.hpp>
@@ -12,35 +11,17 @@
 
 /// @brief Represents a GPU program managed by the application
 struct program_ref {
-
-    /// @brief Default constructor is not allowed because this object must be created from data
     program_ref() = delete;
+    program_ref(const program_ref& other) = delete;
+    program_ref& operator=(const program_ref& other) = delete;
+    program_ref(program_ref&& other);
+    program_ref& operator=(program_ref&& other);
+    ~program_ref();
 
     /// @brief Loads the program from an asset data
     /// @param vertex
     /// @param fragment
     program_ref(const shader_data& vertex, const shader_data& fragment);
-
-    /// @brief Copy constructor is not allowed because this object represents managed data
-    /// @param other
-    program_ref(const program_ref& other) = delete;
-
-    /// @brief Copy assignment is not allowed because this object represents managed data
-    /// @param other
-    /// @return
-    program_ref& operator=(const program_ref& other) = delete;
-
-    /// @brief Move constructor transfers ownership of the managed data
-    /// @param other
-    program_ref(program_ref&& other) = default;
-
-    /// @brief Move assignment transfers ownership of the managed data
-    /// @param other
-    /// @return
-    program_ref& operator=(program_ref&& other) = default;
-
-    /// @brief Destructor ensure managed data is released before destruction
-    ~program_ref();
 
     /// @brief 
     void use() const;
@@ -55,13 +36,13 @@ struct program_ref {
     /// @param cubemap 
     /// @param name 
     /// @param slot 
-    void bind(const std::string& name, const cubemap_ref& cubemap, const GLuint slot = 0) const;
+    void bind(const std::string& name, const cubemap_ref& cubemap, const glm::uint slot = 0) const;
 
     /// @brief 
     /// @param texture 
     /// @param name 
     /// @param slot 
-    void bind(const std::string& name, const texture_ref& texture, const GLuint slot = 0) const;
+    void bind(const std::string& name, const texture_ref& texture, const glm::uint slot = 0) const;
 
     /// @brief 
     /// @tparam value_t 
@@ -74,16 +55,17 @@ struct program_ref {
     void draw() const;
 
     /// @brief Gets the OpenGL id for this managed data
-    /// @return the program id as a GLuint
-    GLuint get_id() const;
+    /// @return the program id as a glm::uint
+    glm::uint get_id() const;
 
 private:
-    GLuint _program_id;
-    GLuint _count;
-    GLuint _array_id;
-    std::unordered_map<std::string, GLint> _program_attributes;
-    std::unordered_map<std::string, GLint> _program_uniforms;
-    inline static GLuint _used_program_id = 0;
+    glm::uint _program_id;
+    glm::uint _array_id;
+    glm::uint _count;
+    std::unordered_map<std::string, glm::int32> _program_attributes;
+    std::unordered_map<std::string, glm::int32> _program_uniforms;
+    bool _must_destroy;
+    inline static glm::uint _used_program_id = 0;
 };
 
 /// @brief

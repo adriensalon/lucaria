@@ -2,23 +2,23 @@
 
 #include <vector>
 
-#include <cereal/cereal.hpp>
 #include <cereal/types/vector.hpp>
 #include <glm/glm.hpp>
 
-/// @brief Represents a mesh for serialization
+#include <data/glm.hpp>
+
 struct mesh_data {
     glm::uint count;
-    std::vector<glm::float32> positions = {};
-    std::vector<glm::float32> colors = {};
-    std::vector<glm::float32> normals = {};
-    std::vector<glm::float32> tangents = {};
-    std::vector<glm::float32> bitangents = {};
-    std::vector<glm::float32> texcoords = {};
-    std::vector<glm::float32> weights = {};
-    std::vector<glm::uint> bones = {};
-    std::vector<glm::uint> indices = {};
-
+    std::vector<glm::vec3> positions = {};
+    std::vector<glm::vec4> colors = {};
+    std::vector<glm::vec3> normals = {};
+    std::vector<glm::vec3> tangents = {};
+    std::vector<glm::vec3> bitangents = {};
+    std::vector<glm::vec2> texcoords = {};
+    std::vector<glm::vec4> weights = {};
+    std::vector<glm::uvec4> bones = {};
+    std::vector<glm::uvec3> indices = {};
+    
     template <typename archive_t>
     void serialize(archive_t& archive)
     {

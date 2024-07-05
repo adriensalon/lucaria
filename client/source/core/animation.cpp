@@ -3,7 +3,6 @@
 #include <ozz/base/io/archive.h>
 #include <ozz/base/memory/allocator.h>
 
-#include <external/ozz/io/stringstream.hpp>
 #include <core/animation.hpp>
 #include <glue/fetch.hpp>
 

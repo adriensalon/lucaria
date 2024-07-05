@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <GLES3/gl3.h>
+#include <glm/glm.hpp>
 
 #include <data/mesh.hpp>
 
@@ -19,7 +19,7 @@ enum struct mesh_attribute {
     texcoord,
 };
 
-inline const std::unordered_map<mesh_attribute, GLuint> mesh_attribute_sizes = {
+inline const std::unordered_map<mesh_attribute, glm::uint> mesh_attribute_sizes = {
     { mesh_attribute::position, 3 },
     { mesh_attribute::color, 3 },
     { mesh_attribute::normal, 3 },
@@ -43,26 +43,21 @@ struct mesh_ref {
 
     /// @brief 
     /// @return 
-    std::unordered_map<mesh_attribute, GLuint> get_buffer_ids() const;
-
-    /// @brief Destroys an existing buffer with this attribute and recreate it with new data.
-    /// @param attribute is the selected attribute.
-    /// @param data is the new data to upload to GPU.
-    void update_buffer(const mesh_attribute attribute, const std::vector<float>& data);
+    std::unordered_map<mesh_attribute, glm::uint> get_buffer_ids() const;
 
     /// @brief Gets the OpenGL id for this managed data
-    /// @return the texture id as a GLuint
-    GLuint get_array_id() const;
+    /// @return the texture id as a glm::uint
+    glm::uint get_array_id() const;
 
     /// @brief 
     /// @return 
-    GLuint get_count() const;
+    glm::uint get_count() const;
 
 private:
-    GLuint _count;
-    GLuint _array_id;
-    GLuint _elements_id;
-    std::unordered_map<mesh_attribute, GLuint> _attribute_ids;
+    glm::uint _count;
+    glm::uint _array_id;
+    glm::uint _elements_id;
+    std::unordered_map<mesh_attribute, glm::uint> _attribute_ids;
     bool _must_destroy;
 };
 
@@ -75,6 +70,3 @@ mesh_ref load_mesh(const std::filesystem::path& file);
 /// @param file 
 /// @return 
 std::future<mesh_ref> fetch_mesh(const std::filesystem::path& file);
-
-///
-// std::future<std::vector<mesh_data>> fetch_meshes(const std::vector<std::filesystem::path>& files);

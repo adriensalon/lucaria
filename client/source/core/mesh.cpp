@@ -3,6 +3,7 @@
 
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/archives/json.hpp>
+#include <GLES3/gl3.h>
 
 #include <core/mesh.hpp>
 #include <glue/fetch.hpp>
@@ -13,34 +14,63 @@ void validate_mesh(const mesh_data& data)
 {
 }
 
-GLuint create_vertex_array()
+glm::uint create_vertex_array()
 {
-    GLuint _array_id;
+    glm::uint _array_id;
     glGenVertexArrays(1, &_array_id);
     glBindVertexArray(_array_id);
     return _array_id;
 }
 
-GLuint create_attribute_buffer(const std::vector<GLfloat>& attribute)
+glm::uint create_attribute_buffer(const std::vector<glm::vec2>& attribute)
 {
-    GLuint _attribute_id;
-    GLfloat* _attribute_ptr = const_cast<GLfloat*>(attribute.data());
+    glm::uint _attribute_id;
+    glm::float32* _attribute_ptr = reinterpret_cast<glm::float32*>(const_cast<glm::vec2*>(attribute.data()));
     glGenBuffers(1, &_attribute_id);
     glBindBuffer(GL_ARRAY_BUFFER, _attribute_id);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * attribute.size(), _attribute_ptr, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 2 * sizeof(glm::float32) * attribute.size(), _attribute_ptr, GL_STATIC_DRAW);
 #if LUCARIA_DEBUG
-    std::cout << "Created ARRAY_BUFFER buffer of size " << attribute.size()
+    std::cout << "Created VEC2 ARRAY_BUFFER buffer of size " << attribute.size()
               << " with id " << _attribute_id << std::endl;
 #endif
     return _attribute_id;
 }
 
-GLuint create_elements_buffer(const std::vector<GLuint>& indices)
+glm::uint create_attribute_buffer(const std::vector<glm::vec3>& attribute)
 {
-    GLuint _elements_id;
+    glm::uint _attribute_id;
+    glm::float32* _attribute_ptr = reinterpret_cast<glm::float32*>(const_cast<glm::vec3*>(attribute.data()));
+    glGenBuffers(1, &_attribute_id);
+    glBindBuffer(GL_ARRAY_BUFFER, _attribute_id);
+    glBufferData(GL_ARRAY_BUFFER, 3 * sizeof(glm::float32) * attribute.size(), _attribute_ptr, GL_STATIC_DRAW);
+#if LUCARIA_DEBUG
+    std::cout << "Created VEC3 ARRAY_BUFFER buffer of size " << attribute.size()
+              << " with id " << _attribute_id << std::endl;
+#endif
+    return _attribute_id;
+}
+
+glm::uint create_attribute_buffer(const std::vector<glm::vec4>& attribute)
+{
+    glm::uint _attribute_id;
+    glm::float32* _attribute_ptr = reinterpret_cast<glm::float32*>(const_cast<glm::vec4*>(attribute.data()));
+    glGenBuffers(1, &_attribute_id);
+    glBindBuffer(GL_ARRAY_BUFFER, _attribute_id);
+    glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(glm::float32) * attribute.size(), _attribute_ptr, GL_STATIC_DRAW);
+#if LUCARIA_DEBUG
+    std::cout << "Created VEC4 ARRAY_BUFFER buffer of size " << attribute.size()
+              << " with id " << _attribute_id << std::endl;
+#endif
+    return _attribute_id;
+}
+
+glm::uint create_elements_buffer(const std::vector<glm::uvec3>& indices)
+{
+    glm::uint _elements_id;
+    glm::uint* _indices_ptr = reinterpret_cast<glm::uint*>(const_cast<glm::uvec3*>(indices.data()));
     glGenBuffers(1, &_elements_id);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _elements_id);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &(indices[0]), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 3 * indices.size() * sizeof(glm::uint), _indices_ptr, GL_STATIC_DRAW);
     return _elements_id;
 }
 
@@ -99,25 +129,25 @@ mesh_ref::mesh_ref(const mesh_data& data)
     _must_destroy = true;
 }
 
-std::unordered_map<mesh_attribute, GLuint> mesh_ref::get_buffer_ids() const
+std::unordered_map<mesh_attribute, glm::uint> mesh_ref::get_buffer_ids() const
 {
     return _attribute_ids;
 }
 
-void mesh_ref::update_buffer(const mesh_attribute attribute, const std::vector<float>& data)
-{
-    if (_attribute_ids.find(attribute) != _attribute_ids.end()) {
-        glDeleteBuffers(1, &_attribute_ids[attribute]);
-    }
-    _attribute_ids[attribute] = detail::create_attribute_buffer(data);
-}
+// void mesh_ref::update_buffer(const mesh_attribute attribute, const std::vector<glm::float32>& data)
+// {
+//     if (_attribute_ids.find(attribute) != _attribute_ids.end()) {
+//         glDeleteBuffers(1, &_attribute_ids[attribute]);
+//     }
+//     _attribute_ids[attribute] = detail::create_attribute_buffer(data);
+// }
 
-GLuint mesh_ref::get_array_id() const
+glm::uint mesh_ref::get_array_id() const
 {
     return _array_id;
 }
 
-GLuint mesh_ref::get_count() const
+glm::uint mesh_ref::get_count() const
 {
     return _count;
 }

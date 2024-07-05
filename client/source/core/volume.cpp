@@ -26,14 +26,14 @@ volume_data::volume_data(const mesh_data& mesh)
 {
     glm::vec3 _min_values = glm::vec3(std::numeric_limits<float>::max());
     glm::vec3 _max_values = glm::vec3(std::numeric_limits<float>::lowest());
-    for (std::size_t _index = 0; _index < mesh.count; ++_index) {
-        glm::vec3 vertex(
-            mesh.positions[_index * 3],
-            mesh.positions[_index * 3 + 1],
-            mesh.positions[_index * 3 + 2]);
-        _min_values = glm::min(_min_values, vertex);
-        _max_values = glm::max(_max_values, vertex);
-    }
+    // for (std::size_t _index = 0; _index < mesh.count; ++_index) {
+    //     glm::vec3 vertex(
+    //         mesh.positions[_index * 3],
+    //         mesh.positions[_index * 3 + 1],
+    //         mesh.positions[_index * 3 + 2]);
+    //     _min_values = glm::min(_min_values, vertex);
+    //     _max_values = glm::max(_max_values, vertex);
+    // }
     aabbs = {{ _min_values, _max_values }};
 }
 
@@ -43,14 +43,14 @@ volume_data::volume_data(const std::vector<mesh_data>& meshes)
     for (const mesh_data& _mesh : meshes) {        
         glm::vec3 _min_values = glm::vec3(std::numeric_limits<float>::max());
         glm::vec3 _max_values = glm::vec3(std::numeric_limits<float>::lowest());
-        for (std::size_t _index = 0; _index < _mesh.count; ++_index) {
-            glm::vec3 _vertex(
-                _mesh.positions[_index * 3],
-                _mesh.positions[_index * 3 + 1],
-                _mesh.positions[_index * 3 + 2]);
-            _min_values = glm::min(_min_values, _vertex);
-            _max_values = glm::max(_max_values, _vertex);
-        }
+        // for (std::size_t _index = 0; _index < _mesh.count; ++_index) {
+        //     glm::vec3 _vertex(
+        //         _mesh.positions[_index * 3],
+        //         _mesh.positions[_index * 3 + 1],
+        //         _mesh.positions[_index * 3 + 2]);
+        //     _min_values = glm::min(_min_values, _vertex);
+        //     _max_values = glm::max(_max_values, _vertex);
+        // }
         aabbs.emplace_back(std::pair<glm::vec3, glm::vec3>{ _min_values, _max_values });
     }
 }
