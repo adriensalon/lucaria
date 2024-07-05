@@ -50,7 +50,7 @@ else()
 	target_link_libraries(lucaria_compiler PRIVATE stb_image)
 	target_link_libraries(lucaria_compiler PRIVATE assimp)
 
-	# target_compile_definitions(lucaria PRIVATE LUCARIA_DEBUG)
+	# target_compile_definitions(lucaria_compiler PRIVATE LUCARIA_DEBUG)
 	# target_compile_definitions(lucaria_compiler PRIVATE LUCARIA_JSON)
 	set_target_properties(lucaria_compiler PROPERTIES CXX_STANDARD 17)
 
