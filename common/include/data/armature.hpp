@@ -5,6 +5,7 @@
 /// @brief Represents an armature for serialization
 struct armature_data {
     unsigned int count;
+    std::vector<float> positions = {};
     std::vector<float> weights = {};
     std::vector<unsigned int> bones = {};
 
@@ -12,6 +13,7 @@ struct armature_data {
     void serialize(archive_t& archive)
     {
         archive(count);
+        archive(positions);
         archive(weights);
         archive(bones);
     }

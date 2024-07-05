@@ -13,17 +13,7 @@
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
 
-#include <data/mesh.hpp>
-#include <data/shader.hpp>
-#include <data/texture.hpp>
-    
-extern mesh_data import_mesh(const std::filesystem::path& input, const std::filesystem::path& output_directory);
-extern shader_data import_shader(const std::filesystem::path& input);
-extern texture_data import_texture(const std::filesystem::path& input);
-
-extern void compile_mesh(const mesh_data& data, const std::filesystem::path& output);
-extern void compile_shader(const shader_data& data, const std::filesystem::path& output);
-extern void compile_texture(const texture_data& data, const std::filesystem::path& output);
+#include <core/import.hpp>
 
 /// @brief Represents a map containing every argument for each command
 using commands_map = std::unordered_map<std::string, std::vector<std::string>>;
@@ -158,6 +148,10 @@ std::filesystem::path substract_relative(const std::filesystem::path base_dir, c
     }
 }
 
+/// @brief 
+/// @tparam resource_data_t 
+/// @param data 
+/// @param output 
 template <typename resource_data_t>
 void compile_binary_or_json(const resource_data_t& data, const std::filesystem::path& output)
 {
@@ -172,6 +166,39 @@ void compile_binary_or_json(const resource_data_t& data, const std::filesystem::
 }
 
 /// @brief 
+/// @param input 
+/// @param output_directory 
+void copy_ozz_files(const std::filesystem::path& input, const std::filesystem::path& output_directory)
+{
+    std::filesystem::path _current_path = std::filesystem::current_path();
+    for (const std::filesystem::directory_entry& _entry : std::filesystem::directory_iterator(_current_path)) {
+        if (std::filesystem::is_regular_file(_entry.path()) && _entry.path().extension().string() == ".ozz") {
+            std::filesystem::path _destination_file;
+            if (_entry.path().filename().string() == "skeleton.ozz") {
+                _destination_file = output_directory / (input.stem().string() + "_skeleton.bin");
+            } else {
+                _destination_file = output_directory / (input.stem().string() + "_animation_" + _entry.path().stem().string() + ".bin");
+            }
+            std::filesystem::rename(_entry.path(), _destination_file);
+        }
+    }
+}
+
+/// @brief 
+/// @param input 
+/// @param output_directory 
+void compile_ozz_resources(const std::filesystem::path& input, const std::filesystem::path& output_directory)
+{
+    const std::string _command = std::filesystem::current_path().string() + "/compiler/gltf2ozz.exe --file=" + input.string();
+    const int _result = std::system(_command.c_str());
+    if (_result != 0) {
+        std::cout << "Error: gltf2ozz command failed with exit code " << _result << std::endl;
+        std::terminate();
+    }
+    copy_ozz_files(input, output_directory);
+}
+
+/// @brief 
 /// @param input_path 
 /// @param output_path 
 void compile_resource(const std::filesystem::path& input_file, const std::filesystem::path& output_file)
@@ -179,8 +206,10 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
     const std::string _extension = input_file.extension().generic_string();
     if (_extension == ".ttf") {
         // compile_binary_or_json(import_font(input_file), output_file);
-    } else if (_extension == ".obj" || _extension == ".glb" || _extension == ".gltf" || _extension == ".fbx") {
-        compile_binary_or_json(import_mesh(input_file, output_file.parent_path()), output_file);
+    } else if (_extension == ".glb" || _extension == ".gltf") {
+        compile_ozz_resources(input_file, output_file.parent_path());
+        compile_binary_or_json(import_mesh(input_file), output_file);
+        compile_binary_or_json(import_armature(input_file), output_file.parent_path() / (output_file.stem().string() + "_armature.bin"));
     } else if (_extension == ".glsl") {
         compile_binary_or_json(import_shader(input_file), output_file);    
     } else if (_extension == ".wav") {

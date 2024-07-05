@@ -1,23 +1,16 @@
-#include <fstream>
-#include <filesystem>
+#include <iostream>
 
-#include <cereal/archives/portable_binary.hpp>
-#include <cereal/cereal.hpp>
-#include <cereal/types/vector.hpp>
 #include <stb_image.h>
 
-#include <data/texture.hpp>
+#include <core/import.hpp>
 
-/// @brief Imports a texture as data
-/// @param input the texture path to load, containing 3 (RGB) or 4 (RGBA) channels
-/// @return the texture data with pixels stored as unsigned char (0-255)
 texture_data import_texture(const std::filesystem::path& input)
 {
     texture_data _data;
     int _width, _height, _channels;
-    unsigned char* _pixels = stbi_load(input.generic_string().c_str(), &_width, &_height, &_channels, NULL);
+    unsigned char* _pixels = stbi_load(input.string().c_str(), &_width, &_height, &_channels, NULL);
     if (_pixels == nullptr) {
-        std::cerr << "Impossible to import texture '" << input.generic_string() << "'" << std::endl;
+        std::cout << "Impossible to import texture '" << input << "'" << std::endl;
         std::terminate();
     }
     _data.channels = static_cast<unsigned int>(_channels);
