@@ -2,15 +2,9 @@
 
 #include <filesystem>
 
-#include <data/armature.hpp>
 #include <data/mesh.hpp>
 #include <data/shader.hpp>
 #include <data/texture.hpp>
-
-/// @brief 
-/// @param input 
-/// @return 
-armature_data import_armature(const std::filesystem::path& input);
 
 /// @brief 
 /// @param input 

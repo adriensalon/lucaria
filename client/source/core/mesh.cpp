@@ -3,8 +3,6 @@
 
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/archives/json.hpp>
-#include <cereal/cereal.hpp>
-#include <cereal/types/vector.hpp>
 
 #include <core/mesh.hpp>
 #include <glue/fetch.hpp>

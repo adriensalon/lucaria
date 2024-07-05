@@ -235,7 +235,6 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
     } else if (_extension == ".glb" || _extension == ".gltf") {
         compile_ozz_resources(input_file, output_file.parent_path());
         compile_binary_or_json(import_mesh(input_file), output_file);
-        compile_binary_or_json(import_armature(input_file), output_file.parent_path() / (output_file.stem().string() + "_armature.bin"));
     } else if (_extension == ".glsl") {
         compile_binary_or_json(import_shader(input_file), output_file);    
     } else if (_extension == ".wav") {

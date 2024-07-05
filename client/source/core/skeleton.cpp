@@ -3,6 +3,7 @@
 #include <ozz/base/io/archive.h>
 #include <ozz/base/memory/allocator.h>
 
+#include <external/ozz/io/stringstream.hpp>
 #include <core/skeleton.hpp>
 #include <glue/fetch.hpp>
 
@@ -46,7 +47,7 @@ std::future<skeleton_ref> fetch_skeleton(const std::filesystem::path& file)
     const std::string _file_str = file.string();
     std::promise<skeleton_ref>& _promise = detail::promises[_file_str];
     fetch_file(_file_str, [&_promise, file](std::istringstream& stream) {
-        ozz_istringstream _ozz_stream(stream);
+        ozz::io::StdStringStreamWrapper _ozz_stream(stream);
         ozz::io::IArchive _ozz_archive(&_ozz_stream);
 #if LUCARIA_DEBUG
         if (!_ozz_archive.TestTag<ozz::animation::Skeleton>()) {
