@@ -9,13 +9,11 @@
 
 /// @brief 
 /// @param input 
-/// @param output_directory 
 /// @return 
 armature_data import_armature(const std::filesystem::path& input);
 
 /// @brief 
 /// @param input 
-/// @param output_directory 
 /// @return 
 mesh_data import_mesh(const std::filesystem::path& input);
 

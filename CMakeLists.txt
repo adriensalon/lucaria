@@ -66,6 +66,7 @@ execute_process(
     COMMAND ${CMAKE_COMMAND} -E make_directory ${INSTALL_DIR}/compiler
     COMMAND ${CMAKE_COMMAND} -E rename ${GLTF2OZZ_EXECUTABLE} ${INSTALL_DIR}/compiler/${GLTF2OZZ_NAME}
     COMMAND ${CMAKE_COMMAND} -E rename ${COMPILER_EXECUTABLE} ${INSTALL_DIR}/compiler/${COMPILER_NAME})
+set(GLTF2OZZ_EXECUTABLE ${INSTALL_DIR}/compiler/${GLTF2OZZ_NAME})
 set(COMPILER_EXECUTABLE ${INSTALL_DIR}/compiler/${COMPILER_NAME})
 message(" ")
 
@@ -74,8 +75,9 @@ execute_process(
     COMMAND ${CMAKE_COMMAND} -E make_directory ${INSTALL_DIR}/client
     COMMAND ${CMAKE_COMMAND} -E make_directory ${INSTALL_DIR}/client/assets
     COMMAND ${COMPILER_EXECUTABLE}
-    -i ${CMAKE_CURRENT_LIST_DIR}/assets
-    -o ${INSTALL_DIR}/client/assets
+        -i ${CMAKE_CURRENT_LIST_DIR}/assets
+        -o ${INSTALL_DIR}/client/assets
+        -gltf2ozz ${GLTF2OZZ_EXECUTABLE}
     WORKING_DIRECTORY ${INSTALL_DIR}
     RESULT_VARIABLE configure_result
     OUTPUT_VARIABLE configure_output

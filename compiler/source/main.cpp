@@ -15,8 +15,12 @@
 
 #include <core/import.hpp>
 
+namespace detail {
+
 /// @brief Represents a map containing every argument for each command
 using commands_map = std::unordered_map<std::string, std::vector<std::string>>;
+
+static std::filesystem::path gltf2ozz_executable;
 
 /// @brief Extracts all commands with arguments from main parameters
 /// @param argc the first parameter taken by the main function
@@ -36,7 +40,7 @@ commands_map extract_args(int argc, char* argv[])
         } else if (!_current.empty()) {
             _commands[_current].push_back(arg);
         } else {
-            std::cerr << "Value encountered without a command '" << arg << "'" << std::endl;
+            std::cout << "Value encountered without a command '" << arg << "'" << std::endl;
             std::terminate();
         }
     }
@@ -59,19 +63,41 @@ bool process_help_command(const commands_map& commands)
 /// @brief 
 /// @param commands 
 /// @return 
+std::filesystem::path process_gltf2ozz_command(const commands_map& commands)
+{
+    if (commands.find("-gltf2ozz") == commands.end()) {
+        std::cout << "Command -gltf2ozz must be provided" << std::endl;
+        std::terminate();
+    }
+    if (commands.at("-gltf2ozz").size() != 1) {
+        std::cout << "Only one file must be provided with option -gltf2ozz" << std::endl;
+        std::terminate();
+    }
+    std::filesystem::path _gltf2ozz_executable = commands.at("-gltf2ozz").at(0);
+    if (!std::filesystem::exists(_gltf2ozz_executable)) {        
+        std::cout << "The path provided with option -gltf2ozz must be an existing application" << std::endl;
+        std::terminate();
+    }
+    std::cout << "-- Tool gltf2ozz provided at " << _gltf2ozz_executable << std::endl;
+    return _gltf2ozz_executable;
+}
+
+/// @brief 
+/// @param commands 
+/// @return 
 std::filesystem::path process_input_command(const commands_map& commands)
 {
     if (commands.find("-i") == commands.end()) {
-        std::cerr << "Command -i must be provided" << std::endl;
+        std::cout << "Command -i must be provided" << std::endl;
         std::terminate();
     }
     if (commands.at("-i").size() != 1) {
-        std::cerr << "Only one directory must be provided with option -i" << std::endl;
+        std::cout << "Only one directory must be provided with option -i" << std::endl;
         std::terminate();
     }
     std::filesystem::path _input_dir = commands.at("-i").at(0);
     if (!std::filesystem::is_directory(_input_dir)) {        
-        std::cerr << "The path provided with option -i must be an existing directory" << std::endl;
+        std::cout << "The path provided with option -i must be an existing directory" << std::endl;
         std::terminate();
     }
     std::cout << "-- Assets input directory at " << _input_dir << std::endl;
@@ -84,16 +110,16 @@ std::filesystem::path process_input_command(const commands_map& commands)
 std::filesystem::path process_output_command(const commands_map& commands)
 {
     if (commands.find("-o") == commands.end()) {
-        std::cerr << "Command -o must be provided" << std::endl;
+        std::cout << "Command -o must be provided" << std::endl;
         std::terminate();
     }
     if (commands.at("-o").size() != 1) {
-        std::cerr << "Only one directory must be provided with option -o" << std::endl;
+        std::cout << "Only one directory must be provided with option -o" << std::endl;
         std::terminate();
     }
     std::filesystem::path _output_dir = commands.at("-o").at(0);
     if (!std::filesystem::is_directory(_output_dir)) {        
-        std::cerr << "The path provided with option -o must be an existing directory" << std::endl;
+        std::cout << "The path provided with option -o must be an existing directory" << std::endl;
         std::terminate();
     }
     std::cout << "-- Assets output directory at " << _output_dir << std::endl;
@@ -113,10 +139,10 @@ void iterate_recursive(const std::filesystem::path base_dir, const std::function
             }
         }
     } catch (const std::filesystem::filesystem_error& e) {
-        std::cerr << "Filesystem error " << e.what() << std::endl;
+        std::cout << "Filesystem error " << e.what() << std::endl;
         std::terminate();
     } catch (const std::exception& e) {
-        std::cerr << "General exception " << e.what() << std::endl;
+        std::cout << "General exception " << e.what() << std::endl;
         std::terminate();
     }
 }
@@ -132,18 +158,18 @@ std::filesystem::path substract_relative(const std::filesystem::path base_dir, c
             if (file_path.string().find(base_dir.string()) == 0) {
                 return std::filesystem::relative(file_path, base_dir);
             } else {
-                std::cerr << "The target path is not within the base directory" << std::endl;
+                std::cout << "The target path is not within the base directory" << std::endl;
                 std::terminate();
             }
         } else {
-            std::cerr << "Base directory or target path does not exist" << std::endl;
+            std::cout << "Base directory or target path does not exist" << std::endl;
             std::terminate();
         }
     } catch (const std::filesystem::filesystem_error& e) {
-        std::cerr << "Filesystem error " << e.what() << std::endl;
+        std::cout << "Filesystem error " << e.what() << std::endl;
         std::terminate();
     } catch (const std::exception& e) {
-        std::cerr << "General exception " << e.what() << std::endl;
+        std::cout << "General exception " << e.what() << std::endl;
         std::terminate();
     }
 }
@@ -217,23 +243,29 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
     } else if (_extension == ".jpg") {
         compile_binary_or_json(import_texture(input_file), output_file); 
     } else {
-        std::cerr << "Invalid input file with extension " << _extension << std::endl;
+        std::cout << "Invalid input file with extension " << _extension << std::endl;
         std::terminate();
     }
 }
 
+}
+
 int main(int argc, char* argv[])
 {
-    commands_map _commands = extract_args(argc, argv);
-    if (process_help_command(_commands)) return 0;
-    std::filesystem::path _input_dir = process_input_command(_commands);
-    std::filesystem::path _output_dir = process_output_command(_commands);
-    iterate_recursive(_input_dir, [&] (const std::filesystem::path& _input_file) {
-        std::filesystem::path _relative_input_file = substract_relative(_input_dir, _input_file);
+    detail::commands_map _commands = detail::extract_args(argc, argv);
+    if (detail::process_help_command(_commands)) {
+        return 0;
+    }
+    std::filesystem::path _input_dir = detail::process_input_command(_commands);
+    std::filesystem::path _output_dir = detail::process_output_command(_commands);
+    detail::gltf2ozz_executable = detail::process_gltf2ozz_command(_commands);
+    std::cout << std::endl;
+    detail::iterate_recursive(_input_dir, [&] (const std::filesystem::path& _input_file) {
+        std::filesystem::path _relative_input_file = detail::substract_relative(_input_dir, _input_file);
         std::filesystem::path _relative_output_file = _relative_input_file;
         _relative_output_file.replace_extension(".bin");
         std::filesystem::path _output_file = _output_dir / _relative_output_file;
-        compile_resource(_input_file, _output_file);
+        detail::compile_resource(_input_file, _output_file);
     });
     return 0;
 }
