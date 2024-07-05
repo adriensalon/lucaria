@@ -1,6 +1,5 @@
 #pragma once
 
-#include <future>
 #include <unordered_map>
 
 #include <core/mesh.hpp>

@@ -1,11 +1,10 @@
 #include <iostream>
 
-#include <ozz/animation/runtime/animation.h>
 #include <ozz/base/io/archive.h>
 #include <ozz/base/memory/allocator.h>
 
-#include <glue/fetch.hpp>
 #include <core/animation.hpp>
+#include <glue/fetch.hpp>
 
 namespace detail {
 
@@ -13,27 +12,34 @@ static std::unordered_map<std::string, std::promise<animation_ref>> promises;
 
 }
 
-
-animation_ref::animation_ref(animation_ref&& other)
+ozz::animation::Animation& animation_ref::get_animation()
 {
-
+    return _animation;
 }
 
-animation_ref& animation_ref::operator=(animation_ref&& other)
+animation_ref load_animation(const std::filesystem::path& file)
 {
-    return *this;
+    ozz::io::File _ozz_file(file.c_str(), "rb");
+#if LUCARIA_DEBUG
+    if (!_ozz_file.opened()) {
+        std::cout << "Impossible to open file '" << file << "'." << std::endl;
+        std::terminate();
+    }
+#endif
+    ozz::io::IArchive _ozz_archive(&_ozz_file);
+#if LUCARIA_DEBUG
+    if (!_ozz_archive.TestTag<ozz::animation::Animation>()) {
+        std::cout << "Impossible to load animation, archive doesn't contain the expected object type." << std::endl;
+        std::terminate();
+    }
+#endif
+    animation_ref _ref;
+    _ozz_archive >> _ref._animation;
+#if LUCARIA_DEBUG
+    std::cout << "Loaded animation data from " << file << std::endl;
+#endif
+    return _ref;
 }
-
-animation_ref::~animation_ref()
-{
-
-}
-
-
-// animation_ref load_animation(const std::filesystem::path& file)
-// {
-
-// }
 
 std::future<animation_ref> fetch_animation(const std::filesystem::path& file)
 {
@@ -41,22 +47,19 @@ std::future<animation_ref> fetch_animation(const std::filesystem::path& file)
     std::promise<animation_ref>& _promise = detail::promises[_file_str];
     fetch_file(_file_str, [&_promise, file](std::istringstream& stream) {
         ozz_istringstream _ozz_stream(stream);
-        ozz::io::IArchive archive(&_ozz_stream);
-
-        if (!archive.TestTag<ozz::animation::Animation>()) {
-            std::cout << "Archive doesn't contain the expected object type." << std::endl;
-        } else {
-            std::cout << "Archive contains animations !" << std::endl;
+        ozz::io::IArchive _ozz_archive(&_ozz_stream);
+#if LUCARIA_DEBUG
+        if (!_ozz_archive.TestTag<ozz::animation::Animation>()) {
+            std::cout << "Impossible to load animation, archive doesn't contain the expected object type." << std::endl;
+            std::terminate();
         }
-        
-        ozz::animation::Animation animation;
-        archive >> animation;
-        
-// #if LUCARIA_DEBUG
-//         std::cout << "Loaded animation data from " << file << " ("
-//                   << _data.count << " vertices)" << std::endl;
-// #endif
-//         _promise.set_value(std::move(mesh_ref(_data)));
+#endif
+        animation_ref _ref;
+        _ozz_archive >> _ref._animation;
+#if LUCARIA_DEBUG
+        std::cout << "Loaded animation data from " << file << std::endl;
+#endif
+        _promise.set_value(std::move(_ref));
     });
     return _promise.get_future();
 }

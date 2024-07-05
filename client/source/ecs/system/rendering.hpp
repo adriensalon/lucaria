@@ -1,10 +1,8 @@
 #pragma once
 
-#include <future>
+#include <glue/update.hpp>
 
 #include <core/cubemap.hpp>
-#include <core/program.hpp>
-#include <glue/update.hpp>
 
 /// @brief
 struct rendering_system {

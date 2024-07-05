@@ -17,6 +17,7 @@ void register_level_001_room(entt::registry& registry)
         .texture(model_texture::color, std::move(fetch_texture("assets/room_color.bin")));
     
     std::future<animation_ref> _anim = fetch_animation("assets/eolienne_animation_wind_rotation.bin");
+    std::future<skeleton_ref> _skeleton = fetch_skeleton("assets/decimategltf_skeleton.bin");
     // registry.emplace<collider_component>(_room_entity)
     //     .volume(std::move(fetch_volume("assets/decimategltf.bin")));
 

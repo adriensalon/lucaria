@@ -7,6 +7,8 @@
 #include <glue/fetch.hpp>
 #include <glue/window.hpp>
 
+#include <core/program.hpp>
+
 #include <ecs/component/model.hpp>
 #include <ecs/system/player.hpp>
 #include <ecs/system/rendering.hpp>
