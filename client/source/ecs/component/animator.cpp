@@ -1,10 +1,25 @@
 #include <ecs/component/animator.hpp>
 #include <glue/fetch.hpp>
 
+animation_sampler_ref::animation_sampler_ref()
+{
+    is_prepared = false;
+    is_playing = false;
+    is_looping = false;
+    ratio = 0.f;
+    weight = 1.f;
+}
+
+animator_component::animator_component()
+{
+    _is_prepared = false;
+    _is_bound_to_model = false;
+}
+
 animator_component& animator_component::animation(const std::string& name, animation_ref&& value)
 {
     _animations.insert_or_assign(name, std::move(value));
-    _samplers.insert_or_assign(name, _animation_sampler());
+    _samplers.insert_or_assign(name, animation_sampler_ref());
     return *this;
 }
 
@@ -12,7 +27,7 @@ animator_component& animator_component::animation(const std::string& name, std::
 {
     _future_animations.insert_or_assign(name, std::move(value));
     _animations.insert_or_assign(name, std::nullopt);
-    _samplers.insert_or_assign(name, _animation_sampler());
+    _samplers.insert_or_assign(name, animation_sampler_ref());
     return *this;
 }
 

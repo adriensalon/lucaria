@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <functional>
 #include <future>
 #include <unordered_map>
 #include <vector>
@@ -39,7 +40,7 @@ struct mesh_ref {
 
     /// @brief 
     /// @param data 
-    mesh_ref(const mesh_data& data, const bool keep_positions = false);
+    mesh_ref(const mesh_data& data, const bool keep_animation_data = false);
 
     /// @brief 
     /// @return 
@@ -59,18 +60,25 @@ struct mesh_ref {
 
     /// @brief 
     /// @return 
-    std::vector<glm::vec3>& get_skinned_positions();
+    const std::vector<glm::uvec4>& get_bones() const;
 
     /// @brief 
-    void upload_skinned_positions();
+    /// @return 
+    const std::vector<glm::vec4>& get_weights() const;
+
+    /// @brief 
+    /// @param callback  
+    void update_skinned_positions(const std::function<void(std::vector<glm::vec3>&)>& callback);
 
 private:
     glm::uint _count;
     glm::uint _array_id;
     glm::uint _elements_id;
     std::unordered_map<mesh_attribute, glm::uint> _attribute_ids;
-    std::vector<glm::vec3> _positions;
     std::vector<glm::vec3> _skinned_positions;
+    std::vector<glm::vec3> _positions;
+    std::vector<glm::uvec4> _bones;
+    std::vector<glm::vec4> _weights;
     bool _must_destroy;
 };
 

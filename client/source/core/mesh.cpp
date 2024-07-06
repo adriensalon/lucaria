@@ -102,7 +102,7 @@ mesh_ref::~mesh_ref()
     }
 }
 
-mesh_ref::mesh_ref(const mesh_data& data, const bool keep_positions)
+mesh_ref::mesh_ref(const mesh_data& data, const bool keep_animation_data)
 {
     detail::validate_mesh(data);
     _count = data.count;
@@ -110,9 +110,25 @@ mesh_ref::mesh_ref(const mesh_data& data, const bool keep_positions)
     _elements_id = detail::create_elements_buffer(data.indices);
     if (!data.positions.empty()) {
         _attribute_ids[mesh_attribute::position] = detail::create_attribute_buffer(data.positions);
-        if (keep_positions) {
-            _positions = data.positions;
+        if (keep_animation_data) {
+#if LUCARIA_DEBUG
+            if (data.positions.empty()) {
+                std::cout << "Requested to keep animation data but positions attribute is empty." << std::endl;
+                std::terminate();
+            }
+            if (data.bones.empty()) {
+                std::cout << "Requested to keep animation data but bones attribute is empty." << std::endl;
+                std::terminate();
+            }
+            if (data.weights.empty()) {
+                std::cout << "Requested to keep animation data but weights attribute is empty." << std::endl;
+                std::terminate();
+            }
+#endif
             _skinned_positions.resize(_count);
+            _positions = data.positions;
+            _bones = data.bones;
+            _weights = data.weights;
         }
     }
     if (!data.colors.empty()) {
@@ -153,15 +169,21 @@ const std::vector<glm::vec3>& mesh_ref::get_positions() const
     return _positions;
 }
 
-std::vector<glm::vec3>& mesh_ref::get_skinned_positions()
+const std::vector<glm::uvec4>& mesh_ref::get_bones() const
 {
-    return _skinned_positions;
+    return _bones;
 }
 
-void mesh_ref::upload_skinned_positions()
+const std::vector<glm::vec4>& mesh_ref::get_weights() const
 {
+    return _weights;
+}
+
+void mesh_ref::update_skinned_positions(const std::function<void(std::vector<glm::vec3>&)>& callback)
+{
+    callback(_skinned_positions);
     glm::uint _attribute_id = _attribute_ids[mesh_attribute::position];
-    glm::float32* _attribute_ptr = reinterpret_cast<glm::float32*>(const_cast<glm::vec3*>(_positions.data()));
+    glm::float32* _attribute_ptr = reinterpret_cast<glm::float32*>(const_cast<glm::vec3*>(_skinned_positions.data()));
     glBindBuffer(GL_ARRAY_BUFFER, _attribute_id);
     glBufferData(GL_ARRAY_BUFFER, 3 * sizeof(glm::float32) * _count, _attribute_ptr, GL_STATIC_DRAW);
 }

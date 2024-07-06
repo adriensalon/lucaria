@@ -23,7 +23,10 @@ namespace detail {
     }
 
     template <typename key_t, typename ref_t>
-    static void update_refmap(std::unordered_map<key_t, std::optional<std::future<ref_t>>>& futures, std::unordered_map<key_t, std::optional<ref_t>>& values)
+    static void update_refmap(
+        std::unordered_map<key_t, std::optional<std::future<ref_t>>>& futures, 
+        std::unordered_map<key_t, std::optional<ref_t>>& values, 
+        const std::function<void(const key_t)>& callback = nullptr)
     {
         std::vector<key_t> _to_erase = {};
         for (std::pair<const key_t, std::optional<std::future<ref_t>>>& _pair : futures) {
@@ -31,6 +34,9 @@ namespace detail {
                 std::future<ref_t>& _future = _pair.second.value();
                 if (get_is_future_ready<ref_t>(_future)) {
                     values.insert_or_assign(_pair.first, std::move(_future.get()));
+                    if (callback) {
+                        // callback(_pair.first);
+                    }
                     _to_erase.push_back(_pair.first);
                 }
             }

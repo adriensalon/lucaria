@@ -14,7 +14,7 @@ void register_level_001_room(entt::registry& registry)
     const entt::entity _room_entity = registry.create();
     
     registry.emplace<model_component>(_room_entity)
-        .mesh(std::move(fetch_mesh("assets/decimategltf.bin", true)))
+        .mesh(std::move(fetch_mesh("assets/decimategltf.bin", false)))
         .texture(model_texture::color, std::move(fetch_texture("assets/room_color.bin")));
     
     registry.emplace<animator_component>(_room_entity)
