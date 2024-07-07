@@ -1,7 +1,5 @@
 #pragma once
 
-#include <glue/update.hpp>
-
 /// @brief 
 struct async_system {
     async_system() = delete;
@@ -12,6 +10,4 @@ struct async_system {
 
     static void update();
 
-private:
-    REGISTER_FOR_UPDATE(async_system)
 };

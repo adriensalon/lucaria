@@ -144,6 +144,7 @@ EM_BOOL mouse_callback(int event_type, const EmscriptenMouseEvent* event, void* 
 {
     if (event_type == EMSCRIPTEN_EVENT_MOUSEMOVE) {
         detail::mouse_position_delta = glm::vec2((float)event->movementX, (float)event->movementY);
+        // detail::mouse_position_delta = glm::vec2((float)event->clientX, (float)event->clientY) - detail::mouse_position;
         detail::mouse_position = glm::vec2((float)event->clientX, (float)event->clientY);
         ImGui::GetIO().AddMousePosEvent(mouse_position.x, mouse_position.y);
     } else if (event_type == EMSCRIPTEN_EVENT_MOUSEDOWN) {

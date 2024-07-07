@@ -5,6 +5,7 @@
 
 #include <core/volume.hpp>
 
+/// @brief 
 struct collider_component {
     collider_component() = default;
     collider_component(const collider_component& other) = delete;
@@ -15,8 +16,6 @@ struct collider_component {
     /// @brief 
     /// @param volume 
     collider_component& volume(std::future<volume_data>&& volume);
-
-    collider_component& on_collision(const std::function<void(collider_component&)>& callback);
 
 private:
     std::optional<std::reference_wrapper<std::future<volume_data>>> _future_volume = std::nullopt;

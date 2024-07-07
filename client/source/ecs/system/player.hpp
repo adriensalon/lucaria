@@ -2,8 +2,8 @@
 
 #include <future>
 
+#include <ecs/component/transform.hpp>
 #include <core/volume.hpp>
-#include <glue/update.hpp>
 
 /// @brief
 struct player_system {
@@ -29,12 +29,13 @@ struct player_system {
     /// @param radius
     static void player_radius(const float radius);
 
+    // enlever au dessus et mettre 
+
+    static void follow_transform(transform_component& value);
+
     /// @brief
     /// @return
     static glm::mat4x4 get_view();
     
     static void update();
-
-private:
-    REGISTER_FOR_UPDATE(player_system)
 };

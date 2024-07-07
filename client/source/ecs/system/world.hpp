@@ -5,7 +5,6 @@
 
 #include <entt/entt.hpp>
 
-#include <glue/update.hpp>
 #include <core/texture.hpp>
 
 /// @brief 
@@ -32,9 +31,4 @@ struct world_system {
     /// @brief
     /// @param callback
     static void each_level(const std::function<void(entt::registry&)>& callback);
-
-    static void update();
-
-private:
-    REGISTER_FOR_UPDATE(world_system)
 };

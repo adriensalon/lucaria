@@ -13,7 +13,7 @@
 
 namespace detail {
 
-static bool is_splash_on = false;
+static bool is_splash_on = true;
 static std::optional<std::future<texture_data>> future_texture = std::nullopt;
 static std::optional<texture_ref> texture = std::nullopt;
 

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <core/cubemap.hpp>
-#include <glue/update.hpp>
 
 /// @brief
 struct rendering_system {
@@ -34,7 +33,4 @@ struct rendering_system {
     static glm::mat4x4 get_projection();
 
     static void update();
-
-private:
-    REGISTER_FOR_UPDATE(rendering_system)
 };

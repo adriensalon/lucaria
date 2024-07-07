@@ -54,6 +54,9 @@ std::size_t get_fetches_failed();
 /// @return 
 std::size_t get_fetches_total();
 
+/// @brief 
+void reset_fetch_counters();
+
 /// @brief Checks if a future has already completed
 /// @tparam value_t is the future type
 /// @param future is the future to be checked

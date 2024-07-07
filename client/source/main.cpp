@@ -1,28 +1,41 @@
-#include <ecs/system/computer.hpp>
-#include <ecs/system/mixer.hpp>
+
+#include <ecs/system/async.hpp>
+#include <ecs/system/sampling.hpp>
+#include <ecs/system/skinning.hpp>
+#include <ecs/system/motion.hpp>
+#include <ecs/system/dynamics.hpp>
+#include <ecs/system/collision.hpp>
 #include <ecs/system/player.hpp>
 #include <ecs/system/rendering.hpp>
 #include <ecs/system/splash.hpp>
+#include <ecs/system/mixer.hpp>
 #include <ecs/system/world.hpp>
 
 #include <glue/window.hpp>
-#include <glue/fetch.hpp>
-
-#include <levels/levels.hpp>
-#include <ozz/base/maths/soa_transform.h>
+#include <levels/__lifetimelong.cpp>
+#include <levels/room_001.cpp>
 
 int main()
 {
-    splash_system::trigger_splash(true);
-
-    player_system::player_position(glm::vec3(0.f, 0.f, 0.f));
-    player_system::player_direction(glm::vec3(-1.f, 0.f, 0.f));
-    player_system::player_height(1.83f);
-    player_system::player_radius(0.2f);
-
+    world_system::register_level("lifetimelong", register_lifetimelong);
     world_system::register_level("001_room", register_level_001_room);
+
+    world_system::add_level("lifetimelong");
     world_system::add_level("001_room");
 
-    run(update);
+    run([] () {
+
+        async_system::update();
+        // sampling_system::update();
+        // skinning_system::update();
+        motion_system::update();
+        // dynamics_system::update();
+        // collision_system::update();
+        player_system::update();
+        rendering_system::update();
+        splash_system::update();
+        mixer_system::update();
+
+    });
     return 0;
 }

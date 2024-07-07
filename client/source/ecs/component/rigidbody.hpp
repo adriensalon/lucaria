@@ -3,7 +3,8 @@
 struct rigidbody_component {
 
 
-    void 
+
+    // collision volume ici aussi
 
 private:
 

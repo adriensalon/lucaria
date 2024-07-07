@@ -3,7 +3,6 @@
 #include <future>
 
 #include <core/texture.hpp>
-#include <glue/update.hpp>
 
 /// @brief Splash system must be drawn above any rendering system.
 struct splash_system {
@@ -23,7 +22,4 @@ struct splash_system {
     static void trigger_splash(const bool titlescreen);
 
     static void update();
-
-private:
-    REGISTER_FOR_UPDATE(splash_system)
 };

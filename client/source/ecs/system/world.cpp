@@ -11,11 +11,6 @@ std::unordered_map<std::string, std::pair<entt::registry, std::function<void(ent
 
 }
 
-void world_system::update()
-{
-
-}
-
 void world_system::register_level(const std::string& name, const std::function<void(entt::registry&)>& callback)
 {
     detail::levels[name].second = callback;
@@ -42,6 +37,7 @@ void world_system::remove_level(const std::string& name)
     }
 #endif
     detail::levels.at(name).first.clear();
+    detail::levels.erase(name);
 }
 
 void world_system::each_level(const std::function<void(entt::registry&)>& callback)
