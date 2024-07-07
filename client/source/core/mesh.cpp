@@ -90,6 +90,10 @@ mesh_ref& mesh_ref::operator=(mesh_ref&& other)
     _array_id = other._array_id;
     _elements_id = other._elements_id;
     _attribute_ids = std::move(other._attribute_ids);
+    _skinned_positions = std::move(other._skinned_positions);
+    _positions = std::move(other._positions);
+    _bones = std::move(other._bones);
+    _weights = std::move(other._weights);
     _must_destroy = true;
     other._must_destroy = false;
     return *this;
@@ -127,6 +131,7 @@ mesh_ref::mesh_ref(const mesh_data& data, const bool keep_animation_data)
 #endif
             _skinned_positions.resize(_count);
             _positions = data.positions;
+            std::cout << "positions size = " << _positions.size() << std::endl;
             _bones = data.bones;
             _weights = data.weights;
         }
@@ -217,7 +222,7 @@ mesh_ref load_mesh(const std::filesystem::path& file, const bool keep_positions)
 
 std::future<mesh_ref> fetch_mesh(const std::filesystem::path& file, const bool keep_positions)
 {
-    std::promise<mesh_ref>& _promise = detail::promises[file.generic_string()];
+    std::promise<mesh_ref>& _promise = detail::promises[file.string()];
     fetch_file(file.string(), [&_promise, file, keep_positions](std::istringstream& stream) {
         mesh_data _data;
         {

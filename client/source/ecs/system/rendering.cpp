@@ -10,6 +10,7 @@
 #include <core/program.hpp>
 
 #include <ecs/component/model.hpp>
+#include <ecs/component/transform.hpp>
 #include <ecs/system/player.hpp>
 #include <ecs/system/rendering.hpp>
 #include <ecs/system/world.hpp>
@@ -41,6 +42,10 @@ static const std::string unlit_fragment = "#version 300 es \n"
                                           "void main() { \n"
                                           "    output_color = texture(uniform_color, frag_texcoord); \n"
                                           "}";
+
+static const std::string pbr_vertex = "";
+
+static const std::string pbr_fragment = "";
 
 static const std::string skybox_vertex = "#version 300 es \n"
                                          "in vec3 vert_position; \n"
@@ -131,6 +136,7 @@ static void draw_unlit(mesh_ref& mesh, texture_ref& color, const glm::mat4x4& mv
     _unlit_program_value.draw();
 }
 
+
 }
 
 void rendering_system::camera_projection(const float fov, const float near, const float far)
@@ -156,13 +162,28 @@ void rendering_system::cubemap_skybox(std::future<cubemap_data>&& cubemap)
 
 void rendering_system::update()
 {
+    static std::function<void(glm::mat4&, const transform_component&)> _update_transform = [] (glm::mat4& output, const transform_component& component) {
+        if (component._parent.has_value()) {
+            const transform_component& _parent = component._parent.value().get();
+            output = _parent._transform * output;
+            _update_transform(output, _parent);
+        }
+    };
     detail::camera_projection = detail::compute_projection();
     detail::clear_screen(detail::clear_color, detail::clear_depth);
     glm::mat4x4 _view_projection = detail::camera_projection * player_system::get_view();
-    world_system::for_each([&_view_projection](entt::registry& _registry) {
-        _registry.view<model_component>().each([&_view_projection](model_component& _model) {
+    world_system::each_level([&_view_projection](entt::registry& _registry) {
+        _registry.view<model_component>().each([&_registry, &_view_projection](entt::entity _entity, model_component& _model) {
             if (_model._mesh.has_value() && _model._textures[model_texture::color].has_value()) {
-                detail::draw_unlit(_model._mesh.value(), _model._textures[model_texture::color].value(), _view_projection);
+                if (_registry.any_of<transform_component>(_entity)) {
+                    const transform_component& _transform = _registry.get<transform_component>(_entity);
+                    glm::mat4 _model_matrix = _transform._transform;
+                    _update_transform(_model_matrix, _transform);
+                    const glm::mat4 _model_view_projection = _view_projection * _model_matrix;
+                    detail::draw_unlit(_model._mesh.value(), _model._textures[model_texture::color].value(), _model_view_projection);
+                } else {
+                    detail::draw_unlit(_model._mesh.value(), _model._textures[model_texture::color].value(), _view_projection);
+                }
             }
         });
     });

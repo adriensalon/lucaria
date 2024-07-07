@@ -31,7 +31,7 @@ struct world_system {
 
     /// @brief
     /// @param callback
-    static void for_each(const std::function<void(entt::registry&)>& callback);
+    static void each_level(const std::function<void(entt::registry&)>& callback);
 
     static void update();
 

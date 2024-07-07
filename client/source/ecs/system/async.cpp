@@ -49,7 +49,7 @@ namespace detail {
 
 void async_system::update()
 {
-    world_system::for_each([](entt::registry& _registry) {
+    world_system::each_level([](entt::registry& _registry) {
         _registry.view<model_component>().each([](model_component& _model) {
             detail::update_ref<mesh_ref>(_model._future_mesh, _model._mesh);
             detail::update_refmap<model_texture, texture_ref>(_model._future_textures, _model._textures);

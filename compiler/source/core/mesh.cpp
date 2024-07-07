@@ -51,7 +51,7 @@ mesh_data import_mesh(const std::filesystem::path& input)
         aiVector3D rotated_vertex = mesh->mVertices[i];
         rotated_vertex = rootTransform * rotated_vertex;
         if (_extension == ".glb" || _extension == ".gltf") {
-            rotated_vertex = gltf_rotationMatrix * rotated_vertex;
+            // rotated_vertex = gltf_rotationMatrix * rotated_vertex;
         }
         _data.positions.push_back(glm::vec3(rotated_vertex.x, rotated_vertex.y, rotated_vertex.z));
         // _data.positions.push_back(rotated_vertex.y);

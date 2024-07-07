@@ -6,7 +6,7 @@ animation_sampler_ref::animation_sampler_ref()
     is_prepared = false;
     is_playing = false;
     is_looping = false;
-    ratio = 0.f;
+    ratio = 0.5f;
     weight = 1.f;
 }
 
@@ -42,4 +42,17 @@ animator_component& animator_component::skeleton(std::future<skeleton_ref>&& val
     _future_skeleton = std::move(value);
     _skeleton = std::nullopt;
     return *this;
+}
+
+animator_component& animator_component::play(const std::string& value)
+{
+    _samplers.at(value).is_playing = true;
+    return *this;
+}
+
+void animator_component::test()
+{
+    
+
+
 }

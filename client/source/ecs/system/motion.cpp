@@ -27,9 +27,9 @@ bool is_ready_for_binding(std::optional<mesh_ref>& mesh, std::optional<skeleton_
 
 void prepare_sampling(animation_sampler_ref& animation_sampler, skeleton_ref& skeleton, animation_ref& animation)
 {
-    std::cout << "prepare sampling" << std::endl;
     animation_sampler.local_transforms.resize(skeleton.get_skeleton().num_soa_joints());
     animation_sampler.sampling_job.animation = &animation.get_animation();
+    // animation_sampler.sampling_job.context.
     animation_sampler.sampling_job.context->Resize(animation.get_animation().num_tracks());
     animation_sampler.sampling_job.output = ozz::make_span(animation_sampler.local_transforms);
     animation_sampler.sampling_job.ratio = animation_sampler.ratio;
@@ -37,10 +37,10 @@ void prepare_sampling(animation_sampler_ref& animation_sampler, skeleton_ref& sk
 
 void compute_sampling(animation_sampler_ref& animation_sampler, std::vector<ozz::math::SoaTransform>& blended_local_transforms)
 {
-    std::cout << "compute sampling" << std::endl;
     if (animation_sampler.is_playing) {
         animation_sampler.sampling_job.ratio = animation_sampler.ratio;
         if (!animation_sampler.sampling_job.Run()) {
+            // animation_sampler.sampling_job.Validate
 #if LUCARIA_DEBUG
             std::cout << "Impossible to run sampling job" << std::endl;
             std::terminate();
@@ -56,17 +56,24 @@ void compute_sampling(animation_sampler_ref& animation_sampler, std::vector<ozz:
 
 void prepare_skinning(std::vector<ozz::math::SoaTransform>& blended_local_transforms, std::vector<ozz::math::Float4x4>& model_transforms, ozz::animation::LocalToModelJob& job, skeleton_ref& skeleton)
 {
-    std::cout << "prepare skinning" << std::endl;
+    blended_local_transforms.resize(skeleton.get_skeleton().num_soa_joints());
     model_transforms.resize(skeleton.get_skeleton().num_joints());
     job.skeleton = &skeleton.get_skeleton();
     job.input = ozz::make_span(blended_local_transforms);
     job.output = ozz::make_span(model_transforms);
+    std::cout << blended_local_transforms.size() << " " << model_transforms.size() << std::endl;
 }
 
 void compute_skinning(std::vector<ozz::math::Float4x4>& model_transforms, ozz::animation::LocalToModelJob& job, mesh_ref& mesh)
 {
-    std::cout << "compute skinning" << std::endl;
-    job.Run();
+    if (!job.Run()) {
+#if LUCARIA_DEBUG
+            std::cout << "Impossible to run skinning job" << std::endl;
+            std::terminate();
+#else
+            return;
+#endif
+        }
     mesh.update_skinned_positions([&model_transforms, &job, &mesh](std::vector<glm::vec3>& _computed_positions) {
         const std::vector<glm::vec3>& tpose_positions = mesh.get_positions();
         const std::vector<glm::uvec4>& bones = mesh.get_bones();
@@ -77,7 +84,6 @@ void compute_skinning(std::vector<ozz::math::Float4x4>& model_transforms, ozz::a
             for (std::size_t _vertex_bone_index = 0; _vertex_bone_index < 4; ++_vertex_bone_index) {
                 const glm::uint bone_index = bones[_vertex_index][_vertex_bone_index];
                 const glm::float32 weight = weights[_vertex_index][_vertex_bone_index];
-
                 if (weight > 0.f) {
                     const glm::mat4 glm_bone_transform = reinterpret_cast<const glm::mat4&>(model_transforms[bone_index]);
                     const glm::vec4 transformed_position = glm_bone_transform * tpose_position;
@@ -94,29 +100,32 @@ void compute_skinning(std::vector<ozz::math::Float4x4>& model_transforms, ozz::a
 
 void motion_system::update()
 {
-    world_system::for_each([](entt::registry& _registry) {
+    world_system::each_level([](entt::registry& _registry) {
         _registry.view<model_component, animator_component>().each([](model_component& _model, animator_component& _animator) {
             if (!_animator._is_bound_to_model && detail::is_ready_for_binding(_model._mesh, _animator._skeleton)) {
                 _animator._is_bound_to_model = true;
             }
             if (_animator._is_bound_to_model) {
-                skeleton_ref& _skeleton = _animator._skeleton.value();
-                mesh_ref& _mesh = _model._mesh.value();
-                if (!_animator._is_prepared) {
-                    detail::prepare_skinning(_animator._blended_local_transforms, _animator._model_transforms, _animator._local_to_model_job, _skeleton);
-                    _animator._is_prepared = true;
-                }
-                for (std::pair<const std::string, animation_sampler_ref>& _pair : _animator._samplers) {
-                    if (!_pair.second.is_prepared) {
-                        std::optional<animation_ref>& _animation = _animator._animations.at(_pair.first);
-                        if (_animation.has_value()) {
-                            detail::prepare_sampling(_pair.second, _skeleton, _animation.value());
-                            _pair.second.is_prepared = true;
-                        }
-                    }
-                    detail::compute_sampling(_pair.second, _animator._blended_local_transforms);
-                }
-                detail::compute_skinning(_animator._model_transforms, _animator._local_to_model_job, _mesh);
+                // skeleton_ref& _skeleton = _animator._skeleton.value();
+                // mesh_ref& _mesh = _model._mesh.value();
+                // if (!_animator._is_prepared) {
+                //     detail::prepare_skinning(_animator._blended_local_transforms, _animator._model_transforms, _animator._local_to_model_job, _skeleton);
+                //     _animator._is_prepared = true;
+                // }
+                // for (ozz::math::SoaTransform& _transform : _animator._blended_local_transforms) {
+                //     _transform = ozz::math::SoaTransform::identity();
+                // }
+                // for (std::pair<const std::string, animation_sampler_ref>& _pair : _animator._samplers) {
+                //     if (!_pair.second.is_prepared) {
+                //         std::optional<animation_ref>& _animation = _animator._animations.at(_pair.first);
+                //         if (_animation.has_value()) {
+                //             detail::prepare_sampling(_pair.second, _skeleton, _animation.value());
+                //             _pair.second.is_prepared = true;
+                //         }
+                //     }
+                //     detail::compute_sampling(_pair.second, _animator._blended_local_transforms);
+                // }
+                // detail::compute_skinning(_animator._model_transforms, _animator._local_to_model_job, _mesh);
             }
         });
     });

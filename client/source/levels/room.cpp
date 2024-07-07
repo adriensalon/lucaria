@@ -4,6 +4,7 @@
 #include <ecs/component/collider.hpp>
 #include <ecs/component/model.hpp>
 #include <ecs/component/speaker.hpp>
+#include <ecs/component/transform.hpp>
 #include <ecs/system/motion.hpp>
 #include <ecs/system/world.hpp>
 
@@ -14,12 +15,16 @@ void register_level_001_room(entt::registry& registry)
     const entt::entity _room_entity = registry.create();
     
     registry.emplace<model_component>(_room_entity)
-        .mesh(std::move(fetch_mesh("assets/decimategltf.bin", true)))
+        .mesh(std::move(fetch_mesh("assets/lol.bin", true)))
         .texture(model_texture::color, std::move(fetch_texture("assets/room_color.bin")));
     
+    registry.emplace<transform_component>(_room_entity)
+        .position_warp(glm::vec3(3.f, 0.f, 0.f));
+    
     registry.emplace<animator_component>(_room_entity)
-        .skeleton(std::move(fetch_skeleton("assets/eolienne_skeleton.bin")))
-        .animation("wind", std::move(fetch_animation("assets/eolienne_animation_wind_rotation.bin")));
+        .skeleton(std::move(fetch_skeleton("assets/lol_skeleton.bin")))
+        .animation("lol", std::move(fetch_animation("assets/lol_animation_AnimLol.bin")))
+        .play("lol");
         
 
     // const entt::entity _speakers_entity = registry.create();

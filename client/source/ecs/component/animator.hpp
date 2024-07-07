@@ -81,6 +81,12 @@ struct animator_component {
     /// @param value
     animator_component& weight(const std::string& name, const glm::float32 value);
 
+    /// @brief
+    /// @param name
+    /// @param value
+    animator_component& root_bone(const glm::uint value);
+
+    void test();
 private:
     bool _is_prepared;
     bool _is_bound_to_model;

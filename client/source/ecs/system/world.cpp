@@ -44,7 +44,7 @@ void world_system::remove_level(const std::string& name)
     detail::levels.at(name).first.clear();
 }
 
-void world_system::for_each(const std::function<void(entt::registry&)>& callback)
+void world_system::each_level(const std::function<void(entt::registry&)>& callback)
 {
     for (std::pair<const std::string, std::pair<entt::registry, std::function<void(entt::registry&)>>>& _pair : detail::levels) {
         callback(_pair.second.first);
