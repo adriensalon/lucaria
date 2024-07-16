@@ -1,5 +1,6 @@
 #pragma once
 
+#include <btBulletDynamicsCommon.h>
 #include <glm/glm.hpp>
 
 struct rigidbody_component {

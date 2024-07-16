@@ -1,9 +1,8 @@
 cmake_minimum_required(VERSION 3.12)
 project(lucaria)
 
-if(POLICY CMP0077)
-    cmake_policy(SET CMP0077 NEW)
-endif()
+cmake_policy(SET CMP0077 NEW)
+cmake_policy(SET CMP0115 NEW)
 
 function(message)
 	if(NOT MESSAGE_QUIET)
@@ -18,13 +17,16 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 		add_subdirectory(../external/imgui ${CMAKE_BINARY_DIR}/external/imgui)
 		
 		set(BUILD_BULLET2_DEMOS OFF)
-		set(BUILD_BULLET3 ON)
+		set(BUILD_BULLET3 OFF)
 		set(BUILD_CPU_DEMOS OFF)
 		set(BUILD_EXTRAS OFF)
 		set(BUILD_UNIT_TESTS OFF)
 		set(BUILD_OPENGL3_DEMOS OFF)
 		set(BULLET_LINK_STATIC ON)
+		set(BULLET_USE_OPENCL OFF)
 		add_subdirectory(../external/bullet ${CMAKE_BINARY_DIR}/external/bullet)
+		target_compile_options(BulletSoftBody PRIVATE -Wno-single-bit-bitfield-constant-conversion)
+		target_compile_options(BulletSoftBody PRIVATE -Wno-implicit-const-int-float-conversion)
 
 		set(JUST_INSTALL_CEREAL ON)
 		set(SKIP_PERFORMANCE_COMPARISON ON)
@@ -42,6 +44,12 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 
 	file(GLOB_RECURSE lucaria_sources "${CMAKE_CURRENT_LIST_DIR}/source/*.cpp")
 	add_executable(lucaria ${lucaria_sources})
+
+	target_include_directories(lucaria PRIVATE
+		${CMAKE_CURRENT_LIST_DIR}/../external/bullet/src
+		${CMAKE_CURRENT_LIST_DIR}/../external/bullet/src/BulletCollision
+		${CMAKE_CURRENT_LIST_DIR}/../external/bullet/src/BulletDynamics
+		${CMAKE_CURRENT_LIST_DIR}/../external/bullet/src/LinearMath)
 
 	target_include_directories(lucaria PRIVATE ${CMAKE_CURRENT_LIST_DIR}/source)
 	target_include_directories(lucaria PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../common/include)

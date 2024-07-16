@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.12)
 project(lucaria_compiler)
 
+cmake_policy(SET CMP0077 NEW)
+
 function(message)
 	if(NOT MESSAGE_QUIET)
 		_message(${ARGN})
