@@ -3,7 +3,6 @@
 #include <glue/fetch.hpp>
 
 #include <ecs/component/animator.hpp>
-#include <ecs/component/collider.hpp>
 #include <ecs/component/model.hpp>
 #include <ecs/component/rigidbody.hpp>
 #include <ecs/component/transform.hpp>
@@ -31,7 +30,7 @@ static entt::entity register_player(entt::registry& registry)
     //     .skeleton(fetch_skeleton("assets/lol_skeleton.bin"))
     //     .play(_lolanim);
     
-    registry.emplace<collider_component<collider_detection::passive>>(_player_entity);
+    // registry.emplace<collider_component<collider_detection::passive>>(_player_entity);
     
     registry.emplace<rigidbody_component>(_player_entity);
         // volume

@@ -88,25 +88,48 @@ const std::vector<GLuint> skybox_indices = {
     30, 31, 32, 33, 34, 35
 };
 
-glm::mat4x4 compute_projection()
+}
+
+void rendering_system::use_camera_projection(const float fov, const float near, const float far)
+{
+    detail::camera_fov = fov;
+    detail::camera_near = near;
+    detail::camera_far = far;
+}
+
+void rendering_system::use_clear_color(const glm::vec4& clear_color)
+{
+    detail::clear_color = clear_color;
+}
+
+void rendering_system::use_clear_depth(const bool is_clearing)
+{
+    detail::clear_depth = is_clearing;
+}
+
+void rendering_system::use_skybox_cubemap(const std::shared_future<std::shared_ptr<cubemap_ref>>& fetched_cubemap)
+{
+}
+
+void rendering_system::clear_screen()
+{
+    GLbitfield _bits = detail::clear_depth ? GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT : GL_COLOR_BUFFER_BIT;
+    glm::vec2 _screen_size = get_screen_size();
+    glViewport(0, 0, _screen_size.x, _screen_size.y);
+    glClearColor(detail::clear_color.x, detail::clear_color.y, detail::clear_color.z, detail::clear_color.w);
+    glClear(_bits);
+}
+
+void rendering_system::compute_projection()
 {
     glm::vec2 _screen_size = get_screen_size();
     float _fov_rad = glm::radians(detail::camera_fov);
     float _aspect_ratio = _screen_size.x / _screen_size.y;
-    return glm::perspective(_fov_rad, _aspect_ratio, detail::camera_near, detail::camera_far);
+    detail::camera_projection = glm::perspective(_fov_rad, _aspect_ratio, detail::camera_near, detail::camera_far);
 }
 
-static void clear_screen(const glm::vec4& color, const bool depth)
-{
-    GLbitfield _bits = depth ? GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT : GL_COLOR_BUFFER_BIT;
-    glm::vec2 _screen_size = get_screen_size();
-    glViewport(0, 0, _screen_size.x, _screen_size.y);
-    glClearColor(color.x, color.y, color.z, color.w);
-    glClear(_bits);
-}
-
-static void draw_skybox(cubemap_ref& cubemap)
-{
+void rendering_system::draw_skybox()
+{    
     // static std::optional<mesh_ref> _skybox_mesh = std::nullopt;
     // static std::optional<cubemap_ref> _skybox_cubemap = std::nullopt;
     // static std::optional<program_ref> _skybox_program = std::nullopt;
@@ -121,77 +144,40 @@ static void draw_skybox(cubemap_ref& cubemap)
     // _skybox_program_value.draw();
 }
 
-static void draw_unlit(mesh_ref& mesh, texture_ref& color, const glm::mat4x4& mvp)
+void rendering_system::draw_unlit_models()
 {
-    static std::optional<program_ref> _unlit_program = std::nullopt;
-    if (!_unlit_program.has_value()) {
-        _unlit_program = program_ref(shader_data { unlit_vertex }, shader_data { unlit_fragment });
+    static std::optional<program_ref> _persistent_unlit_program = std::nullopt;
+    if (!_persistent_unlit_program.has_value()) {
+        _persistent_unlit_program = program_ref(shader_data { detail::unlit_vertex }, shader_data { detail::unlit_fragment });
     }
-    program_ref& _unlit_program_value = _unlit_program.value();
-    _unlit_program_value.use();
-    _unlit_program_value.bind("vert_position", mesh, mesh_attribute::position);
-    _unlit_program_value.bind("vert_texcoord", mesh, mesh_attribute::texcoord);
-    _unlit_program_value.bind("uniform_color", color, 0);
-    _unlit_program_value.bind("uniform_view", mvp);
-    _unlit_program_value.draw();
-}
-
-
-}
-
-void rendering_system::camera_projection(const float fov, const float near, const float far)
-{
-    detail::camera_fov = fov;
-    detail::camera_near = near;
-    detail::camera_far = far;
-}
-
-void rendering_system::clear_color(const glm::vec4& color)
-{
-    detail::clear_color = color;
-}
-
-void rendering_system::clear_depth(const bool clear)
-{
-    detail::clear_depth = clear;
-}
-
-void rendering_system::cubemap_skybox(std::future<cubemap_data>&& cubemap)
-{
-}
-
-void rendering_system::update()
-{
-    static std::function<void(glm::mat4&, const transform_component&)> _update_transform = [] (glm::mat4& output, const transform_component& component) {
-        if (component._parent.has_value()) {
-            const transform_component& _parent = component._parent.value().get();
-            output = _parent._transform * output;
-            _update_transform(output, _parent);
-        }
-    };
-    detail::camera_projection = detail::compute_projection();
-    detail::clear_screen(detail::clear_color, detail::clear_depth);
+    program_ref& _unlit_program = _persistent_unlit_program.value();
     glm::mat4x4 _view_projection = detail::camera_projection * player_system::get_view();
-    world_system::each_level([&_view_projection](entt::registry& _registry) {
-
-        _registry.view<model_component<model_shader::unlit>>().each([&_registry, &_view_projection](entt::entity _entity, model_component<model_shader::unlit>& _model) {
+    
+    world_system::each_level([&_unlit_program, &_view_projection](entt::registry& _registry) {
+        _registry.view<model_component<model_shader::unlit>, transform_component>().each([&_unlit_program, &_view_projection](model_component<model_shader::unlit>& _model, transform_component& _transform) {
             if (_model._mesh && _model._material && _model._material->get_has_texture(material_texture::color)) {
-                if (_registry.any_of<transform_component>(_entity)) {
-                    const transform_component& _transform = _registry.get<transform_component>(_entity);
-                    glm::mat4 _model_matrix = _transform._transform;
-                    _update_transform(_model_matrix, _transform);
-                    const glm::mat4 _model_view_projection = _view_projection * _model_matrix;
-                    detail::draw_unlit(*(_model._mesh.get()), _model._material->get_texture(material_texture::color), _model_view_projection);
-                } else {
-                    detail::draw_unlit(*(_model._mesh.get()), _model._material->get_texture(material_texture::color), _view_projection);
-                }
+                const glm::mat4 _model_view_projection = _view_projection * _transform._transform;
+                const mesh_ref& _mesh = *(_model._mesh.get());
+                const texture_ref& _color = _model._material->get_texture(material_texture::color);
+                _unlit_program.use();
+                _unlit_program.bind("vert_position", _mesh, mesh_attribute::position);
+                _unlit_program.bind("vert_texcoord", _mesh, mesh_attribute::texcoord);
+                _unlit_program.bind("uniform_color", _color, 0);
+                _unlit_program.bind("uniform_view", _model_view_projection);
+                _unlit_program.draw();
             }
         });
-
+        _registry.view<model_component<model_shader::unlit>>(entt::exclude<transform_component>).each([&_unlit_program, &_view_projection](model_component<model_shader::unlit>& _model) {
+            if (_model._mesh && _model._material && _model._material->get_has_texture(material_texture::color)) {
+                const mesh_ref& _mesh = *(_model._mesh.get());
+                const texture_ref& _color = _model._material->get_texture(material_texture::color);
+                _unlit_program.use();
+                _unlit_program.bind("vert_position", _mesh, mesh_attribute::position);
+                _unlit_program.bind("vert_texcoord", _mesh, mesh_attribute::texcoord);
+                _unlit_program.bind("uniform_color", _color, 0);
+                _unlit_program.bind("uniform_view", _view_projection);
+                _unlit_program.draw();
+            }
+        });
     });
-}
-
-glm::mat4x4 rendering_system::get_projection()
-{
-    return detail::camera_projection;
 }

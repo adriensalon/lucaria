@@ -5,7 +5,6 @@
 #include <ecs/system/navigation.hpp>
 #include <ecs/system/player.hpp>
 #include <ecs/system/rendering.hpp>
-#include <ecs/system/sampling.hpp>
 #include <ecs/system/splash.hpp>
 #include <ecs/system/world.hpp>
 
@@ -26,10 +25,16 @@ int main()
         // sampling_system::update();
         // skinning_system::update();
         motion_system::update();
-        // dynamics_system::update();
-        // collision_system::update();
+        dynamics_system::update();
         player_system::update();
-        rendering_system::update();
+        // rendering_system::update();
+
+
+        rendering_system::clear_screen();
+        rendering_system::compute_projection();
+        rendering_system::draw_skybox();
+        rendering_system::draw_unlit_models();
+
         splash_system::update();
     });
     return 0;

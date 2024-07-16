@@ -9,11 +9,13 @@ struct rendering_system {
     rendering_system(rendering_system&& other) = delete;
     rendering_system& operator=(rendering_system&& other) = delete;
 
-    static void camera_projection(const float fov = 60.f, const float near = 0.1f, const float far = 100.f);
-    static void clear_color(const glm::vec4& color);
-    static void clear_depth(const bool clear);
-    static void cubemap_skybox(std::future<cubemap_data>&& cubemap);
-    static glm::mat4x4 get_projection();
+    static void use_camera_projection(const float fov = 60.f, const float near = 0.1f, const float far = 100.f);
+    static void use_clear_color(const glm::vec4& clear_color = { 1.f, 1.f, 1.f, 1.f });
+    static void use_clear_depth(const bool is_clearing = true);
+    static void use_skybox_cubemap(const std::shared_future<std::shared_ptr<cubemap_ref>>& fetched_cubemap);
 
-    static void update();
+    static void clear_screen();
+    static void compute_projection();
+    static void draw_skybox();
+    static void draw_unlit_models();
 };

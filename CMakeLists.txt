@@ -5,14 +5,32 @@ function(find_program_recursive OUTPUT_VARIABLE DIRECTORY EXECUTABLE_NAME)
     file(GLOB_RECURSE EXECUTABLE_PATHS "${DIRECTORY}/*${EXECUTABLE_NAME}*")
 
     foreach(EXECUTABLE_PATH ${EXECUTABLE_PATHS})
-        get_filename_component(EXECUTABLE_NAME ${EXECUTABLE_PATH} NAME_WLE)
+        # Get the filename without extension and the extension
+        get_filename_component(NAME_WITHOUT_EXT ${EXECUTABLE_PATH} NAME_WLE)
+        get_filename_component(FILE_EXT ${EXECUTABLE_PATH} EXT)
 
-        if(EXECUTABLE_NAME STREQUAL "${EXECUTABLE_NAME}")
-            set(${OUTPUT_VARIABLE} ${EXECUTABLE_PATH} PARENT_SCOPE)
-            break()
+        if(NAME_WITHOUT_EXT STREQUAL "${EXECUTABLE_NAME}")
+            if(WIN32)
+                # For Windows executables, check extensions
+                if(FILE_EXT STREQUAL ".exe" OR FILE_EXT STREQUAL ".bat")
+                    set(${OUTPUT_VARIABLE} ${EXECUTABLE_PATH} PARENT_SCOPE)
+                    break()
+                endif()
+            elseif(UNIX)
+                # For Unix-like systems, check if the file is executable
+                if(NOT FILE_EXT)
+                    execute_process(COMMAND ${CMAKE_COMMAND} -E test -x ${EXECUTABLE_PATH}
+                                    RESULT_VARIABLE IS_EXECUTABLE)
+                    if(IS_EXECUTABLE EQUAL 0)
+                        set(${OUTPUT_VARIABLE} ${EXECUTABLE_PATH} PARENT_SCOPE)
+                        break()
+                    endif()
+                endif()
+            endif()
         endif()
     endforeach()
 endfunction()
+
 
 # find emsdk
 if(DEFINED ENV{EMSDK})
