@@ -86,14 +86,19 @@ message("${configure_output}")
 
 # client
 set(CLIENT_BUILD_DIR ${CMAKE_BINARY_DIR}/client)
-execute_process(
-    COMMAND ${CMAKE_COMMAND}
-    -S ${CMAKE_CURRENT_LIST_DIR}/client
-    -B ${CLIENT_BUILD_DIR}
-    -DCMAKE_TOOLCHAIN_FILE=${EMSDK_TOOLCHAIN}
-    -G Ninja)
+# execute_process(
+#     COMMAND ${CMAKE_COMMAND}
+#     -S ${CMAKE_CURRENT_LIST_DIR}/client
+#     -B ${CLIENT_BUILD_DIR}
+#     -DCMAKE_TOOLCHAIN_FILE=${EMSDK_TOOLCHAIN}
+#     -G Ninja)
 add_custom_command(
     OUTPUT ${CLIENT_BUILD_DIR}/lucaria.html
+    COMMAND ${CMAKE_COMMAND}
+        -S ${CMAKE_CURRENT_LIST_DIR}/client
+        -B ${CLIENT_BUILD_DIR}
+        -DCMAKE_TOOLCHAIN_FILE=${EMSDK_TOOLCHAIN}
+        -G Ninja
     COMMAND ${CMAKE_COMMAND} --build ${CLIENT_BUILD_DIR})
 add_custom_target(Lucaria
     ALL

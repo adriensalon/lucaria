@@ -12,6 +12,6 @@ struct rigidbody_component {
     rigidbody_component& mass(const glm::float32 value);
 
 private:
-
+    btRigidBody* _box_rigidbody = nullptr;
     friend struct dynamics_system;
 };
