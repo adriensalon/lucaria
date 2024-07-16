@@ -1,6 +1,5 @@
 #pragma once
 
-/// @brief
 struct motion_system {
     motion_system() = delete;
     motion_system(const motion_system& other) = delete;

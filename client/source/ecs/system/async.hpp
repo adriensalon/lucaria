@@ -1,6 +1,5 @@
 #pragma once
 
-/// @brief 
 struct async_system {
     async_system() = delete;
     async_system(const async_system& other) = delete;

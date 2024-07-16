@@ -22,6 +22,22 @@ namespace detail {
         }
     }
 
+    template <typename ref_t>
+    static void update_ref(std::optional<std::shared_future<std::shared_ptr<ref_t>>>& future, std::shared_ptr<ref_t>& value)
+    {
+        bool _must_erase = false;
+        if (future.has_value()) {
+            std::shared_future<std::shared_ptr<ref_t>>& _future_value = future.value();
+            if (get_is_future_ready<std::shared_ptr<ref_t>>(_future_value)) {
+                value = _future_value.get();
+                _must_erase = true;
+            }
+        }
+        if (_must_erase) {
+            future = std::nullopt;
+        }
+    }
+
     template <typename key_t, typename ref_t>
     static void update_refmap(
         std::unordered_map<key_t, std::optional<std::future<ref_t>>>& futures, 
@@ -50,13 +66,21 @@ namespace detail {
 void async_system::update()
 {
     world_system::each_level([](entt::registry& _registry) {
-        _registry.view<model_component>().each([](model_component& _model) {
-            detail::update_ref<mesh_ref>(_model._future_mesh, _model._mesh);
-            detail::update_refmap<model_texture, texture_ref>(_model._future_textures, _model._textures);
+        // _registry.view<model_component<model_shader::pbr>>().each([](model_component<model_shader::pbr>& _model) {
+        //     detail::update_ref<mesh_ref>(_model._fetched_mesh, _model._mesh);
+        //     detail::update_ref<material_ref>(_model._fetched_material, _model._material);
+        // });
+        // _registry.view<model_component<model_shader::blockout>>().each([](model_component<model_shader::blockout>& _model) {
+        //     detail::update_ref<mesh_ref>(_model._fetched_mesh, _model._mesh);
+        //     detail::update_ref<material_ref>(_model._fetched_material, _model._material);
+        // });
+        _registry.view<model_component<model_shader::unlit>>().each([](model_component<model_shader::unlit>& _model) {
+            detail::update_ref<mesh_ref>(_model._fetched_mesh, _model._mesh);
+            detail::update_ref<material_ref>(_model._fetched_material, _model._material);
         });
-        _registry.view<animator_component>().each([](animator_component& _animator) {
-            detail::update_ref<skeleton_ref>(_animator._future_skeleton, _animator._skeleton);
-            detail::update_refmap<std::string, animation_ref>(_animator._future_animations, _animator._animations);
-        });
+        // _registry.view<animator_component>().each([](animator_component& _animator) {
+        //     detail::update_ref<skeleton_ref>(_animator._future_skeleton, _animator._skeleton);
+        //     detail::update_refmap<std::string, animation_ref>(_animator._future_animations, _animator._animations);
+        // });
     });
 }

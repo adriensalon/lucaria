@@ -1,31 +1,40 @@
 #include <iostream>
-#include <fstream>
 #include <filesystem>
 #include <functional>
 #include <unordered_map>
 #include <string>
 #include <vector>
 
-#include <cereal/archives/portable_binary.hpp>
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/json.hpp>
-#include <cereal/cereal.hpp>
-#include <cereal/types/string.hpp>
-#include <cereal/types/vector.hpp>
+#include <data/armature.hpp>
+#include <data/mesh.hpp>
+#include <data/shader.hpp>
+#include <data/texture.hpp>
+#include <data/volume.hpp>
 
-#include <core/import.hpp>
+// tool
+extern void execute_gltf2ozz(const std::filesystem::path& input_path, const std::filesystem::path& output_directory);
+
+// import
+extern armature_data import_armature(const std::filesystem::path& input_path);
+extern mesh_data import_mesh(const std::filesystem::path& input_path, bool& has_armature);
+extern shader_data import_shader(const std::filesystem::path& input_path);
+extern texture_data import_texture(const std::filesystem::path& input_path);
+extern volume_data import_volume(const std::filesystem::path& input_path);
+
+// export
+extern void export_binary(const armature_data& data, const std::filesystem::path& output_path);
+extern void export_binary(const mesh_data& data, const std::filesystem::path& output_path);
+extern void export_binary(const shader_data& data, const std::filesystem::path& output_path);
+extern void export_binary(const texture_data& data, const std::filesystem::path& output_path);
+extern void export_binary(const volume_data& data, const std::filesystem::path& output_path);
+extern void export_etc(const texture_data& data, const std::filesystem::path& output_path);
 
 namespace detail {
 
-/// @brief Represents a map containing every argument for each command
 using commands_map = std::unordered_map<std::string, std::vector<std::string>>;
 
 static std::filesystem::path gltf2ozz_executable;
 
-/// @brief Extracts all commands with arguments from main parameters
-/// @param argc the first parameter taken by the main function
-/// @param argv the second parameter taken by the main function
-/// @return the map containings all the commands
 commands_map extract_args(int argc, char* argv[])
 {
     commands_map _commands;
@@ -47,9 +56,6 @@ commands_map extract_args(int argc, char* argv[])
     return _commands;
 }
 
-/// @brief 
-/// @param commands 
-/// @return 
 bool process_help_command(const commands_map& commands)
 {
     if (commands.find("-h") == commands.end()) {
@@ -60,9 +66,6 @@ bool process_help_command(const commands_map& commands)
     return true;
 }
 
-/// @brief 
-/// @param commands 
-/// @return 
 std::filesystem::path process_gltf2ozz_command(const commands_map& commands)
 {
     if (commands.find("-gltf2ozz") == commands.end()) {
@@ -82,9 +85,6 @@ std::filesystem::path process_gltf2ozz_command(const commands_map& commands)
     return _gltf2ozz_executable;
 }
 
-/// @brief 
-/// @param commands 
-/// @return 
 std::filesystem::path process_input_command(const commands_map& commands)
 {
     if (commands.find("-i") == commands.end()) {
@@ -104,9 +104,6 @@ std::filesystem::path process_input_command(const commands_map& commands)
     return _input_dir;
 }
 
-/// @brief 
-/// @param commands 
-/// @return 
 std::filesystem::path process_output_command(const commands_map& commands)
 {
     if (commands.find("-o") == commands.end()) {
@@ -126,9 +123,6 @@ std::filesystem::path process_output_command(const commands_map& commands)
     return _output_dir;
 }
 
-/// @brief 
-/// @param base_dir 
-/// @param callback 
 void iterate_recursive(const std::filesystem::path base_dir, const std::function<void(const std::filesystem::path&)> callback)
 {
     try {
@@ -147,10 +141,6 @@ void iterate_recursive(const std::filesystem::path base_dir, const std::function
     }
 }
 
-/// @brief 
-/// @param base_dir 
-/// @param file_path 
-/// @return 
 std::filesystem::path substract_relative(const std::filesystem::path base_dir, const std::filesystem::path file_path)
 {
     try {
@@ -174,73 +164,26 @@ std::filesystem::path substract_relative(const std::filesystem::path base_dir, c
     }
 }
 
-/// @brief 
-/// @tparam resource_data_t 
-/// @param data 
-/// @param output 
-template <typename resource_data_t>
-void compile_binary_or_json(const resource_data_t& data, const std::filesystem::path& output)
-{
-#if LUCARIA_JSON
-    std::ofstream _fstream(output);
-    cereal::JSONOutputArchive _archive(_fstream);
-#else
-    std::ofstream _fstream(output, std::ios::binary);
-    cereal::PortableBinaryOutputArchive _archive(_fstream);
-#endif
-    _archive(data);
-}
-
-/// @brief 
-/// @param input 
-/// @param output_directory 
-void copy_ozz_files(const std::filesystem::path& input, const std::filesystem::path& output_directory)
-{
-    std::filesystem::path _current_path = std::filesystem::current_path();
-    for (const std::filesystem::directory_entry& _entry : std::filesystem::directory_iterator(_current_path)) {
-        if (std::filesystem::is_regular_file(_entry.path()) && _entry.path().extension().string() == ".ozz") {
-            std::filesystem::path _destination_file;
-            if (_entry.path().filename().string() == "skeleton.ozz") {
-                _destination_file = output_directory / (input.stem().string() + "_skeleton.bin");
-            } else {
-                _destination_file = output_directory / (input.stem().string() + "_animation_" + _entry.path().stem().string() + ".bin");
-            }
-            std::filesystem::rename(_entry.path(), _destination_file);
-        }
-    }
-}
-
-/// @brief 
-/// @param input 
-/// @param output_directory 
-void compile_ozz_resources(const std::filesystem::path& input, const std::filesystem::path& output_directory)
-{
-    const std::string _command = std::filesystem::current_path().string() + "/compiler/gltf2ozz.exe --file=" + input.string();
-    const int _result = std::system(_command.c_str());
-    if (_result != 0) {
-        std::cout << "Error: gltf2ozz command failed with exit code " << _result << std::endl;
-        std::terminate();
-    }
-    copy_ozz_files(input, output_directory);
-}
-
-/// @brief 
-/// @param input_path 
-/// @param output_path 
 void compile_resource(const std::filesystem::path& input_file, const std::filesystem::path& output_file)
 {
     const std::string _extension = input_file.extension().generic_string();
     if (_extension == ".ttf") {
-        // compile_binary_or_json(import_font(input_file), output_file);
+        // export_binary(import_font(input_file), output_file);
     } else if (_extension == ".glb" || _extension == ".gltf") {
-        compile_ozz_resources(input_file, output_file.parent_path());
-        compile_binary_or_json(import_mesh(input_file), output_file);
+        bool _has_armature;
+        export_binary(import_mesh(input_file, _has_armature), output_file);
+        export_binary(import_volume(input_file), output_file.parent_path() / (output_file.stem().string() + "_volume.bin"));
+        if (_has_armature) {
+            export_binary(import_armature(input_file), output_file.parent_path() / (output_file.stem().string() + "_armature.bin"));
+            // compile_ozz_resources(input_file, output_file.parent_path());
+            execute_gltf2ozz(input_file, output_file.parent_path());
+        }
     } else if (_extension == ".glsl") {
-        compile_binary_or_json(import_shader(input_file), output_file);    
+        export_binary(import_shader(input_file), output_file);
     } else if (_extension == ".wav") {
-        // compile_binary_or_json(import_sound(input_file), output_file); 
+        // export_binary(import_sound(input_file), output_file); 
     } else if (_extension == ".jpg") {
-        compile_binary_or_json(import_texture(input_file), output_file); 
+        export_binary(import_texture(input_file), output_file); 
     } else {
         std::cout << "Invalid input file with extension " << _extension << std::endl;
         std::terminate();
@@ -258,8 +201,8 @@ int main(int argc, char* argv[])
     std::filesystem::path _input_dir = detail::process_input_command(_commands);
     std::filesystem::path _output_dir = detail::process_output_command(_commands);
     detail::gltf2ozz_executable = detail::process_gltf2ozz_command(_commands);
-    std::cout << std::endl;
     detail::iterate_recursive(_input_dir, [&] (const std::filesystem::path& _input_file) {
+        std::cout << std::endl;
         std::filesystem::path _relative_input_file = detail::substract_relative(_input_dir, _input_file);
         std::filesystem::path _relative_output_file = _relative_input_file;
         _relative_output_file.replace_extension(".bin");

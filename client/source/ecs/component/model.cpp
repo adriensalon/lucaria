@@ -1,28 +1,22 @@
 #include <ecs/component/model.hpp>
 #include <glue/fetch.hpp>
 
-model_component& model_component::mesh(mesh_ref&& value)
+template <model_shader shader_t>
+model_component<shader_t>& model_component<shader_t>::material(const std::shared_future<std::shared_ptr<material_ref>>& fetched_material)
 {
-    _mesh = std::move(value);
+    _fetched_material = fetched_material;
+    _material = nullptr;
     return *this;
 }
 
-model_component& model_component::mesh(std::future<mesh_ref>&& value)
+template <model_shader shader_t>
+model_component<shader_t>& model_component<shader_t>::mesh(const std::shared_future<std::shared_ptr<mesh_ref>>& fetched_mesh)
 {
-    _future_mesh = std::move(value);
-    _mesh = std::nullopt;
+    _fetched_mesh = fetched_mesh;
+    _mesh = nullptr;
     return *this;
 }
 
-model_component& model_component::texture(const model_texture type, texture_ref&& value)
-{
-    _textures.insert_or_assign(type, std::move(value));
-    return *this;
-}
-
-model_component& model_component::texture(const model_texture type, std::future<texture_ref>&& value)
-{
-    _future_textures.insert_or_assign(type, std::move(value));
-    _textures.insert_or_assign(type, std::nullopt);
-    return *this;
-}
+template struct model_component<model_shader::unlit>;
+template struct model_component<model_shader::pbr>;
+template struct model_component<model_shader::blockout>;

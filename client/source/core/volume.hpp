@@ -1,67 +1,25 @@
 #pragma once
 
-#include <optional>
-#include <vector>
+#include <filesystem>
+#include <future>
+#include <memory>
 
-#include <glm/glm.hpp>
+#include <data/volume.hpp>
 
-#include <core/mesh.hpp>
+struct volume_ref {
+    volume_ref() = delete;
+    volume_ref(const volume_ref& other) = default;
+    volume_ref& operator=(const volume_ref& other) = default;
+    volume_ref(volume_ref&& other) = default;
+    volume_ref& operator=(volume_ref&& other) = default;
 
-/// @brief 
-struct volume_data {
+    volume_ref(const volume_data& data);
+    bool get_is_contained(const glm::vec3& position);
 
-    /// @brief 
-    volume_data() = delete;
-
-    /// @brief 
-    /// @param box 
-    volume_data(const std::pair<glm::vec3, glm::vec3>& box);
-
-    /// @brief 
-    /// @param boxes 
-    volume_data(const std::vector<std::pair<glm::vec3, glm::vec3>>& boxes);
-
-    /// @brief 
-    /// @param mesh 
-    volume_data(const mesh_data& mesh);
-
-    /// @brief 
-    /// @param meshes 
-    volume_data(const std::vector<mesh_data>& meshes);
-
-    /// @brief 
-    /// @param other 
-    volume_data(const volume_data& other) = default;
-
-    /// @brief 
-    /// @param other 
-    /// @return 
-    volume_data& operator=(const volume_data& other) = default;
-    
-    /// @brief 
-    /// @param other 
-    volume_data(volume_data&& other) = default;
-
-    /// @brief 
-    /// @param other 
-    /// @return 
-    volume_data& operator=(volume_data&& other) = default;
-
-    /// @brief 
-    std::vector<std::pair<glm::vec3, glm::vec3>> aabbs;
+private:
+    glm::vec3 _minimum;
+    glm::vec3 _maximum;
 };
 
-/// @brief 
-/// @param point 
-/// @return 
-bool get_is_contained(const volume_data& volume, const glm::vec3& position);
-
-/// @brief 
-/// @param files 
-/// @return 
-volume_data load_volume(const std::vector<std::filesystem::path>& files);
-
-/// @brief 
-/// @param file 
-/// @return 
-std::future<volume_data> fetch_volume(const std::vector<std::filesystem::path>& files);
+volume_data load_volume_data(std::istringstream& volume_stream);
+std::shared_future<std::shared_ptr<volume_ref>> fetch_volume(const std::filesystem::path& volume_path);

@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include <cereal/cereal.hpp>
+#include <cereal/types/string.hpp>
 
 struct shader_data {
     std::string text;

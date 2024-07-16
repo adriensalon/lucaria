@@ -1,61 +1,41 @@
 #pragma once
 
+#include <array>
 #include <filesystem>
+#include <future>
+#include <memory>
+#include <sstream>
+#include <unordered_map>
 
-#include <GLES3/gl3.h>
+#include <glm/glm.hpp>
 
 #include <data/texture.hpp>
 
-struct cubemap_data {
-    
+enum struct cubemap_side : glm::uint {
+    positive_x = 0,
+    positive_y = 1,
+    positive_z = 2,
+    negative_x = 3,
+    negative_y = 4,
+    negative_z = 5
 };
 
-/// @brief Represents a GPU cubemap managed by the application
+using cubemap_data = std::array<texture_data, 6>;
+
 struct cubemap_ref {
-
-    /// @brief Default constructor is not allowed because this object must be created from data
     cubemap_ref() = delete;
-
-    /// @brief Loads the textures from asset binaries
-    /// @param plus_x the +X texture binary
-    /// @param plus_y the +Y texture binary
-    /// @param plus_z the +Z texture binary
-    /// @param minus_x the -X texture binary
-    /// @param minus_y the -Y texture binary
-    /// @param minus_z the -Z texture binary
-    cubemap_ref(
-        const texture_data& plus_x,
-        const texture_data& plus_y,
-        const texture_data& plus_z,
-        const texture_data& minus_x,
-        const texture_data& minus_y,
-        const texture_data& minus_z);
-
-    /// @brief Copy constructor is not allowed because this object represents managed data
-    /// @param other the other managed object
     cubemap_ref(const cubemap_ref& other) = delete;
-
-    /// @brief Copy assignment is not allowed because this object represents managed data
-    /// @param other the other managed object
-    /// @return the same object
     cubemap_ref& operator=(const cubemap_ref& other) = delete;
-
-    /// @brief Move constructor transfers ownership of the managed data
-    /// @param other the other managed object
-    cubemap_ref(cubemap_ref&& other) = default;
-
-    /// @brief Move assignment transfers ownership of the managed data
-    /// @param other the other managed object
-    /// @return the same object
-    cubemap_ref& operator=(cubemap_ref&& other) = default;
-
-    /// @brief Destructor ensure managed data is released before destruction
+    cubemap_ref(cubemap_ref&& other);
+    cubemap_ref& operator=(cubemap_ref&& other);
     ~cubemap_ref();
 
-    /// @brief Gets the OpenGL id for this managed data
-    /// @return the texture id as a GLuint
-    GLuint get_id() const;
+    cubemap_ref(const cubemap_data& data);
+    glm::uint get_id() const;
 
 private:
-    GLuint _cubemap_id;
+    bool _is_instanced;
+    glm::uint _cubemap_id;
 };
+
+std::shared_future<std::shared_ptr<cubemap_ref>> fetch_cubemap(const std::array<std::filesystem::path, 6>& texture_paths);

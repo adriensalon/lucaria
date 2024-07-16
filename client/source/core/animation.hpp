@@ -2,36 +2,37 @@
 
 #include <filesystem>
 #include <future>
+#include <memory>
+#include <sstream>
+
+#include <glm/glm.hpp>
 
 #include <ozz/animation/runtime/animation.h>
+#include <ozz/animation/runtime/sampling_job.h>
+#include <ozz/base/maths/soa_transform.h>
 
-/// @brief Represents an underlying ozz animation resource that can be loaded synchronously or not
-/// from the filesystem.
+using animation_data = std::shared_ptr<ozz::animation::Animation>;
+
 struct animation_ref {
-private:
-    animation_ref() = default;
-public:
+    animation_ref() = delete;
     animation_ref(const animation_ref& other) = delete;
     animation_ref& operator=(const animation_ref& other) = delete;
     animation_ref(animation_ref&& other) = default;
     animation_ref& operator=(animation_ref&& other) = default;
 
-    /// @brief Gets the underlying ozz animation.
-    /// @return the ozz animation class instance.
-    ozz::animation::Animation& get_animation();
+    animation_ref(const animation_data& data);
+    float get_duration() const;
+    ozz::animation::SamplingJob& get_job();
+
+    bool is_playing = false;
+    bool is_looping = false;
+    glm::float32 cursor = 0.f;
+    glm::float32 weight = 1.f;
 
 private:
     ozz::animation::Animation _animation;
-    friend animation_ref load_animation(const std::filesystem::path& file);
-    friend std::future<animation_ref> fetch_animation(const std::filesystem::path& file);
+    ozz::animation::SamplingJob _sampling_job;
 };
 
-/// @brief Loads an animation synchronously from a file.
-/// @param file the file path to use.
-/// @return the runtime animation_ref structure.
-animation_ref load_animation(const std::filesystem::path& file);
-
-/// @brief Loads an animation asynchronously from a file.
-/// @param file the file path to use.
-/// @return the future to the runtime animation_ref structure.
-std::future<animation_ref> fetch_animation(const std::filesystem::path& file);
+animation_data load_animation_data(std::istringstream& animation_stream);
+std::shared_future<std::shared_ptr<animation_ref>> fetch_animation(const std::filesystem::path& animation_path);

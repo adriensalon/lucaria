@@ -4,7 +4,6 @@
 #include <ecs/component/collider.hpp>
 #include <ecs/component/model.hpp>
 #include <ecs/component/rigidbody.hpp>
-#include <ecs/component/speaker.hpp>
 #include <ecs/component/transform.hpp>
 
 static void register_level_001_room(entt::registry& registry)

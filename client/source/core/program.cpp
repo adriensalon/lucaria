@@ -1,5 +1,3 @@
-#include <fstream>
-
 #include <GLES3/gl3.h>
 #include <cereal/archives/json.hpp>
 #include <cereal/archives/portable_binary.hpp>
@@ -7,8 +5,8 @@
 #include <cereal/types/string.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-
 #include <core/program.hpp>
+#include <glue/fetch.hpp>
 
 namespace detail {
 
@@ -77,6 +75,8 @@ std::unordered_map<std::string, glm::int32> enumerate_uniforms(const glm::uint p
     return _uniforms;
 }
 
+static std::unordered_map<std::size_t, std::pair<std::vector<shader_data>, std::promise<std::shared_ptr<program_ref>>>> promises;
+
 }
 
 program_ref::program_ref(program_ref&& other)
@@ -91,14 +91,14 @@ program_ref& program_ref::operator=(program_ref&& other)
     _count = other._count;
     _program_attributes = std::move(other._program_attributes);
     _program_uniforms = std::move(other._program_uniforms);
-    _must_destroy = true;
-    other._must_destroy = false;
+    _is_instanced = true;
+    other._is_instanced = false;
     return *this;
 }
 
 program_ref::~program_ref()
 {
-    if (_must_destroy) {
+    if (_is_instanced) {
         glUseProgram(0);
         glDeleteProgram(_program_id);
     }
@@ -269,22 +269,29 @@ glm::uint program_ref::get_id() const
     return _program_id;
 }
 
-shader_data load_shader(const std::filesystem::path& file)
+shader_data load_shader_data(std::istringstream& program_stream)
 {
-#if LUCARIA_DEBUG
-    if (!std::filesystem::is_regular_file(file)) {
-        std::cout << "Invalid shader path " << file << std::endl;
-        std::terminate();
-    }
-#endif
     shader_data _data;
+    {
 #if LUCARIA_JSON
-    std::ifstream _fstream(file);
-    cereal::JSONInputArchive _archive(_fstream);
+        cereal::JSONInputArchive _archive(program_stream);
 #else
-    std::ifstream _fstream(file, std::ios::binary);
-    cereal::PortableBinaryInputArchive _archive(_fstream);
+        cereal::PortableBinaryInputArchive _archive(program_stream);
 #endif
-    _archive(_data);
+        _archive(_data);
+    }    
     return _data;
+}
+
+std::future<std::shared_ptr<program_ref>> fetch_program(const std::filesystem::path& vertex_path, const std::filesystem::path& fragment_path)
+{
+    const std::size_t _hash = compute_hash_files({ vertex_path, fragment_path });
+    std::pair<std::vector<shader_data>, std::promise<std::shared_ptr<program_ref>>>& _promise_pair = detail::promises[_hash];
+    fetch_files({ vertex_path.string(), fragment_path.string() }, [&_promise_pair, _hash](const std::size_t, const std::size_t, std::istringstream& stream) {
+        _promise_pair.first.emplace_back(std::move(load_shader_data(stream)));
+        if (_promise_pair.first.size() == 2) {
+            _promise_pair.second.set_value(std::move(std::make_shared<program_ref>(_promise_pair.first[0], _promise_pair.first[1])));
+        }
+    });
+    return _promise_pair.second.get_future();
 }

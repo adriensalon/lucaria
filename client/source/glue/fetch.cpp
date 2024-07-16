@@ -66,9 +66,6 @@ namespace io {
 }
 }
 
-using fetch_callback = std::function<void(std::istringstream&)>;
-using multiple_fetch_callback = std::function<void(std::size_t, std::size_t, std::istringstream&)>;
-
 namespace detail {
 
 std::size_t fetch_total = 0;
@@ -87,11 +84,11 @@ void on_fetch_success(emscripten_fetch_t* fetch)
     fetch_completed++;
     std::cout << "Successfully fetched " << fetch->numBytes << " bytes from " << fetch->url << std::endl;
     std::vector<char> _data(fetch->data, fetch->data + fetch->numBytes);
-// #if LUCARIA_JSON
-//     std::istringstream _stream(std::string(_data.begin(), _data.end()));
-// #else
+#if LUCARIA_JSON
+    std::istringstream _stream(std::string(_data.begin(), _data.end()));
+#else
     std::istringstream _stream(std::string(_data.begin(), _data.end()), std::ios::binary);
-// #endif
+#endif
     fetch_requests[fetch->url](_stream);
     emscripten_fetch_close(fetch);
 }
@@ -101,11 +98,11 @@ void on_multiple_fetch_success(emscripten_fetch_t* fetch)
     fetch_completed++;
     std::cout << "Successfully fetched MULTI " << fetch->numBytes << " bytes from " << fetch->url << std::endl;
     std::vector<char> _data(fetch->data, fetch->data + fetch->numBytes);
-// #if LUCARIA_JSON
-//     std::istringstream _stream(std::string(_data.begin(), _data.end()));
-// #else
+#if LUCARIA_JSON
+    std::istringstream _stream(std::string(_data.begin(), _data.end()));
+#else
     std::istringstream _stream(std::string(_data.begin(), _data.end()), std::ios::binary);
-// #endif
+#endif
     std::pair<std::size_t, std::size_t>* _user_data = static_cast<std::pair<std::size_t, std::size_t>*>(fetch->userData);
     const std::size_t _index = _user_data->first;
     const std::size_t _total = _user_data->second;
@@ -142,10 +139,10 @@ std::size_t compute_hash_files(const std::vector<std::filesystem::path>& files)
     return _combined_hash;
 }
 
-void fetch_file(const std::string& url, const fetch_callback& callback, const bool persist)
+void fetch_file(const std::filesystem::path& file, const fetch_callback& callback, const bool persist)
 {
     detail::fetch_total++;
-    detail::fetch_requests[url] = callback;
+    detail::fetch_requests[file.string()] = callback;
     emscripten_fetch_attr_t attr;
     emscripten_fetch_attr_init(&attr);
     strcpy(attr.requestMethod, "GET");
@@ -155,17 +152,17 @@ void fetch_file(const std::string& url, const fetch_callback& callback, const bo
     }
     attr.onsuccess = detail::on_fetch_success;
     attr.onerror = detail::on_fetch_error;
-    emscripten_fetch(&attr, url.c_str());
+    emscripten_fetch(&attr, file.c_str());
 }
 
-void fetch_files(const std::vector<std::filesystem::path>& files, const std::function<void(const std::size_t, const std::size_t, std::istringstream&)>& callback, const bool persist)
+void fetch_files(const std::vector<std::filesystem::path>& files, const multiple_fetch_callback& callback, const bool persist)
 {
     const std::size_t _size = files.size();
     detail::fetch_total += _size;
     for (std::size_t _index = 0; _index < _size; ++_index) {
+        const std::filesystem::path& _file = files[_index];
         std::pair<std::size_t, std::size_t>* _user_data = new std::pair<std::size_t, std::size_t>(_index, _size);
-        const std::string _file = files[_index].generic_string();
-        detail::multiple_fetch_requests[_file] = callback;
+        detail::multiple_fetch_requests[_file.string()] = callback;
         emscripten_fetch_attr_t attr;
         emscripten_fetch_attr_init(&attr);
         strcpy(attr.requestMethod, "GET");

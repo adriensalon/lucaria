@@ -2,36 +2,31 @@
 
 #include <filesystem>
 #include <future>
+#include <memory>
 
+#include <glm/glm.hpp>
+#include <ozz/animation/runtime/local_to_model_job.h>
 #include <ozz/animation/runtime/skeleton.h>
+#include <ozz/base/maths/simd_math.h>
 
-/// @brief Represents an underlying ozz skeleton resource that can be loaded synchronously or not
-/// from the filesystem.
+using skeleton_data = std::shared_ptr<ozz::animation::Skeleton>;
+
 struct skeleton_ref {
-private:
-    skeleton_ref() = default;
-public:
+    skeleton_ref() = delete;
     skeleton_ref(const skeleton_ref& other) = delete;
     skeleton_ref& operator=(const skeleton_ref& other) = delete;
     skeleton_ref(skeleton_ref&& other) = default;
     skeleton_ref& operator=(skeleton_ref&& other) = default;
-    
-    /// @brief Gets the underlying ozz skeleton.
-    /// @return the ozz skeleton class instance.
-    ozz::animation::Skeleton& get_skeleton();
+
+    skeleton_ref(const skeleton_data& data);
+    ozz::animation::LocalToModelJob& get_job();
+    glm::uint get_transforms_size() const;
+    glm::uint get_soa_transforms_size() const;
 
 private:
     ozz::animation::Skeleton _skeleton;
-    friend skeleton_ref load_skeleton(const std::filesystem::path& file);
-    friend std::future<skeleton_ref> fetch_skeleton(const std::filesystem::path& file);
+    ozz::animation::LocalToModelJob _local_to_model_job;
 };
 
-/// @brief Loads a skeleton synchronously from a file.
-/// @param file the file path to use.
-/// @return the runtime skeleton_ref structure.
-skeleton_ref load_skeleton(const std::filesystem::path& file);
-
-/// @brief Loads a skeleton asynchronously from a file.
-/// @param file the file path to use.
-/// @return the runtime skeleton_ref structure.
-std::future<skeleton_ref> fetch_skeleton(const std::filesystem::path& file);
+skeleton_data load_skeleton_data(std::istringstream& skeleton_stream);
+std::shared_future<std::shared_ptr<skeleton_ref>> fetch_skeleton(const std::filesystem::path& skeleton_path);

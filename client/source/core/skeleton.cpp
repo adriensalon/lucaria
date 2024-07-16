@@ -8,45 +8,35 @@
 
 namespace detail {
 
-static std::unordered_map<std::string, std::promise<skeleton_ref>> promises;
+static std::unordered_map<std::string, std::promise<std::shared_ptr<skeleton_ref>>> promises;
 
 }
 
-ozz::animation::Skeleton& skeleton_ref::get_skeleton()
+skeleton_ref::skeleton_ref(const skeleton_data& data)
 {
-    return _skeleton;
+    _skeleton = std::move(*(data.get()));
 }
 
-skeleton_ref load_skeleton(const std::filesystem::path& file)
+ozz::animation::LocalToModelJob& skeleton_ref::get_job()
 {
-    ozz::io::File _ozz_file(file.c_str(), "rb");
-#if LUCARIA_DEBUG
-    if (!_ozz_file.opened()) {
-        std::cout << "Impossible to open file '" << file << "'." << std::endl;
-        std::terminate();
-    }
-#endif
-    ozz::io::IArchive _ozz_archive(&_ozz_file);
-#if LUCARIA_DEBUG
-    if (!_ozz_archive.TestTag<ozz::animation::Skeleton>()) {
-        std::cout << "Impossible to load skeleton, archive doesn't contain the expected object type." << std::endl;
-        std::terminate();
-    }
-#endif
-    skeleton_ref _ref;
-    _ozz_archive >> _ref._skeleton;
-#if LUCARIA_DEBUG
-    std::cout << "Loaded animation data from " << file << std::endl;
-#endif
-    return _ref;
+    return _local_to_model_job;
 }
 
-std::future<skeleton_ref> fetch_skeleton(const std::filesystem::path& file)
+glm::uint skeleton_ref::get_transforms_size() const
 {
-    const std::string _file_str = file.string();
-    std::promise<skeleton_ref>& _promise = detail::promises[_file_str];
-    fetch_file(_file_str, [&_promise, file](std::istringstream& stream) {
-        ozz::io::StdStringStreamWrapper _ozz_stream(stream);
+    return static_cast<glm::uint>(_skeleton.num_joints());
+}
+
+glm::uint skeleton_ref::get_soa_transforms_size() const
+{
+    return static_cast<glm::uint>(_skeleton.num_soa_joints());
+}
+
+skeleton_data load_skeleton_data(std::istringstream& skeleton_stream)
+{
+    skeleton_data _data = std::make_shared<ozz::animation::Skeleton>();
+    {
+        ozz::io::StdStringStreamWrapper _ozz_stream(skeleton_stream);
         ozz::io::IArchive _ozz_archive(&_ozz_stream);
 #if LUCARIA_DEBUG
         if (!_ozz_archive.TestTag<ozz::animation::Skeleton>()) {
@@ -54,12 +44,16 @@ std::future<skeleton_ref> fetch_skeleton(const std::filesystem::path& file)
             std::terminate();
         }
 #endif
-        skeleton_ref _ref;
-        _ozz_archive >> _ref._skeleton;
-#if LUCARIA_DEBUG
-        std::cout << "Loaded skeleton data from " << file << std::endl;
-#endif
-        _promise.set_value(std::move(_ref));
+        _ozz_archive >> *(_data.get());
+    }
+    return _data;
+}
+
+std::shared_future<std::shared_ptr<skeleton_ref>> fetch_skeleton(const std::filesystem::path& skeleton_path)
+{
+    std::promise<std::shared_ptr<skeleton_ref>>& _promise = detail::promises[skeleton_path.string()];
+    fetch_file(skeleton_path, [&_promise](std::istringstream& stream) {
+        _promise.set_value(std::move(std::make_shared<skeleton_ref>(load_skeleton_data(stream))));
     });
     return _promise.get_future();
 }

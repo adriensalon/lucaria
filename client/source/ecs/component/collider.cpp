@@ -9,3 +9,7 @@
 // {
 
 // }
+
+
+template struct collider_component<collider_detection::passive>;
+template struct collider_component<collider_detection::navigator>;

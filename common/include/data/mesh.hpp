@@ -8,15 +8,13 @@
 #include <data/glm.hpp>
 
 struct mesh_data {
-    glm::uint count;
+    glm::uint count = 0;
     std::vector<glm::vec3> positions = {};
     std::vector<glm::vec4> colors = {};
     std::vector<glm::vec3> normals = {};
     std::vector<glm::vec3> tangents = {};
     std::vector<glm::vec3> bitangents = {};
     std::vector<glm::vec2> texcoords = {};
-    std::vector<glm::vec4> weights = {};
-    std::vector<glm::uvec4> bones = {};
     std::vector<glm::uvec3> indices = {};
     
     template <typename archive_t>
@@ -29,8 +27,6 @@ struct mesh_data {
         archive(cereal::make_nvp("tangents", tangents));
         archive(cereal::make_nvp("bitangents", bitangents));
         archive(cereal::make_nvp("texcoords", texcoords));
-        archive(cereal::make_nvp("weights", weights));
-        archive(cereal::make_nvp("bones", bones));
         archive(cereal::make_nvp("indices", indices));
     }
 };

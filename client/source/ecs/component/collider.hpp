@@ -1,11 +1,15 @@
 #pragma once
 
 #include <future>
-#include <functional>
 
 #include <core/volume.hpp>
 
-/// @brief 
+enum struct collider_detection {
+    passive,
+    navigator
+};
+
+template <collider_detection detection_t = collider_detection::passive>
 struct collider_component {
     collider_component() = default;
     collider_component(const collider_component& other) = delete;
@@ -13,11 +17,9 @@ struct collider_component {
     collider_component(collider_component&& other) = default;
     collider_component& operator=(collider_component&& other) = default;
 
-    /// @brief 
-    /// @param volume 
-    collider_component& volume(std::future<volume_data>&& volume);
+    collider_component& volume(const std::shared_future<std::shared_ptr<volume_data>>& fetched_volume);
 
 private:
-    std::optional<std::reference_wrapper<std::future<volume_data>>> _future_volume = std::nullopt;
-    std::optional<volume_data> _volume = std::nullopt;
+    std::optional<std::shared_future<std::shared_ptr<volume_ref>>> _fetched_volume = std::nullopt;
+    std::shared_ptr<volume_ref> _volume = nullptr;
 };

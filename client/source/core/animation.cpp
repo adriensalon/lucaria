@@ -8,44 +8,36 @@
 
 namespace detail {
 
-static std::unordered_map<std::string, std::promise<animation_ref>> promises;
+static std::unordered_map<std::string, std::promise<std::shared_ptr<animation_ref>>> promises;
 
 }
 
-ozz::animation::Animation& animation_ref::get_animation()
+animation_ref::animation_ref(const animation_data& data)
 {
-    return _animation;
+    _animation = std::move(*(data.get()));
+    _sampling_job.animation = &_animation;
+    _sampling_job.context->Resize(_animation.num_tracks());
+    // _sampling_job.output = ozz::make_span(_local_transforms);
+    _sampling_job.ratio = 0.f;
+    // _sampling_job.Validate();
+    // bind skeleton? for num joints
+    // animation_sampler.local_transforms.resize(skeleton.get_skeleton().num_soa_joints());
 }
 
-animation_ref load_animation(const std::filesystem::path& file)
+float animation_ref::get_duration() const
 {
-    ozz::io::File _ozz_file(file.c_str(), "rb");
-#if LUCARIA_DEBUG
-    if (!_ozz_file.opened()) {
-        std::cout << "Impossible to open file '" << file << "'." << std::endl;
-        std::terminate();
-    }
-#endif
-    ozz::io::IArchive _ozz_archive(&_ozz_file);
-#if LUCARIA_DEBUG
-    if (!_ozz_archive.TestTag<ozz::animation::Animation>()) {
-        std::cout << "Impossible to load animation, archive doesn't contain the expected object type." << std::endl;
-        std::terminate();
-    }
-#endif
-    animation_ref _ref;
-    _ozz_archive >> _ref._animation;
-#if LUCARIA_DEBUG
-    std::cout << "Loaded animation data from " << file << std::endl;
-#endif
-    return _ref;
+    return _animation.duration();
 }
 
-std::future<animation_ref> fetch_animation(const std::filesystem::path& file)
+ozz::animation::SamplingJob& animation_ref::get_job()
 {
-    const std::string _file_str = file.string();
-    std::promise<animation_ref>& _promise = detail::promises[_file_str];
-    fetch_file(_file_str, [&_promise, file](std::istringstream& stream) {
+    return _sampling_job;
+}
+
+animation_data load_animation_data(std::istringstream& stream)
+{
+    animation_data _data = std::make_shared<ozz::animation::Animation>();
+    {
         ozz::io::StdStringStreamWrapper _ozz_stream(stream);
         ozz::io::IArchive _ozz_archive(&_ozz_stream);
 #if LUCARIA_DEBUG
@@ -54,12 +46,16 @@ std::future<animation_ref> fetch_animation(const std::filesystem::path& file)
             std::terminate();
         }
 #endif
-        animation_ref _ref;
-        _ozz_archive >> _ref._animation;
-#if LUCARIA_DEBUG
-        std::cout << "Loaded animation data from " << file << std::endl;
-#endif
-        _promise.set_value(std::move(_ref));
+        _ozz_archive >> *(_data.get());
+    }
+    return _data;
+}
+
+std::shared_future<std::shared_ptr<animation_ref>> fetch_animation(const std::filesystem::path& animation_path)
+{
+    std::promise<std::shared_ptr<animation_ref>>& _promise = detail::promises[animation_path.string()];
+    fetch_file(animation_path, [&_promise](std::istringstream& stream) {
+        _promise.set_value(std::move(std::make_shared<animation_ref>(load_animation_data(stream))));
     });
     return _promise.get_future();
 }

@@ -1,27 +1,23 @@
 #pragma once
 
-#include <unordered_map>
+#include <future>
+#include <memory>
 
 #include <core/mesh.hpp>
-#include <core/texture.hpp>
+#include <core/material.hpp>
 
-/// @brief
 enum struct model_shader {
     blockout,
     unlit,
     pbr
 };
 
-/// @brief
-enum struct model_texture {
-    color,
-    normal,
-    occlusion,
-    roughness,
-    metallic
+enum struct model_occlusion {
+    passive,
+    occluder
 };
 
-/// @brief 
+template <model_shader shader_t = model_shader::unlit>
 struct model_component {
     model_component() = default;
     model_component(const model_component& other) = delete;
@@ -29,30 +25,14 @@ struct model_component {
     model_component(model_component&& other) = default;
     model_component& operator=(model_component&& other) = default;
 
-    /// @brief 
-    /// @param value 
-    model_component& mesh(mesh_ref&& value);
-
-    /// @brief 
-    /// @param value 
-    model_component& mesh(std::future<mesh_ref>&& value);
-
-    /// @brief 
-    /// @param type 
-    /// @param value 
-    model_component& texture(const model_texture type, texture_ref&& value);
-
-    /// @brief 
-    /// @param type 
-    /// @param value 
-    model_component& texture(const model_texture type, std::future<texture_ref>&& value);
+    model_component& material(const std::shared_future<std::shared_ptr<material_ref>>& fetched_material);
+    model_component& mesh(const std::shared_future<std::shared_ptr<mesh_ref>>& fetched_mesh);
 
 private:
-    std::optional<std::future<mesh_ref>> _future_mesh = std::nullopt;
-    std::optional<mesh_ref> _mesh = std::nullopt;
-    std::unordered_map<model_texture, std::optional<std::future<texture_ref>>> _future_textures = {};
-    std::unordered_map<model_texture, std::optional<texture_ref>> _textures = {};
+    std::optional<std::shared_future<std::shared_ptr<material_ref>>> _fetched_material = std::nullopt;
+    std::optional<std::shared_future<std::shared_ptr<mesh_ref>>> _fetched_mesh = std::nullopt;
+    std::shared_ptr<material_ref> _material = nullptr;
+    std::shared_ptr<mesh_ref> _mesh = nullptr;
     friend struct async_system;
-    friend struct motion_system;
     friend struct rendering_system;
 };

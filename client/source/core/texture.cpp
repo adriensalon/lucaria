@@ -2,8 +2,7 @@
 
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/archives/json.hpp>
-#include <cereal/cereal.hpp>
-#include <cereal/types/vector.hpp>
+#include <GLES3/gl3.h>
 
 #include <core/texture.hpp>
 #include <glue/fetch.hpp>
@@ -14,7 +13,7 @@ void validate_texture(const texture_data& data)
 {
 }
 
-static std::unordered_map<std::string, std::promise<texture_ref>> promises;
+static std::unordered_map<std::string, std::promise<std::shared_ptr<texture_ref>>> promises;
 
 }
 
@@ -26,14 +25,14 @@ texture_ref::texture_ref(texture_ref&& other)
 texture_ref& texture_ref::operator=(texture_ref&& other)
 {
     _texture_id = other._texture_id;
-    _must_destroy = true;
-    other._must_destroy = false;
+    _is_instanced = true;
+    other._is_instanced = false;
     return *this;
 }
 
 texture_ref::~texture_ref()
 {
-    if (_must_destroy) {
+    if (_is_instanced) {
         glBindTexture(GL_TEXTURE_2D, 0);
         glDeleteTextures(1, &_texture_id);
     }
@@ -67,7 +66,7 @@ texture_ref::texture_ref(const texture_data& data)
     std::cout << "Created TEXTURE_2D buffer of size " << data.width << "x" << data.height
               << " with id " << _texture_id << std::endl;
 #endif
-    _must_destroy = true;
+    _is_instanced = true;
 }
 
 GLuint texture_ref::get_id() const
@@ -75,54 +74,25 @@ GLuint texture_ref::get_id() const
     return _texture_id;
 }
 
-texture_ref load_texture(const std::filesystem::path& file)
+texture_data load_texture_data(std::istringstream& texture_stream)
 {
-#if LUCARIA_DEBUG
-    if (!std::filesystem::is_regular_file(file)) {
-        std::cout << "Invalid texture path " << file << std::endl;
-        std::terminate();
-    }
-#endif
     texture_data _data;
     {
-#if LUCARIA_JSON
-        std::ifstream _fstream(file);
-        cereal::JSONInputArchive _archive(_fstream);
+#if LUCARIA_JSON        
+        cereal::JSONInputArchive _archive(texture_stream);
 #else
-        std::ifstream _fstream(file, std::ios::binary);
-        cereal::PortableBinaryInputArchive _archive(_fstream);
+        cereal::PortableBinaryInputArchive _archive(texture_stream);
 #endif
         _archive(_data);
     }
-#if LUCARIA_DEBUG
-    std::cout << "Loaded texture data from " << file << " ("
-              << _data.width << "x"
-              << _data.height << ", "
-              << _data.channels << " channels)" << std::endl;
-#endif
-    return texture_ref(_data);
+    return _data;
 }
 
-std::future<texture_ref> fetch_texture(const std::filesystem::path& file)
+std::shared_future<std::shared_ptr<texture_ref>> fetch_texture(const std::filesystem::path& texture_path)
 {
-    std::promise<texture_ref>& _promise = detail::promises[file.generic_string()];
-    fetch_file(file.generic_string(), [&_promise, file](std::istringstream& stream) {
-        texture_data _data;
-        {
-#if LUCARIA_JSON
-            cereal::JSONInputArchive _archive(stream);
-#else
-            cereal::PortableBinaryInputArchive _archive(stream);
-#endif
-            _archive(_data);
-        }
-#if LUCARIA_DEBUG
-        std::cout << "Loaded texture data from " << file << " ("
-              << _data.width << "x"
-              << _data.height << ", "
-              << _data.channels << " channels)" << std::endl;
-#endif
-        _promise.set_value(std::move(texture_ref(_data)));
+    std::promise<std::shared_ptr<texture_ref>>& _promise = detail::promises[texture_path.string()];
+    fetch_file(texture_path, [&_promise](std::istringstream& stream) {
+        _promise.set_value(std::move(std::make_shared<texture_ref>(load_texture_data(stream))));
     });
     return _promise.get_future();
 }
