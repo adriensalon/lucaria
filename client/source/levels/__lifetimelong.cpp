@@ -21,6 +21,7 @@ static entt::entity register_player(entt::registry& registry)
         .material(fetch_material({{ material_texture::color, "assets/room_color.bin" }}));
     
     registry.emplace<transform_component>(_player_entity)
+        .rotation_relative(glm::vec3(-1.57f, 0.f, 0.f))
         .position_warp(glm::vec3(3.f, 0.f, 0.f));
     
     // constexpr glm::uint _lolanim = 777;
