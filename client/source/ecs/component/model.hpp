@@ -12,11 +12,6 @@ enum struct model_shader {
     pbr
 };
 
-enum struct model_occlusion {
-    passive,
-    occluder
-};
-
 template <model_shader shader_t = model_shader::unlit>
 struct model_component {
     model_component() = default;

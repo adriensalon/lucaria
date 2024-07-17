@@ -9,7 +9,7 @@
 
 namespace detail {
 
-// void soa_lerp(const ozz::math::SoaTransform& source, ozz::math::SoaTransform& destination, const glm::float32 weight) 
+// void soa_lerp(const ozz::math::SoaTransform& source, ozz::math::SoaTransform& destination, const glm::float32 weight)
 // {
 //     ozz::math::SimdFloat4 _simd_weight = ozz::math::simd_float4::Load1(weight);
 //     destination.translation = ozz::math::Lerp(destination.translation, source.translation, _simd_weight);
@@ -51,7 +51,7 @@ namespace detail {
 //         for (std::size_t _index = 0; _index < animation_sampler.local_transforms.size(); ++_index) {
 //             soa_lerp(animation_sampler.local_transforms[_index], blended_local_transforms[_index], animation_sampler.weight);
 //         }
-//     }    
+//     }
 // }
 
 // void prepare_skinning(std::vector<ozz::math::SoaTransform>& blended_local_transforms, std::vector<ozz::math::Float4x4>& model_transforms, ozz::animation::LocalToModelJob& job, skeleton_ref& skeleton)
@@ -95,13 +95,12 @@ namespace detail {
 //     });
 // }
 
-
 }
 
-void motion_system::update()
-{
-    world_system::each_level([](entt::registry& _registry) {
-        _registry.view<model_component<model_shader::unlit>, animator_component>().each([](model_component<model_shader::unlit>& _model, animator_component& _animator) {
+// void motion_system::update()
+// {
+//     world_system::each_level([](entt::registry& _registry) {
+//         _registry.view<model_component<model_shader::unlit>, animator_component>().each([](model_component<model_shader::unlit>& _model, animator_component& _animator) {
             // if (!_animator._is_bound_to_model && detail::is_ready_for_binding(_model._mesh, _animator._skeleton)) {
             //     _animator._is_bound_to_model = true;
             // }
@@ -125,7 +124,26 @@ void motion_system::update()
             //     detail::compute_sampling(_pair.second, _animator._blended_local_transforms);
             // }
             // detail::compute_skinning(_animator._model_transforms, _animator._local_to_model_job, _mesh);
-            
-        });
-    });
+//         });
+//     });
+// }
+
+void motion_system::blend_animations()
+{
+    // animators -> model space matrices w extracted root motion
+}
+
+void motion_system::apply_root_motion()
+{
+    // animators, transforms
+}
+
+void motion_system::apply_foot_ik()
+{
+    // animators, rigidbodies (stores ground_normal)
+}
+
+void motion_system::skin_meshes()
+{
+    // animators, models
 }

@@ -144,7 +144,7 @@ void rendering_system::draw_skybox()
     // _skybox_program_value.draw();
 }
 
-void rendering_system::draw_unlit_models()
+void rendering_system::draw_meshes()
 {
     static std::optional<program_ref> _persistent_unlit_program = std::nullopt;
     if (!_persistent_unlit_program.has_value()) {

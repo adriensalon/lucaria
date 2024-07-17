@@ -32,7 +32,7 @@ static entt::entity register_player(entt::registry& registry)
     
     // registry.emplace<collider_component<collider_detection::passive>>(_player_entity);
     
-    registry.emplace<rigidbody_component>(_player_entity);
+    // registry.emplace<rigidbody_component>(_player_entity);
         // volume
         // weight
 

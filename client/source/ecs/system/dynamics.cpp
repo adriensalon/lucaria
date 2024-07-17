@@ -33,3 +33,13 @@ void dynamics_system::update()
         detail::is_bullet_setup = true;
     }
 }
+
+void dynamics_system::prevent_kinematic_wall_collisions()
+{
+    // transforms, rigidbodies \\ colliders (from bullet)
+}
+
+void dynamics_system::snap_kinematic_grounds()
+{
+    // transforms, rigidbodies \\ colliders (from bullet)
+}

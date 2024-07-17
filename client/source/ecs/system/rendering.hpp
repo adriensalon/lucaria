@@ -17,5 +17,5 @@ struct rendering_system {
     static void clear_screen();
     static void compute_projection();
     static void draw_skybox();
-    static void draw_unlit_models();
+    static void draw_meshes();
 };

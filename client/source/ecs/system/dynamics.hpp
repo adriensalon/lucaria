@@ -12,4 +12,11 @@ struct dynamics_system {
     static void gravity(const glm::vec3& newtons);
 
     static void update();
+
+
+    // static void use_on_collision_callback(const std::function<void()>& callback);
+    // static void use_on_collision_callback(const std::function<void()>& callback);
+
+    static void prevent_kinematic_wall_collisions(); // transforms, rigidbodies \\ colliders (from bullet)
+    static void snap_kinematic_grounds(); // transforms, rigidbodies \\ colliders (from bullet)
 };

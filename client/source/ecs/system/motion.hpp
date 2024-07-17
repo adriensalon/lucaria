@@ -7,5 +7,8 @@ struct motion_system {
     motion_system(motion_system&& other) = delete;
     motion_system& operator=(motion_system&& other) = delete;
     
-    static void update();
+    static void blend_animations();
+    static void apply_root_motion();
+    static void apply_foot_ik();
+    static void skin_meshes();
 };
