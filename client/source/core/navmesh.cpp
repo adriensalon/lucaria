@@ -40,6 +40,11 @@ navmesh_ref::navmesh_ref(const mesh_data& data)
     _is_instanced = true;
 }
 
+btCollisionShape* navmesh_ref::get_shape() const
+{
+    return _shape;
+}
+
 std::shared_future<std::shared_ptr<navmesh_ref>> fetch_navmesh(const std::filesystem::path& mesh_path)
 {
     std::promise<std::shared_ptr<navmesh_ref>>& _promise = detail::promises[mesh_path.string()];

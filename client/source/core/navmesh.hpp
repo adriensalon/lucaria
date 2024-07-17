@@ -13,6 +13,7 @@ struct navmesh_ref {
     ~navmesh_ref();
 
     navmesh_ref(const mesh_data& data);
+    btCollisionShape* get_shape() const;
 
 private:
     bool _is_instanced;
