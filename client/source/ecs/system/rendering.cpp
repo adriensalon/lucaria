@@ -155,10 +155,10 @@ void rendering_system::draw_meshes()
     
     each_level([&_unlit_program, &_view_projection](entt::registry& _registry) {
         _registry.view<model_component<model_shader::unlit>, transform_component>().each([&_unlit_program, &_view_projection](model_component<model_shader::unlit>& _model, transform_component& _transform) {
-            if (_model._mesh && _model._material && _model._material->get_has_texture(material_texture::color)) {
+            if (_model._mesh.has_value() && _model._material.has_value() && _model._material.value().get_has_texture(material_texture::color)) {
                 const glm::mat4 _model_view_projection = _view_projection * _transform._transform;
-                const mesh_ref& _mesh = *(_model._mesh.get());
-                const texture_ref& _color = _model._material->get_texture(material_texture::color);
+                const mesh_ref& _mesh = _model._mesh.value();
+                const texture_ref& _color = _model._material.value().get_texture(material_texture::color);
                 _unlit_program.use();
                 _unlit_program.bind("vert_position", _mesh, mesh_attribute::position);
                 _unlit_program.bind("vert_texcoord", _mesh, mesh_attribute::texcoord);
@@ -168,9 +168,9 @@ void rendering_system::draw_meshes()
             }
         });
         _registry.view<model_component<model_shader::unlit>>(entt::exclude<transform_component>).each([&_unlit_program, &_view_projection](model_component<model_shader::unlit>& _model) {
-            if (_model._mesh && _model._material && _model._material->get_has_texture(material_texture::color)) {
-                const mesh_ref& _mesh = *(_model._mesh.get());
-                const texture_ref& _color = _model._material->get_texture(material_texture::color);
+            if (_model._mesh.has_value() && _model._material.has_value() && _model._material.value().get_has_texture(material_texture::color)) {
+                const mesh_ref& _mesh = _model._mesh.value();
+                const texture_ref& _color = _model._material.value().get_texture(material_texture::color);
                 _unlit_program.use();
                 _unlit_program.bind("vert_position", _mesh, mesh_attribute::position);
                 _unlit_program.bind("vert_texcoord", _mesh, mesh_attribute::texcoord);

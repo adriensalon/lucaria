@@ -76,7 +76,7 @@ struct fetch_container {
     {
         _fetched = fetched;
         _callback = callback;
-        fetch_container_updaters[static_cast<std::uintptr_t>(this)] = [this] () {
+        fetch_container_updaters[reinterpret_cast<std::uintptr_t>(static_cast<void*>(this))] = [this] () {
             bool _must_erase = false;
             if (_fetched.has_value()) {
                 std::shared_future<std::shared_ptr<value_t>>& _future_value = _fetched.value();
@@ -98,7 +98,7 @@ struct fetch_container {
 
     bool has_value() const
     {
-        return _value;
+        return _value.operator bool();
     }
 
     value_t& value()

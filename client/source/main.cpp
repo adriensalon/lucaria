@@ -2,7 +2,6 @@
 #include <core/window.hpp>
 #include <core/world.hpp>
 
-#include <ecs/system/async.hpp>
 #include <ecs/system/dynamics.hpp>
 #include <ecs/system/motion.hpp>
 #include <ecs/system/player.hpp>
@@ -26,8 +25,6 @@ int main()
         
         rendering_system::clear_screen();
         rendering_system::compute_projection();
-
-        async_system::update();
         
 
         player_system::update(); //

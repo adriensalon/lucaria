@@ -3,6 +3,7 @@
 #include <future>
 #include <memory>
 
+#include <core/fetch.hpp>
 #include <core/mesh.hpp>
 #include <core/material.hpp>
 
@@ -24,10 +25,8 @@ struct model_component {
     model_component& mesh(const std::shared_future<std::shared_ptr<mesh_ref>>& fetched_mesh);
 
 private:
-    std::optional<std::shared_future<std::shared_ptr<material_ref>>> _fetched_material = std::nullopt;
-    std::optional<std::shared_future<std::shared_ptr<mesh_ref>>> _fetched_mesh = std::nullopt;
-    std::shared_ptr<material_ref> _material = nullptr;
-    std::shared_ptr<mesh_ref> _mesh = nullptr;
+    fetch_container<material_ref> _material = {};
+    fetch_container<mesh_ref> _mesh = {};
     friend struct async_system;
     friend struct rendering_system;
 };
