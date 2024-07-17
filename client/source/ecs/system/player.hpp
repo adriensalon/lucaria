@@ -21,4 +21,7 @@ struct player_system {
     static glm::mat4x4 get_view();
     
     static void update();
+
+
+    static void use_transform(transform_component& transform);
 };

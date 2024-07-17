@@ -5,7 +5,7 @@
 #include <cereal/archives/json.hpp>
 
 #include <core/armature.hpp>
-#include <glue/fetch.hpp>
+#include <core/fetch.hpp>
 
 
 
@@ -52,8 +52,8 @@ armature_data load_armature_data(std::istringstream& armature_stream)
     return _data;
 }
 
-std::shared_future<std::shared_ptr<armature_ref>> fetch_armature(const std::filesystem::path& armature_path)
-{
-    
-}
+// std::shared_future<std::shared_ptr<armature_ref>> fetch_armature(const std::filesystem::path& armature_path)
+// {
+//     return nullptr;
+// }
 

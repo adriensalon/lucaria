@@ -1,5 +1,5 @@
 #include <ecs/component/model.hpp>
-#include <glue/fetch.hpp>
+#include <core/fetch.hpp>
 
 template <model_shader shader_t>
 model_component<shader_t>& model_component<shader_t>::material(const std::shared_future<std::shared_ptr<material_ref>>& fetched_material)

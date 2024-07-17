@@ -5,7 +5,7 @@
 #include <GLES3/gl3.h>
 
 #include <core/texture.hpp>
-#include <glue/fetch.hpp>
+#include <core/fetch.hpp>
 
 namespace detail {
 

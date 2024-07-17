@@ -4,8 +4,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <glue/fetch.hpp>
-#include <glue/window.hpp>
+#include <core/fetch.hpp>
+#include <core/window.hpp>
 
 #include <core/program.hpp>
 
@@ -13,7 +13,7 @@
 #include <ecs/component/transform.hpp>
 #include <ecs/system/player.hpp>
 #include <ecs/system/rendering.hpp>
-#include <ecs/system/world.hpp>
+#include <core/world.hpp>
 
 namespace detail {
 
@@ -153,7 +153,7 @@ void rendering_system::draw_meshes()
     program_ref& _unlit_program = _persistent_unlit_program.value();
     glm::mat4x4 _view_projection = detail::camera_projection * player_system::get_view();
     
-    world_system::each_level([&_unlit_program, &_view_projection](entt::registry& _registry) {
+    each_level([&_unlit_program, &_view_projection](entt::registry& _registry) {
         _registry.view<model_component<model_shader::unlit>, transform_component>().each([&_unlit_program, &_view_projection](model_component<model_shader::unlit>& _model, transform_component& _transform) {
             if (_model._mesh && _model._material && _model._material->get_has_texture(material_texture::color)) {
                 const glm::mat4 _model_view_projection = _view_projection * _transform._transform;

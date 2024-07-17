@@ -6,7 +6,7 @@
 #include <cereal/archives/json.hpp>
 
 #include <core/material.hpp>
-#include <glue/fetch.hpp>
+#include <core/fetch.hpp>
 
 namespace detail {
 

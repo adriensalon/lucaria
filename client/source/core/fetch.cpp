@@ -5,7 +5,7 @@
 
 #include <emscripten/fetch.h>
 
-#include <glue/fetch.hpp>
+#include <core/fetch.hpp>
 
 namespace ozz {
 namespace io {

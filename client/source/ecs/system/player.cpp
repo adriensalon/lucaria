@@ -3,8 +3,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <glue/fetch.hpp>
-#include <glue/window.hpp>
+#include <core/fetch.hpp>
+#include <core/window.hpp>
 
 #include <ecs/system/player.hpp>
 #include <ecs/system/splash.hpp>

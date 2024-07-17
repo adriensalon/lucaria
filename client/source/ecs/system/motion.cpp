@@ -5,7 +5,7 @@
 #include <ecs/component/animator.hpp>
 #include <ecs/component/model.hpp>
 #include <ecs/system/motion.hpp>
-#include <ecs/system/world.hpp>
+#include <core/world.hpp>
 
 namespace detail {
 
@@ -99,7 +99,7 @@ namespace detail {
 
 // void motion_system::update()
 // {
-//     world_system::each_level([](entt::registry& _registry) {
+//     each_level([](entt::registry& _registry) {
 //         _registry.view<model_component<model_shader::unlit>, animator_component>().each([](model_component<model_shader::unlit>& _model, animator_component& _animator) {
             // if (!_animator._is_bound_to_model && detail::is_ready_for_binding(_model._mesh, _animator._skeleton)) {
             //     _animator._is_bound_to_model = true;

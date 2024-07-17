@@ -7,9 +7,8 @@
 #include <ecs/component/animator.hpp>
 #include <ecs/component/model.hpp>
 #include <ecs/system/splash.hpp>
-#include <ecs/system/world.hpp>
-#include <glue/fetch.hpp>
-#include <glue/window.hpp>
+#include <core/fetch.hpp>
+#include <core/window.hpp>
 
 namespace detail {
 

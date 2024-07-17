@@ -4,7 +4,7 @@
 #include <ozz/base/memory/allocator.h>
 
 #include <core/skeleton.hpp>
-#include <glue/fetch.hpp>
+#include <core/fetch.hpp>
 
 namespace detail {
 

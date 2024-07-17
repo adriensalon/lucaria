@@ -1,5 +1,5 @@
 #include <ecs/component/animator.hpp>
-#include <glue/fetch.hpp>
+#include <core/fetch.hpp>
 
 
 

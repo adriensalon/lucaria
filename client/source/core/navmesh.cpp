@@ -1,5 +1,5 @@
 #include <core/navmesh.hpp>
-#include <glue/fetch.hpp>
+#include <core/fetch.hpp>
 
 namespace detail {
 

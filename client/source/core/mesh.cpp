@@ -6,7 +6,7 @@
 #include <GLES3/gl3.h>
 
 #include <core/mesh.hpp>
-#include <glue/fetch.hpp>
+#include <core/fetch.hpp>
 
 namespace detail {
 

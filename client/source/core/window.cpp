@@ -7,7 +7,8 @@
 #include <emscripten/html5.h>
 #include <imgui.h>
 
-#include <glue/window.hpp>
+#include <core/fetch.hpp>
+#include <core/window.hpp>
 
 namespace detail {
 
@@ -212,6 +213,8 @@ void update()
     int _screen_height = canvas_get_height();
     detail::screen_size = { _screen_width, _screen_height };
     detail::time_delta = _time_delta;
+
+    wait_fetched_containers();
 
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = ImVec2(detail::screen_size.x, detail::screen_size.y);

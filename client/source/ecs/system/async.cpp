@@ -1,6 +1,6 @@
-#include <glue/fetch.hpp>
+#include <core/fetch.hpp>
 #include <ecs/system/async.hpp>
-#include <ecs/system/world.hpp>
+#include <core/world.hpp>
 #include <ecs/component/animator.hpp>
 #include <ecs/component/model.hpp>
 
@@ -65,7 +65,7 @@ namespace detail {
 
 void async_system::update()
 {
-    world_system::each_level([](entt::registry& _registry) {
+    each_level([](entt::registry& _registry) {
         // _registry.view<model_component<model_shader::pbr>>().each([](model_component<model_shader::pbr>& _model) {
         //     detail::update_ref<mesh_ref>(_model._fetched_mesh, _model._mesh);
         //     detail::update_ref<material_ref>(_model._fetched_material, _model._material);

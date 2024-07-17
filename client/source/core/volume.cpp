@@ -3,7 +3,7 @@
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/archives/json.hpp>
 
-#include <glue/fetch.hpp>
+#include <core/fetch.hpp>
 
 namespace detail {
 
