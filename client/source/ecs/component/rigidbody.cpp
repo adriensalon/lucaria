@@ -67,66 +67,43 @@ rigidbody_component& rigidbody_component::capsule(const glm::float32 radius, con
     // TODO REGISTER TO APPROPRIATE DYNAMICS WORLD FROM THE SYSTEM
     // dynamicsWorld->addRigidBody(_rigidbody);
 #if LUCARIA_GUIZMO
-    const int segments = 16; // Number of segments for the wireframe sphere/capsule representation
+    constexpr glm::uint _segments = 10;
     std::vector<glm::vec3> _positions;
     std::vector<glm::uvec2> _indices;
-
-    float halfHeight = height * 0.5f;
-
-    // Generate vertices and indices for the top hemisphere
-    for (int j = 0; j <= segments / 2; ++j) {
-        float phi = glm::half_pi<float>() * float(j) / float(segments / 2);
-        for (int i = 0; i <= segments; ++i) {
-            float theta = glm::two_pi<float>() * float(i) / float(segments);
-            float x = radius * cosf(theta) * sinf(phi);
-            float y = radius * cosf(phi);
-            float z = radius * sinf(theta) * sinf(phi);
-            _positions.push_back(glm::vec3(x, halfHeight + y, z));
-            if (i > 0 && j > 0) {
+    glm::float32 _half_height = height * 0.5f;
+    for (glm::uint _j = 0; _j <= _segments / 2; ++_j) {
+        glm::float32 _phi = glm::half_pi<glm::float32>() * glm::float32(_j) / glm::float32(_segments / 2);
+        for (glm::uint _i = 0; _i <= _segments; ++_i) {
+            glm::float32 _theta = glm::two_pi<glm::float32>() * glm::float32(_i) / glm::float32(_segments);
+            glm::float32 _x = radius * cosf(_theta) * sinf(_phi);
+            glm::float32 _y = radius * cosf(_phi);
+            glm::float32 _z = radius * sinf(_theta) * sinf(_phi);
+            _positions.push_back(glm::vec3(_x, _half_height + _y, _z));
+            if (_i > 0 && _j > 0) {
                 _indices.push_back(glm::uvec2(_positions.size() - 2, _positions.size() - 1));
             }
-            if (j > 0) {
-                _indices.push_back(glm::uvec2(_positions.size() - 1, _positions.size() - 1 - (segments + 1)));
+            if (_j > 0) {
+                _indices.push_back(glm::uvec2(_positions.size() - 1, _positions.size() - 1 - (_segments + 1)));
             }
         }
     }
-
-    // Generate vertices and indices for the bottom hemisphere
-    int offset = _positions.size();
-    for (int j = 0; j <= segments / 2; ++j) {
-        float phi = glm::half_pi<float>() * float(j) / float(segments / 2);
-        for (int i = 0; i <= segments; ++i) {
-            float theta = glm::two_pi<float>() * float(i) / float(segments);
-            float x = radius * cosf(theta) * sinf(phi);
-            float y = radius * cosf(phi);
-            float z = radius * sinf(theta) * sinf(phi);
-            _positions.push_back(glm::vec3(x, -halfHeight - y, z));
-            if (i > 0 && j > 0) {
+    glm::uint offset = _positions.size();
+    for (glm::uint _j = 0; _j <= _segments / 2; ++_j) {
+        glm::float32 _phi = glm::half_pi<glm::float32>() * glm::float32(_j) / glm::float32(_segments / 2);
+        for (glm::uint _i = 0; _i <= _segments; ++_i) {
+            glm::float32 _theta = glm::two_pi<glm::float32>() * glm::float32(_i) / glm::float32(_segments);
+            glm::float32 _x = radius * cosf(_theta) * sinf(_phi);
+            glm::float32 _y = radius * cosf(_phi);
+            glm::float32 _z = radius * sinf(_theta) * sinf(_phi);
+            _positions.push_back(glm::vec3(_x, -_half_height - _y, _z));
+            if (_i > 0 && _j > 0) {
                 _indices.push_back(glm::uvec2(_positions.size() - 2, _positions.size() - 1));
             }
-            if (j > 0) {
-                _indices.push_back(glm::uvec2(_positions.size() - 1, _positions.size() - 1 - (segments + 1)));
+            if (_j > 0) {
+                _indices.push_back(glm::uvec2(_positions.size() - 1, _positions.size() - 1 - (_segments + 1)));
             }
         }
     }
-
-    // Generate vertices and indices for the cylinder sides
-    int topOffset = 0;
-    int bottomOffset = offset;
-    for (int i = 0; i <= segments; ++i) {
-        float theta = glm::two_pi<float>() * float(i) / float(segments);
-        float x = radius * cosf(theta);
-        float z = radius * sinf(theta);
-        _positions.push_back(glm::vec3(x, halfHeight, z));      // Top circle
-        _positions.push_back(glm::vec3(x, -halfHeight, z));     // Bottom circle
-        if (i > 0) {
-            _indices.push_back(glm::uvec2(_positions.size() - 4, _positions.size() - 2));
-            _indices.push_back(glm::uvec2(_positions.size() - 3, _positions.size() - 1));
-        }
-    }
-    // _indices.push_back(glm::uvec2(_positions.size() - 2, _positions.size() - 2 - segments * 2));
-    // _indices.push_back(glm::uvec2(_positions.size() - 1, _positions.size() - 1 - segments * 2));
-
     _guizmo = std::make_unique<guizmo_mesh_ref>(_positions, _indices);
 #endif
     _is_instanced = true;
