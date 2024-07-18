@@ -1,6 +1,7 @@
 #include <glm/gtc/constants.hpp>
 
 #include <ecs/component/rigidbody.hpp>
+#include <ecs/system/dynamics.hpp>
 
 rigidbody_component::rigidbody_component(rigidbody_component&& other)
 {
@@ -32,9 +33,7 @@ rigidbody_component& rigidbody_component::box(const glm::vec3& half_extents)
     _state = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 0)));
     _rigidbody = new btRigidBody(btRigidBody::btRigidBodyConstructionInfo(0, _state, _shape, btVector3(0, 0, 0)));
     _rigidbody->setCollisionFlags(_rigidbody->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
-    
-    // TODO REGISTER TO APPROPRIATE DYNAMICS WORLD FROM THE SYSTEM
-    // dynamicsWorld->addRigidBody(_rigidbody);
+    dynamics_system::get_dynamics_world()->addRigidBody(_rigidbody);
 #if LUCARIA_GUIZMO
     std::vector<glm::vec3> _positions = {
         glm::vec3(-half_extents.x, -half_extents.y, -half_extents.z),

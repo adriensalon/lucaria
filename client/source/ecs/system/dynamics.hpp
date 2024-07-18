@@ -1,5 +1,6 @@
 #pragma once
 
+#include <btBulletDynamicsCommon.h>
 #include <glm/glm.hpp>
 
 struct dynamics_system {
@@ -9,14 +10,10 @@ struct dynamics_system {
     dynamics_system(dynamics_system&& other) = delete;
     dynamics_system& operator=(dynamics_system&& other) = delete;
 
-    static void gravity(const glm::vec3& newtons);
+    static void use_gravity(const glm::vec3& newtons);
+    
+    static btDiscreteDynamicsWorld* get_dynamics_world();
 
-    static void update();
-
-
-    // static void use_on_collision_callback(const std::function<void()>& callback);
-    // static void use_on_collision_callback(const std::function<void()>& callback);
-
-    static void prevent_kinematic_wall_collisions(); // transforms, rigidbodies \\ colliders (from bullet)
-    static void snap_kinematic_grounds(); // transforms, rigidbodies \\ colliders (from bullet)
+    static void prevent_kinematic_wall_collisions();
+    static void snap_kinematic_grounds();
 };

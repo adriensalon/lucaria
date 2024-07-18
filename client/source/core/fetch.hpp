@@ -82,15 +82,12 @@ struct fetch_container {
                 std::shared_future<std::shared_ptr<value_t>>& _future_value = _fetched.value();
                 if (get_is_future_ready<std::shared_ptr<value_t>>(_future_value)) {
                     _value = _future_value.get();
-                    _must_erase = true;
+                    if (_callback) {
+                        _callback();
+                    }
+                    _fetched = std::nullopt;
+                    return true;
                 }
-            }
-            if (_callback) {
-                _callback();
-            }
-            if (_must_erase) {
-                _fetched = std::nullopt;
-                return true;
             }
             return false;
         };
