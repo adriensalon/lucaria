@@ -5,15 +5,14 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <core/fetch.hpp>
-#include <core/window.hpp>
-
 #include <core/program.hpp>
+#include <core/window.hpp>
+#include <core/world.hpp>
 
 #include <ecs/component/model.hpp>
 #include <ecs/component/transform.hpp>
 #include <ecs/system/player.hpp>
 #include <ecs/system/rendering.hpp>
-#include <core/world.hpp>
 
 namespace detail {
 
@@ -24,46 +23,77 @@ static float camera_near = 0.1f;
 static float camera_far = 100.f;
 static glm::mat4x4 camera_projection;
 
-static const std::string unlit_vertex = "#version 300 es \n"
-                                        "in vec3 vert_position; \n"
-                                        "in vec2 vert_texcoord; \n"
-                                        "uniform mat4 uniform_view; \n"
-                                        "out vec2 frag_texcoord; \n"
-                                        "void main() { \n"
-                                        "    frag_texcoord = vert_texcoord; \n"
-                                        "    gl_Position = uniform_view * vec4(vert_position, 1); \n"
-                                        "}";
+static const std::string unlit_vertex = R"(#version 300 es
+    in vec3 vert_position;
+    in vec2 vert_texcoord;
+    uniform mat4 uniform_view;
+    out vec2 frag_texcoord;
+    void main() {
+        frag_texcoord = vert_texcoord;
+        gl_Position = uniform_view * vec4(vert_position, 1);
+    })";
 
-static const std::string unlit_fragment = "#version 300 es \n"
-                                          "precision mediump float; \n"
-                                          "in vec2 frag_texcoord; \n"
-                                          "uniform sampler2D uniform_color; \n"
-                                          "out vec4 output_color; \n"
-                                          "void main() { \n"
-                                          "    output_color = texture(uniform_color, frag_texcoord); \n"
-                                          "}";
+static const std::string unlit_fragment = R"(#version 300 es
+    precision mediump float;
+    in vec2 frag_texcoord;
+    uniform sampler2D uniform_color;
+    out vec4 output_color;
+    void main() {
+        output_color = texture(uniform_color, frag_texcoord);
+    })";
 
-static const std::string pbr_vertex = "";
+static const std::string blockout_vertex = R"(#version 300 es
+    in vec3 vert_position;
+    uniform mat4 uniform_view;
+    out vec3 frag_position;
+    void main() {
+        frag_position = vert_position;
+        gl_Position = uniform_view * vec4(vert_position, 1.0);
+    })";
 
-static const std::string pbr_fragment = "";
+static const std::string blockout_fragment = R"(#version 300 es
+    precision mediump float;
+    in vec3 frag_position;
+    out vec4 output_color;
+    void main() {
+        vec3 abs_position = abs(frag_position);
+        vec3 blend = normalize(max(abs_position, 0.00001));
+        blend /= (abs_position.x + abs_position.y + abs_position.z);
+        float grid_scale = 1.0;
+        vec3 scaled_position = frag_position * grid_scale;
+        float line_thickness = 0.7;
+        vec3 grid = abs(fract(scaled_position - 0.5) - 0.5) / fwidth(scaled_position);
+        float grid_factor = min(min(grid.x, grid.y), grid.z);
+        vec3 base_color = vec3(0.5); // Grey color
+        vec3 line_color = vec3(1.0); // White color
+        float grid_line = smoothstep(0.0, line_thickness, grid_factor);
+        vec3 final_color = mix(line_color, base_color, grid_line);    
+        output_color = vec4(final_color, 1.0);
+    })";
 
-static const std::string skybox_vertex = "#version 300 es \n"
-                                         "in vec3 vert_position; \n"
-                                         "uniform mat4 uniform_projection; \n"
-                                         "out vec3 frag_texcoord; \n"
-                                         "void main() { \n"
-                                         "    frag_texcoord = vert_position; \n"
-                                         "    gl_Position = uniform_projection * vec4(vert_position, 1); \n"
-                                         "};";
+static const std::string pbr_vertex = R"(#version 300 es
+    )";
 
-static const std::string skybox_fragment = "#version 300 es \n"
-                                           "precision mediump float; \n"
-                                           "in vec3 frag_texcoord; \n"
-                                           "uniform samplerCube uniform_color; \n"
-                                           "out vec4 output_color; \n"
-                                           "void main() { \n"
-                                           "    output_color = texture(uniform_color, frag_texcoord); \n"
-                                           "};";
+static const std::string pbr_fragment = R"(#version 300 es
+    )";
+
+static const std::string skybox_vertex = R"(#version 300 es
+    in vec3 vert_position;
+    uniform mat4 uniform_projection;
+    out vec3 frag_texcoord;
+    void main() {
+        frag_texcoord = vert_position;
+        gl_Position = uniform_projection * vec4(vert_position, 1);
+    })";
+
+static const std::string skybox_fragment = R"(#version 300 es
+    precision mediump float;
+    in vec3 frag_texcoord;
+    uniform samplerCube uniform_color;
+    out vec4 output_color;
+    void main() {
+        output_color = texture(uniform_color, frag_texcoord);
+    })";
 
 constexpr GLuint skybox_count = 8;
 
@@ -129,7 +159,7 @@ void rendering_system::compute_projection()
 }
 
 void rendering_system::draw_skybox()
-{    
+{
     // static std::optional<mesh_ref> _skybox_mesh = std::nullopt;
     // static std::optional<cubemap_ref> _skybox_cubemap = std::nullopt;
     // static std::optional<program_ref> _skybox_program = std::nullopt;
@@ -147,13 +177,19 @@ void rendering_system::draw_skybox()
 void rendering_system::draw_meshes()
 {
     static std::optional<program_ref> _persistent_unlit_program = std::nullopt;
+    static std::optional<program_ref> _persistent_blockout_program = std::nullopt;
     if (!_persistent_unlit_program.has_value()) {
         _persistent_unlit_program = program_ref(shader_data { detail::unlit_vertex }, shader_data { detail::unlit_fragment });
     }
+    if (!_persistent_blockout_program.has_value()) {
+        _persistent_blockout_program = program_ref(shader_data { detail::blockout_vertex }, shader_data { detail::blockout_fragment });
+    }
     program_ref& _unlit_program = _persistent_unlit_program.value();
+    program_ref& _blockout_program = _persistent_blockout_program.value();
+
     glm::mat4x4 _view_projection = detail::camera_projection * player_system::get_view();
-    
-    each_level([&_unlit_program, &_view_projection](entt::registry& _registry) {
+
+    each_level([&_unlit_program, &_blockout_program, &_view_projection](entt::registry& _registry) {
         _registry.view<model_component<model_shader::unlit>, transform_component>().each([&_unlit_program, &_view_projection](model_component<model_shader::unlit>& _model, transform_component& _transform) {
             if (_model._mesh.has_value() && _model._material.has_value() && _model._material.value().get_has_texture(material_texture::color)) {
                 const glm::mat4 _model_view_projection = _view_projection * _transform._transform;
@@ -177,6 +213,26 @@ void rendering_system::draw_meshes()
                 _unlit_program.bind("uniform_color", _color, 0);
                 _unlit_program.bind("uniform_view", _view_projection);
                 _unlit_program.draw();
+            }
+        });
+
+        _registry.view<model_component<model_shader::blockout>, transform_component>().each([&_blockout_program, &_view_projection](model_component<model_shader::blockout>& _model, transform_component& _transform) {
+            if (_model._mesh.has_value()) {
+                const glm::mat4 _model_view_projection = _view_projection * _transform._transform;
+                const mesh_ref& _mesh = _model._mesh.value();
+                _blockout_program.use();
+                _blockout_program.bind("vert_position", _mesh, mesh_attribute::position);
+                _blockout_program.bind("uniform_view", _model_view_projection);
+                _blockout_program.draw();
+            }
+        });
+        _registry.view<model_component<model_shader::blockout>>(entt::exclude<transform_component>).each([&_blockout_program, &_view_projection](model_component<model_shader::blockout>& _model) {
+            if (_model._mesh.has_value()) {
+                const mesh_ref& _mesh = _model._mesh.value();
+                _blockout_program.use();
+                _blockout_program.bind("vert_position", _mesh, mesh_attribute::position);
+                _blockout_program.bind("uniform_view", _view_projection);
+                _blockout_program.draw();
             }
         });
     });

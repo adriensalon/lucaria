@@ -40,3 +40,6 @@ collider_component<algorithm_t>& collider_component<algorithm_t>::navmesh(const 
     });
     return *this;
 }
+
+template struct collider_component<collider_algorithm::ground>;
+template struct collider_component<collider_algorithm::wall>;
