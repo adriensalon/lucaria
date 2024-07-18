@@ -275,16 +275,7 @@ void rendering_system::draw_meshes()
         });
 
 #if LUCARIA_GUIZMO
-        _registry.view<collider_component<collider_algorithm::ground>>().each([&](collider_component<collider_algorithm::ground>& collider) {
-            if (collider._navmesh.has_value()) {
-                const guizmo_mesh_ref& _mesh = *(collider._navmesh.value()._guizmo.get());
-                _guizmo_collider_program.use();
-                _guizmo_collider_program.bind_guizmo("vert_position", _mesh);
-                _guizmo_collider_program.bind("uniform_mvp", _view_projection);
-                _guizmo_collider_program.draw_guizmo();
-            }
-        });
-        _registry.view<collider_component<collider_algorithm::wall>>().each([&](collider_component<collider_algorithm::wall>& collider) {
+        _registry.view<collider_component>().each([&](collider_component& collider) {
             if (collider._navmesh.has_value()) {
                 const guizmo_mesh_ref& _mesh = *(collider._navmesh.value()._guizmo.get());
                 _guizmo_collider_program.use();

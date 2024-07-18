@@ -3,12 +3,6 @@
 #include <core/navmesh.hpp>
 #include <core/fetch.hpp>
 
-enum struct collider_algorithm {
-    wall,
-    ground
-};
-
-template <collider_algorithm algorithm_t>
 struct collider_component {
     collider_component() = default;
     collider_component(const collider_component& other) = delete;
@@ -16,8 +10,11 @@ struct collider_component {
     collider_component(collider_component&& other);
     collider_component& operator=(collider_component&& other);
     ~collider_component();
-
+    
     collider_component& navmesh(const std::shared_future<std::shared_ptr<navmesh_ref>>& fetched_navmesh);
+    collider_component& ground();
+    collider_component& wall();
+    collider_component& layer(const glm::uint layer);
 
 private:
     bool _is_instanced = false;

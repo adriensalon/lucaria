@@ -5,6 +5,15 @@
 
 #include <core/mesh.hpp>
 
+enum struct rigidbody_kind {
+    dynamic,
+    kinematic
+};
+
+struct kinematic_collision {
+
+};
+
 struct rigidbody_component {
     rigidbody_component() = default;
     rigidbody_component(const rigidbody_component& other) = delete;
@@ -14,7 +23,13 @@ struct rigidbody_component {
     ~rigidbody_component();
 
     rigidbody_component& box(const glm::vec3& half_extents);
-    rigidbody_component& capsule(const glm::float32 radius, const glm::float32 height);
+    rigidbody_component& capsule(const glm::float32 radius, const glm::float32 height);    
+    rigidbody_component& snap_grounds(const bool enabled = true);
+    rigidbody_component& glide_walls(const bool enabled = true);
+    rigidbody_component& collide_layer(const glm::uint layer, const bool enabled = true);
+    
+    const std::vector<kinematic_collision>& get_kinematic_game_collisions(const glm::uint layer);
+
 
 private:
     bool _is_instanced = false;

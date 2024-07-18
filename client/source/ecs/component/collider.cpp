@@ -1,14 +1,12 @@
 #include <ecs/component/collider.hpp>
 #include <ecs/system/dynamics.hpp>
 
-template <collider_algorithm algorithm_t>
-collider_component<algorithm_t>::collider_component(collider_component&& other)
+collider_component::collider_component(collider_component&& other)
 {
     *this = std::move(other);
 }
 
-template <collider_algorithm algorithm_t>
-collider_component<algorithm_t>& collider_component<algorithm_t>::operator=(collider_component&& other)
+collider_component& collider_component::operator=(collider_component&& other)
 {
     _navmesh = std::move(other._navmesh);
     _state = other._state;
@@ -18,8 +16,7 @@ collider_component<algorithm_t>& collider_component<algorithm_t>::operator=(coll
     return *this;
 }
 
-template <collider_algorithm algorithm_t>
-collider_component<algorithm_t>::~collider_component()
+collider_component::~collider_component()
 {
     if (_is_instanced) {
         delete _rigidbody->getMotionState();
@@ -27,8 +24,27 @@ collider_component<algorithm_t>::~collider_component()
     }
 }
 
-template <collider_algorithm algorithm_t>
-collider_component<algorithm_t>& collider_component<algorithm_t>::navmesh(const std::shared_future<std::shared_ptr<navmesh_ref>>& fetched_navmesh)
+// collider_component& collider_component::dynamic_layer()
+// {
+//     return *this;
+// }
+
+// collider_component& collider_component::kinematic_layer_wall()
+// {
+//     return *this;
+// }
+
+// collider_component& collider_component::kinematic_layer_ground()
+// {
+//     return *this;
+// }
+
+// collider_component& collider_component::kinematic_layer_game(const glm::uint layer)
+// {
+//     return *this;
+// }
+
+collider_component& collider_component::navmesh(const std::shared_future<std::shared_ptr<navmesh_ref>>& fetched_navmesh)
 {
     _navmesh.emplace(fetched_navmesh, [this]() {
         btCollisionShape* _shape = _navmesh.value().get_shape();
@@ -39,6 +55,3 @@ collider_component<algorithm_t>& collider_component<algorithm_t>::navmesh(const 
     });
     return *this;
 }
-
-template struct collider_component<collider_algorithm::ground>;
-template struct collider_component<collider_algorithm::wall>;

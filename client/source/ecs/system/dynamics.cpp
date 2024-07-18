@@ -128,7 +128,7 @@ void dynamics_system::prevent_kinematic_wall_collisions()
 
 
 
-            transform._transform = detail::bullet_to_glm(rigidbody._ghost->getWorldTransform());
+            // transform._transform = detail::bullet_to_glm(rigidbody._ghost->getWorldTransform());
 
             // int numOverlappingPairs = rigidbody._ghost->ge();
             // for (int i = 0; i < numOverlappingPairs; ++i) {
