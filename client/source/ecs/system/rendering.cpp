@@ -54,7 +54,7 @@ static const std::string blockout_vertex = R"(#version 300 es
     })";
 
 static const std::string blockout_fragment = R"(#version 300 es
-    precision mediump float;
+    precision highp float;
     in vec3 frag_position;
     out vec4 output_color;
     void main() {
@@ -70,6 +70,7 @@ static const std::string blockout_fragment = R"(#version 300 es
         vec3 line_color = vec3(1.0); // White color
         float grid_line = smoothstep(0.0, line_thickness, grid_factor);
         vec3 final_color = mix(line_color, base_color, grid_line);    
+        // vec3 final_color = base_color;    
         output_color = vec4(final_color, 1.0);
     })";
 
