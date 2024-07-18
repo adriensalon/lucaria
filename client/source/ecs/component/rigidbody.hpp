@@ -1,7 +1,8 @@
 #pragma once
 
 #include <btBulletDynamicsCommon.h>
-#include <glm/glm.hpp>
+
+#include <core/mesh.hpp>
 
 struct rigidbody_component {
     rigidbody_component() = default;
@@ -19,5 +20,9 @@ private:
     btCollisionShape* _shape = nullptr;
     btDefaultMotionState* _state = nullptr;
     btRigidBody* _rigidbody = nullptr;
+#if LUCARIA_GUIZMO
+    std::unique_ptr<guizmo_mesh_ref> _guizmo = nullptr;
+    friend struct rendering_system;
+#endif
     friend struct dynamics_system;
 };

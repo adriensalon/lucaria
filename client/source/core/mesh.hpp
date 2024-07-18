@@ -66,6 +66,7 @@ struct guizmo_mesh_ref {
     ~guizmo_mesh_ref();
 
     guizmo_mesh_ref(const mesh_data& data);
+    guizmo_mesh_ref(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices);
     glm::uint get_positions_id() const;
     glm::uint get_array_id() const;
     glm::uint get_count() const;

@@ -98,7 +98,7 @@ static const std::string skybox_fragment = R"(#version 300 es
     })";
 
 #if LUCARIA_GUIZMO
-static const std::string guizmo_collider_vertex = R"(#version 300 es
+static const std::string guizmo_vertex = R"(#version 300 es
     in vec3 vert_position;
     uniform mat4 uniform_mvp;
     void main() {
@@ -110,6 +110,13 @@ static const std::string guizmo_collider_fragment = R"(#version 300 es
     out vec4 output_color;
     void main() {
         output_color = vec4(0.0, 1.0, 1.0, 1.0); // Cyan color
+    })";
+
+static const std::string guizmo_rigidbody_fragment = R"(#version 300 es
+    precision mediump float;
+    out vec4 output_color;
+    void main() {
+        output_color = vec4(0.564, 0.933, 0.564, 1.0); // Light green 
     })";
 #endif
 
@@ -199,12 +206,14 @@ void rendering_system::draw_meshes()
     static std::optional<program_ref> _persistent_blockout_program = std::nullopt;
 #if LUCARIA_GUIZMO
     static std::optional<program_ref> _persistent_guizmo_collider_program = std::nullopt;
+    static std::optional<program_ref> _persistent_guizmo_rigidbody_program = std::nullopt;
 #endif
     if (!_is_programs_setup) {
         _persistent_unlit_program = program_ref(shader_data { detail::unlit_vertex }, shader_data { detail::unlit_fragment });
         _persistent_blockout_program = program_ref(shader_data { detail::blockout_vertex }, shader_data { detail::blockout_fragment });
 #if LUCARIA_GUIZMO
-        _persistent_guizmo_collider_program = program_ref(shader_data { detail::guizmo_collider_vertex }, shader_data { detail::guizmo_collider_fragment });
+        _persistent_guizmo_collider_program = program_ref(shader_data { detail::guizmo_vertex }, shader_data { detail::guizmo_collider_fragment });
+        _persistent_guizmo_rigidbody_program = program_ref(shader_data { detail::guizmo_vertex }, shader_data { detail::guizmo_rigidbody_fragment });
 #endif
         _is_programs_setup = true;
     }
@@ -212,6 +221,7 @@ void rendering_system::draw_meshes()
     program_ref& _blockout_program = _persistent_blockout_program.value();
 #if LUCARIA_GUIZMO
     program_ref& _guizmo_collider_program = _persistent_guizmo_collider_program.value();
+    program_ref& _guizmo_rigidbody_program = _persistent_guizmo_rigidbody_program.value();
 #endif
 
     glm::mat4x4 _view_projection = detail::camera_projection * player_system::get_view();
@@ -273,13 +283,24 @@ void rendering_system::draw_meshes()
                 _guizmo_collider_program.draw_guizmo();
             }
         });
-        // _registry.view<collider_component<collider_algorithm::wall>>().each([&](collider_component<collider_algorithm::wall>& collider) {
-        //     const mesh_ref& _mesh = *(collider._navmesh.value()._guizmo.get());
-        //     _guizmo_collider_program.use();
-        //     _guizmo_collider_program.bind("vert_position", _mesh, mesh_attribute::position);
-        //     _guizmo_collider_program.bind("uniform_mvp", _view_projection);
-        //     _guizmo_collider_program.draw();
-        // });
+        _registry.view<collider_component<collider_algorithm::wall>>().each([&](collider_component<collider_algorithm::wall>& collider) {
+            if (collider._navmesh.has_value()) {
+                const guizmo_mesh_ref& _mesh = *(collider._navmesh.value()._guizmo.get());
+                _guizmo_collider_program.use();
+                _guizmo_collider_program.bind_guizmo("vert_position", _mesh);
+                _guizmo_collider_program.bind("uniform_mvp", _view_projection);
+                _guizmo_collider_program.draw_guizmo();
+            }
+        });
+        _registry.view<rigidbody_component>().each([&](rigidbody_component& rigidbody) {
+            if (rigidbody._guizmo) {
+                const guizmo_mesh_ref& _mesh = *(rigidbody._guizmo.get());
+                _guizmo_rigidbody_program.use();
+                _guizmo_rigidbody_program.bind_guizmo("vert_position", _mesh);
+                _guizmo_rigidbody_program.bind("uniform_mvp", _view_projection);
+                _guizmo_rigidbody_program.draw_guizmo();
+            }
+        });
 #endif
     });
 }

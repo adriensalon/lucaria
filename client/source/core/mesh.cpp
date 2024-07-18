@@ -259,6 +259,16 @@ guizmo_mesh_ref::guizmo_mesh_ref(const mesh_data& data)
     _is_instanced = true;
 }
 
+guizmo_mesh_ref::guizmo_mesh_ref(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices)
+{
+    _array_id = detail::create_vertex_array();
+    _count = indices.size() * 2;
+    _elements_id = detail::create_elements_buffer(indices);
+    _positions_id = detail::create_attribute_buffer(positions);
+
+    _is_instanced = true;
+}
+
 glm::uint guizmo_mesh_ref::get_positions_id() const
 {
     return _positions_id;
