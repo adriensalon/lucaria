@@ -269,6 +269,36 @@ guizmo_mesh_ref::guizmo_mesh_ref(const std::vector<glm::vec3>& positions, const 
     _is_instanced = true;
 }
 
+void guizmo_mesh_ref::update(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices)
+{
+    glBindVertexArray(_array_id);
+
+    // Update positions buffer
+    // if (positions.size() > _positions_id) {
+        // Resize the buffer if needed
+        glBindBuffer(GL_ARRAY_BUFFER, _positions_id);
+        glBufferData(GL_ARRAY_BUFFER, 3 * positions.size() * sizeof(glm::float32), positions.data(), GL_STATIC_DRAW);
+    // } else {
+    //     // Update the buffer data
+    //     glBindBuffer(GL_ARRAY_BUFFER, _positions_id);
+    //     glBufferSubData(GL_ARRAY_BUFFER, 0, 3 * positions.size() * sizeof(glm::float32), positions.data());
+    // }
+
+    // Update elements buffer
+    // if (indices.size() > _count) {
+        // Resize the buffer if needed
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _elements_id);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, 2 * indices.size() * sizeof(glm::uint), indices.data(), GL_STATIC_DRAW);
+    // } else {
+    //     // Update the buffer data
+    //     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _elements_id);
+    //     glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, 2 * indices.size() * sizeof(glm::uint), indices.data());
+    // }
+
+    // // Update the count
+    _count = indices.size() * 2;
+}
+
 glm::uint guizmo_mesh_ref::get_positions_id() const
 {
     return _positions_id;

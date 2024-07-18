@@ -23,6 +23,6 @@ private:
     btRigidBody* _rigidbody = nullptr;
     friend struct dynamics_system;
 #if LUCARIA_GUIZMO
-    friend struct rendering_system;
+    std::unique_ptr<guizmo_mesh_ref> _guizmo;
 #endif
 };

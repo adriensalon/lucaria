@@ -8,6 +8,7 @@
 #include <core/program.hpp>
 #include <core/window.hpp>
 #include <core/world.hpp>
+#include <core/hash.hpp>
 
 #include <ecs/component/collider.hpp>
 #include <ecs/component/rigidbody.hpp>
@@ -108,9 +109,10 @@ static const std::string guizmo_vertex = R"(#version 300 es
 
 static const std::string guizmo_collider_fragment = R"(#version 300 es
     precision mediump float;
+    uniform vec3 uniform_color;
     out vec4 output_color;
     void main() {
-        output_color = vec4(0.0, 1.0, 1.0, 1.0); // Cyan color
+        output_color = vec4(uniform_color, 1.0);
     })";
 
 static const std::string guizmo_rigidbody_fragment = R"(#version 300 es
@@ -143,6 +145,8 @@ const std::vector<GLuint> skybox_indices = {
     24, 25, 26, 27, 28, 29,
     30, 31, 32, 33, 34, 35
 };
+
+extern std::unordered_map<glm::vec3, guizmo_mesh_ref, vec3_hash> guizmo_meshes; // 1 par world
 
 }
 
@@ -275,34 +279,42 @@ void rendering_system::draw_meshes()
         });
 
 #if LUCARIA_GUIZMO
-        _registry.view<collider_component>().each([&](collider_component& collider) {
-            if (collider._navmesh.has_value()) {
-                const guizmo_mesh_ref& _mesh = *(collider._navmesh.value()._guizmo.get());
-                _guizmo_collider_program.use();
-                _guizmo_collider_program.bind_guizmo("vert_position", _mesh);
-                _guizmo_collider_program.bind("uniform_mvp", _view_projection);
-                _guizmo_collider_program.draw_guizmo();
-            }
-        });
-        _registry.view<rigidbody_component, transform_component>().each([&](rigidbody_component& rigidbody, transform_component& transform) {
-            if (rigidbody._guizmo) {
-                const glm::mat4 _model_view_projection = _view_projection * transform._transform;
-                const guizmo_mesh_ref& _mesh = *(rigidbody._guizmo.get());
-                _guizmo_rigidbody_program.use();
-                _guizmo_rigidbody_program.bind_guizmo("vert_position", _mesh);
-                _guizmo_rigidbody_program.bind("uniform_mvp", _model_view_projection);
-                _guizmo_rigidbody_program.draw_guizmo();
-            }
-        });
-        _registry.view<rigidbody_component>(entt::exclude<transform_component>).each([&](rigidbody_component& rigidbody) {
-            if (rigidbody._guizmo) {
-                const guizmo_mesh_ref& _mesh = *(rigidbody._guizmo.get());
-                _guizmo_rigidbody_program.use();
-                _guizmo_rigidbody_program.bind_guizmo("vert_position", _mesh);
-                _guizmo_rigidbody_program.bind("uniform_mvp", _view_projection);
-                _guizmo_rigidbody_program.draw_guizmo();
-            }
-        });
+        for (const std::pair<const glm::vec3, guizmo_mesh_ref>& _pair : detail::guizmo_meshes) {
+            _guizmo_collider_program.use();
+            _guizmo_collider_program.bind_guizmo("vert_position", _pair.second);
+            _guizmo_collider_program.bind("uniform_color", _pair.first);
+            _guizmo_collider_program.bind("uniform_mvp", _view_projection);
+            _guizmo_collider_program.draw_guizmo();
+        }
+
+        // _registry.view<collider_component>().each([&](collider_component& collider) {
+        //     if (collider._navmesh.has_value()) {
+        //         const guizmo_mesh_ref& _mesh = *(collider._navmesh.value()._guizmo.get());
+        //         _guizmo_collider_program.use();
+        //         _guizmo_collider_program.bind_guizmo("vert_position", _mesh);
+        //         _guizmo_collider_program.bind("uniform_mvp", _view_projection);
+        //         _guizmo_collider_program.draw_guizmo();
+        //     }
+        // });
+        // _registry.view<rigidbody_component, transform_component>().each([&](rigidbody_component& rigidbody, transform_component& transform) {
+        //     if (rigidbody._guizmo) {
+        //         const glm::mat4 _model_view_projection = _view_projection * transform._transform;
+        //         const guizmo_mesh_ref& _mesh = *(rigidbody._guizmo.get());
+        //         _guizmo_rigidbody_program.use();
+        //         _guizmo_rigidbody_program.bind_guizmo("vert_position", _mesh);
+        //         _guizmo_rigidbody_program.bind("uniform_mvp", _model_view_projection);
+        //         _guizmo_rigidbody_program.draw_guizmo();
+        //     }
+        // });
+        // _registry.view<rigidbody_component>(entt::exclude<transform_component>).each([&](rigidbody_component& rigidbody) {
+        //     if (rigidbody._guizmo) {
+        //         const guizmo_mesh_ref& _mesh = *(rigidbody._guizmo.get());
+        //         _guizmo_rigidbody_program.use();
+        //         _guizmo_rigidbody_program.bind_guizmo("vert_position", _mesh);
+        //         _guizmo_rigidbody_program.bind("uniform_mvp", _view_projection);
+        //         _guizmo_rigidbody_program.draw_guizmo();
+        //     }
+        // });
 #endif
     });
 }

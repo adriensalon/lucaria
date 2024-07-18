@@ -15,9 +15,9 @@ navmesh_ref::navmesh_ref(navmesh_ref&& other)
 navmesh_ref& navmesh_ref::operator=(navmesh_ref&& other)
 {
     _shape = other._shape;
-#if LUCARIA_GUIZMO
-    _guizmo = std::move(other._guizmo);
-#endif
+// #if LUCARIA_GUIZMO
+//     _guizmo = std::move(other._guizmo);
+// #endif
     _is_instanced = true;
     other._is_instanced = false;
     return *this;
@@ -197,7 +197,7 @@ navmesh_ref::navmesh_ref(const mesh_data& data)
     // Convert edge set to vector for mesh_data representation
     _edges.assign(edgeSet.begin(), edgeSet.end());
 
-    _guizmo = std::make_unique<guizmo_mesh_ref>(_positions, _edges);
+    // _guizmo = std::make_unique<guizmo_mesh_ref>(_positions, _edges);
 #endif
     _is_instanced = true;
 }

@@ -20,4 +20,5 @@ struct dynamics_system {
 
     static void prevent_kinematic_wall_collisions();
     static void snap_kinematic_grounds();
+    static void draw_guizmos();
 };
