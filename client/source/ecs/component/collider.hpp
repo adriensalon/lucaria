@@ -25,4 +25,7 @@ private:
     btDefaultMotionState* _state = nullptr;
     btRigidBody* _rigidbody = nullptr;
     friend struct dynamics_system;
+#if LUCARIA_GUIZMO
+    friend struct rendering_system;
+#endif
 };

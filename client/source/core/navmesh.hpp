@@ -18,6 +18,10 @@ struct navmesh_ref {
 private:
     bool _is_instanced;
     btCollisionShape* _shape;
+#if LUCARIA_GUIZMO
+    std::unique_ptr<guizmo_mesh_ref> _guizmo;
+    friend struct rendering_system;
+#endif
 };
 
 std::shared_future<std::shared_ptr<navmesh_ref>> fetch_navmesh(const std::filesystem::path& mesh_path);

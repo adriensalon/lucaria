@@ -9,6 +9,8 @@
 #include <core/window.hpp>
 #include <core/world.hpp>
 
+#include <ecs/component/collider.hpp>
+#include <ecs/component/rigidbody.hpp>
 #include <ecs/component/model.hpp>
 #include <ecs/component/transform.hpp>
 #include <ecs/system/player.hpp>
@@ -95,6 +97,22 @@ static const std::string skybox_fragment = R"(#version 300 es
         output_color = texture(uniform_color, frag_texcoord);
     })";
 
+#if LUCARIA_GUIZMO
+static const std::string guizmo_collider_vertex = R"(#version 300 es
+    in vec3 vert_position;
+    uniform mat4 uniform_mvp;
+    void main() {
+        gl_Position = uniform_mvp * vec4(vert_position, 1.0);
+    })";
+
+static const std::string guizmo_collider_fragment = R"(#version 300 es
+    precision mediump float;
+    out vec4 output_color;
+    void main() {
+        output_color = vec4(0.0, 1.0, 1.0, 1.0); // Cyan color
+    })";
+#endif
+
 constexpr GLuint skybox_count = 8;
 
 const std::vector<GLfloat> skybox_positions = {
@@ -176,20 +194,29 @@ void rendering_system::draw_skybox()
 
 void rendering_system::draw_meshes()
 {
+    static bool _is_programs_setup = false;
     static std::optional<program_ref> _persistent_unlit_program = std::nullopt;
     static std::optional<program_ref> _persistent_blockout_program = std::nullopt;
-    if (!_persistent_unlit_program.has_value()) {
+#if LUCARIA_GUIZMO
+    static std::optional<program_ref> _persistent_guizmo_collider_program = std::nullopt;
+#endif
+    if (!_is_programs_setup) {
         _persistent_unlit_program = program_ref(shader_data { detail::unlit_vertex }, shader_data { detail::unlit_fragment });
-    }
-    if (!_persistent_blockout_program.has_value()) {
         _persistent_blockout_program = program_ref(shader_data { detail::blockout_vertex }, shader_data { detail::blockout_fragment });
+#if LUCARIA_GUIZMO
+        _persistent_guizmo_collider_program = program_ref(shader_data { detail::guizmo_collider_vertex }, shader_data { detail::guizmo_collider_fragment });
+#endif
+        _is_programs_setup = true;
     }
     program_ref& _unlit_program = _persistent_unlit_program.value();
     program_ref& _blockout_program = _persistent_blockout_program.value();
+#if LUCARIA_GUIZMO
+    program_ref& _guizmo_collider_program = _persistent_guizmo_collider_program.value();
+#endif
 
     glm::mat4x4 _view_projection = detail::camera_projection * player_system::get_view();
 
-    each_level([&_unlit_program, &_blockout_program, &_view_projection](entt::registry& _registry) {
+    each_level([&](entt::registry& _registry) {
         _registry.view<model_component<model_shader::unlit>, transform_component>().each([&_unlit_program, &_view_projection](model_component<model_shader::unlit>& _model, transform_component& _transform) {
             if (_model._mesh.has_value() && _model._material.has_value() && _model._material.value().get_has_texture(material_texture::color)) {
                 const glm::mat4 _model_view_projection = _view_projection * _transform._transform;
@@ -235,5 +262,24 @@ void rendering_system::draw_meshes()
                 _blockout_program.draw();
             }
         });
+
+#if LUCARIA_GUIZMO
+        _registry.view<collider_component<collider_algorithm::ground>>().each([&](collider_component<collider_algorithm::ground>& collider) {
+            if (collider._navmesh.has_value()) {
+                const guizmo_mesh_ref& _mesh = *(collider._navmesh.value()._guizmo.get());
+                _guizmo_collider_program.use();
+                _guizmo_collider_program.bind_guizmo("vert_position", _mesh);
+                _guizmo_collider_program.bind("uniform_mvp", _view_projection);
+                _guizmo_collider_program.draw_guizmo();
+            }
+        });
+        // _registry.view<collider_component<collider_algorithm::wall>>().each([&](collider_component<collider_algorithm::wall>& collider) {
+        //     const mesh_ref& _mesh = *(collider._navmesh.value()._guizmo.get());
+        //     _guizmo_collider_program.use();
+        //     _guizmo_collider_program.bind("vert_position", _mesh, mesh_attribute::position);
+        //     _guizmo_collider_program.bind("uniform_mvp", _view_projection);
+        //     _guizmo_collider_program.draw();
+        // });
+#endif
     });
 }

@@ -157,6 +157,24 @@ void program_ref::bind(const std::string& name, const mesh_ref& mesh, const mesh
     detail::graphics_assert();
 }
 
+#if LUCARIA_GUIZMO
+
+void program_ref::bind_guizmo(const std::string& name, const guizmo_mesh_ref& mesh)
+{
+    _count = mesh.get_count();
+    _array_id = mesh.get_array_id();
+    glm::uint _positions_id = mesh.get_positions_id();
+    glm::int32 _location = _program_attributes.at(name);
+    glm::uint _size = 3;
+    glBindVertexArray(_array_id);
+    glBindBuffer(GL_ARRAY_BUFFER, _positions_id);
+    glVertexAttribPointer(_location, _size, GL_FLOAT, GL_FALSE, _size * sizeof(GLfloat), (void*)0);
+    glEnableVertexAttribArray(_location);
+    detail::graphics_assert();
+}
+
+#endif
+
 void program_ref::bind(const std::string& name, const cubemap_ref& cubemap, const glm::uint slot) const
 {
     glm::int32 _location = _program_uniforms.at(name);
@@ -259,10 +277,23 @@ void program_ref::bind<glm::mat4x4>(const std::string& name, const glm::mat4x4& 
 
 void program_ref::draw() const
 {
+    glEnable(GL_DEPTH_TEST);
     glBindVertexArray(_array_id);
     glDrawElements(GL_TRIANGLES, _count, GL_UNSIGNED_INT, 0);
     detail::graphics_assert();
 }
+
+#if LUCARIA_GUIZMO
+
+void program_ref::draw_guizmo() const
+{
+    glDisable(GL_DEPTH_TEST);
+    glBindVertexArray(_array_id);
+    glDrawElements(GL_LINES, _count, GL_UNSIGNED_INT, 0);
+    detail::graphics_assert();
+}
+
+#endif
 
 glm::uint program_ref::get_id() const
 {

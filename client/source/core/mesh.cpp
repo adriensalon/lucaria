@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <set>
 
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/archives/json.hpp>
@@ -77,6 +78,16 @@ glm::uint create_attribute_buffer(const std::vector<glm::vec4>& attribute)
     return _attribute_id;
 }
 
+glm::uint create_elements_buffer(const std::vector<glm::uvec2>& indices)
+{
+    glm::uint _elements_id;
+    glm::uint* _indices_ptr = reinterpret_cast<glm::uint*>(const_cast<glm::uvec2*>(indices.data()));
+    glGenBuffers(1, &_elements_id);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _elements_id);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 2 * indices.size() * sizeof(glm::uint), _indices_ptr, GL_STATIC_DRAW);
+    return _elements_id;
+}
+
 glm::uint create_elements_buffer(const std::vector<glm::uvec3>& indices)
 {
     glm::uint _elements_id;
@@ -86,6 +97,22 @@ glm::uint create_elements_buffer(const std::vector<glm::uvec3>& indices)
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, 3 * indices.size() * sizeof(glm::uint), _indices_ptr, GL_STATIC_DRAW);
     return _elements_id;
 }
+
+std::vector<glm::uvec2> generate_line_indices(const std::vector<glm::uvec3>& triangle_indices) 
+{
+    std::set<std::pair<glm::uint, glm::uint>> _edges;
+    for (const glm::uvec3& _triangle : triangle_indices) {
+        _edges.insert(std::minmax(_triangle.x, _triangle.y));
+        _edges.insert(std::minmax(_triangle.y, _triangle.z));
+        _edges.insert(std::minmax(_triangle.z, _triangle.x));
+    }
+    std::vector<glm::uvec2> _line_indices;
+    for (const auto& _edge : _edges) {
+        _line_indices.emplace_back(_edge.first, _edge.second);
+    }
+    return _line_indices;
+}
+
 
 static std::unordered_map<std::string, std::promise<std::shared_ptr<mesh_ref>>> promises;
 
@@ -192,3 +219,60 @@ std::shared_future<std::shared_ptr<mesh_ref>> fetch_mesh(const std::filesystem::
     });
     return _promise.get_future();
 }
+
+#if LUCARIA_GUIZMO
+    
+guizmo_mesh_ref::guizmo_mesh_ref(guizmo_mesh_ref&& other)
+{
+    *this = std::move(other);
+}
+
+guizmo_mesh_ref& guizmo_mesh_ref::operator=(guizmo_mesh_ref&& other)
+{
+    _count = other._count;
+    _array_id = other._array_id;
+    _elements_id = other._elements_id;
+    _positions_id = other._positions_id;
+    _is_instanced = true;
+    other._is_instanced = false;
+    return *this;
+}
+
+guizmo_mesh_ref::~guizmo_mesh_ref()
+{
+    if (_is_instanced) {
+        glDeleteBuffers(1, &_array_id);
+        glDeleteBuffers(1, &_elements_id);
+        glDeleteBuffers(1, &_positions_id);
+    }
+}
+
+guizmo_mesh_ref::guizmo_mesh_ref(const mesh_data& data)
+{
+    detail::validate_mesh(data);
+    _array_id = detail::create_vertex_array();
+    std::vector<glm::uvec2> _line_indices = detail::generate_line_indices(data.indices);
+    _count = _line_indices.size() * 2;
+    _elements_id = detail::create_elements_buffer(_line_indices);
+    _positions_id = detail::create_attribute_buffer(data.positions);
+
+    _is_instanced = true;
+}
+
+glm::uint guizmo_mesh_ref::get_positions_id() const
+{
+    return _positions_id;
+}
+
+glm::uint guizmo_mesh_ref::get_array_id() const
+{
+    return _array_id;
+}
+
+glm::uint guizmo_mesh_ref::get_count() const
+{
+    return _count;
+}
+
+
+#endif

@@ -54,3 +54,28 @@ private:
 
 mesh_data load_mesh_data(std::istringstream& mesh_stream);
 std::shared_future<std::shared_ptr<mesh_ref>> fetch_mesh(const std::filesystem::path& mesh_path);
+
+#if LUCARIA_GUIZMO
+
+struct guizmo_mesh_ref {
+    guizmo_mesh_ref() = delete;
+    guizmo_mesh_ref(const guizmo_mesh_ref& other) = delete;
+    guizmo_mesh_ref& operator=(const guizmo_mesh_ref& other) = delete;
+    guizmo_mesh_ref(guizmo_mesh_ref&& other);
+    guizmo_mesh_ref& operator=(guizmo_mesh_ref&& other);
+    ~guizmo_mesh_ref();
+
+    guizmo_mesh_ref(const mesh_data& data);
+    glm::uint get_positions_id() const;
+    glm::uint get_array_id() const;
+    glm::uint get_count() const;
+
+private:
+    bool _is_instanced;
+    glm::uint _count;
+    glm::uint _array_id;
+    glm::uint _elements_id;
+    glm::uint _positions_id;
+};
+
+#endif

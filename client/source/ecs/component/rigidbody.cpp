@@ -26,14 +26,14 @@ rigidbody_component::~rigidbody_component()
 
 rigidbody_component& rigidbody_component::box(const glm::vec3& half_extents)
 {
-    // TODO
+    // TODO + kinematic rb
     _is_instanced = true;
     return *this;
 }
 
 rigidbody_component& rigidbody_component::capsule(const glm::float32 radius, const glm::float32 height)
 {
-    // TODO
+    // TODO + kinematic rb
     _is_instanced = true;
     return *this;
 }

@@ -15,6 +15,9 @@ navmesh_ref::navmesh_ref(navmesh_ref&& other)
 navmesh_ref& navmesh_ref::operator=(navmesh_ref&& other)
 {
     _shape = other._shape;
+#if LUCARIA_GUIZMO
+    _guizmo = std::move(other._guizmo);
+#endif
     _is_instanced = true;
     other._is_instanced = false;
     return *this;
@@ -37,6 +40,9 @@ navmesh_ref::navmesh_ref(const mesh_data& data)
         _triangle_mesh->addTriangle(_vertex_0, _vertex_1, _vertex_2);
     }
     _shape = new btBvhTriangleMeshShape(_triangle_mesh, true);
+#if LUCARIA_GUIZMO
+    _guizmo = std::make_unique<guizmo_mesh_ref>(data);
+#endif
     _is_instanced = true;
 }
 

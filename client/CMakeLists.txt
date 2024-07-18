@@ -14,7 +14,9 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 	set(MESSAGE_QUIET ON)
 		add_subdirectory(../external/entt ${CMAKE_BINARY_DIR}/external/entt)
 		add_subdirectory(../external/glm ${CMAKE_BINARY_DIR}/external/glm)
+		
 		add_subdirectory(../external/imgui ${CMAKE_BINARY_DIR}/external/imgui)
+		target_compile_options(imgui PRIVATE -Wno-format-security)
 		
 		option(BUILD_BULLET2_DEMOS OFF)
 		option(BUILD_BULLET3 OFF)
@@ -44,6 +46,8 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 
 	file(GLOB_RECURSE lucaria_sources "${CMAKE_CURRENT_LIST_DIR}/source/*.cpp")
 	add_executable(lucaria ${lucaria_sources})
+	
+	target_compile_options(lucaria PRIVATE -Wno-format-security)
 
 	target_include_directories(lucaria PRIVATE
 		${CMAKE_CURRENT_LIST_DIR}/../external/bullet/src
@@ -62,9 +66,8 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 	target_link_libraries(lucaria PRIVATE ozz_animation)
 
 	target_compile_definitions(lucaria PRIVATE LUCARIA_DEBUG)
-
+	target_compile_definitions(lucaria PRIVATE LUCARIA_GUIZMO)
 	# target_compile_definitions(lucaria PRIVATE LUCARIA_JSON)
-	target_compile_options(lucaria PRIVATE -Wno-format-security)
 
 	set_target_properties(lucaria PROPERTIES CXX_STANDARD 17)
 

@@ -28,6 +28,10 @@ struct program_ref {
     template <typename value_t> void bind(const std::string& name, const value_t& value);
     void draw() const;
     glm::uint get_id() const;
+#if LUCARIA_GUIZMO
+    void bind_guizmo(const std::string& name, const guizmo_mesh_ref& mesh);
+    void draw_guizmo() const;
+#endif
 
 private:
     bool _is_instanced;
