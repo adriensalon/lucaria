@@ -1,11 +1,10 @@
-#include <core/mesh.hpp>
 #include <core/hash.hpp>
+#include <core/mesh.hpp>
 #include <core/program.hpp>
 #include <core/world.hpp>
 #include <ecs/component/rigidbody.hpp>
 #include <ecs/component/transform.hpp>
 #include <ecs/system/dynamics.hpp>
-
 
 #include <btBulletDynamicsCommon.h>
 #include <glm/gtc/matrix_transform.hpp>
@@ -14,60 +13,50 @@
 #if LUCARIA_GUIZMO
 class guizmo_debug_draw : public btIDebugDraw {
 public:
-    // Store positions and indices by color
     std::unordered_map<glm::vec3, std::vector<glm::vec3>, vec3_hash> positions = {};
     std::unordered_map<glm::vec3, std::vector<glm::uvec2>, vec3_hash> indices = {};
 
-    // Implement drawLine method
-    virtual void drawLine(const btVector3& from, const btVector3& to, const btVector3& color) override {
-        glm::vec3 glmColor(color.x(), color.y(), color.z());
-
-        std::vector<glm::vec3>& posList = positions[glmColor];
-        std::vector<glm::uvec2>& idxList = indices[glmColor];
-
-        glm::uint fromIndex = posList.size();
-        glm::uint toIndex = fromIndex + 1;
-
-        // Add the from and to positions
-        posList.emplace_back(from.x(), from.y(), from.z());
-        posList.emplace_back(to.x(), to.y(), to.z());
-
-        // Add the line index
-        idxList.emplace_back(glm::uvec2(fromIndex, toIndex));
+    virtual void drawLine(const btVector3& from, const btVector3& to, const btVector3& color) override
+    {
+        const glm::vec3 _color(color.x(), color.y(), color.z());
+        std::vector<glm::vec3>& _positions = positions[_color];
+        std::vector<glm::uvec2>& _indices = indices[_color];
+        const glm::uint _from_index = _positions.size();
+        const glm::uint _to_index = _from_index + 1;
+        _positions.emplace_back(from.x(), from.y(), from.z());
+        _positions.emplace_back(to.x(), to.y(), to.z());
+        _indices.emplace_back(glm::uvec2(_from_index, _to_index));
     }
 
-    // Implement reportErrorWarning method
-    virtual void reportErrorWarning(const char* warningString) override {
-        std::cerr << "Bullet Warning: " << warningString << std::endl;
+    virtual void reportErrorWarning(const char* warning) override
+    {
+        std::cout << "Bullet warning: " << warning << std::endl;
     }
 
-    // Implement drawContactPoint method
-    virtual void drawContactPoint(const btVector3& pointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color) override {
-        // For simplicity, we can draw a line to represent the contact point
-        drawLine(pointOnB, pointOnB + normalOnB * distance, color);
+    virtual void drawContactPoint(const btVector3& point_on_b, const btVector3& normal_on_b, btScalar distance, int lifetime, const btVector3& color) override
+    {
+        drawLine(point_on_b, point_on_b + normal_on_b * distance, color);
     }
 
-    // Implement draw3dText method
-    virtual void draw3dText(const btVector3& location, const char* textString) override {
-        // For simplicity, you might want to implement this if you have a way to render text in your application
-        std::cout << "Bullet 3D Text: " << textString << " at (" << location.x() << ", " << location.y() << ", " << location.z() << ")" << std::endl;
+    virtual void draw3dText(const btVector3& location, const char* text) override
+    {
+        std::cout << "Bullet 3D text: " << text << " at (" << location.x() << ", " << location.y() << ", " << location.z() << ")" << std::endl;
     }
 
-    // Implement setDebugMode method
-    virtual void setDebugMode(int debugMode) override {
-        m_debugMode = debugMode;
+    virtual void setDebugMode(int mode) override
+    {
+        _debug_mode = mode;
     }
 
-    // Implement getDebugMode method
-    virtual int getDebugMode() const override {
-        return m_debugMode;
+    virtual int getDebugMode() const override
+    {
+        return _debug_mode;
     }
 
 private:
-    int m_debugMode = DBG_DrawWireframe;
+    int _debug_mode = DBG_DrawWireframe;
 };
 #endif
-
 
 namespace detail {
 
@@ -130,7 +119,6 @@ static glm::mat4 bullet_to_glm(const btTransform& transform)
 
 }
 
-
 void dynamics_system::use_gravity(const glm::vec3& newtons)
 {
     detail::dynamics_world->setGravity(btVector3(newtons.x, newtons.y, newtons.z));
@@ -140,8 +128,6 @@ btDiscreteDynamicsWorld* dynamics_system::get_dynamics_world()
 {
     return detail::dynamics_world;
 }
-
-
 
 void dynamics_system::apply_transforms()
 {
@@ -171,7 +157,7 @@ void dynamics_system::compute_wall_slide()
             btBroadphasePairArray& PairArray = rigidbody._ghost->getOverlappingPairCache()->getOverlappingPairArray();
 
             for (int i = 0; i < PairArray.size(); i++) {
-                    ManifoldArray.clear();
+                ManifoldArray.clear();
 
                 btBroadphasePair* CollisionPair = detail::dynamics_world->getPairCache()->findPair(PairArray[i].m_pProxy0, PairArray[i].m_pProxy1);
                 if (!CollisionPair) {
@@ -206,7 +192,6 @@ void dynamics_system::compute_wall_slide()
             // std::cout << "Ghost object position: (" << ghostPos.getX() << ", " << ghostPos.getY() << ", " << ghostPos.getZ() << ")" << std::endl;
         });
     });
-
 }
 
 void dynamics_system::compute_ground_snap()
@@ -216,12 +201,10 @@ void dynamics_system::compute_ground_snap()
 
 void dynamics_system::compute_dynamics()
 {
-    
 }
 
 void dynamics_system::compute_layers()
 {
-    
 }
 
 void dynamics_system::collect_debug_guizmos()
