@@ -5,14 +5,14 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <core/fetch.hpp>
+#include <core/hash.hpp>
 #include <core/program.hpp>
 #include <core/window.hpp>
 #include <core/world.hpp>
-#include <core/hash.hpp>
 
 #include <ecs/component/collider.hpp>
-#include <ecs/component/rigidbody.hpp>
 #include <ecs/component/model.hpp>
+#include <ecs/component/rigidbody.hpp>
 #include <ecs/component/transform.hpp>
 #include <ecs/system/player.hpp>
 #include <ecs/system/rendering.hpp>
@@ -25,6 +25,7 @@ static float camera_fov = 60.f;
 static float camera_near = 0.1f;
 static float camera_far = 100.f;
 static glm::mat4x4 camera_projection;
+static glm::mat4x4 camera_view_projection;
 
 static const std::string unlit_vertex = R"(#version 300 es
     in vec3 vert_position;
@@ -107,19 +108,12 @@ static const std::string guizmo_vertex = R"(#version 300 es
         gl_Position = uniform_mvp * vec4(vert_position, 1.0);
     })";
 
-static const std::string guizmo_collider_fragment = R"(#version 300 es
+static const std::string guizmo_fragment = R"(#version 300 es
     precision mediump float;
     uniform vec3 uniform_color;
     out vec4 output_color;
     void main() {
         output_color = vec4(uniform_color, 1.0);
-    })";
-
-static const std::string guizmo_rigidbody_fragment = R"(#version 300 es
-    precision mediump float;
-    out vec4 output_color;
-    void main() {
-        output_color = vec4(0.564, 0.933, 0.564, 1.0); // Light green 
     })";
 #endif
 
@@ -146,7 +140,9 @@ const std::vector<GLuint> skybox_indices = {
     30, 31, 32, 33, 34, 35
 };
 
+#if LUCARIA_GUIZMO
 extern std::unordered_map<glm::vec3, guizmo_mesh_ref, vec3_hash> guizmo_meshes; // 1 par world
+#endif
 
 }
 
@@ -188,6 +184,11 @@ void rendering_system::compute_projection()
     detail::camera_projection = glm::perspective(_fov_rad, _aspect_ratio, detail::camera_near, detail::camera_far);
 }
 
+void rendering_system::compute_view_projection()
+{
+    detail::camera_view_projection = detail::camera_projection * player_system::get_view();
+}
+
 void rendering_system::draw_skybox()
 {
     // static std::optional<mesh_ref> _skybox_mesh = std::nullopt;
@@ -204,37 +205,51 @@ void rendering_system::draw_skybox()
     // _skybox_program_value.draw();
 }
 
-void rendering_system::draw_meshes()
+void rendering_system::draw_blockout_meshes()
 {
-    static bool _is_programs_setup = false;
-    static std::optional<program_ref> _persistent_unlit_program = std::nullopt;
+    static bool _is_program_setup = false;
     static std::optional<program_ref> _persistent_blockout_program = std::nullopt;
-#if LUCARIA_GUIZMO
-    static std::optional<program_ref> _persistent_guizmo_collider_program = std::nullopt;
-    static std::optional<program_ref> _persistent_guizmo_rigidbody_program = std::nullopt;
-#endif
-    if (!_is_programs_setup) {
-        _persistent_unlit_program = program_ref(shader_data { detail::unlit_vertex }, shader_data { detail::unlit_fragment });
+    if (!_is_program_setup) {
         _persistent_blockout_program = program_ref(shader_data { detail::blockout_vertex }, shader_data { detail::blockout_fragment });
-#if LUCARIA_GUIZMO
-        _persistent_guizmo_collider_program = program_ref(shader_data { detail::guizmo_vertex }, shader_data { detail::guizmo_collider_fragment });
-        _persistent_guizmo_rigidbody_program = program_ref(shader_data { detail::guizmo_vertex }, shader_data { detail::guizmo_rigidbody_fragment });
-#endif
-        _is_programs_setup = true;
+        _is_program_setup = true;
+    }
+    program_ref& _blockout_program = _persistent_blockout_program.value();
+    each_level([&](entt::registry& _registry) {
+        _registry.view<model_component<model_shader::blockout>, transform_component>().each([&](model_component<model_shader::blockout>& _model, transform_component& _transform) {
+            if (_model._mesh.has_value()) {
+                const glm::mat4 _model_view_projection = detail::camera_view_projection * _transform._transform;
+                const mesh_ref& _mesh = _model._mesh.value();
+                _blockout_program.use();
+                _blockout_program.bind("vert_position", _mesh, mesh_attribute::position);
+                _blockout_program.bind("uniform_view", _model_view_projection);
+                _blockout_program.draw();
+            }
+        });
+        _registry.view<model_component<model_shader::blockout>>(entt::exclude<transform_component>).each([&](model_component<model_shader::blockout>& _model) {
+            if (_model._mesh.has_value()) {
+                const mesh_ref& _mesh = _model._mesh.value();
+                _blockout_program.use();
+                _blockout_program.bind("vert_position", _mesh, mesh_attribute::position);
+                _blockout_program.bind("uniform_view", detail::camera_view_projection);
+                _blockout_program.draw();
+            }
+        });
+    });
+}
+
+void rendering_system::draw_unlit_meshes()
+{
+    static bool _is_program_setup = false;
+    static std::optional<program_ref> _persistent_unlit_program = std::nullopt;
+    if (!_is_program_setup) {
+        _persistent_unlit_program = program_ref(shader_data { detail::unlit_vertex }, shader_data { detail::unlit_fragment });
+        _is_program_setup = true;
     }
     program_ref& _unlit_program = _persistent_unlit_program.value();
-    program_ref& _blockout_program = _persistent_blockout_program.value();
-#if LUCARIA_GUIZMO
-    program_ref& _guizmo_collider_program = _persistent_guizmo_collider_program.value();
-    program_ref& _guizmo_rigidbody_program = _persistent_guizmo_rigidbody_program.value();
-#endif
-
-    glm::mat4x4 _view_projection = detail::camera_projection * player_system::get_view();
-
     each_level([&](entt::registry& _registry) {
-        _registry.view<model_component<model_shader::unlit>, transform_component>().each([&_unlit_program, &_view_projection](model_component<model_shader::unlit>& _model, transform_component& _transform) {
+        _registry.view<model_component<model_shader::unlit>, transform_component>().each([&](model_component<model_shader::unlit>& _model, transform_component& _transform) {
             if (_model._mesh.has_value() && _model._material.has_value() && _model._material.value().get_has_texture(material_texture::color)) {
-                const glm::mat4 _model_view_projection = _view_projection * _transform._transform;
+                const glm::mat4 _model_view_projection = detail::camera_view_projection * _transform._transform;
                 const mesh_ref& _mesh = _model._mesh.value();
                 const texture_ref& _color = _model._material.value().get_texture(material_texture::color);
                 _unlit_program.use();
@@ -245,7 +260,7 @@ void rendering_system::draw_meshes()
                 _unlit_program.draw();
             }
         });
-        _registry.view<model_component<model_shader::unlit>>(entt::exclude<transform_component>).each([&_unlit_program, &_view_projection](model_component<model_shader::unlit>& _model) {
+        _registry.view<model_component<model_shader::unlit>>(entt::exclude<transform_component>).each([&](model_component<model_shader::unlit>& _model) {
             if (_model._mesh.has_value() && _model._material.has_value() && _model._material.value().get_has_texture(material_texture::color)) {
                 const mesh_ref& _mesh = _model._mesh.value();
                 const texture_ref& _color = _model._material.value().get_texture(material_texture::color);
@@ -253,68 +268,29 @@ void rendering_system::draw_meshes()
                 _unlit_program.bind("vert_position", _mesh, mesh_attribute::position);
                 _unlit_program.bind("vert_texcoord", _mesh, mesh_attribute::texcoord);
                 _unlit_program.bind("uniform_color", _color, 0);
-                _unlit_program.bind("uniform_view", _view_projection);
+                _unlit_program.bind("uniform_view", detail::camera_view_projection);
                 _unlit_program.draw();
             }
         });
-
-        _registry.view<model_component<model_shader::blockout>, transform_component>().each([&_blockout_program, &_view_projection](model_component<model_shader::blockout>& _model, transform_component& _transform) {
-            if (_model._mesh.has_value()) {
-                const glm::mat4 _model_view_projection = _view_projection * _transform._transform;
-                const mesh_ref& _mesh = _model._mesh.value();
-                _blockout_program.use();
-                _blockout_program.bind("vert_position", _mesh, mesh_attribute::position);
-                _blockout_program.bind("uniform_view", _model_view_projection);
-                _blockout_program.draw();
-            }
-        });
-        _registry.view<model_component<model_shader::blockout>>(entt::exclude<transform_component>).each([&_blockout_program, &_view_projection](model_component<model_shader::blockout>& _model) {
-            if (_model._mesh.has_value()) {
-                const mesh_ref& _mesh = _model._mesh.value();
-                _blockout_program.use();
-                _blockout_program.bind("vert_position", _mesh, mesh_attribute::position);
-                _blockout_program.bind("uniform_view", _view_projection);
-                _blockout_program.draw();
-            }
-        });
-
-#if LUCARIA_GUIZMO
-        for (const std::pair<const glm::vec3, guizmo_mesh_ref>& _pair : detail::guizmo_meshes) {
-            _guizmo_collider_program.use();
-            _guizmo_collider_program.bind_guizmo("vert_position", _pair.second);
-            _guizmo_collider_program.bind("uniform_color", _pair.first);
-            _guizmo_collider_program.bind("uniform_mvp", _view_projection);
-            _guizmo_collider_program.draw_guizmo();
-        }
-
-        // _registry.view<collider_component>().each([&](collider_component& collider) {
-        //     if (collider._navmesh.has_value()) {
-        //         const guizmo_mesh_ref& _mesh = *(collider._navmesh.value()._guizmo.get());
-        //         _guizmo_collider_program.use();
-        //         _guizmo_collider_program.bind_guizmo("vert_position", _mesh);
-        //         _guizmo_collider_program.bind("uniform_mvp", _view_projection);
-        //         _guizmo_collider_program.draw_guizmo();
-        //     }
-        // });
-        // _registry.view<rigidbody_component, transform_component>().each([&](rigidbody_component& rigidbody, transform_component& transform) {
-        //     if (rigidbody._guizmo) {
-        //         const glm::mat4 _model_view_projection = _view_projection * transform._transform;
-        //         const guizmo_mesh_ref& _mesh = *(rigidbody._guizmo.get());
-        //         _guizmo_rigidbody_program.use();
-        //         _guizmo_rigidbody_program.bind_guizmo("vert_position", _mesh);
-        //         _guizmo_rigidbody_program.bind("uniform_mvp", _model_view_projection);
-        //         _guizmo_rigidbody_program.draw_guizmo();
-        //     }
-        // });
-        // _registry.view<rigidbody_component>(entt::exclude<transform_component>).each([&](rigidbody_component& rigidbody) {
-        //     if (rigidbody._guizmo) {
-        //         const guizmo_mesh_ref& _mesh = *(rigidbody._guizmo.get());
-        //         _guizmo_rigidbody_program.use();
-        //         _guizmo_rigidbody_program.bind_guizmo("vert_position", _mesh);
-        //         _guizmo_rigidbody_program.bind("uniform_mvp", _view_projection);
-        //         _guizmo_rigidbody_program.draw_guizmo();
-        //     }
-        // });
-#endif
     });
+}
+
+void rendering_system::draw_guizmos()
+{
+#if LUCARIA_GUIZMO
+    static bool _is_program_setup = false;
+    static std::optional<program_ref> _persistent_guizmo_program = std::nullopt;
+    if (!_is_program_setup) {
+        _persistent_guizmo_program = program_ref(shader_data { detail::guizmo_vertex }, shader_data { detail::guizmo_fragment });
+        _is_program_setup = true;
+    }
+    program_ref& _guizmo_program = _persistent_guizmo_program.value();
+    _guizmo_program.use();
+    for (const std::pair<const glm::vec3, guizmo_mesh_ref>& _pair : detail::guizmo_meshes) {
+        _guizmo_program.bind_guizmo("vert_position", _pair.second);
+        _guizmo_program.bind("uniform_color", _pair.first);
+        _guizmo_program.bind("uniform_mvp", detail::camera_view_projection);
+        _guizmo_program.draw_guizmo();
+    }
+#endif
 }

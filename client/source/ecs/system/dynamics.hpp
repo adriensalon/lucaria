@@ -18,7 +18,10 @@ struct dynamics_system {
 
     // check_collision(rb, layer) a utiliser depuis le controller !
 
-    static void prevent_kinematic_wall_collisions();
-    static void snap_kinematic_grounds();
-    static void draw_guizmos();
+    static void apply_transforms();
+    static void compute_wall_slide();
+    static void compute_ground_snap();
+    static void compute_dynamics();
+    static void compute_layers();
+    static void collect_debug_guizmos();
 };

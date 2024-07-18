@@ -18,7 +18,9 @@ struct rendering_system {
 
     static void clear_screen();
     static void compute_projection();
-    static void compute_view();
+    static void compute_view_projection();
     static void draw_skybox();
-    static void draw_meshes();
+    static void draw_blockout_meshes();
+    static void draw_unlit_meshes();
+    static void draw_guizmos();
 };

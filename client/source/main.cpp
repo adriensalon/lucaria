@@ -34,15 +34,21 @@ int main()
         motion_system::blend_animations();
         motion_system::apply_root_motion(); //
 
-        dynamics_system::prevent_kinematic_wall_collisions(); //
-        dynamics_system::snap_kinematic_grounds(); //
+        dynamics_system::apply_transforms();
+        dynamics_system::compute_wall_slide();
+        dynamics_system::compute_ground_snap();
+        dynamics_system::compute_dynamics();
+        dynamics_system::compute_layers();
+        dynamics_system::collect_debug_guizmos();
         
         motion_system::apply_foot_ik();
         motion_system::skin_meshes();
 
-        // rendering_system::compute_view();
+        rendering_system::compute_view_projection();
         rendering_system::draw_skybox();
-        rendering_system::draw_meshes();
+        rendering_system::draw_blockout_meshes();
+        rendering_system::draw_unlit_meshes();
+        rendering_system::draw_guizmos();
 
         splash_system::update();
     });

@@ -37,9 +37,5 @@ private:
     // btDefaultMotionState* _state = nullptr;
     // btRigidBody* _rigidbody = nullptr;
     btPairCachingGhostObject* _ghost = nullptr;
-#if LUCARIA_GUIZMO
-    std::unique_ptr<guizmo_mesh_ref> _guizmo = nullptr;
-    friend struct rendering_system;
-#endif
     friend struct dynamics_system;
 };
