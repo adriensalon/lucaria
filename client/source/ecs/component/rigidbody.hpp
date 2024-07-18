@@ -1,6 +1,7 @@
 #pragma once
 
 #include <btBulletDynamicsCommon.h>
+#include <BulletCollision/CollisionDispatch/btGhostObject.h>
 
 #include <core/mesh.hpp>
 
@@ -18,8 +19,9 @@ struct rigidbody_component {
 private:
     bool _is_instanced = false;
     btCollisionShape* _shape = nullptr;
-    btDefaultMotionState* _state = nullptr;
-    btRigidBody* _rigidbody = nullptr;
+    // btDefaultMotionState* _state = nullptr;
+    // btRigidBody* _rigidbody = nullptr;
+    btPairCachingGhostObject* _ghost = nullptr;
 #if LUCARIA_GUIZMO
     std::unique_ptr<guizmo_mesh_ref> _guizmo = nullptr;
     friend struct rendering_system;

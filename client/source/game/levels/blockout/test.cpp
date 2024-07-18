@@ -13,5 +13,5 @@ void level_blockout_test(entt::registry& registry)
         .mesh(fetch_mesh("assets/blockout_test.bin"));
 
     registry.emplace<collider_component<collider_algorithm::ground>>(_test_entity)
-        .navmesh(fetch_navmesh("assets/blockout_test_ground.bin"));
+        .navmesh(fetch_navmesh("assets/blockout_test_wall.bin"));
 }

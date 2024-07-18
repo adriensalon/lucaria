@@ -32,8 +32,8 @@ collider_component<algorithm_t>& collider_component<algorithm_t>::navmesh(const 
 {
     _navmesh.emplace(fetched_navmesh, [this]() {
         btCollisionShape* _shape = _navmesh.value().get_shape();
-        _state = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 0)));
-        _rigidbody = new btRigidBody(btRigidBody::btRigidBodyConstructionInfo(0, _state, _shape, btVector3(0, 0, 0)));
+        _state = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1)));
+        _rigidbody = new btRigidBody(btRigidBody::btRigidBodyConstructionInfo(0, _state, _shape));
         dynamics_system::get_dynamics_world()->addRigidBody(_rigidbody);
         _is_instanced = true;
     });
