@@ -14,12 +14,12 @@
 
 void level_persistent_player(entt::registry& registry)
 {    
-    // scripting_system::use_controller_state<runner_controller_state>();
+    scripting_system::use_controller_state<runner_controller_state>();
 
     const entt::entity _player_entity = registry.create();
 
-    registry.emplace<transform_component>(_player_entity)
-        .position_warp(glm::vec3(0.f, 0.f, 0.f));
+    transform_component& _player_transform = registry.emplace<transform_component>(_player_entity)
+        .position_warp(glm::vec3(0.f, 3.5f, 0.f));
     
     registry.emplace<rigidbody_component>(_player_entity)
         .capsule(0.5f, 1.83f);
@@ -28,7 +28,8 @@ void level_persistent_player(entt::registry& registry)
     registry.emplace<controller_component<runner_controller_state>>(_player_entity)
         .state(runner_controller_state())
         .resolve([&] (runner_controller_state& state) {
-            
+            // _player_transform.position_relative({ 0.f, -0.01f, 0.f });
+            _player_transform.position_relative({ 0.03f, 0.f, 0.f });
         });
 
     // rendering_system::use_camera_transform(_player_transform);

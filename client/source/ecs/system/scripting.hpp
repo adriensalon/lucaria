@@ -13,3 +13,5 @@ struct scripting_system {
     static void resolve_controller_states();
 
 };
+
+#include <ecs/system/scripting.inl>

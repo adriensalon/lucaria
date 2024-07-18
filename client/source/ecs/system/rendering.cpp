@@ -293,7 +293,17 @@ void rendering_system::draw_meshes()
                 _guizmo_collider_program.draw_guizmo();
             }
         });
-        _registry.view<rigidbody_component>().each([&](rigidbody_component& rigidbody) {
+        _registry.view<rigidbody_component, transform_component>().each([&](rigidbody_component& rigidbody, transform_component& transform) {
+            if (rigidbody._guizmo) {
+                const glm::mat4 _model_view_projection = _view_projection * transform._transform;
+                const guizmo_mesh_ref& _mesh = *(rigidbody._guizmo.get());
+                _guizmo_rigidbody_program.use();
+                _guizmo_rigidbody_program.bind_guizmo("vert_position", _mesh);
+                _guizmo_rigidbody_program.bind("uniform_mvp", _model_view_projection);
+                _guizmo_rigidbody_program.draw_guizmo();
+            }
+        });
+        _registry.view<rigidbody_component>(entt::exclude<transform_component>).each([&](rigidbody_component& rigidbody) {
             if (rigidbody._guizmo) {
                 const guizmo_mesh_ref& _mesh = *(rigidbody._guizmo.get());
                 _guizmo_rigidbody_program.use();

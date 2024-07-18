@@ -28,7 +28,7 @@ int main()
         
 
         player_system::update(); //
-        // scripting_system::resolve_controller_states();
+        scripting_system::resolve_controller_states();
 
 
         motion_system::blend_animations();
