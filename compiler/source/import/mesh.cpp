@@ -22,11 +22,12 @@ mesh_data import_mesh(const std::filesystem::path& gltf_path, bool& has_armature
         std::terminate();
     }
     const aiMesh* _mesh = _scene->mMeshes[0];
-    const aiMatrix4x4 _root_transform = _scene->mRootNode->mTransformation;
+    // const aiMatrix4x4 _root_transform = _scene->mRootNode->mTransformation;
     has_armature = _mesh->mNumBones > 0;
     for (glm::uint _i = 0; _i < _mesh->mNumVertices; ++_i) {
         if (!has_armature) {
-            const aiVector3D _position = _root_transform * _mesh->mVertices[_i];
+            // const aiVector3D _position = _root_transform * _mesh->mVertices[_i];
+            const aiVector3D _position = _mesh->mVertices[_i];
             _data.positions.push_back(glm::vec3(_position.x, _position.y, _position.z));
         }
         if (_mesh->HasVertexColors(0)) {

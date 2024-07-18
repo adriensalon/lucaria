@@ -19,11 +19,11 @@ void level_persistent_player(entt::registry& registry)
     const entt::entity _player_entity = registry.create();
 
     registry.emplace<model_component<model_shader::unlit>>(_player_entity)
-        .mesh(fetch_mesh("assets/decimategltf.bin"))
+        .mesh(fetch_mesh("assets/blockout_test.bin"))
         .material(fetch_material({{ material_texture::color, "assets/room_color.bin" }}));
     
     transform_component& _player_transform = registry.emplace<transform_component>(_player_entity)
-        .rotation_relative(glm::vec3(-1.57f, 0.f, 0.f))
+        // .rotation_relative(glm::vec3(-1.57f, 0.f, 0.f))
         .position_warp(glm::vec3(3.f, 0.f, 0.f));
     
     registry.emplace<controller_component<runner_controller_state>>(_player_entity)
