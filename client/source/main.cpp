@@ -35,10 +35,7 @@ int main()
         motion_system::apply_root_motion();
 
         dynamics_system::step_simulation();
-        dynamics_system::compute_wall_slide();
-        dynamics_system::compute_ground_snap();
-        dynamics_system::compute_dynamics();
-        dynamics_system::compute_layers();
+        dynamics_system::compute_kinematic_collisions();
         dynamics_system::collect_debug_guizmos();
         
         motion_system::apply_foot_ik();

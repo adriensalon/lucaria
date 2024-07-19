@@ -13,9 +13,6 @@ struct dynamics_system {
     static void use_gravity(const glm::vec3& newtons);
     
     static void step_simulation();
-    static void compute_wall_slide();
-    static void compute_ground_snap();
-    static void compute_dynamics();
-    static void compute_layers();
+    static void compute_kinematic_collisions();
     static void collect_debug_guizmos();
 };

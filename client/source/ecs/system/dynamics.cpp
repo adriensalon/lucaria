@@ -157,7 +157,7 @@ void dynamics_system::step_simulation()
     });
 }
 
-void dynamics_system::compute_wall_slide()
+void dynamics_system::compute_kinematic_collisions()
 {
     each_level([](entt::registry& registry) {
         registry.view<transform_component, kinematic_rigidbody_component>().each([](transform_component& transform, kinematic_rigidbody_component& rigidbody) {
@@ -246,19 +246,6 @@ void dynamics_system::compute_wall_slide()
             }
         });
     });
-}
-
-void dynamics_system::compute_ground_snap()
-{
-    // transforms, rigidbodies \\ colliders (from bullet)
-}
-
-void dynamics_system::compute_dynamics()
-{
-}
-
-void dynamics_system::compute_layers()
-{
 }
 
 void dynamics_system::collect_debug_guizmos()

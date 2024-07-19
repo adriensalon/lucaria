@@ -12,17 +12,6 @@ enum struct rigidbody_kind {
     dynamic
 };
 
-enum struct rigidbody_layer : short {
-    layer_0 = bulletgroupID_collider_layer_0,
-    layer_1 = bulletgroupID_collider_layer_1,
-    layer_2 = bulletgroupID_collider_layer_2,
-    layer_3 = bulletgroupID_collider_layer_3,
-    layer_4 = bulletgroupID_collider_layer_4,
-    layer_5 = bulletgroupID_collider_layer_5,
-    layer_6 = bulletgroupID_collider_layer_6,
-    layer_7 = bulletgroupID_collider_layer_7,
-};
-
 template <rigidbody_kind kind_t>
 struct rigidbody_component;
 
@@ -45,8 +34,10 @@ struct rigidbody_component<rigidbody_kind::kinematic> {
     rigidbody_component& capsule(const float radius, const float height);    
     rigidbody_component& snap_ground(const bool enabled = true);
     rigidbody_component& glide_wall(const bool enabled = true);
-    rigidbody_component& collide_layer(const rigidbody_layer layer, const bool enabled = true);
-    rigidbody_component& fill_kinematic_collisions(const rigidbody_layer layer, std::vector<kinematic_collision>& collisions);
+    rigidbody_component& collide_layer(const kinematic_layer layer, const bool enabled = true);
+    rigidbody_component& fill_wall_collisions(std::vector<kinematic_collision>& collisions);
+    rigidbody_component& fill_ground_collisions(std::vector<kinematic_collision>& collisions);
+    rigidbody_component& fill_layer_collisions(const kinematic_layer layer, std::vector<kinematic_collision>& collisions);
 
 private:
     bool _is_instanced = false;
@@ -54,7 +45,9 @@ private:
     btPairCachingGhostObject* _ghost = nullptr;
     short _group = bulletgroupID_kinematic_rigidbody;
     short _mask = 0;
-    std::unordered_map<rigidbody_layer, std::vector<kinematic_collision>> _collisions = {};
+    std::vector<kinematic_collision> _ground_collisions = {};
+    std::vector<kinematic_collision> _wall_collisions = {};
+    std::unordered_map<kinematic_layer, std::vector<kinematic_collision>> _layer_collisions = {};
     friend struct dynamics_system;
 };
 

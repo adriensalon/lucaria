@@ -68,7 +68,7 @@ collider_component& collider_component::wall()
     return *this;
 }
 
-collider_component& collider_component::layer(const collider_layer layer)
+collider_component& collider_component::layer(const kinematic_layer layer)
 {
     const short _layer = static_cast<short>(layer);
     if (_group != _layer) {

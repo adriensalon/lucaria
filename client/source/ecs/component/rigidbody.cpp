@@ -81,7 +81,7 @@ rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_ki
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_kind::kinematic>::collide_layer(const rigidbody_layer layer, const bool enabled)
+rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_kind::kinematic>::collide_layer(const kinematic_layer layer, const bool enabled)
 {
     const short _layer = static_cast<short>(layer);
     if (enabled) {
@@ -96,10 +96,10 @@ rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_ki
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_kind::kinematic>::fill_kinematic_collisions(const rigidbody_layer layer, std::vector<kinematic_collision>& collisions)
+rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_kind::kinematic>::fill_layer_collisions(const kinematic_layer layer, std::vector<kinematic_collision>& collisions)
 {
-    const std::vector<kinematic_collision>& _layer_collisions = _collisions.at(layer);
-    collisions.insert(collisions.end(), _layer_collisions.begin(), _layer_collisions.end());
+    const std::vector<kinematic_collision>& _collisions = _layer_collisions.at(layer);
+    collisions.insert(collisions.end(), _collisions.begin(), _collisions.end());
     return *this;
 }
 
