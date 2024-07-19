@@ -21,7 +21,9 @@ void level_persistent_player(entt::registry& registry)
     transform_component& _player_transform = registry.emplace<transform_component>(_player_entity)
         .position_warp(glm::vec3(0.f, 3.5f, 0.f));
     
-    registry.emplace<rigidbody_component>(_player_entity)
+    registry.emplace<kinematic_rigidbody_component>(_player_entity)
+        .glide_wall()
+        .snap_ground()
         .capsule(0.5f, 1.83f);
         // .box({ 0.2f, 1.8f, 0.2f });
     

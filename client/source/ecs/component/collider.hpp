@@ -2,6 +2,18 @@
 
 #include <core/navmesh.hpp>
 #include <core/fetch.hpp>
+#include <core/layer.hpp>
+
+enum struct collider_layer : short {
+    layer_0 = bulletgroupID_collider_layer_0,
+    layer_1 = bulletgroupID_collider_layer_1,
+    layer_2 = bulletgroupID_collider_layer_2,
+    layer_3 = bulletgroupID_collider_layer_3,
+    layer_4 = bulletgroupID_collider_layer_4,
+    layer_5 = bulletgroupID_collider_layer_5,
+    layer_6 = bulletgroupID_collider_layer_6,
+    layer_7 = bulletgroupID_collider_layer_7,
+};
 
 struct collider_component {
     collider_component() = default;
@@ -14,12 +26,14 @@ struct collider_component {
     collider_component& navmesh(const std::shared_future<std::shared_ptr<navmesh_ref>>& fetched_navmesh);
     collider_component& ground();
     collider_component& wall();
-    collider_component& layer(const glm::uint layer);
+    collider_component& layer(const collider_layer layer);
 
 private:
     bool _is_instanced = false;
     fetch_container<navmesh_ref> _navmesh = {};
     btDefaultMotionState* _state = nullptr;
     btRigidBody* _rigidbody = nullptr;
+    short _group = 0;
+    short _mask = bulletgroupID_kinematic_rigidbody; // ?bulletgroupID_dynamic_rigidbody
     friend struct dynamics_system;
 };

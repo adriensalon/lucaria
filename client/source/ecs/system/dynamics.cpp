@@ -1,4 +1,5 @@
 #include <core/hash.hpp>
+#include <core/layer.hpp>
 #include <core/mesh.hpp>
 #include <core/program.hpp>
 #include <core/world.hpp>
@@ -70,13 +71,7 @@ static guizmo_debug_draw* guizmo_draw = nullptr;
 std::unordered_map<glm::vec3, guizmo_mesh_ref, vec3_hash> guizmo_meshes = {};
 #endif
 
-static btDiscreteDynamicsWorld* dynamics_world = nullptr;
-
-constexpr int collider_ground_group = 0; // interacts with kinematic_rigidbody_group, dynamic_rigidbody_group
-constexpr int collider_wall_group = 1; // interacts with kinematic_rigidbody_group, dynamic_rigidbody_group
-constexpr int kinematic_rigidbody_group = 2;
-constexpr int dynamic_rigidbody_group = 3;
-std::unordered_set<int> collider_layer_groups = {};
+btDiscreteDynamicsWorld* dynamics_world = nullptr;
 
 static bool setup_bullet_worlds()
 {
@@ -138,7 +133,7 @@ btDiscreteDynamicsWorld* dynamics_system::get_dynamics_world()
 void dynamics_system::apply_transforms()
 {
     each_level([](entt::registry& registry) {
-        registry.view<transform_component, rigidbody_component>().each([](transform_component& transform, rigidbody_component& rigidbody) {
+        registry.view<transform_component, rigidbody_component<rigidbody_kind::kinematic>>().each([](transform_component& transform, rigidbody_component<rigidbody_kind::kinematic>& rigidbody) {
             const btTransform _transform = detail::glm_to_bullet(transform._transform);
             rigidbody._ghost->setWorldTransform(_transform);
         });
@@ -154,7 +149,7 @@ void dynamics_system::compute_wall_slide()
     // std::cout << detail::dynamics_world->getNumCollisionObjects() << std::endl;
 
     each_level([](entt::registry& registry) {
-        registry.view<transform_component, rigidbody_component>().each([](transform_component& transform, rigidbody_component& rigidbody) {
+        registry.view<transform_component, rigidbody_component<rigidbody_kind::kinematic>>().each([](transform_component& transform, rigidbody_component<rigidbody_kind::kinematic>& rigidbody) {
             // rigidbody._rigidbody->getMotionState()->setWorldTransform(_transform);
             // rigidbody._rigidbody->setWorldTransform(_transform);
             // rigidbody._ghost->setWorldTransform(_transform);
