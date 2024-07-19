@@ -34,6 +34,6 @@ private:
     btDefaultMotionState* _state = nullptr;
     btRigidBody* _rigidbody = nullptr;
     short _group = 0;
-    short _mask = bulletgroupID_kinematic_rigidbody; // ?bulletgroupID_dynamic_rigidbody
+    short _mask = bulletgroupID_kinematic_rigidbody;
     friend struct dynamics_system;
 };

@@ -12,13 +12,7 @@ struct dynamics_system {
 
     static void use_gravity(const glm::vec3& newtons);
     
-    static btDiscreteDynamicsWorld* get_dynamics_world(); // layer ! (sale go core?)
- 
-    // raycast a utiliser depuis le controller !
-
-    // check_collision(rb, layer) a utiliser depuis le controller !
-
-    static void apply_transforms();
+    static void step_simulation();
     static void compute_wall_slide();
     static void compute_ground_snap();
     static void compute_dynamics();

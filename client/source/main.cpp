@@ -22,7 +22,7 @@ int main()
     add_level(levelID_blockout_test);
 
     run([]() {
-        player_system::update(); //
+        player_system::update();
         
         rendering_system::clear_screen();
         rendering_system::compute_projection();
@@ -32,9 +32,9 @@ int main()
 
 
         motion_system::blend_animations();
-        motion_system::apply_root_motion(); //
+        motion_system::apply_root_motion();
 
-        dynamics_system::apply_transforms();
+        dynamics_system::step_simulation();
         dynamics_system::compute_wall_slide();
         dynamics_system::compute_ground_snap();
         dynamics_system::compute_dynamics();

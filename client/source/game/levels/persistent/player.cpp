@@ -24,8 +24,8 @@ void level_persistent_player(entt::registry& registry)
     registry.emplace<kinematic_rigidbody_component>(_player_entity)
         .glide_wall()
         .snap_ground()
+        .collide_layer(rigidbody_layer::layer_0)
         .capsule(0.5f, 1.83f);
-        // .box({ 0.2f, 1.8f, 0.2f });
     
     registry.emplace<controller_component<runner_controller_state>>(_player_entity)
         .state(runner_controller_state())

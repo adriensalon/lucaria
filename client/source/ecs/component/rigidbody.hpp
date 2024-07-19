@@ -46,14 +46,15 @@ struct rigidbody_component<rigidbody_kind::kinematic> {
     rigidbody_component& snap_ground(const bool enabled = true);
     rigidbody_component& glide_wall(const bool enabled = true);
     rigidbody_component& collide_layer(const rigidbody_layer layer, const bool enabled = true);
-    rigidbody_component& fill_kinematic_collisions(std::vector<kinematic_collision>& collisions);
+    rigidbody_component& fill_kinematic_collisions(const rigidbody_layer layer, std::vector<kinematic_collision>& collisions);
 
 private:
     bool _is_instanced = false;
     btCollisionShape* _shape = nullptr;
     btPairCachingGhostObject* _ghost = nullptr;
     short _group = bulletgroupID_kinematic_rigidbody;
-    short _mask = 0; // ?bulletgroupID_collider_ground, ?bulletgroupID_collider_wall, ?bulletgroupID_collider_layer_X...
+    short _mask = 0;
+    std::unordered_map<rigidbody_layer, std::vector<kinematic_collision>> _collisions = {};
     friend struct dynamics_system;
 };
 
@@ -78,7 +79,7 @@ private:
     btRigidBody* _rigidbody = nullptr;
     float _mass = 0.f;
     short _group = bulletgroupID_dynamic_rigidbody;
-    short _mask = bulletgroupID_collider_ground | bulletgroupID_collider_wall; // ?bulletgroupID_dynamic_rigidbody
+    short _mask = bulletgroupID_collider_ground | bulletgroupID_collider_wall;
     friend struct dynamics_system;
 };
 

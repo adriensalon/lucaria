@@ -36,8 +36,8 @@ rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_ki
     _shape = new btBoxShape(btVector3(half_extents.x, half_extents.y, half_extents.z));
     _ghost = new btPairCachingGhostObject();
     _ghost->setCollisionShape(_shape);
-    // dynamics_system::get_dynamics_world()->addCollisionObject(_ghost, btBroadphaseProxy::SensorTrigger, btBroadphaseProxy::AllFilter);
-    dynamics_system::get_dynamics_world()->addCollisionObject(_ghost, _group, _mask);
+    _ghost->setCollisionFlags(_ghost->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
+    detail::dynamics_world->addCollisionObject(_ghost, _group, _mask);
     _is_instanced = true;
     return *this;
 }
@@ -48,9 +48,7 @@ rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_ki
     _ghost = new btPairCachingGhostObject();
     _ghost->setCollisionShape(_shape);
     _ghost->setCollisionFlags(_ghost->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
-    _ghost->setUserIndex(33);
-    dynamics_system::get_dynamics_world()->addCollisionObject(_ghost, _group, _mask);
-
+    detail::dynamics_world->addCollisionObject(_ghost, _group, _mask);
     _is_instanced = true;
     return *this;
 }
@@ -98,9 +96,10 @@ rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_ki
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_kind::kinematic>::fill_kinematic_collisions(std::vector<kinematic_collision>& collisions)
+rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_kind::kinematic>::fill_kinematic_collisions(const rigidbody_layer layer, std::vector<kinematic_collision>& collisions)
 {
-
+    const std::vector<kinematic_collision>& _layer_collisions = _collisions.at(layer);
+    collisions.insert(collisions.end(), _layer_collisions.begin(), _layer_collisions.end());
     return *this;
 }
 
@@ -143,8 +142,7 @@ rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind
     _shape = new btBoxShape(btVector3(half_extents.x, half_extents.y, half_extents.z));
     _state = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 0)));
     _rigidbody = new btRigidBody(btRigidBody::btRigidBodyConstructionInfo(_mass, _state, _shape, btVector3(0, 0, 0)));
-    dynamics_system::get_dynamics_world()->addRigidBody(_rigidbody);
-
+    detail::dynamics_world->addRigidBody(_rigidbody, _group, _mask);
     _is_instanced = true;
     return *this;
 }
@@ -154,14 +152,21 @@ rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind
     _shape = new btCapsuleShape(radius, height);
     _state = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 0)));
     _rigidbody = new btRigidBody(btRigidBody::btRigidBodyConstructionInfo(_mass, _state, _shape, btVector3(0, 0, 0)));
-    dynamics_system::get_dynamics_world()->addRigidBody(_rigidbody);
-
+    detail::dynamics_world->addRigidBody(_rigidbody, _group, _mask);
     _is_instanced = true;
     return *this;
 }
 
 rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind::dynamic>::collide_dynamics(const bool enabled)
 {
-
+    if (enabled) {
+        _mask = _mask | bulletgroupID_dynamic_rigidbody;
+    } else if (contains_layer(_mask, bulletgroupID_dynamic_rigidbody)) {
+        _mask = remove_layer(_mask, bulletgroupID_dynamic_rigidbody);
+    }
+    if (_is_instanced) {
+        detail::dynamics_world->removeRigidBody(_rigidbody);
+        detail::dynamics_world->addRigidBody(_rigidbody, _group, _mask);
+    }
     return *this;
 }

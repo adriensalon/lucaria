@@ -44,35 +44,42 @@ collider_component& collider_component::navmesh(const std::shared_future<std::sh
 
 collider_component& collider_component::ground()
 {
-    _group = bulletgroupID_collider_ground;
-    _mask = _mask | bulletgroupID_dynamic_rigidbody;
-    if (_is_instanced) {
-        detail::dynamics_world->removeRigidBody(_rigidbody);
-        detail::dynamics_world->addRigidBody(_rigidbody, _group, _mask);
+    if (_group != bulletgroupID_collider_ground) {
+        _group = bulletgroupID_collider_ground;
+        _mask = _mask | bulletgroupID_dynamic_rigidbody;
+        if (_is_instanced) {
+            detail::dynamics_world->removeRigidBody(_rigidbody);
+            detail::dynamics_world->addRigidBody(_rigidbody, _group, _mask);
+        }
     }
     return *this;
 }
 
 collider_component& collider_component::wall()
 {
-    _group = bulletgroupID_collider_wall;
-    _mask = _mask | bulletgroupID_dynamic_rigidbody;
-    if (_is_instanced) {
-        detail::dynamics_world->removeRigidBody(_rigidbody);
-        detail::dynamics_world->addRigidBody(_rigidbody, _group, _mask);
+    if (_group != bulletgroupID_collider_wall) {
+        _group = bulletgroupID_collider_wall;
+        _mask = _mask | bulletgroupID_dynamic_rigidbody;
+        if (_is_instanced) {
+            detail::dynamics_world->removeRigidBody(_rigidbody);
+            detail::dynamics_world->addRigidBody(_rigidbody, _group, _mask);
+        }
     }
     return *this;
 }
 
 collider_component& collider_component::layer(const collider_layer layer)
 {
-    _group = static_cast<short>(layer);
-    if (contains_layer(_mask, bulletgroupID_dynamic_rigidbody)) {
-        _mask = remove_layer(_mask, bulletgroupID_dynamic_rigidbody);
-    }
-    if (_is_instanced) {
-        detail::dynamics_world->removeRigidBody(_rigidbody);
-        detail::dynamics_world->addRigidBody(_rigidbody, _group, _mask);
-    }
+    const short _layer = static_cast<short>(layer);
+    if (_group != _layer) {
+        _group = _layer;
+        if (contains_layer(_mask, bulletgroupID_dynamic_rigidbody)) {
+            _mask = remove_layer(_mask, bulletgroupID_dynamic_rigidbody);
+        }
+        if (_is_instanced) {
+            detail::dynamics_world->removeRigidBody(_rigidbody);
+            detail::dynamics_world->addRigidBody(_rigidbody, _group, _mask);
+        }
+    }    
     return *this;
 }
