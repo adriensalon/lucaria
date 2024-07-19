@@ -11,7 +11,7 @@ std::unordered_map<std::string, bool>& get_keys();
 std::unordered_map<int, bool>& get_buttons();
 glm::vec2 get_screen_size();
 glm::vec2 get_mouse_position();
-glm::vec2 get_mouse_position_delta();
+glm::vec2& get_mouse_position_delta();
 float get_time_delta();
 bool is_audio_locked();
 bool is_mouse_locked();

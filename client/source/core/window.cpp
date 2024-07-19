@@ -45,7 +45,8 @@ static std::vector<int> buttons_changed = {};
 static glm::vec2 screen_size = { 0.f, 0.f };
 static glm::vec2 mouse_position = { 0.f, 0.f };
 static glm::vec2 mouse_position_delta = { 0.f, 0.f };
-static float time_delta = 0.f;
+static glm::vec2 accumulated_mouse_position_delta = { 0.f, 0.f };
+static glm::float64 time_delta = 0.f; // seconds
 static std::function<void()> update_callback = nullptr;
 
 static bool is_audio_locked = false;
@@ -144,7 +145,8 @@ EM_BOOL key_callback(int event_type, const EmscriptenKeyboardEvent* event, void*
 EM_BOOL mouse_callback(int event_type, const EmscriptenMouseEvent* event, void* user_data)
 {
     if (event_type == EMSCRIPTEN_EVENT_MOUSEMOVE) {
-        detail::mouse_position_delta = glm::vec2((float)event->movementX, (float)event->movementY);
+        detail::accumulated_mouse_position_delta += glm::vec2((float)event->movementX, (float)event->movementY);
+        // std::cout << "x = " << event->screenX << ", y = " << event->screenY << "ok" << std::endl;
         // detail::mouse_position_delta = glm::vec2((float)event->clientX, (float)event->clientY) - detail::mouse_position;
         detail::mouse_position = glm::vec2((float)event->clientX, (float)event->clientY);
         ImGui::GetIO().AddMousePosEvent(mouse_position.x, mouse_position.y);
@@ -204,17 +206,20 @@ static bool setup_emscripten()
 
 void update()
 {
+    emscripten_set_main_loop_timing(EM_TIMING_RAF, 1);
     static double _last_render_time = 0;
     double _render_time = emscripten_get_now();
-    double _time_delta = _render_time - _last_render_time;
+    detail::time_delta = (_render_time - _last_render_time) / 1000.f;
     _last_render_time = _render_time;
+
+    static glm::vec2 _last_accum_pos_delta(0.f, 0.f);
+    detail::mouse_position_delta = detail::accumulated_mouse_position_delta - _last_accum_pos_delta;
+    _last_accum_pos_delta = detail::accumulated_mouse_position_delta;
 
     int _screen_width = canvas_get_width();
     int _screen_height = canvas_get_height();
     detail::screen_size = { _screen_width, _screen_height };
-    detail::time_delta = _time_delta;
 
-    wait_fetched_containers();
 
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = ImVec2(detail::screen_size.x, detail::screen_size.y);
@@ -236,7 +241,7 @@ void update()
 
     update_callback();
 
-    detail::mouse_position_delta = { 0, 0 };
+    // detail::mouse_position_delta = { 0, 0 };
     detail::keys_changed.clear();
     detail::buttons_changed.clear();
 
@@ -244,6 +249,9 @@ void update()
     // ImGui::ShowDemoWindow();
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    
+    wait_fetched_containers();
+    // detail::mouse_position_delta = glm::vec2(0.f);
 }
 
 }
@@ -274,7 +282,7 @@ glm::vec2 get_mouse_position()
     return detail::mouse_position;
 }
 
-glm::vec2 get_mouse_position_delta()
+glm::vec2& get_mouse_position_delta()
 {
     return detail::mouse_position_delta;
 }

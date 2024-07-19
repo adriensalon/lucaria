@@ -28,7 +28,7 @@ struct rigidbody_component {
     rigidbody_component& glide_walls(const bool enabled = true);
     rigidbody_component& collide_layer(const glm::uint layer, const bool enabled = true);
     
-    const std::vector<kinematic_collision>& get_kinematic_game_collisions(const glm::uint layer);
+    const std::vector<kinematic_collision>& get_kinematic_collisions(const glm::uint layer);
 
 
 private:

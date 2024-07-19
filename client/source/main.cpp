@@ -22,12 +22,12 @@ int main()
     add_level(levelID_blockout_test);
 
     run([]() {
+        player_system::update(); //
         
         rendering_system::clear_screen();
         rendering_system::compute_projection();
         
 
-        player_system::update(); //
         scripting_system::resolve_controller_states();
 
 

@@ -11,8 +11,8 @@
 
 namespace detail {
 
-constexpr float mouse_sensitivity = 0.007f;
-constexpr float player_speed = 0.002f;
+constexpr float mouse_sensitivity = 7.f;
+constexpr float player_speed = 2.f;
 constexpr std::string_view player_forward_key = "z";
 constexpr std::string_view player_left_key = "q";
 constexpr std::string_view player_backward_key = "s";
@@ -44,7 +44,7 @@ static glm::vec3 compute_position()
 static void compute_rotation()
 {
     const glm::vec2 _mouse_delta = get_mouse_position_delta();
-    const float _time_delta = get_time_delta();
+    const double _time_delta = get_time_delta();
     detail::player_yaw += _mouse_delta.x * detail::mouse_sensitivity * _time_delta;
     detail::player_pitch -= _mouse_delta.y * detail::mouse_sensitivity * _time_delta;
     detail::player_pitch = glm::clamp(detail::player_pitch, -89.0f, 89.0f);

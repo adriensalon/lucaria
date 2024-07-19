@@ -55,6 +55,27 @@ static const std::string blockout_vertex = R"(#version 300 es
         gl_Position = uniform_view * vec4(vert_position, 1.0);
     })";
 
+// static const std::string blockout_fragment = R"(#version 300 es
+//     precision highp float;
+//     in vec3 frag_position;
+//     out vec4 output_color;
+//     void main() {
+//         vec3 abs_position = abs(frag_position);
+//         vec3 blend = normalize(max(abs_position, 0.00001));
+//         blend /= (abs_position.x + abs_position.y + abs_position.z);
+//         float grid_scale = 1.0;
+//         vec3 scaled_position = frag_position * grid_scale;
+//         float line_thickness = 0.7;
+//         vec3 grid = abs(fract(scaled_position - 0.5) - 0.5) / fwidth(scaled_position);
+//         float grid_factor = min(min(grid.x, grid.y), grid.z);
+//         vec3 base_color = vec3(0.5); // Grey color
+//         vec3 line_color = vec3(1.0); // White color
+//         float grid_line = smoothstep(0.0, line_thickness, grid_factor);
+//         // vec3 final_color = mix(line_color, base_color, grid_line);    
+//         vec3 final_color = base_color;    
+//         output_color = vec4(final_color, 1.0);
+//     })";
+
 static const std::string blockout_fragment = R"(#version 300 es
     precision highp float;
     in vec3 frag_position;
@@ -66,15 +87,18 @@ static const std::string blockout_fragment = R"(#version 300 es
         float grid_scale = 1.0;
         vec3 scaled_position = frag_position * grid_scale;
         float line_thickness = 0.7;
-        vec3 grid = abs(fract(scaled_position - 0.5) - 0.5) / fwidth(scaled_position);
-        float grid_factor = min(min(grid.x, grid.y), grid.z);
+        
+        // Calculate grid only for horizontal lines
+        float grid = abs(fract(scaled_position.y - 0.5) - 0.5) / fwidth(scaled_position.y);
+        float grid_factor = grid;
+        
         vec3 base_color = vec3(0.5); // Grey color
-        vec3 line_color = vec3(1.0); // White color
+        vec3 line_color = vec3(0.02); // White color
         float grid_line = smoothstep(0.0, line_thickness, grid_factor);
         vec3 final_color = mix(line_color, base_color, grid_line);    
-        // vec3 final_color = base_color;    
         output_color = vec4(final_color, 1.0);
     })";
+
 
 static const std::string pbr_vertex = R"(#version 300 es
     )";

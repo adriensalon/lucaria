@@ -72,6 +72,12 @@ std::unordered_map<glm::vec3, guizmo_mesh_ref, vec3_hash> guizmo_meshes = {};
 
 static btDiscreteDynamicsWorld* dynamics_world = nullptr;
 
+constexpr int collider_ground_group = 0; // interacts with kinematic_rigidbody_group, dynamic_rigidbody_group
+constexpr int collider_wall_group = 1; // interacts with kinematic_rigidbody_group, dynamic_rigidbody_group
+constexpr int kinematic_rigidbody_group = 2;
+constexpr int dynamic_rigidbody_group = 3;
+std::unordered_set<int> collider_layer_groups = {};
+
 static bool setup_bullet_worlds()
 {
     collision_configuration = new btDefaultCollisionConfiguration();
