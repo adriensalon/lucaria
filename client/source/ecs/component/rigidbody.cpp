@@ -57,15 +57,6 @@ rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_ki
 
 rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_kind::kinematic>::snap_ground(const bool enabled)
 {
-    // if (enabled) {
-    //     _mask = _mask | bulletgroupID_collider_ground;
-    // } else if (contains_layer(_mask, bulletgroupID_collider_ground)) {
-    //     _mask = remove_layer(_mask, bulletgroupID_collider_ground);
-    // }
-    // if (_is_instanced) {
-    //     detail::dynamics_world->removeCollisionObject(_ghost);
-    //     detail::dynamics_world->addCollisionObject(_ghost, _group, _mask);
-    // }
     _is_snap_ground = enabled;
     return *this;
 }
@@ -99,12 +90,21 @@ rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_ki
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_kind::kinematic>::fill_layer_collisions(const kinematic_layer layer, std::vector<kinematic_collision>& collisions)
+const std::optional<kinematic_collision>& rigidbody_component<rigidbody_kind::kinematic>::get_ground_collision() const
 {
-    const std::vector<kinematic_collision>& _collisions = _layer_collisions.at(layer);
-    collisions.insert(collisions.end(), _collisions.begin(), _collisions.end());
-    return *this;
+    return _ground_collision;
 }
+
+const std::vector<kinematic_collision>& rigidbody_component<rigidbody_kind::kinematic>::get_wall_collisions() const
+{
+    return _wall_collisions;
+}
+
+const std::vector<kinematic_collision>& rigidbody_component<rigidbody_kind::kinematic>::get_layer_collisions(const kinematic_layer layer) const
+{
+    return _layer_collisions.at(layer);
+}
+
 
 rigidbody_component<rigidbody_kind::dynamic>::rigidbody_component(rigidbody_component&& other)
 {

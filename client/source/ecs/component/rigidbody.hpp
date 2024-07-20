@@ -37,10 +37,9 @@ struct rigidbody_component<rigidbody_kind::kinematic> {
     rigidbody_component& glide_wall(const bool enabled = true);
     rigidbody_component& collide_layer(const kinematic_layer layer, const bool enabled = true);
     
-    const std::vector<kinematic_collision>& get_wall_collisions();
-    const std::vector<kinematic_collision>& get_ground_collisions();
-    const std::vector<kinematic_collision>& get_layer_collisions(const kinematic_layer layer);
-    rigidbody_component& fill_layer_collisions(const kinematic_layer layer, std::vector<kinematic_collision>& collisions);
+    const std::optional<kinematic_collision>& get_ground_collision() const;
+    const std::vector<kinematic_collision>& get_wall_collisions() const;
+    const std::vector<kinematic_collision>& get_layer_collisions(const kinematic_layer layer) const;
 
 private:
     bool _is_instanced = false;
@@ -50,7 +49,7 @@ private:
     bool _is_snap_ground = false;
     short _group = bulletgroupID_kinematic_rigidbody;
     short _mask = 0;
-    std::vector<kinematic_collision> _ground_collisions = {};
+    std::optional<kinematic_collision> _ground_collision = {};
     std::vector<kinematic_collision> _wall_collisions = {};
     std::unordered_map<kinematic_layer, std::vector<kinematic_collision>> _layer_collisions = {};
     friend struct dynamics_system;

@@ -1,17 +1,17 @@
+#include <btBulletDynamicsCommon.h>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include <core/hash.hpp>
 #include <core/layer.hpp>
 #include <core/mesh.hpp>
 #include <core/program.hpp>
 #include <core/window.hpp>
 #include <core/world.hpp>
+
 #include <ecs/component/rigidbody.hpp>
 #include <ecs/component/transform.hpp>
 #include <ecs/system/dynamics.hpp>
-
-
-#include <btBulletDynamicsCommon.h>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 #if LUCARIA_GUIZMO
 class guizmo_debug_draw : public btIDebugDraw {
@@ -164,12 +164,6 @@ static bool get_collision(kinematic_collision& collision, const btPersistentMani
             glm::vec3(_point.m_normalWorldOnB.x(), _point.m_normalWorldOnB.y(), _point.m_normalWorldOnB.z()),
             _point.getDistance()
         };
-        // std::cout << "collision at x = " << collision.impact_position.x
-        //           << ", y = " << collision.impact_position.y
-        //           << ", z = " << collision.impact_position.z << std::endl;
-        // std::cout << "normal at x = " << collision.impact_normal.x
-        //           << ", y = " << collision.impact_normal.y
-        //           << ", z = " << collision.impact_normal.z << std::endl;
         return true;
     }
     return false;
@@ -183,7 +177,7 @@ static void compute_collide_wall(const kinematic_collision& collision, glm::mat4
     transform[3] = glm::vec4(_new_position, 1.0f);
 }
 
-static void compute_snap_ground(glm::mat4& transform, const float half_height)
+static bool compute_snap_ground(glm::mat4& transform, kinematic_collision& collision, const float half_height)
 {
     glm::vec3 position = glm::vec3(transform[3]);
     btVector3 start(position.x, position.y + detail::snap_ground_distance, position.z);
@@ -192,11 +186,14 @@ static void compute_snap_ground(glm::mat4& transform, const float half_height)
     rayCallback.m_collisionFilterGroup = bulletgroupID_kinematic_rigidbody;
     rayCallback.m_collisionFilterMask = bulletgroupID_collider_ground;
     detail::dynamics_world->rayTest(start, end, rayCallback);
-    if (rayCallback.hasHit()) {
-        btVector3 hitPoint = rayCallback.m_hitPointWorld;
-        position.y = hitPoint.y() + half_height;
-        transform[3][1] = position.y;
+    if (rayCallback.hasHit()) {        
+        collision.impact_position = glm::vec3(rayCallback.m_hitPointWorld.x(), rayCallback.m_hitPointWorld.y(), rayCallback.m_hitPointWorld.z());
+        collision.impact_normal = glm::vec3(rayCallback.m_hitNormalWorld.x(), rayCallback.m_hitNormalWorld.y(), rayCallback.m_hitNormalWorld.z());
+        collision.penetration_distance = glm::distance(position, collision.impact_position);
+        transform[3][1] = collision.impact_position.y + half_height;
+        return true;
     }
+    return false;
 }
 
 }
@@ -234,7 +231,7 @@ void dynamics_system::compute_kinematic_collisions()
     btManifoldArray _manifold_array;
     each_level([&](entt::registry& registry) {
         registry.view<transform_component, kinematic_rigidbody_component>().each([&](transform_component& transform, kinematic_rigidbody_component& rigidbody) {
-            rigidbody._ground_collisions.clear();
+            rigidbody._ground_collision.reset();
             rigidbody._wall_collisions.clear();
             rigidbody._layer_collisions.clear();
             btBroadphasePairArray& _pair_array = rigidbody._ghost->getOverlappingPairCache()->getOverlappingPairArray();
@@ -265,9 +262,7 @@ void dynamics_system::compute_kinematic_collisions()
                     if (!detail::get_collision(_collision, _manifold)) {
                         continue;
                     }
-                    if (_other_group == bulletgroupID_collider_ground) {
-                        rigidbody._ground_collisions.emplace_back(_collision);
-                    } else if (_other_group == bulletgroupID_collider_wall) {
+                    if (_other_group == bulletgroupID_collider_wall) {
                         detail::compute_collide_wall(_collision, transform._transform);
                         rigidbody._wall_collisions.emplace_back(_collision);
                     } else {
@@ -276,7 +271,9 @@ void dynamics_system::compute_kinematic_collisions()
                 }
             }
             if (rigidbody._is_snap_ground) {
-                detail::compute_snap_ground(transform._transform, rigidbody._half_height);
+                if (detail::compute_snap_ground(transform._transform, _collision, rigidbody._half_height)) {
+                    rigidbody._ground_collision = _collision;
+                }
             }
         });
     });
