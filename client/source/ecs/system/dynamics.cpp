@@ -189,7 +189,7 @@ static void compute_collide_ground(const kinematic_collision& collision, glm::ma
     transform[3] = glm::vec4(_new_position, 1.0f);
 }
 
-static void compute_snap_ground(const kinematic_collision& collision, transform_component& transform)
+static void compute_snap_ground(const float snap_distance, transform_component& transform)
 {
 
 }
@@ -266,6 +266,7 @@ void dynamics_system::compute_kinematic_collisions()
                     }
                 }
             }
+            detail::compute_snap_ground(0.5f, transform._transform);
         });
     });
 }
