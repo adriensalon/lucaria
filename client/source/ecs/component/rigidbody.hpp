@@ -19,6 +19,7 @@ struct kinematic_collision {
     // todo 
     glm::vec3 impact_position;
     glm::vec3 impact_normal;
+    float penetration_distance;
 };
 
 template <>

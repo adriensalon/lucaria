@@ -31,7 +31,7 @@ void level_persistent_player(entt::registry& registry)
         .state(runner_controller_state())
         .resolve([&] (runner_controller_state& state) {
             // _player_transform.position_relative({ 0.f, -0.01f, 0.f });
-            _player_transform.position_relative({ 0.03f, 0.f, 0.f });
+            _player_transform.position_relative({ 0.03f, 0.f, -0.005f });
         });
 
     // rendering_system::use_camera_transform(_player_transform);

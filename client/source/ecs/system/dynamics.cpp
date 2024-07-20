@@ -160,9 +160,9 @@ static bool get_collision(kinematic_collision& collision, const btPersistentMani
         }
         collision = kinematic_collision {
             glm::vec3(_point.getPositionWorldOnA().x(), _point.getPositionWorldOnA().y(), _point.getPositionWorldOnA().z()),
-            glm::vec3(_point.m_normalWorldOnB.x(), _point.m_normalWorldOnB.y(), _point.m_normalWorldOnB.z())
+            glm::vec3(_point.m_normalWorldOnB.x(), _point.m_normalWorldOnB.y(), _point.m_normalWorldOnB.z()),
+            _point.getDistance()
         };
-
         // std::cout << "collision at x = " << collision.impact_position.x
         //           << ", y = " << collision.impact_position.y
         //           << ", z = " << collision.impact_position.z << std::endl;
@@ -174,9 +174,19 @@ static bool get_collision(kinematic_collision& collision, const btPersistentMani
     return false;
 }
 
-static void compute_slide_wall(const kinematic_collision& collision, transform_component& transform)
+static void compute_collide_wall(const kinematic_collision& collision, glm::mat4& transform)
 {
-    
+    glm::vec3 _position = glm::vec3(transform[3]);
+    glm::vec3 _normal_xz(collision.impact_normal.x, 0.f, collision.impact_normal.z);
+    glm::vec3 _new_position = _position - _normal_xz * collision.penetration_distance;
+    transform[3] = glm::vec4(_new_position, 1.0f);
+}
+
+static void compute_collide_ground(const kinematic_collision& collision, glm::mat4& transform)
+{
+    glm::vec3 _position = glm::vec3(transform[3]);
+    glm::vec3 _new_position = _position - collision.impact_normal * collision.penetration_distance;
+    transform[3] = glm::vec4(_new_position, 1.0f);
 }
 
 static void compute_snap_ground(const kinematic_collision& collision, transform_component& transform)
@@ -246,15 +256,12 @@ void dynamics_system::compute_kinematic_collisions()
                         continue;
                     }
                     if (_other_group == bulletgroupID_collider_ground) {
-                        // std::cout << "ground detected !" << std::endl;
-                        detail::compute_snap_ground(_collision, transform);
+                        detail::compute_collide_ground(_collision, transform._transform);
                         rigidbody._ground_collisions.emplace_back(_collision);
                     } else if (_other_group == bulletgroupID_collider_wall) {
-                        // std::cout << "wall detected !" << std::endl;
-                        detail::compute_slide_wall(_collision, transform);
+                        detail::compute_collide_wall(_collision, transform._transform);
                         rigidbody._wall_collisions.emplace_back(_collision);
                     } else {
-                        // std::cout << "game layer detected !" << std::endl;
                         rigidbody._layer_collisions[static_cast<kinematic_layer>(_other_group)].emplace_back(_collision);
                     }
                 }
