@@ -9,7 +9,6 @@
 #include <data/mesh.hpp>
 #include <data/shader.hpp>
 #include <data/texture.hpp>
-#include <data/volume.hpp>
 
 // tool
 extern void execute_gltf2ozz(const std::filesystem::path& input_path, const std::filesystem::path& output_directory);
@@ -19,14 +18,12 @@ extern armature_data import_armature(const std::filesystem::path& input_path);
 extern mesh_data import_mesh(const std::filesystem::path& input_path, bool& has_armature);
 extern shader_data import_shader(const std::filesystem::path& input_path);
 extern texture_data import_texture(const std::filesystem::path& input_path);
-extern volume_data import_volume(const std::filesystem::path& input_path);
 
 // export
 extern void export_binary(const armature_data& data, const std::filesystem::path& output_path);
 extern void export_binary(const mesh_data& data, const std::filesystem::path& output_path);
 extern void export_binary(const shader_data& data, const std::filesystem::path& output_path);
 extern void export_binary(const texture_data& data, const std::filesystem::path& output_path);
-extern void export_binary(const volume_data& data, const std::filesystem::path& output_path);
 extern void export_etc(const texture_data& data, const std::filesystem::path& output_path);
 
 namespace detail {
@@ -172,7 +169,7 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
     } else if (_extension == ".glb" || _extension == ".gltf") {
         bool _has_armature;
         export_binary(import_mesh(input_file, _has_armature), output_file);
-        export_binary(import_volume(input_file), output_file.parent_path() / (output_file.stem().string() + "_volume.bin"));
+        // export_binary(import_volume(input_file), output_file.parent_path() / (output_file.stem().string() + "_volume.bin"));
         if (_has_armature) {
             export_binary(import_armature(input_file), output_file.parent_path() / (output_file.stem().string() + "_armature.bin"));
             // compile_ozz_resources(input_file, output_file.parent_path());

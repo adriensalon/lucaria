@@ -88,7 +88,7 @@ program_ref& program_ref::operator=(program_ref&& other)
 {
     _program_id = other._program_id;
     _array_id = other._array_id;
-    _count = other._count;
+    _indices_count = other._indices_count;
     _program_attributes = std::move(other._program_attributes);
     _program_uniforms = std::move(other._program_uniforms);
     _is_instanced = true;
@@ -145,7 +145,7 @@ void program_ref::use() const
 
 void program_ref::bind(const std::string& name, const mesh_ref& mesh, const mesh_attribute attribute)
 {
-    _count = mesh.get_count();
+    _indices_count = mesh.get_indices_count();
     _array_id = mesh.get_array_id();
     std::unordered_map<mesh_attribute, glm::uint> _buffer_ids = mesh.get_buffer_ids();
     glm::int32 _location = _program_attributes.at(name);
@@ -161,7 +161,7 @@ void program_ref::bind(const std::string& name, const mesh_ref& mesh, const mesh
 
 void program_ref::bind_guizmo(const std::string& name, const guizmo_mesh_ref& mesh)
 {
-    _count = mesh.get_count();
+    _indices_count = mesh.get_indices_count();
     _array_id = mesh.get_array_id();
     glm::uint _positions_id = mesh.get_positions_id();
     glm::int32 _location = _program_attributes.at(name);
@@ -279,7 +279,7 @@ void program_ref::draw() const
 {
     glEnable(GL_DEPTH_TEST);
     glBindVertexArray(_array_id);
-    glDrawElements(GL_TRIANGLES, _count, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, _indices_count, GL_UNSIGNED_INT, 0);
     detail::graphics_assert();
 }
 
@@ -289,7 +289,7 @@ void program_ref::draw_guizmo() const
 {
     glDisable(GL_DEPTH_TEST);
     glBindVertexArray(_array_id);
-    glDrawElements(GL_LINES, _count, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_LINES, _indices_count, GL_UNSIGNED_INT, 0);
     detail::graphics_assert();
 }
 

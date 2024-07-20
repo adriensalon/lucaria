@@ -37,14 +37,14 @@ glm::uint create_attribute_buffer(const std::vector<glm::vec2>& attribute)
     return _attribute_id;
 }
 
-glm::uint create_empty_vec3_attribute_buffer(const glm::uint count)
+glm::uint create_empty_vec3_attribute_buffer(const glm::uint vertex_count)
 {
     glm::uint _attribute_id;
     glGenBuffers(1, &_attribute_id);
     glBindBuffer(GL_ARRAY_BUFFER, _attribute_id);
-    glBufferData(GL_ARRAY_BUFFER, 3 * sizeof(glm::float32) * count, nullptr, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 3 * sizeof(glm::float32) * vertex_count, nullptr, GL_STATIC_DRAW);
 #if LUCARIA_DEBUG
-    std::cout << "Created EMPTY VEC3 ARRAY_BUFFER buffer of size " << count
+    std::cout << "Created EMPTY VEC3 ARRAY_BUFFER buffer of size " << vertex_count
               << " with id " << _attribute_id << std::endl;
 #endif
     return _attribute_id;
@@ -125,7 +125,7 @@ mesh_ref::mesh_ref(mesh_ref&& other)
 
 mesh_ref& mesh_ref::operator=(mesh_ref&& other)
 {
-    _count = other._count;
+    _indices_count = other._indices_count;
     _array_id = other._array_id;
     _elements_id = other._elements_id;
     _attribute_ids = std::move(other._attribute_ids);
@@ -148,7 +148,7 @@ mesh_ref::~mesh_ref()
 mesh_ref::mesh_ref(const mesh_data& data)
 {
     detail::validate_mesh(data);
-    _count = data.count;
+    _indices_count = 3 * data.indices.size();
     _array_id = detail::create_vertex_array();
     _elements_id = detail::create_elements_buffer(data.indices);
     if (!data.positions.empty()) {
@@ -179,7 +179,7 @@ void mesh_ref::update_positions(const std::vector<glm::vec3>& new_positions)
     glm::uint _attribute_id = _attribute_ids.at(mesh_attribute::position);
     glm::float32* _attribute_ptr = reinterpret_cast<glm::float32*>(const_cast<glm::vec3*>(new_positions.data()));
     glBindBuffer(GL_ARRAY_BUFFER, _attribute_id);
-    glBufferData(GL_ARRAY_BUFFER, 3 * sizeof(glm::float32) * _count, _attribute_ptr, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 3 * sizeof(glm::float32) * new_positions.size(), _attribute_ptr, GL_STATIC_DRAW);
 }
 
 std::unordered_map<mesh_attribute, glm::uint> mesh_ref::get_buffer_ids() const
@@ -192,9 +192,9 @@ glm::uint mesh_ref::get_array_id() const
     return _array_id;
 }
 
-glm::uint mesh_ref::get_count() const
+glm::uint mesh_ref::get_indices_count() const
 {
-    return _count;
+    return _indices_count;
 }
 
 mesh_data load_mesh_data(std::istringstream& mesh_stream)
@@ -229,7 +229,7 @@ guizmo_mesh_ref::guizmo_mesh_ref(guizmo_mesh_ref&& other)
 
 guizmo_mesh_ref& guizmo_mesh_ref::operator=(guizmo_mesh_ref&& other)
 {
-    _count = other._count;
+    _indices_count = other._indices_count;
     _array_id = other._array_id;
     _elements_id = other._elements_id;
     _positions_id = other._positions_id;
@@ -252,7 +252,7 @@ guizmo_mesh_ref::guizmo_mesh_ref(const mesh_data& data)
     detail::validate_mesh(data);
     _array_id = detail::create_vertex_array();
     std::vector<glm::uvec2> _line_indices = detail::generate_line_indices(data.indices);
-    _count = _line_indices.size() * 2;
+    _indices_count = 2 * _line_indices.size();
     _elements_id = detail::create_elements_buffer(_line_indices);
     _positions_id = detail::create_attribute_buffer(data.positions);
     _is_instanced = true;
@@ -261,7 +261,7 @@ guizmo_mesh_ref::guizmo_mesh_ref(const mesh_data& data)
 guizmo_mesh_ref::guizmo_mesh_ref(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices)
 {
     _array_id = detail::create_vertex_array();
-    _count = indices.size() * 2;
+    _indices_count = indices.size() * 2;
     _elements_id = detail::create_elements_buffer(indices);
     _positions_id = detail::create_attribute_buffer(positions);
     _is_instanced = true;
@@ -274,7 +274,7 @@ void guizmo_mesh_ref::update(const std::vector<glm::vec3>& positions, const std:
     glBufferData(GL_ARRAY_BUFFER, 3 * positions.size() * sizeof(glm::float32), positions.data(), GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _elements_id);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, 2 * indices.size() * sizeof(glm::uint), indices.data(), GL_STATIC_DRAW);
-    _count = indices.size() * 2;
+    _indices_count = indices.size() * 2;
 }
 
 glm::uint guizmo_mesh_ref::get_positions_id() const
@@ -287,9 +287,9 @@ glm::uint guizmo_mesh_ref::get_array_id() const
     return _array_id;
 }
 
-glm::uint guizmo_mesh_ref::get_count() const
+glm::uint guizmo_mesh_ref::get_indices_count() const
 {
-    return _count;
+    return _indices_count;
 }
 
 

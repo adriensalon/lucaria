@@ -8,7 +8,7 @@
 #include <data/glm.hpp>
 
 struct mesh_data {
-    glm::uint count = 0;
+    glm::uint count = 0; // vertices count
     std::vector<glm::vec3> positions = {};
     std::vector<glm::vec4> colors = {};
     std::vector<glm::vec3> normals = {};

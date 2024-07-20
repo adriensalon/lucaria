@@ -18,9 +18,6 @@ constexpr std::string_view player_left_key = "q";
 constexpr std::string_view player_backward_key = "s";
 constexpr std::string_view player_right_key = "d";
 
-static std::optional<std::reference_wrapper<std::future<volume_data>>> future_volume;
-static std::optional<volume_data> volume;
-
 static glm::vec3 player_position = { 0.0f, 1.8f, 3.0f };
 static glm::vec3 player_forward = { 0.0f, 0.0f, -1.0f };
 static glm::vec3 player_up = { 0.0f, 1.0f, 0.0f };

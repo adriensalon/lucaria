@@ -37,7 +37,7 @@ private:
     bool _is_instanced;
     glm::uint _program_id;
     glm::uint _array_id;
-    glm::uint _count;
+    glm::uint _indices_count;
     std::unordered_map<std::string, glm::int32> _program_attributes;
     std::unordered_map<std::string, glm::int32> _program_uniforms;
 };

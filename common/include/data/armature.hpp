@@ -8,7 +8,7 @@
 #include <data/glm.hpp>
 
 struct armature_data {
-    glm::uint count;
+    glm::uint count = 0; // vertices count
     std::vector<glm::vec3> positions = {};
     std::vector<glm::vec4> weights = {};
     std::vector<glm::uvec4> bones = {};

@@ -9,7 +9,6 @@
 #include <data/mesh.hpp>
 #include <data/shader.hpp>
 #include <data/texture.hpp>
-#include <data/volume.hpp>
 
 namespace detail {
 
@@ -44,11 +43,6 @@ void export_binary(const shader_data& data, const std::filesystem::path& output_
 }
 
 void export_binary(const texture_data& data, const std::filesystem::path& output_path)
-{
-    detail::compile_binary_or_json(data, output_path);
-}
-
-void export_binary(const volume_data& data, const std::filesystem::path& output_path)
 {
     detail::compile_binary_or_json(data, output_path);
 }

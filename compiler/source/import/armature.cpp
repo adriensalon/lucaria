@@ -10,7 +10,6 @@
 armature_data import_armature(const std::filesystem::path& gltf_path)
 {
     armature_data _data;
-    _data.count = 0;
     Assimp::Importer _importer;
     const aiScene* _scene = _importer.ReadFile(gltf_path.string(), aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType);
     if (!_scene) {
@@ -34,6 +33,7 @@ armature_data import_armature(const std::filesystem::path& gltf_path)
             _vertex_weights[_vertex_id].push_back(_weight);
         }
     }
+    _data.count = _mesh->mNumVertices;
     for (glm::uint _i = 0; _i < _mesh->mNumVertices; ++_i) {
         const aiVector3D _position = _root_transform * _mesh->mVertices[_i];
         _data.positions.push_back(glm::vec3(_position.x, _position.y, _position.z));
@@ -46,7 +46,6 @@ armature_data import_armature(const std::filesystem::path& gltf_path)
             std::cout << "Non-triangle face encountered in gltf '" << gltf_path << "'. Only triangles are supported." << std::endl;
             std::terminate();
         }
-        _data.count +=3;
     }
     std::cout << "   Exporting armature data binary..." << std::endl;
     return _data;

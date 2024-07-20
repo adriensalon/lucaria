@@ -42,11 +42,11 @@ struct mesh_ref {
     void update_positions(const std::vector<glm::vec3>& new_positions);
     std::unordered_map<mesh_attribute, glm::uint> get_buffer_ids() const;
     glm::uint get_array_id() const;
-    glm::uint get_count() const;
+    glm::uint get_indices_count() const;
 
 private:
     bool _is_instanced;
-    glm::uint _count;
+    glm::uint _indices_count;
     glm::uint _array_id;
     glm::uint _elements_id;
     std::unordered_map<mesh_attribute, glm::uint> _attribute_ids;
@@ -70,11 +70,11 @@ struct guizmo_mesh_ref {
     void update(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices);
     glm::uint get_positions_id() const;
     glm::uint get_array_id() const;
-    glm::uint get_count() const;
+    glm::uint get_indices_count() const;
 
 private:
     bool _is_instanced;
-    glm::uint _count;
+    glm::uint _indices_count;
     glm::uint _array_id;
     glm::uint _elements_id;
     glm::uint _positions_id;

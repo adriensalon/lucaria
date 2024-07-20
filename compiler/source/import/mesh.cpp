@@ -10,7 +10,6 @@
 mesh_data import_mesh(const std::filesystem::path& gltf_path, bool& has_armature)
 {
     mesh_data _data;
-    _data.count = 0;
     Assimp::Importer _importer;
     const aiScene* _scene = _importer.ReadFile(gltf_path.string(), aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType);
     if (!_scene) {
@@ -24,6 +23,7 @@ mesh_data import_mesh(const std::filesystem::path& gltf_path, bool& has_armature
     const aiMesh* _mesh = _scene->mMeshes[0];
     // const aiMatrix4x4 _root_transform = _scene->mRootNode->mTransformation;
     has_armature = _mesh->mNumBones > 0;
+    _data.count = _mesh->mNumVertices;
     for (glm::uint _i = 0; _i < _mesh->mNumVertices; ++_i) {
         if (!has_armature) {
             // const aiVector3D _position = _root_transform * _mesh->mVertices[_i];
@@ -55,7 +55,6 @@ mesh_data import_mesh(const std::filesystem::path& gltf_path, bool& has_armature
             std::terminate();
         }
         _data.indices.push_back(glm::uvec3(_face.mIndices[0], _face.mIndices[1], _face.mIndices[2]));
-        _data.count +=3;
     }
     std::cout << "   Exporting mesh data binary..." << std::endl;
     return _data;
