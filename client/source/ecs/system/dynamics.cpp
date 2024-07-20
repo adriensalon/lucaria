@@ -177,7 +177,7 @@ static bool get_collision(kinematic_collision& collision, const btPersistentMani
 static void compute_collide_wall(const kinematic_collision& collision, glm::mat4& transform)
 {
     glm::vec3 _position = glm::vec3(transform[3]);
-    glm::vec3 _normal_xz(collision.impact_normal.x, 0.f, collision.impact_normal.z);
+    glm::vec3 _normal_xz = glm::normalize(glm::vec3(collision.impact_normal.x, 0.f, collision.impact_normal.z));
     glm::vec3 _new_position = _position - _normal_xz * collision.penetration_distance;
     transform[3] = glm::vec4(_new_position, 1.0f);
 }
