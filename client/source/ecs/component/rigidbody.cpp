@@ -38,6 +38,7 @@ rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_ki
     _ghost->setCollisionShape(_shape);
     _ghost->setCollisionFlags(_ghost->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
     detail::dynamics_world->addCollisionObject(_ghost, _group, _mask);
+    _half_height = half_extents.y;
     _is_instanced = true;
     return *this;
 }
@@ -49,21 +50,23 @@ rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_ki
     _ghost->setCollisionShape(_shape);
     _ghost->setCollisionFlags(_ghost->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
     detail::dynamics_world->addCollisionObject(_ghost, _group, _mask);
+    _half_height = height / 2.f;
     _is_instanced = true;
     return *this;
 }
 
 rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_kind::kinematic>::snap_ground(const bool enabled)
 {
-    if (enabled) {
-        _mask = _mask | bulletgroupID_collider_ground;
-    } else if (contains_layer(_mask, bulletgroupID_collider_ground)) {
-        _mask = remove_layer(_mask, bulletgroupID_collider_ground);
-    }
-    if (_is_instanced) {
-        detail::dynamics_world->removeCollisionObject(_ghost);
-        detail::dynamics_world->addCollisionObject(_ghost, _group, _mask);
-    }
+    // if (enabled) {
+    //     _mask = _mask | bulletgroupID_collider_ground;
+    // } else if (contains_layer(_mask, bulletgroupID_collider_ground)) {
+    //     _mask = remove_layer(_mask, bulletgroupID_collider_ground);
+    // }
+    // if (_is_instanced) {
+    //     detail::dynamics_world->removeCollisionObject(_ghost);
+    //     detail::dynamics_world->addCollisionObject(_ghost, _group, _mask);
+    // }
+    _is_snap_ground = enabled;
     return *this;
 }
 

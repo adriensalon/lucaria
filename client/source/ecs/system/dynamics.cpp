@@ -63,7 +63,7 @@ private:
 
 namespace detail {
 
-static float snap_ground_distance = 1.f;
+static float snap_ground_distance = 10.f;
 static btDefaultCollisionConfiguration* collision_configuration = nullptr;
 static btCollisionDispatcher* dispatcher = nullptr;
 static btBroadphaseInterface* overlapping_pair_cache = nullptr;
@@ -183,16 +183,20 @@ static void compute_collide_wall(const kinematic_collision& collision, glm::mat4
     transform[3] = glm::vec4(_new_position, 1.0f);
 }
 
-static void compute_collide_ground(const kinematic_collision& collision, glm::mat4& transform)
+static void compute_snap_ground(glm::mat4& transform, const float half_height)
 {
-    glm::vec3 _position = glm::vec3(transform[3]);
-    glm::vec3 _new_position = _position - collision.impact_normal * collision.penetration_distance;
-    transform[3] = glm::vec4(_new_position, 1.0f);
-}
-
-static void compute_snap_ground(glm::mat4& transform)
-{
-    
+    glm::vec3 position = glm::vec3(transform[3]);
+    btVector3 start(position.x, position.y + detail::snap_ground_distance, position.z);
+    btVector3 end(position.x, position.y - detail::snap_ground_distance, position.z);
+    btCollisionWorld::ClosestRayResultCallback rayCallback(start, end);
+    rayCallback.m_collisionFilterGroup = bulletgroupID_kinematic_rigidbody;
+    rayCallback.m_collisionFilterMask = bulletgroupID_collider_ground;
+    detail::dynamics_world->rayTest(start, end, rayCallback);
+    if (rayCallback.hasHit()) {
+        btVector3 hitPoint = rayCallback.m_hitPointWorld;
+        position.y = hitPoint.y() + half_height;
+        transform[3][1] = position.y;
+    }
 }
 
 }
@@ -262,7 +266,6 @@ void dynamics_system::compute_kinematic_collisions()
                         continue;
                     }
                     if (_other_group == bulletgroupID_collider_ground) {
-                        detail::compute_collide_ground(_collision, transform._transform);
                         rigidbody._ground_collisions.emplace_back(_collision);
                     } else if (_other_group == bulletgroupID_collider_wall) {
                         detail::compute_collide_wall(_collision, transform._transform);
@@ -272,7 +275,9 @@ void dynamics_system::compute_kinematic_collisions()
                     }
                 }
             }
-            detail::compute_snap_ground(transform._transform);
+            if (rigidbody._is_snap_ground) {
+                detail::compute_snap_ground(transform._transform, rigidbody._half_height);
+            }
         });
     });
 }

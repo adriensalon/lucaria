@@ -46,6 +46,8 @@ private:
     bool _is_instanced = false;
     btCollisionShape* _shape = nullptr;
     btPairCachingGhostObject* _ghost = nullptr;
+    float _half_height = 0.f;
+    bool _is_snap_ground = false;
     short _group = bulletgroupID_kinematic_rigidbody;
     short _mask = 0;
     std::vector<kinematic_collision> _ground_collisions = {};

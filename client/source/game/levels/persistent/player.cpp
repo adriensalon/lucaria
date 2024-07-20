@@ -14,12 +14,13 @@
 
 void level_persistent_player(entt::registry& registry)
 {    
+    rendering_system::use_clear_color({ 0.f, 0.f, 0.f, 1.f });
     scripting_system::use_controller_state<runner_controller_state>();
 
     const entt::entity _player_entity = registry.create();
 
     transform_component& _player_transform = registry.emplace<transform_component>(_player_entity)
-        .position_warp(glm::vec3(0.f, 3.5f, 0.f));
+        .position_warp(glm::vec3(-14.f, 6.2f, 3.f));
     
     registry.emplace<kinematic_rigidbody_component>(_player_entity)
         .glide_wall()
