@@ -14,9 +14,8 @@ void level_blockout_test(entt::registry& registry)
 
     registry.emplace<collider_component>(_test_entity)
         .navmesh(fetch_navmesh("assets/blockout_test_wall.bin"))
-        // .layer(collider_layer::layer_0);
-        // .layer(kinematic_layer::layer_0);
-        .wall();
+        .layer(kinematic_layer::layer_0);
+        // .wall();
         
         // .kinematic_layer_wall()
         // .dynamic_layer();

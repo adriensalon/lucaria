@@ -2,11 +2,12 @@
 #include <core/layer.hpp>
 #include <core/mesh.hpp>
 #include <core/program.hpp>
-#include <core/world.hpp>
 #include <core/window.hpp>
+#include <core/world.hpp>
 #include <ecs/component/rigidbody.hpp>
 #include <ecs/component/transform.hpp>
 #include <ecs/system/dynamics.hpp>
+
 
 #include <btBulletDynamicsCommon.h>
 #include <glm/gtc/matrix_transform.hpp>
@@ -117,20 +118,70 @@ static glm::mat4 bullet_to_glm(const btTransform& transform)
     return _matrix;
 }
 
-static glm::vec3 getPositionFromMatrix(const glm::mat4& matrix) {
-    // Extract the translation (position) from the matrix
-    glm::vec3 position(matrix[3][0], matrix[3][1], matrix[3][2]);
-    return position;
+static bool get_manifold(btPersistentManifold** manifold, const btManifoldArray& array, const int index)
+{
+    *manifold = array[index];
+    if (*manifold) {
+        return true;
+    }
+    return false;
 }
 
-std::optional<short> getCollisionGroup(btCollisionObject* object) {
-    if (object) {
-        btBroadphaseProxy* proxy = object->getBroadphaseHandle();
-        if (proxy) {
-            return proxy->m_collisionFilterGroup;
-        }
+static bool get_other_object(btCollisionObject** other_object, const btPersistentManifold* manifold, const btPairCachingGhostObject* ghost)
+{
+    btCollisionObject* _obj_A = const_cast<btCollisionObject*>(manifold->getBody0());
+    btCollisionObject* _obj_B = const_cast<btCollisionObject*>(manifold->getBody1());
+    if (_obj_A == ghost) {
+        *other_object = _obj_B;
+        return true;
+    } else if (_obj_B == ghost) {
+        *other_object = _obj_A;
+        return true;
     }
-    return std::nullopt;
+    return false;
+}
+
+static bool get_other_group(short& other_group, const btCollisionObject* other_object)
+{
+    const btBroadphaseProxy* _proxy = other_object->getBroadphaseHandle();
+    if (_proxy) {
+        other_group = _proxy->m_collisionFilterGroup;
+        return true;
+    }
+    return false;
+}
+
+static bool get_collision(kinematic_collision& collision, const btPersistentManifold* manifold)
+{
+    for (int _p = 0; _p < manifold->getNumContacts(); ++_p) {
+        const btManifoldPoint& _point = manifold->getContactPoint(_p);
+        if (_point.getDistance() > 0.0f) {
+            continue;
+        }
+        collision = kinematic_collision {
+            glm::vec3(_point.getPositionWorldOnA().x(), _point.getPositionWorldOnA().y(), _point.getPositionWorldOnA().z()),
+            glm::vec3(_point.m_normalWorldOnB.x(), _point.m_normalWorldOnB.y(), _point.m_normalWorldOnB.z())
+        };
+
+        // std::cout << "collision at x = " << collision.impact_position.x
+        //           << ", y = " << collision.impact_position.y
+        //           << ", z = " << collision.impact_position.z << std::endl;
+        // std::cout << "normal at x = " << collision.impact_normal.x
+        //           << ", y = " << collision.impact_normal.y
+        //           << ", z = " << collision.impact_normal.z << std::endl;
+        return true;
+    }
+    return false;
+}
+
+static void compute_slide_wall(const kinematic_collision& collision, transform_component& transform)
+{
+    
+}
+
+static void compute_snap_ground(const kinematic_collision& collision, transform_component& transform)
+{
+
 }
 
 }
@@ -159,90 +210,54 @@ void dynamics_system::step_simulation()
 
 void dynamics_system::compute_kinematic_collisions()
 {
-    each_level([](entt::registry& registry) {
-        registry.view<transform_component, kinematic_rigidbody_component>().each([](transform_component& transform, kinematic_rigidbody_component& rigidbody) {
-            
-            
-            btManifoldArray ManifoldArray;
-            btBroadphasePairArray& PairArray = rigidbody._ghost->getOverlappingPairCache()->getOverlappingPairArray();
-            for (int i = 0; i < PairArray.size(); i++) {
-                ManifoldArray.clear();
-
-                btBroadphasePair* CollisionPair = detail::dynamics_world->getPairCache()->findPair(PairArray[i].m_pProxy0, PairArray[i].m_pProxy1);
-                if (!CollisionPair) {
+    kinematic_collision _collision;
+    btManifoldArray _manifold_array;
+    each_level([&](entt::registry& registry) {
+        registry.view<transform_component, kinematic_rigidbody_component>().each([&](transform_component& transform, kinematic_rigidbody_component& rigidbody) {
+            rigidbody._ground_collisions.clear();
+            rigidbody._wall_collisions.clear();
+            rigidbody._layer_collisions.clear();
+            btBroadphasePairArray& _pair_array = rigidbody._ghost->getOverlappingPairCache()->getOverlappingPairArray();
+            for (int _i = 0; _i < _pair_array.size(); _i++) {
+                _manifold_array.clear();
+                btBroadphasePair* _collision_pair = detail::dynamics_world->getPairCache()->findPair(_pair_array[_i].m_pProxy0, _pair_array[_i].m_pProxy1);
+                if (!_collision_pair) {
                     continue;
                 }
-                btCollisionAlgorithm* collisionAlgorithm = CollisionPair->m_algorithm;
-                if (!collisionAlgorithm) {
+                btCollisionAlgorithm* _collision_algorithm = _collision_pair->m_algorithm;
+                if (!_collision_algorithm) {
                     continue;
                 }
-                std::cout << "YAAAAAAAAAAAAA \n";
-                collisionAlgorithm->getAllContactManifolds(ManifoldArray);
-
-                for (int j = 0; j < ManifoldArray.size(); j++) {
-                    for (int p = 0; p < ManifoldArray[j]->getNumContacts(); p++) {
-                        const btManifoldPoint& Point = ManifoldArray[j]->getContactPoint(p);
-
-                        if (Point.getDistance() < 0.0f) {
-                            // return true;
-                        }
+                _collision_algorithm->getAllContactManifolds(_manifold_array);
+                for (int _j = 0; _j < _manifold_array.size(); _j++) {
+                    short _other_group;
+                    btPersistentManifold* _manifold;
+                    btCollisionObject* _other_object;
+                    if (!detail::get_manifold(&_manifold, _manifold_array, _j)) {
+                        continue;
+                    }
+                    if (!detail::get_other_object(&_other_object, _manifold, rigidbody._ghost)) {
+                        continue;
+                    }
+                    if (!detail::get_other_group(_other_group, _other_object)) {
+                        continue;
+                    }
+                    if (!detail::get_collision(_collision, _manifold)) {
+                        continue;
+                    }
+                    if (_other_group == bulletgroupID_collider_ground) {
+                        // std::cout << "ground detected !" << std::endl;
+                        detail::compute_snap_ground(_collision, transform);
+                        rigidbody._ground_collisions.emplace_back(_collision);
+                    } else if (_other_group == bulletgroupID_collider_wall) {
+                        // std::cout << "wall detected !" << std::endl;
+                        detail::compute_slide_wall(_collision, transform);
+                        rigidbody._wall_collisions.emplace_back(_collision);
+                    } else {
+                        // std::cout << "game layer detected !" << std::endl;
+                        rigidbody._layer_collisions[static_cast<kinematic_layer>(_other_group)].emplace_back(_collision);
                     }
                 }
-            }
-
-            for (int j = 0; j < ManifoldArray.size(); j++) {
-                btPersistentManifold* manifold = ManifoldArray[j];
-                if (!manifold) {
-                    continue;
-                }
-
-                btCollisionObject* objA = const_cast<btCollisionObject*>(manifold->getBody0());
-                btCollisionObject* objB = const_cast<btCollisionObject*>(manifold->getBody1());
-                btCollisionObject* otherObject = nullptr;
-
-                if (objA == rigidbody._ghost) {
-                    otherObject = objB;
-                } else if (objB == rigidbody._ghost) {
-                    otherObject = objA;
-                } else {
-                    continue; // Neither object is the ghost object, skip this manifold
-                }
-
-
-                std::optional<short> _group_other = detail::getCollisionGroup(otherObject);
-                if (!_group_other) {
-                    continue;
-                }
-
-
-                if (_group_other.value() == bulletgroupID_collider_ground) {
-                    std::cout << "ground detected !" << std::endl;
-
-                } else if (_group_other.value() == bulletgroupID_collider_wall) {
-                    std::cout << "wall detected !" << std::endl;
-                } else {
-                    for (int p = 0; p < manifold->getNumContacts(); p++) {
-                        const btManifoldPoint& point = manifold->getContactPoint(p);
-
-                        if (point.getDistance() < 0.0f) {  // Contact detected (penetration)
-                            kinematic_collision collision;
-                            
-                            // Convert Bullet types to glm types
-                            collision.impact_position = glm::vec3(point.getPositionWorldOnA().x(), point.getPositionWorldOnA().y(), point.getPositionWorldOnA().z());
-                            collision.impact_normal = glm::vec3(point.m_normalWorldOnB.x(), point.m_normalWorldOnB.y(), point.m_normalWorldOnB.z());
-                            
-                            const glm::vec3 position = detail::getPositionFromMatrix(transform._transform);
-                            std::cout << "collision at x = " << collision.impact_position.x << ", y = " << collision.impact_position.y << ", z = " << collision.impact_position.z << std::endl;
-                            std::cout << "normal at x = " << collision.impact_normal.x << ", y = " << collision.impact_normal.y << ", z = " << collision.impact_normal.z << std::endl;
-                            std::cout << "position at x = " << position.x << ", y = " << position.y << ", z = " << position.z << std::endl;
-                            
-                            break;
-                        }
-                    }
-                }
-
-
-
             }
         });
     });
