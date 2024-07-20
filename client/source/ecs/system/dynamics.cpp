@@ -63,6 +63,7 @@ private:
 
 namespace detail {
 
+static float snap_ground_distance = 1.f;
 static btDefaultCollisionConfiguration* collision_configuration = nullptr;
 static btCollisionDispatcher* dispatcher = nullptr;
 static btBroadphaseInterface* overlapping_pair_cache = nullptr;
@@ -189,9 +190,9 @@ static void compute_collide_ground(const kinematic_collision& collision, glm::ma
     transform[3] = glm::vec4(_new_position, 1.0f);
 }
 
-static void compute_snap_ground(const float snap_distance, transform_component& transform)
+static void compute_snap_ground(glm::mat4& transform)
 {
-
+    
 }
 
 }
@@ -199,6 +200,11 @@ static void compute_snap_ground(const float snap_distance, transform_component& 
 void dynamics_system::use_gravity(const glm::vec3& newtons)
 {
     detail::dynamics_world->setGravity(btVector3(newtons.x, newtons.y, newtons.z));
+}
+
+void dynamics_system::use_snap_ground_distance(const float meters)
+{
+    detail::snap_ground_distance = meters;
 }
 
 void dynamics_system::step_simulation()
@@ -266,7 +272,7 @@ void dynamics_system::compute_kinematic_collisions()
                     }
                 }
             }
-            detail::compute_snap_ground(0.5f, transform._transform);
+            detail::compute_snap_ground(transform._transform);
         });
     });
 }

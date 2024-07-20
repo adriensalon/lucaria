@@ -36,8 +36,10 @@ struct rigidbody_component<rigidbody_kind::kinematic> {
     rigidbody_component& snap_ground(const bool enabled = true);
     rigidbody_component& glide_wall(const bool enabled = true);
     rigidbody_component& collide_layer(const kinematic_layer layer, const bool enabled = true);
-    rigidbody_component& fill_wall_collisions(std::vector<kinematic_collision>& collisions);
-    rigidbody_component& fill_ground_collisions(std::vector<kinematic_collision>& collisions);
+    
+    const std::vector<kinematic_collision>& get_wall_collisions();
+    const std::vector<kinematic_collision>& get_ground_collisions();
+    const std::vector<kinematic_collision>& get_layer_collisions(const kinematic_layer layer);
     rigidbody_component& fill_layer_collisions(const kinematic_layer layer, std::vector<kinematic_collision>& collisions);
 
 private:
