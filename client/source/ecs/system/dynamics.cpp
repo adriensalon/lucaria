@@ -172,8 +172,8 @@ static bool get_collision(kinematic_collision& collision, const btPersistentMani
 static void compute_collide_wall(const kinematic_collision& collision, glm::mat4& transform)
 {
     glm::vec3 _position = glm::vec3(transform[3]);
-    glm::vec3 _normal_xz = glm::normalize(glm::vec3(collision.impact_normal.x, 0.f, collision.impact_normal.z));
-    glm::vec3 _new_position = _position - _normal_xz * collision.penetration_distance;
+    glm::vec3 _normal_xz = glm::normalize(glm::vec3(collision.normal.x, 0.f, collision.normal.z));
+    glm::vec3 _new_position = _position - _normal_xz * collision.distance;
     transform[3] = glm::vec4(_new_position, 1.0f);
 }
 
@@ -187,10 +187,10 @@ static bool compute_snap_ground(glm::mat4& transform, kinematic_collision& colli
     rayCallback.m_collisionFilterMask = bulletgroupID_collider_ground;
     detail::dynamics_world->rayTest(start, end, rayCallback);
     if (rayCallback.hasHit()) {        
-        collision.impact_position = glm::vec3(rayCallback.m_hitPointWorld.x(), rayCallback.m_hitPointWorld.y(), rayCallback.m_hitPointWorld.z());
-        collision.impact_normal = glm::vec3(rayCallback.m_hitNormalWorld.x(), rayCallback.m_hitNormalWorld.y(), rayCallback.m_hitNormalWorld.z());
-        collision.penetration_distance = glm::distance(position, collision.impact_position);
-        transform[3][1] = collision.impact_position.y + half_height;
+        collision.position = glm::vec3(rayCallback.m_hitPointWorld.x(), rayCallback.m_hitPointWorld.y(), rayCallback.m_hitPointWorld.z());
+        collision.normal = glm::vec3(rayCallback.m_hitNormalWorld.x(), rayCallback.m_hitNormalWorld.y(), rayCallback.m_hitNormalWorld.z());
+        collision.distance = glm::distance(position, collision.position);
+        transform[3][1] = collision.position.y + half_height;
         return true;
     }
     return false;

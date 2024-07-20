@@ -16,10 +16,9 @@ template <rigidbody_kind kind_t>
 struct rigidbody_component;
 
 struct kinematic_collision {
-    // todo 
-    glm::vec3 impact_position;
-    glm::vec3 impact_normal;
-    float penetration_distance;
+    glm::vec3 position;
+    glm::vec3 normal;
+    float distance;
 };
 
 template <>
@@ -68,6 +67,8 @@ struct rigidbody_component<rigidbody_kind::dynamic> {
     rigidbody_component& box(const glm::vec3& half_extents);
     rigidbody_component& capsule(const float radius, const float height);
     rigidbody_component& collide_dynamics(const bool enabled = true);
+    // add force
+    // add impulsion
     
 private:
     bool _is_instanced = false;
