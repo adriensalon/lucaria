@@ -12,7 +12,7 @@ struct dynamics_system {
 
     static void use_gravity(const glm::vec3& newtons);
     static void use_snap_ground_distance(const float meters);
-    
+
     static void step_simulation();
     static void compute_kinematic_collisions();
     static void collect_debug_guizmos();

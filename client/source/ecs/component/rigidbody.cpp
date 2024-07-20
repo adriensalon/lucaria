@@ -105,7 +105,6 @@ const std::vector<kinematic_collision>& rigidbody_component<rigidbody_kind::kine
     return _layer_collisions.at(layer);
 }
 
-
 rigidbody_component<rigidbody_kind::dynamic>::rigidbody_component(rigidbody_component&& other)
 {
     *this = std::move(other);

@@ -80,6 +80,6 @@ collider_component& collider_component::layer(const kinematic_layer layer)
             detail::dynamics_world->removeRigidBody(_rigidbody);
             detail::dynamics_world->addRigidBody(_rigidbody, _group, _mask);
         }
-    }    
+    }
     return *this;
 }

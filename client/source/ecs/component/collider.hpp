@@ -1,8 +1,8 @@
 #pragma once
 
-#include <core/navmesh.hpp>
 #include <core/fetch.hpp>
 #include <core/layer.hpp>
+#include <core/navmesh.hpp>
 
 struct collider_component {
     collider_component() = default;
@@ -11,7 +11,7 @@ struct collider_component {
     collider_component(collider_component&& other);
     collider_component& operator=(collider_component&& other);
     ~collider_component();
-    
+
     collider_component& navmesh(const std::shared_future<std::shared_ptr<navmesh_ref>>& fetched_navmesh);
     collider_component& ground();
     collider_component& wall();

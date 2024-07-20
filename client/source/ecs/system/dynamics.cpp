@@ -159,11 +159,9 @@ static bool get_collision(kinematic_collision& collision, const btPersistentMani
         if (_point.getDistance() > 0.0f) {
             continue;
         }
-        collision = kinematic_collision {
-            glm::vec3(_point.getPositionWorldOnA().x(), _point.getPositionWorldOnA().y(), _point.getPositionWorldOnA().z()),
-            glm::vec3(_point.m_normalWorldOnB.x(), _point.m_normalWorldOnB.y(), _point.m_normalWorldOnB.z()),
-            _point.getDistance()
-        };
+        collision.distance = _point.getDistance();
+        collision.position = glm::vec3(_point.getPositionWorldOnA().x(), _point.getPositionWorldOnA().y(), _point.getPositionWorldOnA().z());
+        collision.normal = glm::vec3(_point.m_normalWorldOnB.x(), _point.m_normalWorldOnB.y(), _point.m_normalWorldOnB.z());
         return true;
     }
     return false;
@@ -186,10 +184,10 @@ static bool compute_snap_ground(glm::mat4& transform, kinematic_collision& colli
     rayCallback.m_collisionFilterGroup = bulletgroupID_kinematic_rigidbody;
     rayCallback.m_collisionFilterMask = bulletgroupID_collider_ground;
     detail::dynamics_world->rayTest(start, end, rayCallback);
-    if (rayCallback.hasHit()) {        
+    if (rayCallback.hasHit()) {
+        collision.distance = glm::distance(position, collision.position);
         collision.position = glm::vec3(rayCallback.m_hitPointWorld.x(), rayCallback.m_hitPointWorld.y(), rayCallback.m_hitPointWorld.z());
         collision.normal = glm::vec3(rayCallback.m_hitNormalWorld.x(), rayCallback.m_hitNormalWorld.y(), rayCallback.m_hitNormalWorld.z());
-        collision.distance = glm::distance(position, collision.position);
         transform[3][1] = collision.position.y + half_height;
         return true;
     }

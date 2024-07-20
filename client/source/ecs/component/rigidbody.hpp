@@ -1,11 +1,15 @@
 #pragma once
 
+#include <optional>
+#include <unordered_map>
+#include <vector>
+
+#include <BulletCollision/CollisionDispatch/btGhostObject.h>
 #include <btBulletCollisionCommon.h>
 #include <btBulletDynamicsCommon.h>
-#include <BulletCollision/CollisionDispatch/btGhostObject.h>
+#include <glm/glm.hpp>
 
 #include <core/layer.hpp>
-#include <core/mesh.hpp>
 
 enum struct rigidbody_kind {
     kinematic,
@@ -16,9 +20,9 @@ template <rigidbody_kind kind_t>
 struct rigidbody_component;
 
 struct kinematic_collision {
+    float distance;
     glm::vec3 position;
     glm::vec3 normal;
-    float distance;
 };
 
 template <>
@@ -31,11 +35,11 @@ struct rigidbody_component<rigidbody_kind::kinematic> {
     ~rigidbody_component();
 
     rigidbody_component& box(const glm::vec3& half_extents);
-    rigidbody_component& capsule(const float radius, const float height);    
+    rigidbody_component& capsule(const float radius, const float height);
     rigidbody_component& snap_ground(const bool enabled = true);
     rigidbody_component& glide_wall(const bool enabled = true);
     rigidbody_component& collide_layer(const kinematic_layer layer, const bool enabled = true);
-    
+
     const std::optional<kinematic_collision>& get_ground_collision() const;
     const std::vector<kinematic_collision>& get_wall_collisions() const;
     const std::vector<kinematic_collision>& get_layer_collisions(const kinematic_layer layer) const;
@@ -69,7 +73,7 @@ struct rigidbody_component<rigidbody_kind::dynamic> {
     rigidbody_component& collide_dynamics(const bool enabled = true);
     // add force
     // add impulsion
-    
+
 private:
     bool _is_instanced = false;
     btCollisionShape* _shape = nullptr;
