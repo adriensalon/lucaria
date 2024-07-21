@@ -1,7 +1,7 @@
 #include <iostream>
 
-#include <btBulletDynamicsCommon.h>
 #include <GLES3/gl3.h>
+#include <btBulletDynamicsCommon.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -17,8 +17,6 @@
 #include <ecs/component/transform.hpp>
 #include <ecs/system/player.hpp>
 #include <ecs/system/rendering.hpp>
-
-
 
 #if LUCARIA_GUIZMO
 class guizmo_debug_draw : public btIDebugDraw {
@@ -122,8 +120,8 @@ static const std::string blockout_vertex = R"(#version 300 es
 //         vec3 base_color = vec3(0.5); // Grey color
 //         vec3 line_color = vec3(1.0); // White color
 //         float grid_line = smoothstep(0.0, line_thickness, grid_factor);
-//         // vec3 final_color = mix(line_color, base_color, grid_line);    
-//         vec3 final_color = base_color;    
+//         // vec3 final_color = mix(line_color, base_color, grid_line);
+//         vec3 final_color = base_color;
 //         output_color = vec4(final_color, 1.0);
 //     })";
 
@@ -149,7 +147,6 @@ static const std::string blockout_fragment = R"(#version 300 es
         vec3 final_color = mix(line_color, base_color, grid_line);    
         output_color = vec4(final_color, 1.0);
     })";
-
 
 static const std::string pbr_vertex = R"(#version 300 es
     )";
@@ -219,6 +216,11 @@ const std::vector<GLuint> skybox_indices = {
 extern btDiscreteDynamicsWorld* dynamics_world;
 static guizmo_debug_draw guizmo_draw = {};
 static std::unordered_map<glm::vec3, guizmo_mesh_ref, vec3_hash> guizmo_meshes = {};
+
+void draw_guizmo_line(const btVector3& from, const btVector3& to, const btVector3& color)
+{
+    guizmo_draw.drawLine(from, to, color);
+}
 #endif
 
 }
@@ -351,7 +353,6 @@ void rendering_system::draw_unlit_meshes()
         });
     });
 }
-
 
 void rendering_system::clear_debug_guizmos()
 {

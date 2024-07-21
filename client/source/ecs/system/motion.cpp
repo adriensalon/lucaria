@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include <btBulletDynamicsCommon.h>
 #include <ozz/base/maths/soa_transform.h>
 
 #include <ecs/component/animator.hpp>
@@ -9,124 +10,22 @@
 
 namespace detail {
 
-// void soa_lerp(const ozz::math::SoaTransform& source, ozz::math::SoaTransform& destination, const glm::float32 weight)
-// {
-//     ozz::math::SimdFloat4 _simd_weight = ozz::math::simd_float4::Load1(weight);
-//     destination.translation = ozz::math::Lerp(destination.translation, source.translation, _simd_weight);
-//     destination.rotation = ozz::math::Lerp(destination.rotation, source.rotation, _simd_weight);
-//     destination.scale = ozz::math::Lerp(destination.scale, source.scale, _simd_weight);
-// }
+#if LUCARIA_GUIZMO
+extern void draw_guizmo_line(const btVector3& from, const btVector3& to, const btVector3& color);
 
-// bool is_ready_for_binding(std::optional<mesh_ref>& mesh, std::optional<skeleton_ref>& skeleton)
-// {
-//     const bool _mesh_has_value = mesh.has_value();
-//     const bool _skeleton_has_value = skeleton.has_value();
-//     const bool _positions_not_empty = _mesh_has_value && _skeleton_has_value && !mesh.value().get_positions().empty();
-//     return _positions_not_empty;
-// }
-
-// void prepare_sampling(animation_sampler_ref& animation_sampler, skeleton_ref& skeleton, animation_ref& animation)
-// {
-//     animation_sampler.local_transforms.resize(skeleton.get_skeleton().num_soa_joints());
-//     // animation_sampler.sampling_job.animation = &animation.get_animation();
-//     // // animation_sampler.sampling_job.context.
-//     // animation_sampler.sampling_job.context->Resize(animation.get_animation().num_tracks());
-//     // animation_sampler.sampling_job.output = ozz::make_span(animation_sampler.local_transforms);
-//     // animation_sampler.sampling_job.ratio = animation_sampler.ratio;
-// }
-
-// void compute_sampling(animation_sampler_ref& animation_sampler, std::vector<ozz::math::SoaTransform>& blended_local_transforms)
-// {
-//     if (animation_sampler.is_playing) {
-//         animation_sampler.sampling_job.ratio = animation_sampler.ratio;
-//         if (!animation_sampler.sampling_job.Run()) {
-//             animation_sampler.sampling_job.Validate()
-// #if LUCARIA_DEBUG
-//             std::cout << "Impossible to run sampling job" << std::endl;
-//             std::terminate();
-// #else
-//             return;
-// #endif
-//         }
-//         for (std::size_t _index = 0; _index < animation_sampler.local_transforms.size(); ++_index) {
-//             soa_lerp(animation_sampler.local_transforms[_index], blended_local_transforms[_index], animation_sampler.weight);
-//         }
-//     }
-// }
-
-// void prepare_skinning(std::vector<ozz::math::SoaTransform>& blended_local_transforms, std::vector<ozz::math::Float4x4>& model_transforms, ozz::animation::LocalToModelJob& job, skeleton_ref& skeleton)
-// {
-//     blended_local_transforms.resize(skeleton.get_skeleton().num_soa_joints());
-//     model_transforms.resize(skeleton.get_skeleton().num_joints());
-//     job.skeleton = &skeleton.get_skeleton();
-//     job.input = ozz::make_span(blended_local_transforms);
-//     job.output = ozz::make_span(model_transforms);
-//     std::cout << blended_local_transforms.size() << " " << model_transforms.size() << std::endl;
-// }
-
-// void compute_skinning(std::vector<ozz::math::Float4x4>& model_transforms, ozz::animation::LocalToModelJob& job, mesh_ref& mesh)
-// {
-//     if (!job.Run()) {
-// #if LUCARIA_DEBUG
-//             std::cout << "Impossible to run skinning job" << std::endl;
-//             std::terminate();
-// #else
-//             return;
-// #endif
-//         }
-//     mesh.update_skinned_positions([&model_transforms, &job, &mesh](std::vector<glm::vec3>& _computed_positions) {
-//         const std::vector<glm::vec3>& tpose_positions = mesh.get_positions();
-//         const std::vector<glm::uvec4>& bones = mesh.get_bones();
-//         const std::vector<glm::vec4>& weights = mesh.get_weights();
-//         for (std::size_t _vertex_index = 0; _vertex_index < tpose_positions.size(); ++_vertex_index) {
-//             glm::vec4 skinned_position(0.0f);
-//             const glm::vec4 tpose_position(tpose_positions[_vertex_index], 1.0f);
-//             for (std::size_t _vertex_bone_index = 0; _vertex_bone_index < 4; ++_vertex_bone_index) {
-//                 const glm::uint bone_index = bones[_vertex_index][_vertex_bone_index];
-//                 const glm::float32 weight = weights[_vertex_index][_vertex_bone_index];
-//                 if (weight > 0.f) {
-//                     const glm::mat4 glm_bone_transform = reinterpret_cast<const glm::mat4&>(model_transforms[bone_index]);
-//                     const glm::vec4 transformed_position = glm_bone_transform * tpose_position;
-//                     skinned_position += weight * transformed_position;
-//                 }
-//             }
-//             _computed_positions[_vertex_index] = glm::vec3(skinned_position);
-//         }
-//     });
-// }
-
+void draw_guizmo_cone(const btVector3& from, const btVector3& to, const btVector3& color) {
+    
+    // Draw the cone (you need to implement this based on your rendering framework)
+    // This could involve setting up a vertex buffer for a cone mesh and rendering it with the calculated transform
+    // For simplicity, we'll just print out the cone parameters here
+    std::cout << "Draw cone from (" << from.x() << ", " << from.y() << ", " << from.z() << ") "
+              << "to (" << to.x() << ", " << to.y() << ", " << to.z() << ") "
+              << "with color (" << color.x() << ", " << color.y() << ", " << color.z() << ")\n";
 }
 
-// void motion_system::update()
-// {
-//     each_level([](entt::registry& _registry) {
-//         _registry.view<model_component<model_shader::unlit>, animator_component>().each([](model_component<model_shader::unlit>& _model, animator_component& _animator) {
-            // if (!_animator._is_bound_to_model && detail::is_ready_for_binding(_model._mesh, _animator._skeleton)) {
-            //     _animator._is_bound_to_model = true;
-            // }
-            // skeleton_ref& _skeleton = _animator._skeleton.value();
-            // mesh_ref& _mesh = _model._mesh.value();
-            // if (!_animator._is_prepared) {
-            //     detail::prepare_skinning(_animator._blended_local_transforms, _animator._model_transforms, _animator._local_to_model_job, _skeleton);
-            //     _animator._is_prepared = true;
-            // }
-            // for (ozz::math::SoaTransform& _transform : _animator._blended_local_transforms) {
-            //     _transform = ozz::math::SoaTransform::identity();
-            // }
-            // for (std::pair<const std::string, animation_sampler_ref>& _pair : _animator._samplers) {
-            //     if (!_pair.second.is_prepared) {
-            //         std::optional<animation_ref>& _animation = _animator._animations.at(_pair.first);
-            //         if (_animation.has_value()) {
-            //             detail::prepare_sampling(_pair.second, _skeleton, _animation.value());
-            //             _pair.second.is_prepared = true;
-            //         }
-            //     }
-            //     detail::compute_sampling(_pair.second, _animator._blended_local_transforms);
-            // }
-            // detail::compute_skinning(_animator._model_transforms, _animator._local_to_model_job, _mesh);
-//         });
-//     });
-// }
+#endif
+
+}
 
 void motion_system::blend_animations()
 {
@@ -162,5 +61,40 @@ void motion_system::skin_meshes()
 
 void motion_system::collect_debug_guizmos()
 {
-    // animators, models
+#if LUCARIA_GUIZMO
+    each_level([](entt::registry& registry) {
+        registry.view<animator_component>().each([](animator_component& animator) {
+            if (animator._skeleton.has_value()) {
+                // add cones from animator._model_transforms with detail::draw_line(from, to, color)
+
+                skeleton_ref& skeleton = animator._skeleton.value();
+                const ozz::vector<ozz::math::Float4x4>& model_transforms = animator._model_transforms;
+                // Ensure the skeleton and model transforms are valid
+                if (!model_transforms.empty()) {
+                    const auto& joint_parents = skeleton.joint_parents();
+
+                    // Iterate through each joint to draw cones
+                    for (size_t i = 0; i < model_transforms.size(); ++i) {
+                        int parent_index = joint_parents[i];
+                        if (parent_index == ozz::animation::Skeleton::kNoParent) {
+                            continue;  // Skip root joints
+                        }
+
+                        // Get the current and parent joint transforms
+                        const auto& current_transform = model_transforms[i];
+                        const auto& parent_transform = model_transforms[parent_index];
+
+                        // Convert Ozz transforms to Bullet vectors
+                        btVector3 from(parent_transform.cols[3].x, parent_transform.cols[3].y, parent_transform.cols[3].z);
+                        btVector3 to(current_transform.cols[3].x, current_transform.cols[3].y, current_transform.cols[3].z);
+                        btVector3 color(1.0f, 0.0f, 0.0f);  // Red color for bones
+
+                        // Draw the cone
+                        detail::draw_guizmo_cone(from, to, color);
+                    }
+                }
+            }
+        });
+    });
+#endif
 }

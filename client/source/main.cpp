@@ -34,6 +34,7 @@ int main()
 
         motion_system::blend_animations();
         motion_system::apply_root_motion();
+        motion_system::collect_debug_guizmos();
 
         dynamics_system::step_simulation();
         dynamics_system::compute_kinematic_collisions();
