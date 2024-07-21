@@ -15,6 +15,11 @@ model_component<shader_t>& model_component<shader_t>::mesh(const std::shared_fut
     return *this;
 }
 
+model_component<model_shader::blockout>& model_component<model_shader::blockout>::mesh(const std::shared_future<std::shared_ptr<mesh_ref>>& fetched_mesh)
+{
+    _mesh.emplace(fetched_mesh);
+    return *this;
+}
+
 template struct model_component<model_shader::unlit>;
 template struct model_component<model_shader::pbr>;
-template struct model_component<model_shader::blockout>;

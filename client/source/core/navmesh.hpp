@@ -4,10 +4,10 @@
 
 #include <core/mesh.hpp>
 
-enum struct shape_kind {
-    static,
-    dynamic
-};
+// enum struct shape_kind {
+//     static,
+//     dynamic
+// };
 
 enum struct static_shape_kind {
     box,

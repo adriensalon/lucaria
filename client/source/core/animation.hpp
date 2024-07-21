@@ -23,7 +23,13 @@ struct animation_ref {
     animation_ref(const animation_data& data);
     float get_duration() const;
     ozz::animation::SamplingJob& get_job();
+    // animator_component& play(const glm::uint& id);
+    // animator_component& pause(const glm::uint& id);
+    // animator_component& loop(const glm::uint& id, const bool must_loop);
+    // animator_component& warp(const glm::uint& id, const glm::float32 cursor_seconds);
+    // animator_component& weight(const glm::uint& id, const glm::float32 normalized);
 
+    
     bool is_playing = false;
     bool is_looping = false;
     glm::float32 cursor = 0.f;

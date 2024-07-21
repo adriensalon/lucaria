@@ -3,6 +3,7 @@
 #include <future>
 #include <memory>
 #include <optional>
+#include <unordered_map>
 
 #include <glm/glm.hpp>
 #include <ozz/animation/runtime/animation_utils.h>
@@ -23,18 +24,15 @@ struct animator_component {
     animator_component(animator_component&& other) = default;
     animator_component& operator=(animator_component&& other) = default;
 
+    animator_component& animations(const std::unordered_map<glm::uint, std::shared_future<std::shared_ptr<animation_ref>>>& fetched_animations);
     animator_component& armature(const std::shared_future<std::shared_ptr<armature_ref>>& fetched_armature);
     animator_component& skeleton(const std::shared_future<std::shared_ptr<skeleton_ref>>& fetched_skeleton);
-    animator_component& moveset(const std::shared_future<std::shared_ptr<moveset_ref>>& fetched_moveset);
-    animator_component& play(const glm::uint& id);
-    animator_component& pause(const glm::uint& id);
-    animator_component& loop(const glm::uint& id, const bool must_loop);
-    animator_component& warp(const glm::uint& id, const glm::float32 cursor_seconds);
-    animator_component& weight(const glm::uint& id, const glm::float32 normalized);
+    
+    animation_ref& get_animation(const glm::uint name);
 
 private:
+    std::unordered_map<glm::uint, fetch_container<animation_ref>> _animations = {};
     fetch_container<armature_ref> _armature = {};
     fetch_container<skeleton_ref> _skeleton = {};
-    fetch_container<moveset_ref> _moveset = {};
     friend struct motion_system;
 };

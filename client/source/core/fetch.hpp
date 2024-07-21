@@ -72,6 +72,11 @@ struct fetch_container {
     fetch_container(fetch_container&& other) = default;
     fetch_container& operator=(fetch_container&& other) = default;
 
+    fetch_container(const std::shared_future<std::shared_ptr<value_t>>& fetched, const std::function<void()>& callback = nullptr)
+    {
+        emplace(fetched, callback);
+    }
+
     void emplace(const std::shared_future<std::shared_ptr<value_t>>& fetched, const std::function<void()>& callback = nullptr)
     {
         _fetched = fetched;

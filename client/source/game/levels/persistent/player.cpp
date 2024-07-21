@@ -11,6 +11,8 @@
 
 #include <game/gameplay/runner.hpp>
 
+constexpr glm::uint animationID_player_lol1 = 44;
+constexpr glm::uint animationID_player_lol2 = 45;
 
 void level_persistent_player(entt::registry& registry)
 {    
@@ -28,15 +30,18 @@ void level_persistent_player(entt::registry& registry)
         .collide_layer(kinematic_layer::layer_0)
         .capsule(0.5f, 1.83f);
     
-    registry.emplace<model_component<model_shader::blockout>>(_player_entity)
+    registry.emplace<blockout_model_component>(_player_entity)
         .mesh(fetch_mesh("assets/player.bin"));
     
     registry.emplace<animator_component>(_player_entity)
         .armature(fetch_armature("assets/lol_armature.bin"))
-        .skeleton(fetch_skeleton("assets/lol_skeleton.bin"));
-        // .moveset(fetch_moveset({
-        //     { 33, "assets/lol_animation_AnimLol.bin" }
-        // }));
+        .skeleton(fetch_skeleton("assets/lol_skeleton.bin"))
+        .animations({ 
+            { animationID_player_lol1, fetch_animation("assets/lol_animation_AnimLol.bin") },
+            // { animationID_player_lol2, fetch_animation("assets/lol_animation_AnimLol.bin") },
+            // { animationID_player_lol2, fetch_animation("assets/lol_animation_AnimLol.bin") },
+            // { animationID_player_lol2, fetch_animation("assets/lol_animation_AnimLol.bin") },
+        });
     
     registry.emplace<controller_component<runner_controller_state>>(_player_entity)
         .state(runner_controller_state())
