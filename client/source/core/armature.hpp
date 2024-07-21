@@ -1,10 +1,7 @@
 #pragma once
 
-#include <array>
 #include <filesystem>
-#include <functional>
 #include <future>
-#include <unordered_map>
 #include <sstream>
 #include <vector>
 
@@ -23,10 +20,10 @@ struct armature_ref {
     const std::vector<glm::vec3>& get_positions() const;
     const std::vector<glm::uvec4>& get_bones() const;
     const std::vector<glm::vec4>& get_weights() const;
-    glm::uint get_count() const;
+    glm::uint get_vertices_count() const;
 
 private:
-    glm::uint _count;
+    glm::uint _vertices_count;
     std::vector<glm::vec3> _positions;
     std::vector<glm::uvec4> _bones;
     std::vector<glm::vec4> _weights;

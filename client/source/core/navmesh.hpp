@@ -4,6 +4,30 @@
 
 #include <core/mesh.hpp>
 
+enum struct shape_kind {
+    static,
+    dynamic
+};
+
+enum struct static_shape_kind {
+    box,
+    sphere,
+    capsule,
+    cylinder,
+    cone,
+    convex_hull,
+    impact_triangle_mesh
+};
+
+enum struct dynamic_shape_kind {
+    box,
+    sphere,
+    capsule,
+    cylinder,
+    cone,
+    
+};
+
 struct navmesh_ref {
     navmesh_ref() = delete;
     navmesh_ref(const navmesh_ref& other) = delete;

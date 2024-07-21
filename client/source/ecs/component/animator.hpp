@@ -14,6 +14,7 @@
 #include <core/armature.hpp>
 #include <core/moveset.hpp>
 #include <core/skeleton.hpp>
+#include <core/fetch.hpp>
 
 struct animator_component {
     animator_component() = default;
@@ -23,8 +24,8 @@ struct animator_component {
     animator_component& operator=(animator_component&& other) = default;
 
     animator_component& armature(const std::shared_future<std::shared_ptr<armature_ref>>& fetched_armature);
-    animator_component& moveset(const std::shared_future<std::shared_ptr<moveset_ref>>& fetched_moveset);
     animator_component& skeleton(const std::shared_future<std::shared_ptr<skeleton_ref>>& fetched_skeleton);
+    animator_component& moveset(const std::shared_future<std::shared_ptr<moveset_ref>>& fetched_moveset);
     animator_component& play(const glm::uint& id);
     animator_component& pause(const glm::uint& id);
     animator_component& loop(const glm::uint& id, const bool must_loop);
@@ -32,12 +33,8 @@ struct animator_component {
     animator_component& weight(const glm::uint& id, const glm::float32 normalized);
 
 private:
-    std::optional<std::shared_future<std::shared_ptr<armature_ref>>> _fetched_armature = std::nullopt;
-    std::optional<std::shared_future<std::shared_ptr<moveset_ref>>> _fetched_moveset = std::nullopt;
-    std::optional<std::shared_future<std::shared_ptr<skeleton_ref>>> _fetched_skeleton = std::nullopt;
-    std::shared_ptr<armature_ref> _armature = nullptr;
-    std::shared_ptr<moveset_ref> _moveset = nullptr;
-    std::shared_ptr<skeleton_ref> _skeleton = nullptr;
-    friend struct async_system;
+    fetch_container<armature_ref> _armature = {};
+    fetch_container<skeleton_ref> _skeleton = {};
+    fetch_container<moveset_ref> _moveset = {};
     friend struct motion_system;
 };

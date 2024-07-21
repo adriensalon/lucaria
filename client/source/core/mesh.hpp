@@ -1,8 +1,6 @@
 #pragma once
 
-#include <array>
 #include <filesystem>
-#include <functional>
 #include <future>
 #include <sstream>
 #include <unordered_map>

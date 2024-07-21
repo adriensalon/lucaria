@@ -34,6 +34,7 @@ struct rigidbody_component<rigidbody_kind::kinematic> {
     rigidbody_component& operator=(rigidbody_component&& other);
     ~rigidbody_component();
 
+    rigidbody_component& motion_box();
     rigidbody_component& box(const glm::vec3& half_extents);
     rigidbody_component& capsule(const float radius, const float height);
     rigidbody_component& snap_ground(const bool enabled = true);
@@ -46,6 +47,7 @@ struct rigidbody_component<rigidbody_kind::kinematic> {
 
 private:
     bool _is_instanced = false;
+    bool _is_motion_box = false;
     btCollisionShape* _shape = nullptr;
     btPairCachingGhostObject* _ghost = nullptr;
     float _half_height = 0.f;
@@ -56,6 +58,7 @@ private:
     std::vector<kinematic_collision> _wall_collisions = {};
     std::unordered_map<kinematic_layer, std::vector<kinematic_collision>> _layer_collisions = {};
     friend struct dynamics_system;
+    friend struct motion_system; // to reshape box from skinned aabb
 };
 
 template <>
