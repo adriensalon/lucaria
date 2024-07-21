@@ -18,7 +18,7 @@
 struct animation_controller {
     bool is_playing = true;
     bool is_looping = true;
-    glm::float32 time_ratio = 0.f;
+    glm::float32 time_ratio = 0.5f;
     glm::float32 playback_speed = 1.f;
 };
 

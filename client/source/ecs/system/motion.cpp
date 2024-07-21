@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include <btBulletDynamicsCommon.h>
-#include <ozz/base/maths/soa_transform.h>
+#include <ozz/animation/runtime/local_to_model_job.h>
 
 #include <ecs/component/animator.hpp>
 #include <ecs/component/model.hpp>
@@ -14,14 +14,9 @@ namespace detail {
 #if LUCARIA_GUIZMO
 extern void draw_guizmo_line(const btVector3& from, const btVector3& to, const btVector3& color);
 
-void draw_guizmo_cone(const btVector3& from, const btVector3& to, const btVector3& color) {
-    
-    // Draw the cone (you need to implement this based on your rendering framework)
-    // This could involve setting up a vertex buffer for a cone mesh and rendering it with the calculated transform
-    // For simplicity, we'll just print out the cone parameters here
-    std::cout << "Draw cone from (" << from.x() << ", " << from.y() << ", " << from.z() << ") "
-              << "to (" << to.x() << ", " << to.y() << ", " << to.z() << ") "
-              << "with color (" << color.x() << ", " << color.y() << ", " << color.z() << ")\n";
+void draw_guizmo_cone(const btVector3& from, const btVector3& to, const btVector3& color) 
+{
+    draw_guizmo_line(from, to, color);
 }
 
 #endif
@@ -52,6 +47,18 @@ void motion_system::blend_animations()
                         if (!sampling_job.Run()) {
 #if LUCARIA_DEBUG
                             std::cout << "Impossible to run sampling job." << std::endl;
+                            std::terminate();
+#endif
+                        }
+
+                        // ca faudra bouger
+                        ozz::animation::LocalToModelJob ltm_job;
+                        ltm_job.skeleton = &_skeleton;
+                        ltm_job.input = make_span(_local_transforms);
+                        ltm_job.output = make_span(_model_transforms);
+                        if (!ltm_job.Run()) {
+#if LUCARIA_DEBUG
+                            std::cout << "Impossible to run local to model job." << std::endl;
                             std::terminate();
 #endif
                         }
