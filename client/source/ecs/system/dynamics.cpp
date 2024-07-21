@@ -13,54 +13,6 @@
 #include <ecs/component/transform.hpp>
 #include <ecs/system/dynamics.hpp>
 
-#if LUCARIA_GUIZMO
-class guizmo_debug_draw : public btIDebugDraw {
-public:
-    std::unordered_map<glm::vec3, std::vector<glm::vec3>, vec3_hash> positions = {};
-    std::unordered_map<glm::vec3, std::vector<glm::uvec2>, vec3_hash> indices = {};
-
-    virtual void drawLine(const btVector3& from, const btVector3& to, const btVector3& color) override
-    {
-        const glm::vec3 _color(color.x(), color.y(), color.z());
-        std::vector<glm::vec3>& _positions = positions[_color];
-        std::vector<glm::uvec2>& _indices = indices[_color];
-        const glm::uint _from_index = _positions.size();
-        const glm::uint _to_index = _from_index + 1;
-        _positions.emplace_back(from.x(), from.y(), from.z());
-        _positions.emplace_back(to.x(), to.y(), to.z());
-        _indices.emplace_back(glm::uvec2(_from_index, _to_index));
-    }
-
-    virtual void reportErrorWarning(const char* warning) override
-    {
-        std::cout << "Bullet warning: " << warning << std::endl;
-    }
-
-    virtual void drawContactPoint(const btVector3& point_on_b, const btVector3& normal_on_b, btScalar distance, int lifetime, const btVector3& color) override
-    {
-        drawLine(point_on_b, point_on_b + normal_on_b * distance, color);
-    }
-
-    virtual void draw3dText(const btVector3& location, const char* text) override
-    {
-        std::cout << "Bullet 3D text: " << text << " at (" << location.x() << ", " << location.y() << ", " << location.z() << ")" << std::endl;
-    }
-
-    virtual void setDebugMode(int mode) override
-    {
-        _debug_mode = mode;
-    }
-
-    virtual int getDebugMode() const override
-    {
-        return _debug_mode;
-    }
-
-private:
-    int _debug_mode = DBG_DrawWireframe;
-};
-#endif
-
 namespace detail {
 
 static float snap_ground_distance = 10.f;
@@ -70,8 +22,8 @@ static btBroadphaseInterface* overlapping_pair_cache = nullptr;
 static btSequentialImpulseConstraintSolver* solver = nullptr;
 
 #if LUCARIA_GUIZMO
-static guizmo_debug_draw* guizmo_draw = nullptr;
-std::unordered_map<glm::vec3, guizmo_mesh_ref, vec3_hash> guizmo_meshes = {};
+
+
 #endif
 
 btDiscreteDynamicsWorld* dynamics_world = nullptr;
@@ -85,10 +37,6 @@ static bool setup_bullet_worlds()
     solver = new btSequentialImpulseConstraintSolver();
     dynamics_world = new btDiscreteDynamicsWorld(dispatcher, overlapping_pair_cache, solver, collision_configuration);
     dynamics_world->setGravity(btVector3(0.f, -9.81f, 0.f));
-#if LUCARIA_GUIZMO
-    guizmo_draw = new guizmo_debug_draw();
-    dynamics_world->setDebugDrawer(guizmo_draw);
-#endif
     return true;
 }
 
@@ -280,23 +228,6 @@ void dynamics_system::compute_kinematic_collisions()
 void dynamics_system::collect_debug_guizmos()
 {
 #if LUCARIA_GUIZMO
-    for (std::pair<const glm::vec3, std::vector<glm::vec3>>& _pair : detail::guizmo_draw->positions) {
-        const glm::vec3 _color = _pair.first;
-        std::vector<glm::vec3>& _positions = _pair.second;
-        std::vector<glm::uvec2>& _indices = detail::guizmo_draw->indices.at(_color);
-        _positions.clear();
-        _indices.clear();
-    }
     detail::dynamics_world->debugDrawWorld();
-    for (const std::pair<const glm::vec3, std::vector<glm::vec3>>& _pair : detail::guizmo_draw->positions) {
-        const glm::vec3 _color = _pair.first;
-        const std::vector<glm::vec3>& _positions = _pair.second;
-        const std::vector<glm::uvec2>& _indices = detail::guizmo_draw->indices.at(_color);
-        if (detail::guizmo_meshes.find(_color) == detail::guizmo_meshes.end()) {
-            detail::guizmo_meshes.emplace(_color, guizmo_mesh_ref(_positions, _indices));
-        } else {
-            detail::guizmo_meshes.at(_color).update(_positions, _indices);
-        }
-    }
 #endif
 }

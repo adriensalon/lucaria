@@ -17,10 +17,11 @@ struct rendering_system {
     static void use_skybox_cubemap(const std::shared_future<std::shared_ptr<cubemap_ref>>& fetched_cubemap);
 
     static void clear_screen();
+    static void clear_debug_guizmos();
     static void compute_projection();
     static void compute_view_projection();
     static void draw_skybox();
     static void draw_blockout_meshes();
     static void draw_unlit_meshes();
-    static void draw_guizmos();
+    static void draw_debug_guizmos();
 };

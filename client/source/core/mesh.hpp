@@ -48,6 +48,7 @@ private:
     glm::uint _array_id;
     glm::uint _elements_id;
     std::unordered_map<mesh_attribute, glm::uint> _attribute_ids;
+    friend struct program_ref;
 };
 
 mesh_data load_mesh_data(std::istringstream& mesh_stream);

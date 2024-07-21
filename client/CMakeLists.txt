@@ -65,7 +65,7 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 	target_link_libraries(lucaria PRIVATE imgui)
 	target_link_libraries(lucaria PRIVATE ozz_animation)
 
-	# target_compile_definitions(lucaria PRIVATE LUCARIA_DEBUG)
+	target_compile_definitions(lucaria PRIVATE LUCARIA_DEBUG)
 	target_compile_definitions(lucaria PRIVATE LUCARIA_GUIZMO)
 	# target_compile_definitions(lucaria PRIVATE LUCARIA_JSON)
 

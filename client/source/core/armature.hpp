@@ -17,7 +17,7 @@ struct armature_ref {
     armature_ref& operator=(armature_ref&& other) = default;
 
     armature_ref(const armature_data& data);
-    const std::vector<glm::vec3>& get_positions() const;
+    std::vector<glm::vec3>& get_positions();
     const std::vector<glm::uvec4>& get_bones() const;
     const std::vector<glm::vec4>& get_weights() const;
     glm::uint get_vertices_count() const;

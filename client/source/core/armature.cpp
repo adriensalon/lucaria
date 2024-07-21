@@ -21,7 +21,8 @@ armature_ref::armature_ref(const armature_data& data)
     _bones = data.bones;
     _weights = data.weights;
 }
-const std::vector<glm::vec3>& armature_ref::get_positions() const
+
+std::vector<glm::vec3>& armature_ref::get_positions()
 {
     return _positions;
 }

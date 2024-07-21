@@ -11,4 +11,5 @@ struct motion_system {
     static void apply_root_motion();
     static void apply_foot_ik();
     static void skin_meshes();
+    static void collect_debug_guizmos();
 };

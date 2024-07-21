@@ -131,6 +131,18 @@ namespace detail {
 void motion_system::blend_animations()
 {
     // animators -> model space matrices w extracted root motion
+
+    // sampling job
+    each_level([](entt::registry& registry) {
+        registry.view<animator_component>().each([](animator_component& animator) {
+            for (const std::pair<const glm::uint, fetch_container<animation_ref>>& _pair : animator._animations) {
+                if (_pair.second.has_value()) {
+                    // _pair.second.value().get_animation().
+                }
+            }
+            
+        });
+    });
 }
 
 void motion_system::apply_root_motion()
@@ -144,6 +156,11 @@ void motion_system::apply_foot_ik()
 }
 
 void motion_system::skin_meshes()
+{
+    // animators, models
+}
+
+void motion_system::collect_debug_guizmos()
 {
     // animators, models
 }

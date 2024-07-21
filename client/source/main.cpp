@@ -24,6 +24,7 @@ int main()
     run([]() {
         player_system::update();
         
+        rendering_system::clear_debug_guizmos();
         rendering_system::clear_screen();
         rendering_system::compute_projection();
         
@@ -45,7 +46,7 @@ int main()
         rendering_system::draw_skybox();
         rendering_system::draw_blockout_meshes();
         rendering_system::draw_unlit_meshes();
-        rendering_system::draw_guizmos();
+        rendering_system::draw_debug_guizmos();
 
         splash_system::update();
     });
