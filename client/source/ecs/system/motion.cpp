@@ -7,6 +7,7 @@
 #include <ecs/component/model.hpp>
 #include <ecs/system/motion.hpp>
 #include <core/world.hpp>
+#include <core/window.hpp>
 
 namespace detail {
 
@@ -29,17 +30,35 @@ void draw_guizmo_cone(const btVector3& from, const btVector3& to, const btVector
 
 void motion_system::blend_animations()
 {
-    // animators -> model space matrices w extracted root motion
-
-    // sampling job
+    float _time_delta = get_time_delta();
     each_level([](entt::registry& registry) {
         registry.view<animator_component>().each([](animator_component& animator) {
-            for (const std::pair<const glm::uint, fetch_container<animation_ref>>& _pair : animator._animations) {
-                if (_pair.second.has_value()) {
-                    // _pair.second.value().get_animation().
+            if (animator._skeleton.has_value()) {
+                ozz::animation::Skeleton& _skeleton = animator._skeleton.value();
+                ozz::vector<ozz::math::Float4x4>& _model_transforms = animator._model_transforms;
+                for (std::pair<const glm::uint, fetch_container<animation_ref>>& _pair : animator._animations) {
+                    if (_pair.second.has_value()) {
+                        animation_controller& _controller = animator._controllers[_pair.first];
+                        ozz::animation::Animation& _animation = _pair.second.value();
+                        ozz::vector<ozz::math::SoaTransform>& _local_transforms = animator._local_transforms[_pair.first];
+
+                        // update controller with delta_time
+
+                        ozz::animation::SamplingJob sampling_job;
+                        sampling_job.animation = &_animation;
+                        sampling_job.context = animator._sampling_context.get();
+                        sampling_job.ratio = _controller.time_ratio;
+                        sampling_job.output = make_span(_local_transforms);
+                        if (!sampling_job.Run()) {
+#if LUCARIA_DEBUG
+                            std::cout << "Impossible to run sampling job." << std::endl;
+                            std::terminate();
+#endif
+                        }
+
+                    }
                 }
             }
-            
         });
     });
 }

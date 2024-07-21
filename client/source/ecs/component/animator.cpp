@@ -18,6 +18,7 @@ animator_component& animator_component::animations(const std::unordered_map<glm:
                 _local_transforms[_name].resize(_skeleton.value().num_soa_joints());
             }
         });
+        _controllers[_name] = animation_controller();
     }
     return *this;
 }
@@ -44,7 +45,10 @@ animator_component& animator_component::skeleton(const std::shared_future<std::s
                 _local_transforms[_pair.first].resize(_skeleton.value().num_soa_joints());
             }
         }
-        _model_transforms.resize(_skeleton.value().num_joints());
+        const int _num_joints = _skeleton.value().num_joints();
+        _sampling_context = std::make_unique<ozz::animation::SamplingJob::Context>();
+        _sampling_context->Resize(_num_joints);
+        _model_transforms.resize(_num_joints);
     });
     return *this;
 }
