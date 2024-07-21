@@ -42,6 +42,7 @@ struct model_component<model_shader::blockout> {
 
 private:
     fetch_container<mesh_ref> _mesh = {};
+    friend struct motion_system;
     friend struct rendering_system;
 };
 

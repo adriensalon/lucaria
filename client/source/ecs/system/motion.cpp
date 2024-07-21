@@ -2,9 +2,11 @@
 
 #include <btBulletDynamicsCommon.h>
 #include <ozz/animation/runtime/local_to_model_job.h>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <ecs/component/animator.hpp>
 #include <ecs/component/model.hpp>
+#include <ecs/component/transform.hpp>
 #include <ecs/system/motion.hpp>
 #include <core/world.hpp>
 #include <core/window.hpp>
@@ -20,6 +22,13 @@ void draw_guizmo_cone(const btVector3& from, const btVector3& to, const btVector
 }
 
 #endif
+
+glm::mat4 ozz_to_glm(const ozz::math::Float4x4& matrix) 
+{
+    glm::mat4 _matrix;
+    std::memcpy(glm::value_ptr(_matrix), matrix.cols, sizeof(matrix.cols));
+    return _matrix;
+}
 
 }
 
@@ -38,6 +47,8 @@ void motion_system::blend_animations()
                         ozz::vector<ozz::math::SoaTransform>& _local_transforms = animator._local_transforms[_pair.first];
 
                         // update controller with delta_time
+
+                        // _controller.time_ratio += 0.01f;
 
                         ozz::animation::SamplingJob sampling_job;
                         sampling_job.animation = &_animation;
@@ -62,7 +73,6 @@ void motion_system::blend_animations()
                             std::terminate();
 #endif
                         }
-
                     }
                 }
             }
@@ -72,7 +82,23 @@ void motion_system::blend_animations()
 
 void motion_system::apply_root_motion()
 {
-    // animators, transforms
+    each_level([](entt::registry& registry) {
+        registry.view<animator_component, transform_component>().each([](animator_component& animator, transform_component& transform) {
+            if (animator._motion_bone_index.has_value()) {
+                const glm::uint _motion_bone_index = animator._motion_bone_index.value();
+                ozz::math::Float4x4& _ozz_motion_transform = animator._model_transforms[_motion_bone_index];
+                const glm::mat4 _motion_transform = detail::ozz_to_glm(_ozz_motion_transform);
+                // const ozz::math::Float4x4 _ozz_inverse_motion_transform = ozz::math::Invert(_ozz_motion_transform);
+                // _ozz_motion_transform = ozz::math::Float4x4::identity();
+                // for (glm::uint _index = 0; _index < animator._model_transforms.size() && _index != _motion_bone_index; ++_index) {
+                //     ozz::math::Float4x4& _transform = animator._model_transforms[_index];
+                //     _transform = _ozz_inverse_motion_transform * _transform;
+                //     std::cout << "inverting tf" << std::endl;
+                // }
+                // transform.transform_relative(_motion_transform);
+            }
+        });
+    });
 }
 
 void motion_system::apply_foot_ik()
@@ -82,7 +108,13 @@ void motion_system::apply_foot_ik()
 
 void motion_system::skin_meshes()
 {
-    // animators, models
+    each_level([](entt::registry& registry) {
+        registry.view<animator_component, blockout_model_component>().each([](animator_component& animator, blockout_model_component& model) {
+            // std::vector<glm::vec3> _positions;
+            // // todo
+            // model._mesh.value().update_positions(_positions);
+        });
+    });
 }
 
 void motion_system::collect_debug_guizmos()

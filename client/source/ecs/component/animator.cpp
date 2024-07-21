@@ -52,3 +52,9 @@ animator_component& animator_component::skeleton(const std::shared_future<std::s
     });
     return *this;
 }
+
+animator_component& animator_component::motion_bone_index(const std::optional<glm::uint> bone_index)
+{
+    _motion_bone_index = bone_index;
+    return *this;
+}

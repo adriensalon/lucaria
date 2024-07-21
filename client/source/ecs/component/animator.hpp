@@ -2,13 +2,14 @@
 
 #include <future>
 #include <memory>
+#include <optional>
 #include <unordered_map>
 
 #include <glm/glm.hpp>
 #include <ozz/animation/runtime/sampling_job.h>
+#include <ozz/base/containers/vector.h>
 #include <ozz/base/maths/simd_math.h>
 #include <ozz/base/maths/soa_transform.h>
-#include <ozz/base/containers/vector.h>
 
 #include <core/animation.hpp>
 #include <core/armature.hpp>
@@ -32,6 +33,7 @@ struct animator_component {
     animator_component& animations(const std::unordered_map<glm::uint, std::shared_future<std::shared_ptr<animation_ref>>>& fetched_animations);
     animator_component& armature(const std::shared_future<std::shared_ptr<armature_ref>>& fetched_armature);
     animator_component& skeleton(const std::shared_future<std::shared_ptr<skeleton_ref>>& fetched_skeleton);
+    animator_component& motion_bone_index(const std::optional<glm::uint> bone_index);
 
     animation_controller& get_controller(const glm::uint name);
 
@@ -39,6 +41,7 @@ private:
     fetch_container<armature_ref> _armature = {};
     fetch_container<skeleton_ref> _skeleton = {};
     ozz::vector<ozz::math::Float4x4> _model_transforms = {};
+    std::optional<glm::uint> _motion_bone_index = std::nullopt;
     std::unique_ptr<ozz::animation::SamplingJob::Context> _sampling_context = nullptr;
     std::unordered_map<glm::uint, animation_controller> _controllers = {};
     std::unordered_map<glm::uint, fetch_container<animation_ref>> _animations = {};

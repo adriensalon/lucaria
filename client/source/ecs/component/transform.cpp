@@ -5,7 +5,7 @@
 
 transform_component& transform_component::transform_relative(const glm::mat4& value)
 {
-    _transform = _transform * value;
+    _transform = value * _transform;
     return *this;
 }
 
