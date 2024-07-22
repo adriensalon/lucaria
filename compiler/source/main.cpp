@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <import/assimp.hpp>
+#include <import/audiofile.hpp>
 #include <import/stb.hpp>
 #include <import/text.hpp>
 
@@ -171,6 +172,7 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
         export_binary(_imported_shader.shader, output_file);
 
     } else if (_extension == ".wav") {
+        imported_audiofile_data _imported_data = import_audiofile(input_file);
         // export_binary(import_sound(input_file), output_file);
 
     } else {
