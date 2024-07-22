@@ -10,13 +10,13 @@
 
 namespace detail {
 
-static std::unordered_map<std::size_t, std::tuple<std::vector<material_texture>, std::unordered_map<material_texture, texture_data>, std::promise<std::shared_ptr<material_ref>>>> promises;
+static std::unordered_map<std::size_t, std::tuple<std::vector<material_texture>, std::unordered_map<material_texture, image_data>, std::promise<std::shared_ptr<material_ref>>>> promises;
 
 }
 
-material_ref::material_ref(const std::unordered_map<material_texture, texture_data>& textures)
+material_ref::material_ref(const std::unordered_map<material_texture, image_data>& textures)
 {
-    for (const std::pair<const material_texture, texture_data>& _pair : textures) {
+    for (const std::pair<const material_texture, image_data>& _pair : textures) {
         _textures.emplace(_pair.first, std::make_shared<texture_ref>(_pair.second));
     }
 }
@@ -42,12 +42,12 @@ std::shared_future<std::shared_ptr<material_ref>> fetch_material(const std::unor
     std::vector<std::filesystem::path> _paths;
     std::transform(texture_paths.begin(), texture_paths.end(), std::back_inserter(_paths), [](const auto& _pair) { return _pair.second; });
     const std::size_t _hash = compute_hash_files(_paths);
-    std::tuple<std::vector<material_texture>, std::unordered_map<material_texture, texture_data>, std::promise<std::shared_ptr<material_ref>>>& _promise_tuple = detail::promises[_hash];
+    std::tuple<std::vector<material_texture>, std::unordered_map<material_texture, image_data>, std::promise<std::shared_ptr<material_ref>>>& _promise_tuple = detail::promises[_hash];
     std::vector<material_texture>& _keys = std::get<0>(_promise_tuple);
     for (const std::pair<const material_texture, std::filesystem::path>& _pair : texture_paths) {
         _keys.emplace_back(_pair.first);
     }
-    std::unordered_map<material_texture, texture_data>& _storage = std::get<1>(_promise_tuple);
+    std::unordered_map<material_texture, image_data>& _storage = std::get<1>(_promise_tuple);
     std::promise<std::shared_ptr<material_ref>>& _promise = std::get<2>(_promise_tuple);
     fetch_files(_paths, [&_keys, &_storage, &_promise](const std::size_t texture_index, const std::size_t textures_count, std::istringstream& stream) {
         const material_texture _texture_map = _keys[texture_index];

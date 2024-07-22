@@ -24,7 +24,7 @@ bool all_equal(T first, Args... args)
     return ((first == args) && ...);
 }
 
-static std::unordered_map<std::size_t, std::pair<std::vector<std::pair<cubemap_side, texture_data>>, std::promise<std::shared_ptr<cubemap_ref>>>> promises;
+static std::unordered_map<std::size_t, std::pair<std::vector<std::pair<cubemap_side, image_data>>, std::promise<std::shared_ptr<cubemap_ref>>>> promises;
 
 }
 
@@ -51,12 +51,12 @@ cubemap_ref::~cubemap_ref()
 
 cubemap_ref::cubemap_ref(const cubemap_data& data)
 {
-    const texture_data& _positive_x = data[static_cast<glm::uint>(cubemap_side::positive_x)];
-    const texture_data& _positive_y = data[static_cast<glm::uint>(cubemap_side::positive_y)];
-    const texture_data& _positive_z = data[static_cast<glm::uint>(cubemap_side::positive_z)];
-    const texture_data& _negative_x = data[static_cast<glm::uint>(cubemap_side::negative_x)];
-    const texture_data& _negative_y = data[static_cast<glm::uint>(cubemap_side::negative_y)];
-    const texture_data& _negative_z = data[static_cast<glm::uint>(cubemap_side::negative_z)];
+    const image_data& _positive_x = data[static_cast<glm::uint>(cubemap_side::positive_x)];
+    const image_data& _positive_y = data[static_cast<glm::uint>(cubemap_side::positive_y)];
+    const image_data& _positive_z = data[static_cast<glm::uint>(cubemap_side::positive_z)];
+    const image_data& _negative_x = data[static_cast<glm::uint>(cubemap_side::negative_x)];
+    const image_data& _negative_y = data[static_cast<glm::uint>(cubemap_side::negative_y)];
+    const image_data& _negative_z = data[static_cast<glm::uint>(cubemap_side::negative_z)];
     glGenTextures(1, &_cubemap_id);
     glBindTexture(GL_TEXTURE_CUBE_MAP, _cubemap_id);
     GLenum _format;
@@ -99,13 +99,13 @@ std::shared_future<std::shared_ptr<cubemap_ref>> fetch_cubemap(const std::array<
 {
     const std::vector<std::filesystem::path> _paths(texture_paths.begin(), texture_paths.end());
     const std::size_t _hash = compute_hash_files(_paths);
-    std::pair<std::vector<std::pair<cubemap_side, texture_data>>, std::promise<std::shared_ptr<cubemap_ref>>>& _promise_pair = detail::promises[_hash];
+    std::pair<std::vector<std::pair<cubemap_side, image_data>>, std::promise<std::shared_ptr<cubemap_ref>>>& _promise_pair = detail::promises[_hash];
     fetch_files(_paths, [&_promise_pair](const std::size_t _side_index, const std::size_t, std::istringstream& stream) {
         _promise_pair.first.emplace_back(static_cast<cubemap_side>(_side_index), std::move(load_texture_data(stream)));
         if (_promise_pair.first.size() == 6) {
-            std::array<texture_data, 6> _textures;
+            std::array<image_data, 6> _textures;
             for (glm::uint _index = 0; _index < 6; ++_index) {
-                const std::pair<const cubemap_side, texture_data>& _pair = _promise_pair.first[_index];
+                const std::pair<const cubemap_side, image_data>& _pair = _promise_pair.first[_index];
                 _textures[static_cast<glm::uint>(_pair.first)] = std::move(_pair.second);
             }
             _promise_pair.second.set_value(std::move(std::make_shared<cubemap_ref>(_textures)));

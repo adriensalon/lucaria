@@ -32,7 +32,7 @@ void export_binary(const armature_data& data, const std::filesystem::path& outpu
     detail::compile_binary_or_json(data, output_path);
 }
 
-void export_binary(const mesh_data& data, const std::filesystem::path& output_path)
+void export_binary(const geometry_data& data, const std::filesystem::path& output_path)
 {
     detail::compile_binary_or_json(data, output_path);
 }
@@ -42,7 +42,7 @@ void export_binary(const shader_data& data, const std::filesystem::path& output_
     detail::compile_binary_or_json(data, output_path);
 }
 
-void export_binary(const texture_data& data, const std::filesystem::path& output_path)
+void export_binary(const image_data& data, const std::filesystem::path& output_path)
 {
     detail::compile_binary_or_json(data, output_path);
 }

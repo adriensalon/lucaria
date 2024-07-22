@@ -72,6 +72,17 @@ struct fetch_container {
     fetch_container(fetch_container&& other) = default;
     fetch_container& operator=(fetch_container&& other) = default;
 
+    void emplace(const std::shared_ptr<value_t>& value)
+    {
+#if LUCARIA_DEBUG
+        if (_fetched) {
+            std::cout << "Fetched container is already waiting for a future." << std::endl;
+            std::terminate();
+        }
+#endif
+        _value = value;
+    }
+
     void emplace(const std::shared_future<std::shared_ptr<value_t>>& fetched, const std::function<void()>& callback = nullptr)
     {
 #if LUCARIA_DEBUG

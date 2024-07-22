@@ -13,7 +13,7 @@
 namespace detail {
 
 static bool is_splash_on = true;
-static std::optional<std::future<texture_data>> future_texture = std::nullopt;
+static std::optional<std::future<image_data>> future_texture = std::nullopt;
 static std::optional<texture_ref> texture = std::nullopt;
 
 static void update_texture_if_needed()
@@ -62,7 +62,7 @@ bool splash_system::is_splash_on()
     return detail::is_splash_on;
 }
 
-void splash_system::splash_texture(std::future<texture_data>&& texture)
+void splash_system::splash_texture(std::future<image_data>&& texture)
 {
     detail::future_texture = std::move(texture);
     detail::texture = std::nullopt;

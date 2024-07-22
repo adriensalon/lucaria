@@ -11,7 +11,7 @@
 
 namespace detail {
 
-void validate_mesh(const mesh_data& data)
+void validate_mesh(const geometry_data& data)
 {
 }
 
@@ -145,7 +145,7 @@ mesh_ref::~mesh_ref()
     }
 }
 
-mesh_ref::mesh_ref(const mesh_data& data)
+mesh_ref::mesh_ref(const geometry_data& data)
 {
     detail::validate_mesh(data);
     _indices_count = 3 * data.indices.size();
@@ -197,9 +197,9 @@ glm::uint mesh_ref::get_indices_count() const
     return _indices_count;
 }
 
-mesh_data load_mesh_data(std::istringstream& mesh_stream)
+geometry_data load_mesh_data(std::istringstream& mesh_stream)
 {
-    mesh_data _data;
+    geometry_data _data;
     {
 #if LUCARIA_JSON
         cereal::JSONInputArchive _archive(mesh_stream);
@@ -247,7 +247,7 @@ guizmo_mesh_ref::~guizmo_mesh_ref()
     }
 }
 
-guizmo_mesh_ref::guizmo_mesh_ref(const mesh_data& data)
+guizmo_mesh_ref::guizmo_mesh_ref(const geometry_data& data)
 {
     detail::validate_mesh(data);
     _array_id = detail::create_vertex_array();

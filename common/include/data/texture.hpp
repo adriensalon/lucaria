@@ -5,7 +5,7 @@
 #include <cereal/types/vector.hpp>
 #include <glm/glm.hpp>
 
-struct texture_data {
+struct image_data {
     glm::uint channels;
     glm::uint width;
     glm::uint height;

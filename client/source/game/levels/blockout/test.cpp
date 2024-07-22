@@ -13,29 +13,29 @@ void level_blockout_test(entt::registry& registry)
         .mesh(fetch_mesh("assets/blockout_test.bin"));
 
     registry.emplace<collider_component>(_wall_entity)
-        .navmesh(fetch_navmesh("assets/blockout_test_wall.bin"))
+        .navmesh(fetch_shape("assets/blockout_test_wall.bin"))
         .wall();
 
 
 
     const entt::entity _ground_entity0 = registry.create();
     registry.emplace<collider_component>(_ground_entity0)
-        .navmesh(fetch_navmesh("assets/blockout_test_ground0.bin"))
+        .navmesh(fetch_shape("assets/blockout_test_ground0.bin"))
         .ground();
         
     const entt::entity _ground_entity1 = registry.create();
     registry.emplace<collider_component>(_ground_entity1)
-        .navmesh(fetch_navmesh("assets/blockout_test_ground1.bin"))
+        .navmesh(fetch_shape("assets/blockout_test_ground1.bin"))
         .ground();
 
     const entt::entity _ground_entity2 = registry.create();
     registry.emplace<collider_component>(_ground_entity2)
-        .navmesh(fetch_navmesh("assets/blockout_test_ground2.bin"))
+        .navmesh(fetch_shape("assets/blockout_test_ground2.bin"))
         .ground();
 
     const entt::entity _ground_entity3 = registry.create();
     registry.emplace<collider_component>(_ground_entity3)
-        .navmesh(fetch_navmesh("assets/blockout_test_ground3.bin"))
+        .navmesh(fetch_shape("assets/blockout_test_ground3.bin"))
         .ground();
         
 }

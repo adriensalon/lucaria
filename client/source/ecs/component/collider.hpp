@@ -12,14 +12,14 @@ struct collider_component {
     collider_component& operator=(collider_component&& other);
     ~collider_component();
 
-    collider_component& navmesh(const std::shared_future<std::shared_ptr<navmesh_ref>>& fetched_navmesh);
+    collider_component& navmesh(const std::shared_future<std::shared_ptr<shape_ref>>& fetched_navmesh);
     collider_component& ground();
     collider_component& wall();
     collider_component& layer(const kinematic_layer layer);
 
 private:
     bool _is_instanced = false;
-    fetch_container<navmesh_ref> _navmesh = {};
+    fetch_container<shape_ref> _navmesh = {};
     btDefaultMotionState* _state = nullptr;
     btRigidBody* _rigidbody = nullptr;
     short _group = 0;

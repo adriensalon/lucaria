@@ -7,7 +7,7 @@
 
 #include <data/glm.hpp>
 
-struct mesh_data {
+struct geometry_data {
     glm::uint count = 0; // vertices count
     std::vector<glm::vec3> positions = {};
     std::vector<glm::vec4> colors = {};

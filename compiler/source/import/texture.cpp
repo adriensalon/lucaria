@@ -5,9 +5,9 @@
 
 #include <data/texture.hpp>
 
-texture_data import_texture(const std::filesystem::path& image_path)
+image_data import_texture(const std::filesystem::path& image_path)
 {
-    texture_data _data;
+    image_data _data;
     int _width, _height, _channels;
     unsigned char* _pixels = stbi_load(image_path.string().c_str(), &_width, &_height, &_channels, NULL);
     if (_pixels == nullptr) {

@@ -36,7 +36,7 @@ struct mesh_ref {
     mesh_ref& operator=(mesh_ref&& other);
     ~mesh_ref();
 
-    mesh_ref(const mesh_data& data);
+    mesh_ref(const geometry_data& data);
     void update_positions(const std::vector<glm::vec3>& new_positions);
     std::unordered_map<mesh_attribute, glm::uint> get_buffer_ids() const;
     glm::uint get_array_id() const;
@@ -51,7 +51,7 @@ private:
     friend struct program_ref;
 };
 
-mesh_data load_mesh_data(std::istringstream& mesh_stream);
+geometry_data load_mesh_data(std::istringstream& mesh_stream);
 std::shared_future<std::shared_ptr<mesh_ref>> fetch_mesh(const std::filesystem::path& mesh_path);
 
 #if LUCARIA_GUIZMO
@@ -64,7 +64,7 @@ struct guizmo_mesh_ref {
     guizmo_mesh_ref& operator=(guizmo_mesh_ref&& other);
     ~guizmo_mesh_ref();
 
-    guizmo_mesh_ref(const mesh_data& data);
+    guizmo_mesh_ref(const geometry_data& data);
     guizmo_mesh_ref(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices);
     void update(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices);
     glm::uint get_positions_id() const;

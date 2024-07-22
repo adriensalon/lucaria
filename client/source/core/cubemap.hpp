@@ -20,7 +20,7 @@ enum struct cubemap_side : glm::uint {
     negative_z = 5
 };
 
-using cubemap_data = std::array<texture_data, 6>;
+using cubemap_data = std::array<image_data, 6>;
 
 struct cubemap_ref {
     cubemap_ref() = delete;

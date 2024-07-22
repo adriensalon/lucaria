@@ -1,15 +1,11 @@
 #pragma once
 
 #include <btBulletDynamicsCommon.h>
+#include <glm/glm.hpp>
 
 #include <core/mesh.hpp>
 
-// enum struct shape_kind {
-//     static,
-//     dynamic
-// };
-
-enum struct static_shape_kind {
+enum struct shape_type {
     box,
     sphere,
     capsule,
@@ -19,24 +15,48 @@ enum struct static_shape_kind {
     impact_triangle_mesh
 };
 
-enum struct dynamic_shape_kind {
-    box,
-    sphere,
-    capsule,
-    cylinder,
-    cone,
-    
+template <shape_type shape_t>
+struct shape_data;
+
+template <>
+struct shape_data<shape_type::box> {
+    glm::vec3 half_extents;
 };
 
-struct navmesh_ref {
-    navmesh_ref() = delete;
-    navmesh_ref(const navmesh_ref& other) = delete;
-    navmesh_ref& operator=(const navmesh_ref& other) = delete;
-    navmesh_ref(navmesh_ref&& other);
-    navmesh_ref& operator=(navmesh_ref&& other);
-    ~navmesh_ref();
+template <>
+struct shape_data<shape_type::sphere> {
+    glm::float32 radius;
+};
 
-    navmesh_ref(const mesh_data& data);
+template <>
+struct shape_data<shape_type::capsule> {
+    // todo
+};
+
+template <>
+struct shape_data<shape_type::cylinder> {
+    // todo
+};
+
+template <>
+struct shape_data<shape_type::cone> {
+    // todo
+};
+
+struct shape_ref {
+    shape_ref() = delete;
+    shape_ref(const shape_ref& other) = delete;
+    shape_ref& operator=(const shape_ref& other) = delete;
+    shape_ref(shape_ref&& other);
+    shape_ref& operator=(shape_ref&& other);
+    ~shape_ref();
+
+    template <shape_type shape_t = shape_type::box> 
+    shape_ref(const shape_data<shape_t>& data);
+    
+    template <shape_type shape_t = shape_type::convex_hull> 
+    shape_ref(const geometry_data& data);
+    
     btCollisionShape* get_shape() const;
 
 private:
@@ -44,4 +64,4 @@ private:
     btCollisionShape* _shape;
 };
 
-std::shared_future<std::shared_ptr<navmesh_ref>> fetch_navmesh(const std::filesystem::path& mesh_path);
+std::shared_future<std::shared_ptr<shape_ref>> fetch_shape(const std::filesystem::path& mesh_path);

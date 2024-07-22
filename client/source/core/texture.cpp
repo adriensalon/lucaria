@@ -9,7 +9,7 @@
 
 namespace detail {
 
-void validate_texture(const texture_data& data)
+void validate_texture(const image_data& data)
 {
 }
 
@@ -38,7 +38,7 @@ texture_ref::~texture_ref()
     }
 }
 
-texture_ref::texture_ref(const texture_data& data)
+texture_ref::texture_ref(const image_data& data)
 {
     detail::validate_texture(data);
     glGenTextures(1, &_texture_id);
@@ -74,9 +74,9 @@ GLuint texture_ref::get_id() const
     return _texture_id;
 }
 
-texture_data load_texture_data(std::istringstream& texture_stream)
+image_data load_texture_data(std::istringstream& texture_stream)
 {
-    texture_data _data;
+    image_data _data;
     {
 #if LUCARIA_JSON        
         cereal::JSONInputArchive _archive(texture_stream);

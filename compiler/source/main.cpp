@@ -15,16 +15,16 @@ extern void execute_gltf2ozz(const std::filesystem::path& input_path, const std:
 
 // import
 extern armature_data import_armature(const std::filesystem::path& input_path);
-extern mesh_data import_mesh(const std::filesystem::path& input_path, bool& has_armature);
+extern geometry_data import_mesh(const std::filesystem::path& input_path, bool& has_armature);
 extern shader_data import_shader(const std::filesystem::path& input_path);
-extern texture_data import_texture(const std::filesystem::path& input_path);
+extern image_data import_texture(const std::filesystem::path& input_path);
 
 // export
 extern void export_binary(const armature_data& data, const std::filesystem::path& output_path);
-extern void export_binary(const mesh_data& data, const std::filesystem::path& output_path);
+extern void export_binary(const geometry_data& data, const std::filesystem::path& output_path);
 extern void export_binary(const shader_data& data, const std::filesystem::path& output_path);
-extern void export_binary(const texture_data& data, const std::filesystem::path& output_path);
-extern void export_etc(const texture_data& data, const std::filesystem::path& output_path);
+extern void export_binary(const image_data& data, const std::filesystem::path& output_path);
+extern void export_etc(const image_data& data, const std::filesystem::path& output_path);
 
 namespace detail {
 

@@ -30,7 +30,7 @@ collider_component::~collider_component()
     }
 }
 
-collider_component& collider_component::navmesh(const std::shared_future<std::shared_ptr<navmesh_ref>>& fetched_navmesh)
+collider_component& collider_component::navmesh(const std::shared_future<std::shared_ptr<shape_ref>>& fetched_navmesh)
 {
     _navmesh.emplace(fetched_navmesh, [this]() {
         btCollisionShape* _shape = _navmesh.value().get_shape();

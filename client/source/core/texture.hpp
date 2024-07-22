@@ -15,7 +15,7 @@ struct texture_ref {
     texture_ref& operator=(texture_ref&& other);
     ~texture_ref();
 
-    texture_ref(const texture_data& data);
+    texture_ref(const image_data& data);
     glm::uint get_id() const;
 
 private:
@@ -23,5 +23,5 @@ private:
     glm::uint _texture_id;
 };
 
-texture_data load_texture_data(std::istringstream& texture_stream);
+image_data load_texture_data(std::istringstream& texture_stream);
 std::shared_future<std::shared_ptr<texture_ref>> fetch_texture(const std::filesystem::path& texture_path);

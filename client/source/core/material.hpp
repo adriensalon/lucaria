@@ -30,7 +30,7 @@ struct material_ref {
     material_ref(material_ref&& other) = default;
     material_ref& operator=(material_ref&& other) = default;
 
-    material_ref(const std::unordered_map<material_texture, texture_data>& textures);
+    material_ref(const std::unordered_map<material_texture, image_data>& textures);
 
     bool get_has_texture(const material_texture texture);
     texture_ref& get_texture(const material_texture texture);

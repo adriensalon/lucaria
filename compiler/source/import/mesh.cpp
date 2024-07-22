@@ -7,9 +7,9 @@
 
 #include <data/mesh.hpp>
 
-mesh_data import_mesh(const std::filesystem::path& gltf_path, bool& has_armature)
+geometry_data import_mesh(const std::filesystem::path& gltf_path, bool& has_armature)
 {
-    mesh_data _data;
+    geometry_data _data;
     Assimp::Importer _importer;
     const aiScene* _scene = _importer.ReadFile(gltf_path.string(), aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType);
     if (!_scene) {

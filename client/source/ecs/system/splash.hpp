@@ -12,7 +12,7 @@ struct splash_system {
     splash_system& operator=(splash_system&& other) = delete;
 
     static bool is_splash_on();
-    static void splash_texture(std::future<texture_data>&& texture);
+    static void splash_texture(std::future<image_data>&& texture);
     static void trigger_splash(const bool titlescreen);
 
     static void update();
