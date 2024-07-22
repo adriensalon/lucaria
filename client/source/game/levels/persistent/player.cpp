@@ -34,7 +34,7 @@ void level_persistent_player(entt::registry& registry)
         .mesh(fetch_mesh("assets/player.bin"));
     
     registry.emplace<animator_component>(_player_entity)
-        .motion_bone_index(3)
+        .motion_bone_index(4)
         .armature(fetch_armature("assets/player_armature.bin"))
         .skeleton(fetch_skeleton("assets/player_skeleton.bin"))
         .animations({ 

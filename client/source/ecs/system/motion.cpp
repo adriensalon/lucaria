@@ -75,7 +75,7 @@ void motion_system::blend_animations()
 
                         // update controller with delta_time
 
-                        _controller.time_ratio += 0.1f;
+                        _controller.time_ratio += 0.01f;
                         _controller.time_ratio = glm::mod(_controller.time_ratio, 1.f);
 
                         ozz::animation::SamplingJob sampling_job;
@@ -113,19 +113,22 @@ void motion_system::apply_root_motion()
     each_level([](entt::registry& registry) {
         registry.view<animator_component, transform_component>().each([](animator_component& animator, transform_component& transform) {
             if (animator._motion_bone_index.has_value()) {
-                const glm::uint _motion_bone_index = animator._motion_bone_index.value();
+                // const glm::uint _motion_bone_index = animator._motion_bone_index.value();
+                const glm::uint _motion_bone_index = 3;
                 ozz::math::Float4x4& _ozz_motion_transform = animator._model_transforms[_motion_bone_index];
                 const glm::mat4 _motion_transform = detail::ozz_to_glm(_ozz_motion_transform);
-                // print_matrix(_ozz_motion_transform);
+                // print_matrix(animator._model_transforms[3]);
 
-                // const ozz::math::Float4x4 _ozz_inverse_motion_transform = ozz::math::Invert(_ozz_motion_transform);
-                // _ozz_motion_transform = ozz::math::Float4x4::identity();
-                // for (glm::uint _index = 0; _index < animator._model_transforms.size() && _index != _motion_bone_index; ++_index) {
-                //     ozz::math::Float4x4& _transform = animator._model_transforms[_index];
-                //     _transform = _ozz_inverse_motion_transform * _transform;
-                //     std::cout << "inverting tf" << std::endl;
+                // if (animator._model_transforms[3].cols[3].w == 1.f) {
+                //     const ozz::math::Float4x4 _ozz_inverse_motion_transform = ozz::math::Invert(_ozz_motion_transform);
+                //     _ozz_motion_transform = ozz::math::Float4x4::identity();
+                //     for (glm::uint _index = 0; _index < animator._model_transforms.size() && _index != _motion_bone_index; ++_index) {
+                //         ozz::math::Float4x4& _transform = animator._model_transforms[_index];
+                //         _transform = _ozz_inverse_motion_transform * _transform;
+                //         std::cout << "inverting tf" << std::endl;
+                //     }
+                //     transform.transform_relative(_motion_transform);
                 // }
-                // transform.transform_relative(_motion_transform);
             }
         });
     });
@@ -138,13 +141,14 @@ void motion_system::apply_foot_ik()
 
 void motion_system::skin_meshes()
 {
-    // each_level([](entt::registry& registry) {
-    //     registry.view<animator_component, blockout_model_component>().each([](animator_component& animator, blockout_model_component& model) {
-    //         // std::vector<glm::vec3> _positions;
-    //         // // todo
-    //         // model._mesh.value().update_positions(_positions);
-    //     });
-    // });
+    each_level([](entt::registry& registry) {
+        registry.view<animator_component, blockout_model_component>().each([](animator_component& animator, blockout_model_component& model) {
+            // std::vector<glm::vec3> _positions;
+            // // todo
+            if (model._mesh.has_value() && animator._armature.has_value())
+            model._mesh.value().update_positions(animator._armature.value().get_positions());
+        });
+    });
 }
 
 void motion_system::collect_debug_guizmos()
@@ -161,15 +165,29 @@ void motion_system::collect_debug_guizmos()
                 if (!model_transforms.empty()) {
                     const auto& joint_parents = skeleton.joint_parents();
 
+                    // Check sizes match
+                    if (model_transforms.size() != joint_parents.size()) {
+                        std::cout << "Mismatch between model transforms and joint parents sizes." << std::endl;
+                        std::terminate();
+                    }
+
                     // Iterate through each joint to draw cones
                     for (size_t i = 0; i < model_transforms.size(); ++i) {
                         int parent_index = joint_parents[i];
+                        const auto& current_transform = model_transforms[i];
                         if (parent_index == ozz::animation::Skeleton::kNoParent) {
-                            continue; // Skip root joints
+                            // Handle root bone separately
+                            // Draw a cone or line from the origin to the root bone's position
+                            btVector3 root_position(current_transform.cols[3].x, current_transform.cols[3].y, current_transform.cols[3].z);
+                            btVector3 origin(0.0f, -1.0f, 0.0f); // Use an appropriate origin
+                            btVector3 color(1.0f, 1.0f, 0.0f); // Green color for root bone
+
+                            // Draw the root bone
+                            detail::draw_guizmo_cone(origin, root_position, color);
+                            continue;
                         }
 
                         // Get the current and parent joint transforms
-                        const auto& current_transform = model_transforms[i];
                         const auto& parent_transform = model_transforms[parent_index];
 
                         // Convert Ozz transforms to Bullet vectors
