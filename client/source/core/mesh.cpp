@@ -197,7 +197,7 @@ glm::uint mesh_ref::get_indices_count() const
     return _indices_count;
 }
 
-geometry_data load_mesh_data(std::istringstream& mesh_stream)
+geometry_data load_geometry_data(std::istringstream& mesh_stream)
 {
     geometry_data _data;
     {
@@ -215,7 +215,7 @@ std::shared_future<std::shared_ptr<mesh_ref>> fetch_mesh(const std::filesystem::
 {
     std::promise<std::shared_ptr<mesh_ref>>& _promise = detail::promises[mesh_path.string()];
     fetch_file(mesh_path, [&_promise](std::istringstream& stream) {
-        _promise.set_value(std::move(std::make_shared<mesh_ref>(load_mesh_data(stream))));
+        _promise.set_value(std::move(std::make_shared<mesh_ref>(load_geometry_data(stream))));
     });
     return _promise.get_future();
 }

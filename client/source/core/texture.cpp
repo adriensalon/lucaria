@@ -74,7 +74,7 @@ GLuint texture_ref::get_id() const
     return _texture_id;
 }
 
-image_data load_texture_data(std::istringstream& texture_stream)
+image_data load_image_data(std::istringstream& texture_stream)
 {
     image_data _data;
     {
@@ -92,7 +92,7 @@ std::shared_future<std::shared_ptr<texture_ref>> fetch_texture(const std::filesy
 {
     std::promise<std::shared_ptr<texture_ref>>& _promise = detail::promises[texture_path.string()];
     fetch_file(texture_path, [&_promise](std::istringstream& stream) {
-        _promise.set_value(std::move(std::make_shared<texture_ref>(load_texture_data(stream))));
+        _promise.set_value(std::move(std::make_shared<texture_ref>(load_image_data(stream))));
     });
     return _promise.get_future();
 }

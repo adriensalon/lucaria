@@ -7,6 +7,7 @@
 
 #include <core/program.hpp>
 #include <core/fetch.hpp>
+#include <core/hash.hpp>
 
 namespace detail {
 
@@ -316,7 +317,7 @@ shader_data load_shader_data(std::istringstream& program_stream)
 
 std::future<std::shared_ptr<program_ref>> fetch_program(const std::filesystem::path& vertex_path, const std::filesystem::path& fragment_path)
 {
-    const std::size_t _hash = compute_hash_files({ vertex_path, fragment_path });
+    const std::size_t _hash = path_vector_hash()({ vertex_path, fragment_path });
     std::pair<std::vector<shader_data>, std::promise<std::shared_ptr<program_ref>>>& _promise_pair = detail::promises[_hash];
     fetch_files({ vertex_path.string(), fragment_path.string() }, [&_promise_pair, _hash](const std::size_t, const std::size_t, std::istringstream& stream) {
         _promise_pair.first.emplace_back(std::move(load_shader_data(stream)));

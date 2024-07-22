@@ -9,6 +9,7 @@
 #include <core/cubemap.hpp>
 #include <core/texture.hpp>
 #include <core/fetch.hpp>
+#include <core/hash.hpp>
 
 namespace detail {
 
@@ -67,7 +68,7 @@ cubemap_ref::cubemap_ref(const cubemap_data& data)
     } 
 #if LUCARIA_DEBUG
     else {
-        std::cout << "Invalid channels across cubemap textures or channels != 3 or channels != 4" << std::endl;
+        std::cout << "Invalid channels across cubemap images or channels != 3 or channels != 4" << std::endl;
         std::terminate();
     }
 #endif
@@ -95,20 +96,20 @@ glm::uint cubemap_ref::get_id() const
     return _cubemap_id;
 }
 
-std::shared_future<std::shared_ptr<cubemap_ref>> fetch_cubemap(const std::array<std::filesystem::path, 6>& texture_paths)
+std::shared_future<std::shared_ptr<cubemap_ref>> fetch_cubemap(const std::array<std::filesystem::path, 6>& image_paths)
 {
-    const std::vector<std::filesystem::path> _paths(texture_paths.begin(), texture_paths.end());
-    const std::size_t _hash = compute_hash_files(_paths);
+    const std::vector<std::filesystem::path> _paths(image_paths.begin(), image_paths.end());
+    const std::size_t _hash = path_vector_hash()(_paths);
     std::pair<std::vector<std::pair<cubemap_side, image_data>>, std::promise<std::shared_ptr<cubemap_ref>>>& _promise_pair = detail::promises[_hash];
     fetch_files(_paths, [&_promise_pair](const std::size_t _side_index, const std::size_t, std::istringstream& stream) {
-        _promise_pair.first.emplace_back(static_cast<cubemap_side>(_side_index), std::move(load_texture_data(stream)));
+        _promise_pair.first.emplace_back(static_cast<cubemap_side>(_side_index), std::move(load_image_data(stream)));
         if (_promise_pair.first.size() == 6) {
-            std::array<image_data, 6> _textures;
+            std::array<image_data, 6> _images;
             for (glm::uint _index = 0; _index < 6; ++_index) {
                 const std::pair<const cubemap_side, image_data>& _pair = _promise_pair.first[_index];
-                _textures[static_cast<glm::uint>(_pair.first)] = std::move(_pair.second);
+                _images[static_cast<glm::uint>(_pair.first)] = std::move(_pair.second);
             }
-            _promise_pair.second.set_value(std::move(std::make_shared<cubemap_ref>(_textures)));
+            _promise_pair.second.set_value(std::move(std::make_shared<cubemap_ref>(_images)));
         }
     });
     return _promise_pair.second.get_future();

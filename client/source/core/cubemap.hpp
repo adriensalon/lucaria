@@ -38,4 +38,4 @@ private:
     glm::uint _cubemap_id;
 };
 
-std::shared_future<std::shared_ptr<cubemap_ref>> fetch_cubemap(const std::array<std::filesystem::path, 6>& texture_paths);
+std::shared_future<std::shared_ptr<cubemap_ref>> fetch_cubemap(const std::array<std::filesystem::path, 6>& image_paths);

@@ -18,9 +18,9 @@ static std::optional<texture_ref> texture = std::nullopt;
 
 static void update_texture_if_needed()
 {
-    if (!texture.has_value() && future_texture.has_value() && get_is_future_ready(future_texture.value())) {
-        texture = texture_ref(future_texture.value().get());
-    }
+    // if (!texture.has_value() && future_texture.has_value() && get_is_future_ready(future_texture.value())) {
+    //     texture = texture_ref(future_texture.value().get());
+    // }
 }
 
 static bool is_fetching_complete()

@@ -7,6 +7,7 @@
 
 #include <core/material.hpp>
 #include <core/fetch.hpp>
+#include <core/hash.hpp>
 
 namespace detail {
 
@@ -41,7 +42,7 @@ std::shared_future<std::shared_ptr<material_ref>> fetch_material(const std::unor
 {
     std::vector<std::filesystem::path> _paths;
     std::transform(texture_paths.begin(), texture_paths.end(), std::back_inserter(_paths), [](const auto& _pair) { return _pair.second; });
-    const std::size_t _hash = compute_hash_files(_paths);
+    const std::size_t _hash = path_vector_hash()(_paths);
     std::tuple<std::vector<material_texture>, std::unordered_map<material_texture, image_data>, std::promise<std::shared_ptr<material_ref>>>& _promise_tuple = detail::promises[_hash];
     std::vector<material_texture>& _keys = std::get<0>(_promise_tuple);
     for (const std::pair<const material_texture, std::filesystem::path>& _pair : texture_paths) {
@@ -51,7 +52,7 @@ std::shared_future<std::shared_ptr<material_ref>> fetch_material(const std::unor
     std::promise<std::shared_ptr<material_ref>>& _promise = std::get<2>(_promise_tuple);
     fetch_files(_paths, [&_keys, &_storage, &_promise](const std::size_t texture_index, const std::size_t textures_count, std::istringstream& stream) {
         const material_texture _texture_map = _keys[texture_index];
-        _storage.emplace(_texture_map, std::move(load_texture_data(stream)));
+        _storage.emplace(_texture_map, std::move(load_image_data(stream)));
         if (_storage.size() == textures_count) {
             _promise.set_value(std::move(std::make_shared<material_ref>(_storage)));
         }

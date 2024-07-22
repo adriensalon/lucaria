@@ -64,4 +64,4 @@ private:
     btCollisionShape* _shape;
 };
 
-std::shared_future<std::shared_ptr<shape_ref>> fetch_shape(const std::filesystem::path& mesh_path);
+std::shared_future<std::shared_ptr<shape_ref>> fetch_shape(const std::filesystem::path& geometry_path);

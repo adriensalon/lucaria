@@ -5,6 +5,7 @@
 
 #include <core/skeleton.hpp>
 #include <core/fetch.hpp>
+#include <core/load.hpp>
 
 namespace detail {
 

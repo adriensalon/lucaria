@@ -11,6 +11,12 @@
 
 #include <core/layer.hpp>
 
+struct kinematic_collision {
+    float distance;
+    glm::vec3 position;
+    glm::vec3 normal;
+};
+
 enum struct rigidbody_kind {
     kinematic,
     dynamic
@@ -18,12 +24,6 @@ enum struct rigidbody_kind {
 
 template <rigidbody_kind kind_t>
 struct rigidbody_component;
-
-struct kinematic_collision {
-    float distance;
-    glm::vec3 position;
-    glm::vec3 normal;
-};
 
 template <>
 struct rigidbody_component<rigidbody_kind::kinematic> {
