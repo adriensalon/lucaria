@@ -25,8 +25,8 @@ void level_persistent_player(entt::registry& registry)
         .position_warp(glm::vec3(-14.f, 6.2f, 3.f));
     
     registry.emplace<kinematic_rigidbody_component>(_player_entity)
-        .glide_wall()
-        .snap_ground()
+        .collide_walls()
+        .collide_grounds()
         .collide_layer(kinematic_layer::layer_0)
         .capsule(0.5f, 1.83f);
     

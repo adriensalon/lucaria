@@ -43,7 +43,7 @@ rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_ki
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_kind::kinematic>::capsule(const float radius, const float height)
+rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_kind::kinematic>::capsule(const glm::float32 radius, const glm::float32 height)
 {
     _shape = new btCapsuleShape(radius, height);
     _ghost = new btPairCachingGhostObject();
@@ -55,13 +55,13 @@ rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_ki
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_kind::kinematic>::snap_ground(const bool enabled)
+rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_kind::kinematic>::collide_grounds(const bool enabled)
 {
     _is_snap_ground = enabled;
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_kind::kinematic>::glide_wall(const bool enabled)
+rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_kind::kinematic>::collide_walls(const bool enabled)
 {
     if (enabled) {
         _mask = _mask | bulletgroupID_collider_wall;
@@ -130,7 +130,7 @@ rigidbody_component<rigidbody_kind::dynamic>::~rigidbody_component()
     }
 }
 
-rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind::dynamic>::mass(const float kilograms)
+rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind::dynamic>::mass(const glm::float32 kilograms)
 {
     _mass = kilograms;
     if (_is_instanced) {
@@ -149,7 +149,7 @@ rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind::dynamic>::capsule(const float radius, const float height)
+rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind::dynamic>::capsule(const glm::float32 radius, const glm::float32 height)
 {
     _shape = new btCapsuleShape(radius, height);
     _state = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 0)));

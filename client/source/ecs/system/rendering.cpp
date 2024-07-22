@@ -327,10 +327,10 @@ void rendering_system::draw_unlit_meshes()
     program_ref& _unlit_program = _persistent_unlit_program.value();
     each_level([&](entt::registry& _registry) {
         _registry.view<model_component<model_shader::unlit>, transform_component>().each([&](model_component<model_shader::unlit>& _model, transform_component& _transform) {
-            if (_model._mesh.has_value() && _model._material.has_value() && _model._material.value().get_has_texture(material_texture::color)) {
+            if (_model._mesh.has_value() && _model._color.has_value()) {
                 const glm::mat4 _model_view_projection = detail::camera_view_projection * _transform._transform;
                 const mesh_ref& _mesh = _model._mesh.value();
-                const texture_ref& _color = _model._material.value().get_texture(material_texture::color);
+                const texture_ref& _color = _model._color.value();
                 _unlit_program.use();
                 _unlit_program.bind("vert_position", _mesh, mesh_attribute::position);
                 _unlit_program.bind("vert_texcoord", _mesh, mesh_attribute::texcoord);
@@ -340,9 +340,9 @@ void rendering_system::draw_unlit_meshes()
             }
         });
         _registry.view<model_component<model_shader::unlit>>(entt::exclude<transform_component>).each([&](model_component<model_shader::unlit>& _model) {
-            if (_model._mesh.has_value() && _model._material.has_value() && _model._material.value().get_has_texture(material_texture::color)) {
+            if (_model._mesh.has_value() && _model._color.has_value()) {
                 const mesh_ref& _mesh = _model._mesh.value();
-                const texture_ref& _color = _model._material.value().get_texture(material_texture::color);
+                const texture_ref& _color = _model._color.value();
                 _unlit_program.use();
                 _unlit_program.bind("vert_position", _mesh, mesh_attribute::position);
                 _unlit_program.bind("vert_texcoord", _mesh, mesh_attribute::texcoord);

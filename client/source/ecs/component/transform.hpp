@@ -20,6 +20,10 @@ struct transform_component {
     transform_component& transform_relative(const glm::mat4& transform);
     transform_component& transform_warp(const glm::mat4& transform);
 
+    glm::vec3 get_position() const;
+    glm::quat get_rotation() const;
+    glm::vec3 get_euler() const;
+
 private:
     glm::mat4 _transform = glm::mat4(1.0f);
     std::optional<std::reference_wrapper<transform_component>> _parent = std::nullopt; // remove only children

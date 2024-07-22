@@ -17,7 +17,7 @@ btVector3 get_random_color() {
     // Create a random number generator with a uniform distribution between 0.0 and 1.0
     static std::random_device rd; // Obtain a random number from hardware
     static std::mt19937 generator(rd()); // Seed the generator
-    static std::uniform_real_distribution<float> distribution(0.0f, 1.0f); // Define the range
+    static std::uniform_real_distribution<glm::float32> distribution(0.0f, 1.0f); // Define the range
 
     // Generate random colors
     return btVector3(distribution(generator), distribution(generator), distribution(generator));
@@ -61,7 +61,7 @@ void print_matrix(const ozz::math::Float4x4& matrix)
 
 void motion_system::blend_animations()
 {
-    float _time_delta = get_time_delta();
+    glm::float32 _time_delta = get_time_delta();
     each_level([](entt::registry& registry) {
         registry.view<animator_component>().each([](animator_component& animator) {
             if (animator._skeleton.has_value()) {
@@ -176,14 +176,14 @@ void motion_system::collect_debug_guizmos()
                         int parent_index = joint_parents[i];
                         const auto& current_transform = model_transforms[i];
                         if (parent_index == ozz::animation::Skeleton::kNoParent) {
-                            // Handle root bone separately
-                            // Draw a cone or line from the origin to the root bone's position
-                            btVector3 root_position(current_transform.cols[3].x, current_transform.cols[3].y, current_transform.cols[3].z);
-                            btVector3 origin(0.0f, -1.0f, 0.0f); // Use an appropriate origin
-                            btVector3 color(1.0f, 1.0f, 0.0f); // Green color for root bone
+                            // // Handle root bone separately
+                            // // Draw a cone or line from the origin to the root bone's position
+                            // btVector3 root_position(current_transform.cols[3].x, current_transform.cols[3].y, current_transform.cols[3].z);
+                            // btVector3 origin(0.0f, -1.0f, 0.0f); // Use an appropriate origin
+                            // btVector3 color(1.0f, 1.0f, 0.0f); // Green color for root bone
 
-                            // Draw the root bone
-                            detail::draw_guizmo_cone(origin, root_position, color);
+                            // // Draw the root bone
+                            // detail::draw_guizmo_cone(origin, root_position, color);
                             continue;
                         }
 

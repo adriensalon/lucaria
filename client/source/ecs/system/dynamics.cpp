@@ -15,7 +15,7 @@
 
 namespace detail {
 
-static float snap_ground_distance = 10.f;
+static glm::float32 snap_ground_distance = 10.f;
 static btDefaultCollisionConfiguration* collision_configuration = nullptr;
 static btCollisionDispatcher* dispatcher = nullptr;
 static btBroadphaseInterface* overlapping_pair_cache = nullptr;
@@ -123,11 +123,11 @@ static void compute_collide_wall(const kinematic_collision& collision, glm::mat4
     transform[3] = glm::vec4(_new_position, 1.0f);
 }
 
-static bool compute_snap_ground(glm::mat4& transform, kinematic_collision& collision, const float half_height)
+static bool compute_snap_ground(glm::mat4& transform, kinematic_collision& collision, const glm::float32 half_height)
 {
     glm::vec3 position = glm::vec3(transform[3]);
-    btVector3 start(position.x, position.y + detail::snap_ground_distance, position.z);
-    btVector3 end(position.x, position.y - detail::snap_ground_distance, position.z);
+    btVector3 start(position.x, position.y, position.z);
+    btVector3 end(position.x, position.y - detail::snap_ground_distance - half_height, position.z);
     btCollisionWorld::ClosestRayResultCallback rayCallback(start, end);
     rayCallback.m_collisionFilterGroup = bulletgroupID_kinematic_rigidbody;
     rayCallback.m_collisionFilterMask = bulletgroupID_collider_ground;
@@ -149,7 +149,7 @@ void dynamics_system::use_gravity(const glm::vec3& newtons)
     detail::dynamics_world->setGravity(btVector3(newtons.x, newtons.y, newtons.z));
 }
 
-void dynamics_system::use_snap_ground_distance(const float meters)
+void dynamics_system::use_snap_ground_distance(const glm::float32 meters)
 {
     detail::snap_ground_distance = meters;
 }

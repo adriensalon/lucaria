@@ -40,11 +40,11 @@ struct model_component<model_shader::unlit> {
     model_component(model_component&& other) = default;
     model_component& operator=(model_component&& other) = default;
 
-    model_component& material(const std::shared_future<std::shared_ptr<material_ref>>& fetched_material);
+    model_component& color(const std::shared_future<std::shared_ptr<texture_ref>>& fetched_texture);
     model_component& mesh(const std::shared_future<std::shared_ptr<mesh_ref>>& fetched_mesh);
 
 private:
-    fetch_container<material_ref> _material = {};
+    fetch_container<texture_ref> _color = {};
     fetch_container<mesh_ref> _mesh = {};
     friend struct rendering_system;
 };

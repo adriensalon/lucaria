@@ -10,17 +10,21 @@
 #include <glm/glm.hpp>
 
 #include <core/layer.hpp>
-
-struct kinematic_collision {
-    float distance;
-    glm::vec3 position;
-    glm::vec3 normal;
-};
+#include <core/fetch.hpp>
+#include <core/shape.hpp>
 
 enum struct rigidbody_kind {
     kinematic,
     dynamic
 };
+
+struct kinematic_collision {
+    glm::float32 distance;
+    glm::vec3 position;
+    glm::vec3 normal;
+};
+
+// dynamic collisions ?
 
 template <rigidbody_kind kind_t>
 struct rigidbody_component;
@@ -36,9 +40,13 @@ struct rigidbody_component<rigidbody_kind::kinematic> {
 
     rigidbody_component& motion_box();
     rigidbody_component& box(const glm::vec3& half_extents);
-    rigidbody_component& capsule(const float radius, const float height);
-    rigidbody_component& snap_ground(const bool enabled = true);
-    rigidbody_component& glide_wall(const bool enabled = true);
+    rigidbody_component& sphere(const glm::float32 radius);
+    rigidbody_component& capsule(const glm::float32 radius, const glm::float32 height);
+    rigidbody_component& cylinder(const glm::float32 radius, const glm::float32 height);
+    rigidbody_component& cone(const glm::float32 radius, const glm::float32 height);
+    rigidbody_component& shape(const std::shared_future<std::shared_ptr<shape_ref>>& fetched_shape);
+    rigidbody_component& collide_grounds(const bool enabled = true);
+    rigidbody_component& collide_walls(const bool enabled = true);
     rigidbody_component& collide_layer(const kinematic_layer layer, const bool enabled = true);
 
     const std::optional<kinematic_collision>& get_ground_collision() const;
@@ -48,9 +56,10 @@ struct rigidbody_component<rigidbody_kind::kinematic> {
 private:
     bool _is_instanced = false;
     bool _is_motion_box = false;
+    fetch_container<shape_ref> _trueshape = {};
     btCollisionShape* _shape = nullptr;
     btPairCachingGhostObject* _ghost = nullptr;
-    float _half_height = 0.f;
+    glm::float32 _half_height = 0.f;
     bool _is_snap_ground = false;
     short _group = bulletgroupID_kinematic_rigidbody;
     short _mask = 0;
@@ -70,19 +79,25 @@ struct rigidbody_component<rigidbody_kind::dynamic> {
     rigidbody_component& operator=(rigidbody_component&& other);
     ~rigidbody_component();
 
-    rigidbody_component& mass(const float kilograms);
+    rigidbody_component& mass(const glm::float32 kilograms);
     rigidbody_component& box(const glm::vec3& half_extents);
-    rigidbody_component& capsule(const float radius, const float height);
+    rigidbody_component& sphere(const glm::float32 radius);
+    rigidbody_component& capsule(const glm::float32 radius, const glm::float32 height);
+    rigidbody_component& cylinder(const glm::float32 radius, const glm::float32 height);
+    rigidbody_component& cone(const glm::float32 radius, const glm::float32 height);
+    rigidbody_component& shape(const std::shared_future<std::shared_ptr<shape_ref>>& fetched_shape);
     rigidbody_component& collide_dynamics(const bool enabled = true);
-    // add force
-    // add impulsion
+    rigidbody_component& add_force(const glm::vec3& force);
+    rigidbody_component& add_impulsion(const glm::vec3& force);
+
+    // dynamic collisions ?
 
 private:
     bool _is_instanced = false;
     btCollisionShape* _shape = nullptr;
     btDefaultMotionState* _state = nullptr;
     btRigidBody* _rigidbody = nullptr;
-    float _mass = 0.f;
+    glm::float32 _mass = 0.f;
     short _group = bulletgroupID_dynamic_rigidbody;
     short _mask = bulletgroupID_collider_ground | bulletgroupID_collider_wall;
     friend struct dynamics_system;
