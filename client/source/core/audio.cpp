@@ -1,5 +1,6 @@
 #include <filesystem>
 #include <iostream>
+#include <vector>
 
 #include <AL/al.h>
 #include <AL/alc.h>

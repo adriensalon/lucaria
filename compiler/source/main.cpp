@@ -1,30 +1,17 @@
-#include <iostream>
 #include <filesystem>
 #include <functional>
-#include <unordered_map>
+#include <iostream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
-#include <data/armature.hpp>
-#include <data/mesh.hpp>
-#include <data/shader.hpp>
-#include <data/texture.hpp>
+#include <import/assimp.hpp>
+#include <import/stb.hpp>
+#include <import/text.hpp>
 
-// tool
-extern void execute_gltf2ozz(const std::filesystem::path& input_path, const std::filesystem::path& output_directory);
+#include <export/binary.hpp>
 
-// import
-extern armature_data import_armature(const std::filesystem::path& input_path);
-extern geometry_data import_mesh(const std::filesystem::path& input_path, bool& has_armature);
-extern shader_data import_shader(const std::filesystem::path& input_path);
-extern image_data import_texture(const std::filesystem::path& input_path);
-
-// export
-extern void export_binary(const armature_data& data, const std::filesystem::path& output_path);
-extern void export_binary(const geometry_data& data, const std::filesystem::path& output_path);
-extern void export_binary(const shader_data& data, const std::filesystem::path& output_path);
-extern void export_binary(const image_data& data, const std::filesystem::path& output_path);
-extern void export_etc(const image_data& data, const std::filesystem::path& output_path);
+#include <tool/gltf2ozz.hpp>
 
 namespace detail {
 
@@ -74,7 +61,7 @@ std::filesystem::path process_gltf2ozz_command(const commands_map& commands)
         std::terminate();
     }
     std::filesystem::path _gltf2ozz_executable = commands.at("-gltf2ozz").at(0);
-    if (!std::filesystem::exists(_gltf2ozz_executable)) {        
+    if (!std::filesystem::exists(_gltf2ozz_executable)) {
         std::cout << "The path provided with option -gltf2ozz must be an existing application" << std::endl;
         std::terminate();
     }
@@ -93,7 +80,7 @@ std::filesystem::path process_input_command(const commands_map& commands)
         std::terminate();
     }
     std::filesystem::path _input_dir = commands.at("-i").at(0);
-    if (!std::filesystem::is_directory(_input_dir)) {        
+    if (!std::filesystem::is_directory(_input_dir)) {
         std::cout << "The path provided with option -i must be an existing directory" << std::endl;
         std::terminate();
     }
@@ -112,7 +99,7 @@ std::filesystem::path process_output_command(const commands_map& commands)
         std::terminate();
     }
     std::filesystem::path _output_dir = commands.at("-o").at(0);
-    if (!std::filesystem::is_directory(_output_dir)) {        
+    if (!std::filesystem::is_directory(_output_dir)) {
         std::cout << "The path provided with option -o must be an existing directory" << std::endl;
         std::terminate();
     }
@@ -166,21 +153,26 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
     const std::string _extension = input_file.extension().generic_string();
     if (_extension == ".ttf") {
         // export_binary(import_font(input_file), output_file);
+
     } else if (_extension == ".glb" || _extension == ".gltf") {
-        bool _has_armature;
-        export_binary(import_mesh(input_file, _has_armature), output_file);
-        // export_binary(import_volume(input_file), output_file.parent_path() / (output_file.stem().string() + "_volume.bin"));
-        if (_has_armature) {
-            export_binary(import_armature(input_file), output_file.parent_path() / (output_file.stem().string() + "_armature.bin"));
-            // compile_ozz_resources(input_file, output_file.parent_path());
+        imported_assimp_data _imported_geometry = import_assimp(input_file);
+        export_binary(_imported_geometry.mesh_geometry, output_file);
+        if (_imported_geometry.armature_geometry.has_value()) {
+            export_binary(_imported_geometry.armature_geometry.value(), output_file.parent_path() / (output_file.stem().string() + "_armature.bin"));
             execute_gltf2ozz(input_file, output_file.parent_path());
         }
-    } else if (_extension == ".glsl") {
-        export_binary(import_shader(input_file), output_file);
+
+    } else if (_extension == ".jpg" || _extension == ".png" || _extension == ".bmp") {
+        imported_stb_data _imported_image = import_stb(input_file);
+        export_binary(_imported_image.image, output_file);
+
+    } else if (_extension == ".glsl" || _extension == ".txt" || _extension == ".vert" || _extension == ".frag") {
+        imported_text_data _imported_shader = import_text(input_file);
+        export_binary(_imported_shader.shader, output_file);
+
     } else if (_extension == ".wav") {
-        // export_binary(import_sound(input_file), output_file); 
-    } else if (_extension == ".jpg") {
-        export_binary(import_texture(input_file), output_file); 
+        // export_binary(import_sound(input_file), output_file);
+
     } else {
         std::cout << "Invalid input file with extension " << _extension << std::endl;
         std::terminate();
@@ -198,7 +190,7 @@ int main(int argc, char* argv[])
     std::filesystem::path _input_dir = detail::process_input_command(_commands);
     std::filesystem::path _output_dir = detail::process_output_command(_commands);
     detail::gltf2ozz_executable = detail::process_gltf2ozz_command(_commands);
-    detail::iterate_recursive(_input_dir, [&] (const std::filesystem::path& _input_file) {
+    detail::iterate_recursive(_input_dir, [&](const std::filesystem::path& _input_file) {
         std::cout << std::endl;
         std::filesystem::path _relative_input_file = detail::substract_relative(_input_dir, _input_file);
         std::filesystem::path _relative_output_file = _relative_input_file;

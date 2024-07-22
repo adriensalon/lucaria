@@ -9,7 +9,7 @@
 
 #include <glm/glm.hpp>
 
-#include <data/texture.hpp>
+#include <data/image.hpp>
 
 enum struct cubemap_side : glm::uint {
     positive_x = 0,

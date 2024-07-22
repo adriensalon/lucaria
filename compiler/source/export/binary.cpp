@@ -1,14 +1,10 @@
 
 #include <fstream>
-#include <filesystem>
 
-#include <cereal/archives/portable_binary.hpp>
 #include <cereal/archives/json.hpp>
+#include <cereal/archives/portable_binary.hpp>
 
-#include <data/armature.hpp>
-#include <data/mesh.hpp>
-#include <data/shader.hpp>
-#include <data/texture.hpp>
+#include <export/binary.hpp>
 
 namespace detail {
 
@@ -27,22 +23,20 @@ void compile_binary_or_json(const resource_data_t& data, const std::filesystem::
 
 }
 
-void export_binary(const armature_data& data, const std::filesystem::path& output_path)
-{
-    detail::compile_binary_or_json(data, output_path);
-}
-
 void export_binary(const geometry_data& data, const std::filesystem::path& output_path)
 {
     detail::compile_binary_or_json(data, output_path);
+    std::cout << "   Exporting binary geometry " << output_path.filename() << std::endl;
 }
 
 void export_binary(const shader_data& data, const std::filesystem::path& output_path)
 {
     detail::compile_binary_or_json(data, output_path);
+    std::cout << "   Exporting binary shader " << output_path.filename() << std::endl;
 }
 
 void export_binary(const image_data& data, const std::filesystem::path& output_path)
 {
     detail::compile_binary_or_json(data, output_path);
+    std::cout << "   Exporting binary image " << output_path.filename() << std::endl;
 }

@@ -8,7 +8,7 @@
 
 #include <glm/glm.hpp>
 
-#include <data/mesh.hpp>
+#include <data/geometry.hpp>
 
 enum struct mesh_attribute {
     position,

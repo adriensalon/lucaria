@@ -5,7 +5,7 @@
 
 #include <glm/glm.hpp>
 
-#include <data/texture.hpp>
+#include <data/image.hpp>
 
 struct texture_ref {
     texture_ref() = delete;

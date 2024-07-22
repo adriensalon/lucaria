@@ -1,6 +1,7 @@
-#include <filesystem>
 #include <iostream>
 #include <string>
+
+#include <tool/gltf2ozz.hpp>
 
 void execute_gltf2ozz(const std::filesystem::path& input_path, const std::filesystem::path& output_directory)
 {
@@ -16,10 +17,10 @@ void execute_gltf2ozz(const std::filesystem::path& input_path, const std::filesy
             std::filesystem::path _destination_file;
             if (_entry.path().filename().string() == "skeleton.ozz") {
                 _destination_file = output_directory / (input_path.stem().string() + "_skeleton.bin");
-                std::cout << "   Exporting skeleton data binary..." << std::endl;
+                std::cout << "   Exporting ozz skeleton " << _destination_file.filename() << std::endl;
             } else {
                 _destination_file = output_directory / (input_path.stem().string() + "_animation_" + _entry.path().stem().string() + ".bin");
-                std::cout << "   Exporting animation data binary..." << std::endl;
+                std::cout << "   Exporting ozz animation " << _destination_file.filename() << std::endl;
             }
             std::filesystem::rename(_entry.path(), _destination_file);
         }

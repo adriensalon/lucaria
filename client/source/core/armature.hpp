@@ -7,7 +7,7 @@
 
 #include <glm/glm.hpp>
 
-#include <data/armature.hpp>
+#include <data/geometry.hpp>
 
 struct armature_ref {
     armature_ref() = delete;
@@ -16,7 +16,7 @@ struct armature_ref {
     armature_ref(armature_ref&& other) = default;
     armature_ref& operator=(armature_ref&& other) = default;
 
-    armature_ref(const armature_data& data);
+    armature_ref(const geometry_data& data);
     std::vector<glm::vec3>& get_positions();
     const std::vector<glm::uvec4>& get_bones() const;
     const std::vector<glm::vec4>& get_weights() const;
@@ -29,5 +29,5 @@ private:
     std::vector<glm::vec4> _weights;
 };
 
-armature_data load_armature_data(std::istringstream& armature_stream);
+// armature_data load_armature_data(std::istringstream& armature_stream);
 std::shared_future<std::shared_ptr<armature_ref>> fetch_armature(const std::filesystem::path& armature_path);

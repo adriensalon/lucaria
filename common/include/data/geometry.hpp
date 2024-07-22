@@ -3,9 +3,8 @@
 #include <vector>
 
 #include <cereal/types/vector.hpp>
-#include <glm/glm.hpp>
 
-#include <data/glm.hpp>
+#include <data/math.hpp>
 
 struct geometry_data {
     glm::uint count = 0; // vertices count
@@ -15,6 +14,8 @@ struct geometry_data {
     std::vector<glm::vec3> tangents = {};
     std::vector<glm::vec3> bitangents = {};
     std::vector<glm::vec2> texcoords = {};
+    std::vector<glm::uvec4> bones = {};
+    std::vector<glm::vec4> weights = {};
     std::vector<glm::uvec3> indices = {};
     
     template <typename archive_t>
@@ -27,6 +28,8 @@ struct geometry_data {
         archive(cereal::make_nvp("tangents", tangents));
         archive(cereal::make_nvp("bitangents", bitangents));
         archive(cereal::make_nvp("texcoords", texcoords));
+        archive(cereal::make_nvp("bones", bones));
+        archive(cereal::make_nvp("weights", weights));
         archive(cereal::make_nvp("indices", indices));
     }
 };
