@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include <entt/entt.hpp>
 #include <glm/glm.hpp>
 

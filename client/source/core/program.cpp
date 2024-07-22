@@ -8,10 +8,9 @@
 #include <core/program.hpp>
 #include <core/fetch.hpp>
 #include <core/hash.hpp>
+#include <core/window.hpp>
 
 namespace detail {
-
-extern void graphics_assert();
 
 glm::uint create_shader(const GLenum type, const std::string& text)
 {
@@ -133,7 +132,7 @@ program_ref::program_ref(const shader_data& vertex, const shader_data& fragment)
     glDeleteShader(_fragment_id);
     _program_attributes = detail::enumerate_attributes(_program_id);
     _program_uniforms = detail::enumerate_uniforms(_program_id);
-    detail::graphics_assert();
+    graphics_assert();
 }
 
 void program_ref::use() const
@@ -155,7 +154,7 @@ void program_ref::bind(const std::string& name, const mesh_ref& mesh, const mesh
     glBindBuffer(GL_ARRAY_BUFFER, _buffer_ids.at(attribute));
     glVertexAttribPointer(_location, _size, GL_FLOAT, GL_FALSE, _size * sizeof(GLfloat), (void*)0);
     glEnableVertexAttribArray(_location);
-    detail::graphics_assert();
+    graphics_assert();
 }
 
 #if LUCARIA_GUIZMO
@@ -171,7 +170,7 @@ void program_ref::bind_guizmo(const std::string& name, const guizmo_mesh_ref& me
     glBindBuffer(GL_ARRAY_BUFFER, _positions_id);
     glVertexAttribPointer(_location, _size, GL_FLOAT, GL_FALSE, _size * sizeof(GLfloat), (void*)0);
     glEnableVertexAttribArray(_location);
-    detail::graphics_assert();
+    graphics_assert();
 }
 
 #endif
@@ -182,7 +181,7 @@ void program_ref::bind(const std::string& name, const cubemap_ref& cubemap, cons
     glUniform1i(_location, slot);
     glActiveTexture(GL_TEXTURE0 + slot);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.get_id());
-    detail::graphics_assert();
+    graphics_assert();
 }
 
 void program_ref::bind(const std::string& name, const texture_ref& texture, const glm::uint slot) const
@@ -191,7 +190,7 @@ void program_ref::bind(const std::string& name, const texture_ref& texture, cons
     glUniform1i(_location, slot);
     glActiveTexture(GL_TEXTURE0 + slot);
     glBindTexture(GL_TEXTURE_2D, texture.get_id());
-    detail::graphics_assert();
+    graphics_assert();
 }
 
 template <>
@@ -199,7 +198,7 @@ void program_ref::bind<GLfloat>(const std::string& name, const GLfloat& value)
 {
     const glm::int32 _location = _program_uniforms.at(name);
     glUniform1f(_location, value);
-    detail::graphics_assert();
+    graphics_assert();
 }
 
 template <>
@@ -209,7 +208,7 @@ void program_ref::bind<std::vector<GLfloat>>(const std::string& name, const std:
     const glm::uint _count = value.size();
     const GLfloat* _ptr = const_cast<const GLfloat*>(value.data());
     glUniform1fv(_location, _count, _ptr);
-    detail::graphics_assert();
+    graphics_assert();
 }
 
 template <>
@@ -217,7 +216,7 @@ void program_ref::bind<glm::vec2>(const std::string& name, const glm::vec2& valu
 {
     const glm::int32 _location = _program_uniforms.at(name);
     glUniform2f(_location, value.x, value.y);
-    detail::graphics_assert();
+    graphics_assert();
 }
 
 template <>
@@ -227,7 +226,7 @@ void program_ref::bind<std::vector<glm::vec2>>(const std::string& name, const st
     const glm::uint _count = value.size();
     const GLfloat* _ptr = reinterpret_cast<const GLfloat*>(value.data());
     glUniform2fv(_location, _count, _ptr);
-    detail::graphics_assert();
+    graphics_assert();
 }
 
 template <>
@@ -235,7 +234,7 @@ void program_ref::bind<glm::vec3>(const std::string& name, const glm::vec3& valu
 {
     const glm::int32 _location = _program_uniforms.at(name);
     glUniform3f(_location, value.x, value.y, value.z);
-    detail::graphics_assert();
+    graphics_assert();
 }
 
 template <>
@@ -245,7 +244,7 @@ void program_ref::bind<std::vector<glm::vec3>>(const std::string& name, const st
     const glm::uint _count = value.size();
     const GLfloat* _ptr = reinterpret_cast<const GLfloat*>(value.data());
     glUniform3fv(_location, _count, _ptr);
-    detail::graphics_assert();
+    graphics_assert();
 }
 
 template <>
@@ -253,7 +252,7 @@ void program_ref::bind<glm::vec4>(const std::string& name, const glm::vec4& valu
 {
     const glm::int32 _location = _program_uniforms.at(name);
     glUniform4f(_location, value.x, value.y, value.z, value.w);
-    detail::graphics_assert();
+    graphics_assert();
 }
 
 template <>
@@ -263,7 +262,7 @@ void program_ref::bind<std::vector<glm::vec4>>(const std::string& name, const st
     const glm::uint _count = value.size();
     const GLfloat* _ptr = reinterpret_cast<const GLfloat*>(value.data());
     glUniform4fv(_location, _count, _ptr);
-    detail::graphics_assert();
+    graphics_assert();
 }
 
 // TODO MATRICES
@@ -273,7 +272,7 @@ void program_ref::bind<glm::mat4x4>(const std::string& name, const glm::mat4x4& 
 {
     const glm::int32 _location = _program_uniforms.at(name);
     glUniformMatrix4fv(_location, 1, GL_FALSE, glm::value_ptr(value));
-    detail::graphics_assert();
+    graphics_assert();
 }
 
 void program_ref::draw() const
@@ -281,7 +280,7 @@ void program_ref::draw() const
     glEnable(GL_DEPTH_TEST);
     glBindVertexArray(_array_id);
     glDrawElements(GL_TRIANGLES, _indices_count, GL_UNSIGNED_INT, 0);
-    detail::graphics_assert();
+    graphics_assert();
 }
 
 #if LUCARIA_GUIZMO
@@ -291,7 +290,7 @@ void program_ref::draw_guizmo() const
     glDisable(GL_DEPTH_TEST);
     glBindVertexArray(_array_id);
     glDrawElements(GL_LINES, _indices_count, GL_UNSIGNED_INT, 0);
-    detail::graphics_assert();
+    graphics_assert();
 }
 
 #endif

@@ -2,7 +2,7 @@
 
 #include <core/fetch.hpp>
 #include <core/layer.hpp>
-#include <core/navmesh.hpp>
+#include <core/shape.hpp>
 
 struct collider_component {
     collider_component() = default;

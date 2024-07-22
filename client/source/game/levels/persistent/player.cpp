@@ -39,7 +39,7 @@ void level_persistent_player(entt::registry& registry)
         .skeleton(fetch_skeleton("assets/player_skeleton.bin"))
         .animations({ 
             { animationID_player_lol1, fetch_animation("assets/player_animation_AnimLol.bin") },
-            // { animationID_player_lol2, fetch_animation("assets/lol_animation_AnimLol.bin") },
+            // { animationID_player_lol2, fetch_animation("assets/lol_animation_Anim_0_Armature.001.bin") },
             // { animationID_player_lol2, fetch_animation("assets/lol_animation_AnimLol.bin") },
             // { animationID_player_lol2, fetch_animation("assets/lol_animation_AnimLol.bin") },
         });

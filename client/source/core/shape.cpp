@@ -1,6 +1,5 @@
 #include <core/fetch.hpp>
-#include <core/navmesh.hpp>
-
+#include <core/shape.hpp>
 
 namespace detail {
 

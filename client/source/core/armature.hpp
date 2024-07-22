@@ -29,5 +29,4 @@ private:
     std::vector<glm::vec4> _weights;
 };
 
-// armature_data load_armature_data(std::istringstream& armature_stream);
 std::shared_future<std::shared_ptr<armature_ref>> fetch_armature(const std::filesystem::path& armature_path);
