@@ -1,35 +1,62 @@
 #include <iostream>
+#include <random>
 
 #include <btBulletDynamicsCommon.h>
-#include <ozz/animation/runtime/local_to_model_job.h>
 #include <glm/gtc/type_ptr.hpp>
+#include <ozz/animation/runtime/local_to_model_job.h>
 
+
+#include <core/window.hpp>
+#include <core/world.hpp>
 #include <ecs/component/animator.hpp>
 #include <ecs/component/model.hpp>
 #include <ecs/component/transform.hpp>
 #include <ecs/system/motion.hpp>
-#include <core/world.hpp>
-#include <core/window.hpp>
+
+btVector3 get_random_color() {
+    // Create a random number generator with a uniform distribution between 0.0 and 1.0
+    static std::random_device rd; // Obtain a random number from hardware
+    static std::mt19937 generator(rd()); // Seed the generator
+    static std::uniform_real_distribution<float> distribution(0.0f, 1.0f); // Define the range
+
+    // Generate random colors
+    return btVector3(distribution(generator), distribution(generator), distribution(generator));
+}
+
+
+
 
 namespace detail {
 
 #if LUCARIA_GUIZMO
 extern void draw_guizmo_line(const btVector3& from, const btVector3& to, const btVector3& color);
 
-void draw_guizmo_cone(const btVector3& from, const btVector3& to, const btVector3& color) 
+void draw_guizmo_cone(const btVector3& from, const btVector3& to, const btVector3& color)
 {
     draw_guizmo_line(from, to, color);
 }
 
 #endif
 
-glm::mat4 ozz_to_glm(const ozz::math::Float4x4& matrix) 
+glm::mat4 ozz_to_glm(const ozz::math::Float4x4& matrix)
 {
     glm::mat4 _matrix;
     std::memcpy(glm::value_ptr(_matrix), matrix.cols, sizeof(matrix.cols));
     return _matrix;
 }
 
+}
+
+void print_matrix(const ozz::math::Float4x4& matrix)
+{
+    // const ozz::math::SimdFloat4 cols[] = matrix.cols;
+
+    // Print the matrix in a 4x4 grid
+    std::cout << std::endl;
+    std::cout << "[ " << matrix.cols[0].x << " " << matrix.cols[1].x << " " << matrix.cols[2].x << " " << matrix.cols[3].x << " ]" << std::endl;
+    std::cout << "[ " << matrix.cols[0].y << " " << matrix.cols[1].y << " " << matrix.cols[2].y << " " << matrix.cols[3].y << " ]" << std::endl;
+    std::cout << "[ " << matrix.cols[0].z << " " << matrix.cols[1].z << " " << matrix.cols[2].z << " " << matrix.cols[3].z << " ]" << std::endl;
+    std::cout << "[ " << matrix.cols[0].w << " " << matrix.cols[1].w << " " << matrix.cols[2].w << " " << matrix.cols[3].w << " ]" << std::endl;
 }
 
 void motion_system::blend_animations()
@@ -48,7 +75,8 @@ void motion_system::blend_animations()
 
                         // update controller with delta_time
 
-                        // _controller.time_ratio += 0.01f;
+                        _controller.time_ratio += 0.1f;
+                        _controller.time_ratio = glm::mod(_controller.time_ratio, 1.f);
 
                         ozz::animation::SamplingJob sampling_job;
                         sampling_job.animation = &_animation;
@@ -88,6 +116,8 @@ void motion_system::apply_root_motion()
                 const glm::uint _motion_bone_index = animator._motion_bone_index.value();
                 ozz::math::Float4x4& _ozz_motion_transform = animator._model_transforms[_motion_bone_index];
                 const glm::mat4 _motion_transform = detail::ozz_to_glm(_ozz_motion_transform);
+                // print_matrix(_ozz_motion_transform);
+
                 // const ozz::math::Float4x4 _ozz_inverse_motion_transform = ozz::math::Invert(_ozz_motion_transform);
                 // _ozz_motion_transform = ozz::math::Float4x4::identity();
                 // for (glm::uint _index = 0; _index < animator._model_transforms.size() && _index != _motion_bone_index; ++_index) {
@@ -108,13 +138,13 @@ void motion_system::apply_foot_ik()
 
 void motion_system::skin_meshes()
 {
-    each_level([](entt::registry& registry) {
-        registry.view<animator_component, blockout_model_component>().each([](animator_component& animator, blockout_model_component& model) {
-            // std::vector<glm::vec3> _positions;
-            // // todo
-            // model._mesh.value().update_positions(_positions);
-        });
-    });
+    // each_level([](entt::registry& registry) {
+    //     registry.view<animator_component, blockout_model_component>().each([](animator_component& animator, blockout_model_component& model) {
+    //         // std::vector<glm::vec3> _positions;
+    //         // // todo
+    //         // model._mesh.value().update_positions(_positions);
+    //     });
+    // });
 }
 
 void motion_system::collect_debug_guizmos()
@@ -135,7 +165,7 @@ void motion_system::collect_debug_guizmos()
                     for (size_t i = 0; i < model_transforms.size(); ++i) {
                         int parent_index = joint_parents[i];
                         if (parent_index == ozz::animation::Skeleton::kNoParent) {
-                            continue;  // Skip root joints
+                            continue; // Skip root joints
                         }
 
                         // Get the current and parent joint transforms
@@ -145,7 +175,7 @@ void motion_system::collect_debug_guizmos()
                         // Convert Ozz transforms to Bullet vectors
                         btVector3 from(parent_transform.cols[3].x, parent_transform.cols[3].y, parent_transform.cols[3].z);
                         btVector3 to(current_transform.cols[3].x, current_transform.cols[3].y, current_transform.cols[3].z);
-                        btVector3 color(1.0f, 0.0f, 0.0f);  // Red color for bones
+                        btVector3 color(1.0f, 0.0f, 0.0f); // Red color for bones
 
                         // Draw the cone
                         detail::draw_guizmo_cone(from, to, color);

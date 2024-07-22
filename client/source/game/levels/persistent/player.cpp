@@ -34,11 +34,11 @@ void level_persistent_player(entt::registry& registry)
         .mesh(fetch_mesh("assets/player.bin"));
     
     registry.emplace<animator_component>(_player_entity)
-        .motion_bone_index(0)
-        .armature(fetch_armature("assets/lol_armature.bin"))
-        .skeleton(fetch_skeleton("assets/lol_skeleton.bin"))
+        .motion_bone_index(3)
+        .armature(fetch_armature("assets/player_armature.bin"))
+        .skeleton(fetch_skeleton("assets/player_skeleton.bin"))
         .animations({ 
-            { animationID_player_lol1, fetch_animation("assets/lol_animation_AnimLol.bin") },
+            { animationID_player_lol1, fetch_animation("assets/player_animation_AnimLol.bin") },
             // { animationID_player_lol2, fetch_animation("assets/lol_animation_AnimLol.bin") },
             // { animationID_player_lol2, fetch_animation("assets/lol_animation_AnimLol.bin") },
             // { animationID_player_lol2, fetch_animation("assets/lol_animation_AnimLol.bin") },
