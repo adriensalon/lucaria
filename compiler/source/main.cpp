@@ -11,6 +11,7 @@
 #include <import/text.hpp>
 
 #include <export/binary.hpp>
+#include <export/vorbis.hpp>
 
 #include <tool/gltf2ozz.hpp>
 
@@ -173,7 +174,7 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
 
     } else if (_extension == ".wav") {
         imported_audiofile_data _imported_data = import_audiofile(input_file);
-        // export_binary(import_sound(input_file), output_file);
+        export_vorbis(_imported_data.song_audio, output_file);
 
     } else {
         std::cout << "Invalid input file with extension " << _extension << std::endl;
