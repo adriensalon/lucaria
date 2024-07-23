@@ -6,20 +6,20 @@
 #include <vector>
 
 #include <import/assimp.hpp>
-#include <import/audiofile.hpp>
 #include <import/stb.hpp>
 #include <import/text.hpp>
 
 #include <export/binary.hpp>
-#include <export/vorbis.hpp>
 
 #include <tool/gltf2ozz.hpp>
+#include <tool/oggenc.hpp>
 
 namespace detail {
 
 using commands_map = std::unordered_map<std::string, std::vector<std::string>>;
 
 static std::filesystem::path gltf2ozz_executable;
+static std::filesystem::path oggenc_executable;
 
 commands_map extract_args(int argc, char* argv[])
 {
@@ -69,6 +69,25 @@ std::filesystem::path process_gltf2ozz_command(const commands_map& commands)
     }
     std::cout << "-- Tool gltf2ozz provided at " << _gltf2ozz_executable << std::endl;
     return _gltf2ozz_executable;
+}
+
+std::filesystem::path process_oggenc_command(const commands_map& commands)
+{
+    if (commands.find("-oggenc") == commands.end()) {
+        std::cout << "Command -oggenc must be provided" << std::endl;
+        std::terminate();
+    }
+    if (commands.at("-oggenc").size() != 1) {
+        std::cout << "Only one file must be provided with option -oggenc" << std::endl;
+        std::terminate();
+    }
+    std::filesystem::path _oggenc_executable = commands.at("-oggenc").at(0);
+    if (!std::filesystem::exists(_oggenc_executable)) {
+        std::cout << "The path provided with option -oggenc must be an existing application" << std::endl;
+        std::terminate();
+    }
+    std::cout << "-- Tool oggenc provided at " << _oggenc_executable << std::endl;
+    return _oggenc_executable;
 }
 
 std::filesystem::path process_input_command(const commands_map& commands)
@@ -173,8 +192,7 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
         export_binary(_imported_shader.shader, output_file);
 
     } else if (_extension == ".wav") {
-        imported_audiofile_data _imported_data = import_audiofile(input_file);
-        export_vorbis(_imported_data.song_audio, output_file);
+        execute_oggenc(input_file, output_file.parent_path());
 
     } else {
         std::cout << "Invalid input file with extension " << _extension << std::endl;
@@ -193,6 +211,7 @@ int main(int argc, char* argv[])
     std::filesystem::path _input_dir = detail::process_input_command(_commands);
     std::filesystem::path _output_dir = detail::process_output_command(_commands);
     detail::gltf2ozz_executable = detail::process_gltf2ozz_command(_commands);
+    detail::oggenc_executable = detail::process_oggenc_command(_commands);
     detail::iterate_recursive(_input_dir, [&](const std::filesystem::path& _input_file) {
         std::cout << std::endl;
         std::filesystem::path _relative_input_file = detail::substract_relative(_input_dir, _input_file);

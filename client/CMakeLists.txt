@@ -12,8 +12,16 @@ endfunction()
 
 if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 	set(MESSAGE_QUIET ON)
+		add_subdirectory(../external/ogg ${CMAKE_BINARY_DIR}/external/ogg)
+		set(OGG_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/../external/ogg/include)
+		set(OGG_LIBRARIES ogg)
+
 		add_subdirectory(../external/entt ${CMAKE_BINARY_DIR}/external/entt)
 		add_subdirectory(../external/glm ${CMAKE_BINARY_DIR}/external/glm)
+		
+		option(INSTALL_CMAKE_PACKAGE_MODULE OFF)
+		add_subdirectory(../external/vorbis ${CMAKE_BINARY_DIR}/external/vorbis)
+		set(VORBIS_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/../external/vorbis/include)
 		
 		add_subdirectory(../external/imgui ${CMAKE_BINARY_DIR}/external/imgui)
 		target_compile_options(imgui PRIVATE -Wno-format-security)
@@ -29,6 +37,11 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 		add_subdirectory(../external/bullet ${CMAKE_BINARY_DIR}/external/bullet)
 		target_compile_options(BulletSoftBody PRIVATE -Wno-single-bit-bitfield-constant-conversion)
 		target_compile_options(BulletSoftBody PRIVATE -Wno-implicit-const-int-float-conversion)
+		set(BULLET_INCLUDE_DIRS 
+			${CMAKE_CURRENT_LIST_DIR}/../external/bullet/src
+			${CMAKE_CURRENT_LIST_DIR}/../external/bullet/src/BulletCollision
+			${CMAKE_CURRENT_LIST_DIR}/../external/bullet/src/BulletDynamics
+			${CMAKE_CURRENT_LIST_DIR}/../external/bullet/src/LinearMath)
 
 		set(JUST_INSTALL_CEREAL ON)
 		set(SKIP_PERFORMANCE_COMPARISON ON)
@@ -49,11 +62,9 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 	
 	target_compile_options(lucaria PRIVATE -Wno-format-security)
 
-	target_include_directories(lucaria PRIVATE
-		${CMAKE_CURRENT_LIST_DIR}/../external/bullet/src
-		${CMAKE_CURRENT_LIST_DIR}/../external/bullet/src/BulletCollision
-		${CMAKE_CURRENT_LIST_DIR}/../external/bullet/src/BulletDynamics
-		${CMAKE_CURRENT_LIST_DIR}/../external/bullet/src/LinearMath)
+	target_include_directories(lucaria PRIVATE ${BULLET_INCLUDE_DIRS})
+	target_include_directories(lucaria PRIVATE ${OGG_INCLUDE_DIRS})
+	target_include_directories(lucaria PRIVATE ${VORBIS_INCLUDE_DIRS})
 
 	target_include_directories(lucaria PRIVATE ${CMAKE_CURRENT_LIST_DIR}/source)
 	target_include_directories(lucaria PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../common/include)
@@ -63,6 +74,8 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 	target_link_libraries(lucaria PRIVATE EnTT)
 	target_link_libraries(lucaria PRIVATE glm)
 	target_link_libraries(lucaria PRIVATE imgui)
+	target_link_libraries(lucaria PRIVATE ogg)
+	target_link_libraries(lucaria PRIVATE vorbis vorbisenc vorbisfile)
 	target_link_libraries(lucaria PRIVATE ozz_animation)
 
 	target_compile_definitions(lucaria PRIVATE LUCARIA_DEBUG)

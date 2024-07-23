@@ -23,5 +23,5 @@ private:
     glm::uint _texture_id;
 };
 
-image_data load_image_data(std::istringstream& texture_stream);
+image_data load_image_data(std::istringstream& image_stream);
 std::shared_future<std::shared_ptr<texture_ref>> fetch_texture(const std::filesystem::path& texture_path);

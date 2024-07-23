@@ -14,13 +14,16 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 	return()
 else()
 	set(MESSAGE_QUIET ON)
-		add_subdirectory(../external/audiofile ${CMAKE_BINARY_DIR}/external/audiofile)
 		add_subdirectory(../external/glm ${CMAKE_BINARY_DIR}/external/glm)
-		add_subdirectory(../external/libogg ${CMAKE_BINARY_DIR}/external/libogg)
 		add_subdirectory(../external/stb ${CMAKE_BINARY_DIR}/external/stb)
 		
+		add_subdirectory(../external/ogg ${CMAKE_BINARY_DIR}/external/ogg)
+		set(OGG_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/../external/ogg/include)
+		set(OGG_LIBRARIES ogg)
+
 		option(INSTALL_CMAKE_PACKAGE_MODULE OFF)
-		add_subdirectory(../external/libvorbis ${CMAKE_BINARY_DIR}/external/libvorbis)
+		add_subdirectory(../external/vorbis ${CMAKE_BINARY_DIR}/external/vorbis)
+		set(VORBIS_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/../external/vorbis/include)
 		if (MSVC)
 			target_compile_options(vorbis PRIVATE /wd4244)
 			target_compile_options(vorbis PRIVATE /wd4267)
@@ -32,6 +35,10 @@ else()
 			target_compile_options(vorbisfile PRIVATE /wd4267)
 			target_compile_options(vorbisfile PRIVATE /wd4305)
 		endif()
+		
+		add_subdirectory(../external/vorbistools ${CMAKE_BINARY_DIR}/external/vorbistools)
+		target_include_directories(oggenc PRIVATE ${OGG_INCLUDE_DIRS})
+		target_include_directories(oggenc PRIVATE ${VORBIS_INCLUDE_DIRS})
 
 		set(JUST_INSTALL_CEREAL ON)
 		set(SKIP_PERFORMANCE_COMPARISON ON)
@@ -62,25 +69,32 @@ else()
 
 	target_include_directories(lucaria_compiler PRIVATE ${CMAKE_CURRENT_LIST_DIR}/source)
 	target_include_directories(lucaria_compiler PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../common/include)
+	target_include_directories(lucaria_compiler PRIVATE ${OGG_INCLUDE_DIRS})
+	target_include_directories(lucaria_compiler PRIVATE ${VORBIS_INCLUDE_DIRS})
 
-	target_link_libraries(lucaria_compiler PRIVATE AudioFile)
 	target_link_libraries(lucaria_compiler PRIVATE cereal)
 	target_link_libraries(lucaria_compiler PRIVATE glm)
 	target_link_libraries(lucaria_compiler PRIVATE ogg)
 	target_link_libraries(lucaria_compiler PRIVATE stb_image)
 	target_link_libraries(lucaria_compiler PRIVATE assimp)
-	target_link_libraries(lucaria_compiler PRIVATE vorbis)
+	target_link_libraries(lucaria_compiler PRIVATE vorbis vorbisenc vorbisfile)
 
 	# target_compile_definitions(lucaria_compiler PRIVATE LUCARIA_DEBUG)
 	# target_compile_definitions(lucaria_compiler PRIVATE LUCARIA_JSON)
 	set_target_properties(lucaria_compiler PROPERTIES CXX_STANDARD 17)
 
 	add_dependencies(lucaria_compiler gltf2ozz)
+	add_dependencies(lucaria_compiler oggenc)
 
 	add_custom_command(TARGET lucaria_compiler POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy
 		"$<TARGET_FILE_DIR:gltf2ozz>/gltf2ozz.exe"
 		"$<TARGET_FILE_DIR:lucaria_compiler>/gltf2ozz.exe"
-		MAIN_DEPENDENCY gltf2ozz
-	)
+		MAIN_DEPENDENCY gltf2ozz)
+
+	add_custom_command(TARGET lucaria_compiler POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy
+		"$<TARGET_FILE_DIR:oggenc>/oggenc.exe"
+		"$<TARGET_FILE_DIR:lucaria_compiler>/oggenc.exe"
+		MAIN_DEPENDENCY oggenc)
 endif()

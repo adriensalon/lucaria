@@ -13,6 +13,8 @@
 #include <game/gameplay/runner.hpp>
 #include <game/levels/levels.hpp>
 
+#include <core/sound.hpp>
+
 int main()
 {
     register_level(levelID_persistent_player, level_persistent_player);
@@ -20,6 +22,8 @@ int main()
 
     add_level(levelID_persistent_player);
     add_level(levelID_blockout_test);
+
+    std::shared_future<std::shared_ptr<sound_ref>> ok = fetch_sound("assets/anorlondo.ogg");
 
     run([]() {
         player_system::update();
