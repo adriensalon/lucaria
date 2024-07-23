@@ -1,12 +1,16 @@
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include <vector>
 
+
+#include <AL/al.h>
+#include <AL/alc.h>
 #include <vorbis/vorbisfile.h>
 
 #include <core/fetch.hpp>
 #include <core/sound.hpp>
+#include <core/window.hpp>
 
 namespace detail {
 
@@ -14,50 +18,55 @@ struct VorbisStream {
     std::istringstream& stream;
     std::vector<char> buffer;
 
-    VorbisStream(std::istringstream& dataStream) : stream(dataStream) {
-        // Copy data from istringstream to buffer
+    VorbisStream(std::istringstream& dataStream)
+        : stream(dataStream)
+    {
         stream.seekg(0, std::ios::end);
         size_t size = stream.tellg();
         buffer.resize(size);
         stream.seekg(0, std::ios::beg);
         stream.read(buffer.data(), size);
-        // Reset stream to read from the buffer
         stream.str(std::string(buffer.begin(), buffer.end()));
     }
 };
 
-
-// Callback functions for OggVorbis to read from std::istringstream
-size_t read_func(void* ptr, size_t size, size_t nmemb, void* datasource) {
+size_t read_func(void* ptr, size_t size, size_t nmemb, void* datasource)
+{
     VorbisStream* vs = static_cast<VorbisStream*>(datasource);
     vs->stream.read(static_cast<char*>(ptr), size * nmemb);
     return vs->stream.gcount();
 }
 
-int seek_func(void* datasource, ogg_int64_t offset, int whence) {
+int seek_func(void* datasource, ogg_int64_t offset, int whence)
+{
     VorbisStream* vs = static_cast<VorbisStream*>(datasource);
     std::istringstream::pos_type pos;
-
     switch (whence) {
-        case SEEK_SET: pos = offset; break;
-        case SEEK_CUR: pos = vs->stream.tellg() + std::istringstream::pos_type(offset); break;
-        case SEEK_END: pos = vs->buffer.size() - offset; break;
-        default: return -1;
+    case SEEK_SET:
+        pos = offset;
+        break;
+    case SEEK_CUR:
+        pos = vs->stream.tellg() + std::istringstream::pos_type(offset);
+        break;
+    case SEEK_END:
+        pos = vs->buffer.size() - offset;
+        break;
+    default:
+        return -1;
     }
-
-    vs->stream.clear();  // Clear any error state
+    vs->stream.clear();
     vs->stream.seekg(pos);
-
     return vs->stream.good() ? 0 : -1;
 }
 
-long tell_func(void* datasource) {
+long tell_func(void* datasource)
+{
     VorbisStream* vs = static_cast<VorbisStream*>(datasource);
     return static_cast<long>(vs->stream.tellg());
 }
 
-int close_func(void* datasource) {
-    // No actual resource to close in this example
+int close_func(void* datasource)
+{
     return 0;
 }
 
@@ -72,20 +81,35 @@ sound_ref::sound_ref(sound_ref&& other)
 
 sound_ref& sound_ref::operator=(sound_ref&& other)
 {
-    // todo
+    _buffer_id = other._buffer_id;
+    _is_instanced = true;
+    other._is_instanced = false;
     return *this;
 }
 
 sound_ref::~sound_ref()
 {
     if (_is_instanced) {
-        // todo
+        alDeleteBuffers(1, &_buffer_id);
     }
 }
 
 sound_ref::sound_ref(const audio_data& data)
 {
-    // todo
+    _buffer_id = 0;
+    alGenBuffers(1, &_buffer_id);
+#if LUCARIA_DEBUG
+    if (_buffer_id == 0) {
+        std::cout << "Failed to generate OpenAL buffer." << std::endl;
+        std::terminate();
+    }
+#endif
+    alBufferData(_buffer_id, alGetEnumValue("AL_FORMAT_MONO_FLOAT32"), data.samples.data(), static_cast<ALsizei>(data.samples.size() * sizeof(glm::float32)), data.sample_rate);
+#if LUCARIA_DEBUG
+    audio_assert();
+    std::cout << "Created sound buffer of size " << data.samples.size() << " with id " << _buffer_id << std::endl;
+#endif
+    _is_instanced = true;
 }
 
 glm::uint sound_ref::get_id() const
@@ -98,35 +122,35 @@ audio_data load_audio_data(std::istringstream& audio_stream)
     audio_data _data;
     detail::VorbisStream vorbisStream(audio_stream);
     OggVorbis_File vorbis;
-
     ov_callbacks callbacks;
     callbacks.read_func = detail::read_func;
     callbacks.seek_func = detail::seek_func;
     callbacks.tell_func = detail::tell_func;
     callbacks.close_func = detail::close_func;
-
     if (ov_open_callbacks(&vorbisStream, &vorbis, nullptr, 0, callbacks) != 0) {
-        // std::cerr << "Invalid Ogg file '" << argv[1] << "'." << std::endl;
-        // return -1;
+        std::cout << "Invalid Ogg file." << std::endl;
+        std::terminate();
     }
-
-    // Print sound information
     vorbis_info* info = ov_info(&vorbis, -1);
-    std::cout << "Ogg file " << info->rate << " Hz, " << info->channels << " channels, " << info->bitrate_nominal / 1024 << " kbit/s." << std::endl;
-
-    // Read the entire sound stream
-    unsigned char buf[4096];
-    while (true) {
-        int section = 0;
-        long bytes = ov_read(&vorbis, reinterpret_cast<char*>(buf), sizeof(buf), 0, 2, 1, &section);
-        std::cout << "reading " << bytes << std::endl;
-        if (bytes <= 0)  // End of file or error
-            break;
+    if (info->channels != 1) {
+        std::cout << "Only mono files are supported." << std::endl;
+        ov_clear(&vorbis);
+        std::terminate();
     }
-
-    // Close sound file
+    _data.sample_rate = info->rate;
+    float** pcm_channels;
+    int bitstream;
+    long samples;
+    while ((samples = ov_read_float(&vorbis, &pcm_channels, 512, &bitstream)) > 0) {
+        for (long i = 0; i < samples; ++i) {
+            _data.samples.push_back(pcm_channels[0][i]);
+        }
+    }
+    if (samples < 0) {
+        std::cout << "Error reading Ogg file." << std::endl;
+        std::terminate();
+    }
     ov_clear(&vorbis);
-
     return _data;
 }
 
