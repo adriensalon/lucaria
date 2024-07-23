@@ -23,7 +23,8 @@ int main()
     add_level(levelID_persistent_player);
     add_level(levelID_blockout_test);
 
-    std::shared_future<std::shared_ptr<sound_ref>> ok = fetch_sound("assets/anorlondo.ogg");
+    std::shared_future<std::shared_ptr<sound_ref>> ok = fetch_sound("assets/anorlondo.bin");
+    
 
     run([]() {
         player_system::update();

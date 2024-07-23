@@ -7,7 +7,7 @@ void execute_oggenc(const std::filesystem::path& input_path, const std::filesyst
 {
     const std::filesystem::path _oggenc_file = std::filesystem::current_path() / "compiler" / "oggenc";
     const std::filesystem::path _destination_file = (output_directory / input_path.stem()).string() + ".bin";
-    const std::string _command = _oggenc_file.string() + " "  + input_path.string() + " -o " + _destination_file.string();
+    const std::string _command = _oggenc_file.string() + " "  + input_path.string() + " -o " + _destination_file.string() + " --downmix";
     const int _result = std::system(_command.c_str());
     if (_result != 0) {
         std::cout << "Tool oggenc failed with exit code " << _result << "." << std::endl;
