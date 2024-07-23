@@ -19,3 +19,4 @@ glm::vec2& get_mouse_position_delta();
 glm::float64 get_time_delta();
 bool is_audio_locked();
 bool is_mouse_locked();
+void on_audio_locked(const std::function<void()>& callback);

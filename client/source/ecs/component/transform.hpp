@@ -30,5 +30,6 @@ private:
     std::vector<std::reference_wrapper<transform_component>> _children = {};
     friend struct dynamics_system;
     friend struct motion_system;
+    friend struct mixer_system;
     friend struct rendering_system;
 };

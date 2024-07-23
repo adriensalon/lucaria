@@ -25,6 +25,7 @@ int main()
     add_level(levelID_blockout_test);
 
     std::shared_future<std::shared_ptr<sound_ref>> ok;
+    ok = fetch_sound("assets/anorlondo.bin");
 
     run([&ok]() {
         player_system::update();
@@ -35,7 +36,6 @@ int main()
         
         if (get_keys()["h"]) {
             
-            ok = fetch_sound("assets/anorlondo.bin");
     
         }
 

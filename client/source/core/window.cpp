@@ -48,6 +48,7 @@ static glm::vec2 mouse_position_delta = { 0.f, 0.f };
 static glm::vec2 accumulated_mouse_position_delta = { 0.f, 0.f };
 static glm::float64 time_delta = 0.f; // seconds
 static std::function<void()> update_callback = nullptr;
+static std::vector<std::function<void()>> on_audio_locked_callbacks = {};
 
 static bool is_audio_locked = false;
 static bool is_mouse_locked = false;
@@ -127,6 +128,13 @@ void process_lock()
 {
     if (!is_audio_locked) {
         is_audio_locked = setup_openal();
+        if (is_audio_locked) {
+            // TODO execute callbacks
+            for (const auto& _callback : on_audio_locked_callbacks) {
+                _callback();
+            }
+            on_audio_locked_callbacks.clear();
+        }
     }
     if (!is_mouse_locked) {
         emscripten_assert(emscripten_request_pointerlock("#canvas", 1));
@@ -421,4 +429,13 @@ bool is_audio_locked()
 bool is_mouse_locked()
 {
     return detail::is_mouse_locked;
+}
+
+void on_audio_locked(const std::function<void()>& callback)
+{
+    if (detail::is_audio_locked) {
+        callback();
+    } else {
+        detail::on_audio_locked_callbacks.emplace_back(callback);
+    }
 }

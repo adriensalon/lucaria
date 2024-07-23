@@ -157,8 +157,10 @@ audio_data load_audio_data(std::istringstream& audio_stream)
 std::shared_future<std::shared_ptr<sound_ref>> fetch_sound(const std::filesystem::path& sound_path)
 {
     std::promise<std::shared_ptr<sound_ref>>& _promise = detail::promises[sound_path.string()];
-    fetch_file(sound_path, [&_promise](std::istringstream& stream) {
-        _promise.set_value(std::move(std::make_shared<sound_ref>(load_audio_data(stream))));
+    on_audio_locked([&_promise, sound_path] () {
+        fetch_file(sound_path, [&_promise](std::istringstream& stream) {
+            _promise.set_value(std::move(std::make_shared<sound_ref>(load_audio_data(stream))));
+        });
     });
     return _promise.get_future();
 }
