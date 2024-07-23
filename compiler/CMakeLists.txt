@@ -16,7 +16,7 @@ else()
 	set(MESSAGE_QUIET ON)
 		add_subdirectory(../external/glm ${CMAKE_BINARY_DIR}/external/glm)
 		add_subdirectory(../external/stb ${CMAKE_BINARY_DIR}/external/stb)
-		
+				
 		add_subdirectory(../external/ogg ${CMAKE_BINARY_DIR}/external/ogg)
 		set(OGG_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/../external/ogg/include)
 		set(OGG_LIBRARIES ogg)
@@ -55,6 +55,8 @@ else()
 		set(BUILD_SHARED_LIBS OFF)
 		add_subdirectory(../external/assimp ${CMAKE_BINARY_DIR}/external/assimp)
 
+		add_subdirectory(../external/etcpak ${CMAKE_BINARY_DIR}/external/etcpak) # we use zlib from assimp
+
 		set(ozz_build_tools ON)
 		set(ozz_build_fbx OFF)
 		set(ozz_build_gltf ON)
@@ -83,6 +85,7 @@ else()
 	# target_compile_definitions(lucaria_compiler PRIVATE LUCARIA_JSON)
 	set_target_properties(lucaria_compiler PROPERTIES CXX_STANDARD 17)
 
+	add_dependencies(lucaria_compiler etcpak)
 	add_dependencies(lucaria_compiler gltf2ozz)
 	add_dependencies(lucaria_compiler oggenc)
 
