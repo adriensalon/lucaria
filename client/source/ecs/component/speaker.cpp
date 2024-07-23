@@ -1,3 +1,7 @@
+
+#include <AL/al.h>
+#include <AL/alc.h>
+
 #include <ecs/component/speaker.hpp>
 
 speaker_component& speaker_component::sounds(const std::unordered_map<glm::uint, std::shared_future<std::shared_ptr<sound_ref>>>& fetched_sounds)
@@ -5,7 +9,14 @@ speaker_component& speaker_component::sounds(const std::unordered_map<glm::uint,
     for (const std::pair<const glm::uint, std::shared_future<std::shared_ptr<sound_ref>>>& _pair : fetched_sounds) {
         const glm::uint _name = _pair.first;
         _sounds[_name].emplace(_pair.second, [this, _name] () {
-            // todo create source
+            alGenSources(1, &(_source_ids[_name]));
+#if LUCARIA_DEBUG
+            if (!_source_ids.at(_name)) {
+                std::cout << "Failed to generate OpenAL source." << std::endl;
+                std::terminate();
+            }
+#endif
+            alSourcei(_source_ids[_name], AL_BUFFER, _sounds.at(_name).value().get_id());
         });
         _controllers[_name] = sound_controller();
     }

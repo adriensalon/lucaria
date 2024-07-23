@@ -24,23 +24,14 @@ int main()
     add_level(levelID_persistent_player);
     add_level(levelID_blockout_test);
 
-    std::shared_future<std::shared_ptr<sound_ref>> ok;
-    ok = fetch_sound("assets/anorlondo.bin");
-
-    run([&ok]() {
+    run([]() {
         player_system::update();
         
         rendering_system::clear_debug_guizmos();
         rendering_system::clear_screen();
         rendering_system::compute_projection();
         
-        if (get_keys()["h"]) {
-            
-    
-        }
-
         scripting_system::resolve_controller_states();
-
 
         motion_system::blend_animations();
         motion_system::apply_root_motion();

@@ -6,6 +6,8 @@
 #include <ecs/component/model.hpp>
 #include <ecs/component/transform.hpp>
 #include <ecs/component/rigidbody.hpp>
+#include <ecs/component/speaker.hpp>
+#include <ecs/system/mixer.hpp>
 #include <ecs/system/rendering.hpp>
 #include <ecs/system/scripting.hpp>
 
@@ -33,6 +35,9 @@ void level_persistent_player(entt::registry& registry)
     registry.emplace<blockout_model_component>(_player_entity)
         .mesh(fetch_mesh("assets/player.bin"));
     
+    registry.emplace<speaker_component>(_player_entity)
+        .sounds({{ 666, fetch_sound("assets/anorlondo.bin") }});
+    
     registry.emplace<animator_component>(_player_entity)
         .motion_bone_index(4)
         .armature(fetch_armature("assets/player_armature.bin"))
@@ -52,4 +57,5 @@ void level_persistent_player(entt::registry& registry)
         });
 
     // rendering_system::use_camera_transform(_player_transform);
+    mixer_system::use_listener_transform(_player_transform);
 }
