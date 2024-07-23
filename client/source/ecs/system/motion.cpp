@@ -155,47 +155,56 @@ void motion_system::collect_debug_guizmos()
 {
 #if LUCARIA_GUIZMO
     each_level([](entt::registry& registry) {
-        registry.view<animator_component>().each([](animator_component& animator) {
+        registry.view<animator_component>(entt::exclude<transform_component>).each([](animator_component& animator) {
             if (animator._skeleton.has_value()) {
-                // add cones from animator._model_transforms with detail::draw_line(from, to, color)
-
-                skeleton_ref& skeleton = animator._skeleton.value();
                 const ozz::vector<ozz::math::Float4x4>& model_transforms = animator._model_transforms;
-                // Ensure the skeleton and model transforms are valid
                 if (!model_transforms.empty()) {
-                    const auto& joint_parents = skeleton.joint_parents();
-
-                    // Check sizes match
+                    const auto& joint_parents = animator._skeleton.value().joint_parents();
+#if LUCARIA_DEBUG
                     if (model_transforms.size() != joint_parents.size()) {
                         std::cout << "Mismatch between model transforms and joint parents sizes." << std::endl;
                         std::terminate();
                     }
-
-                    // Iterate through each joint to draw cones
+#endif
                     for (size_t i = 0; i < model_transforms.size(); ++i) {
                         int parent_index = joint_parents[i];
-                        const auto& current_transform = model_transforms[i];
                         if (parent_index == ozz::animation::Skeleton::kNoParent) {
                             // // Handle root bone separately
-                            // // Draw a cone or line from the origin to the root bone's position
-                            // btVector3 root_position(current_transform.cols[3].x, current_transform.cols[3].y, current_transform.cols[3].z);
-                            // btVector3 origin(0.0f, -1.0f, 0.0f); // Use an appropriate origin
-                            // btVector3 color(1.0f, 1.0f, 0.0f); // Green color for root bone
-
-                            // // Draw the root bone
-                            // detail::draw_guizmo_cone(origin, root_position, color);
                             continue;
                         }
-
-                        // Get the current and parent joint transforms
-                        const auto& parent_transform = model_transforms[parent_index];
-
-                        // Convert Ozz transforms to Bullet vectors
+                        const ozz::math::Float4x4& current_transform = model_transforms[i];
+                        const ozz::math::Float4x4& parent_transform = model_transforms[parent_index];
                         btVector3 from(parent_transform.cols[3].x, parent_transform.cols[3].y, parent_transform.cols[3].z);
                         btVector3 to(current_transform.cols[3].x, current_transform.cols[3].y, current_transform.cols[3].z);
                         btVector3 color(1.0f, 0.0f, 0.0f); // Red color for bones
-
-                        // Draw the cone
+                        detail::draw_guizmo_cone(from, to, color);
+                    }
+                }
+            }
+        });
+        registry.view<animator_component, transform_component>().each([](animator_component& animator, transform_component& transform) {
+            if (animator._skeleton.has_value()) {
+                const ozz::vector<ozz::math::Float4x4>& model_transforms = animator._model_transforms;
+                if (!model_transforms.empty()) {
+                    const auto& joint_parents = animator._skeleton.value().joint_parents();
+#if LUCARIA_DEBUG
+                    if (model_transforms.size() != joint_parents.size()) {
+                        std::cout << "Mismatch between model transforms and joint parents sizes." << std::endl;
+                        std::terminate();
+                    }
+#endif
+                    for (size_t i = 0; i < model_transforms.size(); ++i) {
+                        int parent_index = joint_parents[i];
+                        if (parent_index == ozz::animation::Skeleton::kNoParent) {
+                            // // Handle root bone separately
+                            continue;
+                        }
+                        const ozz::math::Float4x4 _modifier_transform = *(reinterpret_cast<ozz::math::Float4x4*>(&transform._transform));
+                        const ozz::math::Float4x4 current_transform = _modifier_transform * model_transforms[i];
+                        const ozz::math::Float4x4 parent_transform = _modifier_transform * model_transforms[parent_index];
+                        btVector3 from(parent_transform.cols[3].x, parent_transform.cols[3].y, parent_transform.cols[3].z);
+                        btVector3 to(current_transform.cols[3].x, current_transform.cols[3].y, current_transform.cols[3].z);
+                        btVector3 color(1.0f, 0.0f, 0.0f); // Red color for bones
                         detail::draw_guizmo_cone(from, to, color);
                     }
                 }
