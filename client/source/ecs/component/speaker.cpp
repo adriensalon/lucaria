@@ -17,6 +17,7 @@ speaker_component& speaker_component::sounds(const std::unordered_map<glm::uint,
             }
 #endif
             alSourcei(_source_ids[_name], AL_BUFFER, _sounds.at(_name).value().get_id());
+            alSourcePlay(_source_ids[_name]); //CONTROVERSIAL
         });
         _controllers[_name] = sound_controller();
     }

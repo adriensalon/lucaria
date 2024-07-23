@@ -12,9 +12,10 @@ struct speaker_component {
     speaker_component() = default;
     speaker_component(const speaker_component& other) = delete;
     speaker_component& operator=(const speaker_component& other) = delete;
-    speaker_component(speaker_component&& other) = default;
-    speaker_component& operator=(speaker_component&& other) = default;
-
+    speaker_component(speaker_component&& other) = default; // todo
+    speaker_component& operator=(speaker_component&& other) = default; // todo
+ // todo delete
+ 
     speaker_component& sounds(const std::unordered_map<glm::uint, std::shared_future<std::shared_ptr<sound_ref>>>& fetched_sounds);
 
     sound_controller& get_controller(const glm::uint name);

@@ -4,6 +4,7 @@
 
 #include <ecs/system/dynamics.hpp>
 #include <ecs/system/motion.hpp>
+#include <ecs/system/mixer.hpp>
 #include <ecs/system/player.hpp>
 #include <ecs/system/rendering.hpp>
 #include <ecs/system/scripting.hpp>
@@ -49,6 +50,9 @@ int main()
         rendering_system::draw_blockout_meshes();
         rendering_system::draw_unlit_meshes();
         rendering_system::draw_debug_guizmos();
+        
+        mixer_system::apply_speaker_transforms();
+        mixer_system::apply_listener_transform();
 
         splash_system::update();
     });
