@@ -33,17 +33,17 @@ void level_persistent_player(entt::registry& registry)
         .capsule(0.5f, 1.83f);
     
     registry.emplace<blockout_model_component>(_player_entity)
-        .mesh(fetch_mesh("assets/player.bin"));
+        .mesh(fetch_mesh("assets/johnwick.bin"));
     
     registry.emplace<speaker_component>(_player_entity)
         .sounds({{ 666, fetch_sound("assets/anorlondo.bin") }});
     
     registry.emplace<animator_component>(_player_entity)
         .motion_bone_index(4)
-        .armature(fetch_armature("assets/player_armature.bin"))
-        .skeleton(fetch_skeleton("assets/player_skeleton.bin"))
+        .armature(fetch_armature("assets/johnwick_armature.bin"))
+        .skeleton(fetch_skeleton("assets/johnwick_skeleton.bin"))
         .animations({ 
-            { animationID_player_lol1, fetch_animation("assets/player_animation_AnimLol.bin") },
+            { animationID_player_lol1, fetch_animation("assets/johnwick_animation_walk.bin") },
             // { animationID_player_lol2, fetch_animation("assets/lol_animation_Anim_0_Armature.001.bin") },
             // { animationID_player_lol2, fetch_animation("assets/lol_animation_AnimLol.bin") },
             // { animationID_player_lol2, fetch_animation("assets/lol_animation_AnimLol.bin") },
