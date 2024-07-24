@@ -42,5 +42,5 @@ private:
     std::unordered_map<std::string, glm::int32> _program_uniforms;
 };
 
-shader_data load_shader_data(std::istringstream& program_stream);
-std::future<std::shared_ptr<program_ref>> fetch_program(const std::filesystem::path& vertex_path, const std::filesystem::path& fragment_path);
+shader_data load_shader_data(const std::vector<char>& shader_bytes);
+std::future<std::shared_ptr<program_ref>> fetch_program(const std::filesystem::path& vertex_shader_path, const std::filesystem::path& fragment_shader_path);

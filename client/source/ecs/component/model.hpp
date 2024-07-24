@@ -5,7 +5,7 @@
 
 #include <core/fetch.hpp>
 #include <core/mesh.hpp>
-#include <core/material.hpp>
+#include <core/texture.hpp>
 
 enum struct model_shader {
     blockout,
@@ -49,6 +49,22 @@ private:
     friend struct rendering_system;
 };
 
+enum struct pbr_texture {
+    color,
+    normal,
+    occlusion,
+    roughness,
+    metallic
+};
+
+inline const std::unordered_map<pbr_texture, std::size_t> pbr_texture_channels = {
+    { pbr_texture::color, 4 },
+    { pbr_texture::normal, 3 },
+    { pbr_texture::occlusion, 1 },
+    { pbr_texture::roughness, 1 },
+    { pbr_texture::metallic, 1 },
+};
+
 template <>
 struct model_component<model_shader::pbr> {
     model_component() = default;
@@ -57,11 +73,11 @@ struct model_component<model_shader::pbr> {
     model_component(model_component&& other) = default;
     model_component& operator=(model_component&& other) = default;
 
-    model_component& material(const std::shared_future<std::shared_ptr<material_ref>>& fetched_material);
+    model_component& textures(const std::unordered_map<pbr_texture, std::shared_future<std::shared_ptr<texture_ref>>>& fetched_material);
     model_component& mesh(const std::shared_future<std::shared_ptr<mesh_ref>>& fetched_mesh);
 
 private:
-    fetch_container<material_ref> _material = {};
+    std::unordered_map<pbr_texture, fetch_container<texture_ref>> _textures = {};
     fetch_container<mesh_ref> _mesh = {};
     friend struct rendering_system;
 };

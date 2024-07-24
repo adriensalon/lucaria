@@ -3,9 +3,9 @@
 #include <ozz/base/io/archive.h>
 #include <ozz/base/memory/allocator.h>
 
-#include <core/skeleton.hpp>
 #include <core/fetch.hpp>
 #include <core/load.hpp>
+#include <core/skeleton.hpp>
 
 namespace detail {
 
@@ -16,9 +16,9 @@ static std::unordered_map<std::string, std::promise<std::shared_ptr<skeleton_ref
 std::shared_future<std::shared_ptr<skeleton_ref>> fetch_skeleton(const std::filesystem::path& skeleton_path)
 {
     std::promise<std::shared_ptr<skeleton_ref>>& _promise = detail::promises[skeleton_path.string()];
-    fetch_file(skeleton_path, [&_promise](std::istringstream& stream) {
+    fetch_file(skeleton_path, [&_promise](const std::vector<char>& skeleton_bytes) {
         std::shared_ptr<skeleton_ref> _skeleton = std::make_shared<skeleton_ref>();
-        ozz::io::StdStringStreamWrapper _ozz_stream(stream);
+        ozz_raw_input_stream _ozz_stream(skeleton_bytes);
         {
             ozz::io::IArchive _ozz_archive(&_ozz_stream);
 #if LUCARIA_DEBUG

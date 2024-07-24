@@ -198,30 +198,15 @@ glm::uint mesh_ref::get_indices_count() const
     return _indices_count;
 }
 
-geometry_data load_geometry_data(std::istringstream& mesh_stream)
+geometry_data load_geometry_data(const std::vector<char>& geometry_bytes)
 {
     geometry_data _data;
     {
+        raw_input_stream _stream(geometry_bytes);
 #if LUCARIA_JSON
-        cereal::JSONInputArchive _archive(mesh_stream);
+        cereal::JSONInputArchive _archive(_stream);
 #else
-        cereal::PortableBinaryInputArchive _archive(mesh_stream);
-#endif
-        _archive(_data);
-    }
-    return _data;
-}
-
-geometry_data load_geometry_data(const std::vector<char>& mesh_stream)
-{
-    geometry_data _data;
-    {
-        raw_input_stream stream(mesh_stream);
-        std::cout << "lol" << std::endl;
-#if LUCARIA_JSON
-        cereal::JSONInputArchive _archive(stream);
-#else
-        cereal::PortableBinaryInputArchive _archive(stream);
+        cereal::PortableBinaryInputArchive _archive(_stream);
 #endif
         _archive(_data);
     }
@@ -231,12 +216,8 @@ geometry_data load_geometry_data(const std::vector<char>& mesh_stream)
 std::shared_future<std::shared_ptr<mesh_ref>> fetch_mesh(const std::filesystem::path& mesh_path)
 {
     std::promise<std::shared_ptr<mesh_ref>>& _promise = detail::promises[mesh_path.string()];
-    // fetch_file(mesh_path, [&_promise](std::istringstream& stream) {
-    //     _promise.set_value(std::move(std::make_shared<mesh_ref>(load_geometry_data(stream))));
-    // });
-    fetch_file(mesh_path, [&_promise](const std::vector<char>& stream) {
-
-        _promise.set_value(std::move(std::make_shared<mesh_ref>(load_geometry_data(stream))));
+    fetch_file(mesh_path, [&_promise](const std::vector<char>& geometry_bytes) {
+        _promise.set_value(std::move(std::make_shared<mesh_ref>(load_geometry_data(geometry_bytes))));
     });
     return _promise.get_future();
 }

@@ -11,6 +11,7 @@ std::size_t fetch_failed = 0;
 std::unordered_map<std::string, fetch_callback> fetch_requests;
 std::unordered_map<std::string, fetch_raw_callback> fetch_raw_requests;
 std::unordered_map<std::string, multiple_fetch_callback> multiple_fetch_requests;
+std::unordered_map<std::string, multiple_fetch_raw_callback> multiple_fetch_raw_requests;
 
 std::size_t compute_hash(std::size_t lhs, std::size_t rhs)
 {
@@ -53,8 +54,22 @@ void on_multiple_fetch_success(emscripten_fetch_t* fetch)
     std::pair<std::size_t, std::size_t>* _user_data = static_cast<std::pair<std::size_t, std::size_t>*>(fetch->userData);
     const std::size_t _index = _user_data->first;
     const std::size_t _total = _user_data->second;
-    std::cout << "fetched " << fetch->url << "  " << std::to_string(_index) << "/" << std::to_string(_total) << std::endl;
+    // std::cout << "fetched " << fetch->url << "  " << std::to_string(_index) << "/" << std::to_string(_total) << std::endl;
     multiple_fetch_requests[fetch->url](_index, _total, _stream);
+    delete _user_data;
+    emscripten_fetch_close(fetch);
+}
+
+void on_multiple_fetch_raw_success(emscripten_fetch_t* fetch)
+{
+    fetch_completed++;
+    std::cout << "Successfully fetched MULTI " << fetch->numBytes << " bytes from " << fetch->url << std::endl;
+    std::vector<char> _data(fetch->data, fetch->data + fetch->numBytes);
+    std::pair<std::size_t, std::size_t>* _user_data = static_cast<std::pair<std::size_t, std::size_t>*>(fetch->userData);
+    const std::size_t _index = _user_data->first;
+    const std::size_t _total = _user_data->second;
+    // std::cout << "fetched " << fetch->url << "  " << std::to_string(_index) << "/" << std::to_string(_total) << std::endl;
+    multiple_fetch_raw_requests[fetch->url](_index, _total, _data);
     delete _user_data;
     emscripten_fetch_close(fetch);
 }
@@ -134,6 +149,28 @@ void fetch_files(const std::vector<std::filesystem::path>& files, const multiple
             attr.attributes |= EMSCRIPTEN_FETCH_PERSIST_FILE;
         }
         attr.onsuccess = detail::on_multiple_fetch_success;
+        attr.onerror = detail::on_multiple_fetch_error;
+        attr.userData = _user_data;
+        emscripten_fetch(&attr, _file.c_str());
+    }
+}
+
+void fetch_files(const std::vector<std::filesystem::path>& files, const multiple_fetch_raw_callback& callback, const bool persist)
+{
+    const std::size_t _size = files.size();
+    detail::fetch_total += _size;
+    for (std::size_t _index = 0; _index < _size; ++_index) {
+        const std::filesystem::path& _file = files[_index];
+        std::pair<std::size_t, std::size_t>* _user_data = new std::pair<std::size_t, std::size_t>(_index, _size);
+        detail::multiple_fetch_raw_requests[_file.string()] = callback;
+        emscripten_fetch_attr_t attr;
+        emscripten_fetch_attr_init(&attr);
+        strcpy(attr.requestMethod, "GET");
+        attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+        if (persist) {
+            attr.attributes |= EMSCRIPTEN_FETCH_PERSIST_FILE;
+        }
+        attr.onsuccess = detail::on_multiple_fetch_raw_success;
         attr.onerror = detail::on_multiple_fetch_error;
         attr.userData = _user_data;
         emscripten_fetch(&attr, _file.c_str());

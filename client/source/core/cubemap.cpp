@@ -101,8 +101,8 @@ std::shared_future<std::shared_ptr<cubemap_ref>> fetch_cubemap(const std::array<
     const std::vector<std::filesystem::path> _paths(image_paths.begin(), image_paths.end());
     const std::size_t _hash = path_vector_hash()(_paths);
     std::pair<std::vector<std::pair<cubemap_side, image_data>>, std::promise<std::shared_ptr<cubemap_ref>>>& _promise_pair = detail::promises[_hash];
-    fetch_files(_paths, [&_promise_pair](const std::size_t _side_index, const std::size_t, std::istringstream& stream) {
-        _promise_pair.first.emplace_back(static_cast<cubemap_side>(_side_index), std::move(load_image_data(stream)));
+    fetch_files(_paths, [&_promise_pair](const std::size_t _side_index, const std::size_t, const std::vector<char>& image_bytes) {
+        _promise_pair.first.emplace_back(static_cast<cubemap_side>(_side_index), std::move(load_image_data(image_bytes)));
         if (_promise_pair.first.size() == 6) {
             std::array<image_data, 6> _images;
             for (glm::uint _index = 0; _index < 6; ++_index) {

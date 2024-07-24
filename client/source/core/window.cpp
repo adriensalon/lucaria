@@ -341,6 +341,12 @@ void update()
 
 }
 
+void run(std::function<void()> update)
+{
+    detail::update_callback = update;
+    emscripten_set_main_loop(detail::update, 0, EM_TRUE);
+}
+
 void graphics_assert()
 {
 #if LUCARIA_DEBUG
@@ -401,10 +407,13 @@ void audio_assert()
 #endif
 }
 
-void run(std::function<void()> update)
+void on_audio_locked(const std::function<void()>& callback)
 {
-    detail::update_callback = update;
-    emscripten_set_main_loop(detail::update, 0, EM_TRUE);
+    if (detail::is_audio_locked) {
+        callback();
+    } else {
+        detail::on_audio_locked_callbacks.emplace_back(callback);
+    }
 }
 
 std::unordered_map<std::string, bool>& get_keys()
@@ -447,7 +456,7 @@ bool get_is_s3tc_supported()
     return detail::is_s3tc_supported;
 }
 
-bool is_audio_locked()
+bool get_is_audio_locked()
 {
     return detail::is_audio_locked;
 }
@@ -455,13 +464,4 @@ bool is_audio_locked()
 bool get_is_mouse_locked()
 {
     return detail::is_mouse_locked;
-}
-
-void on_audio_locked(const std::function<void()>& callback)
-{
-    if (detail::is_audio_locked) {
-        callback();
-    } else {
-        detail::on_audio_locked_callbacks.emplace_back(callback);
-    }
 }

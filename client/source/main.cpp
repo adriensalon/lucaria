@@ -14,9 +14,6 @@
 #include <game/gameplay/runner.hpp>
 #include <game/levels/levels.hpp>
 
-#include <core/sound.hpp>
-#include <core/window.hpp>
-
 int main()
 {
     register_level(levelID_persistent_player, level_persistent_player);

@@ -4,8 +4,8 @@
 #include <cereal/archives/json.hpp>
 #include <cereal/archives/portable_binary.hpp>
 
-
 #include <core/fetch.hpp>
+#include <core/load.hpp>
 #include <core/texture.hpp>
 #include <core/window.hpp>
 
@@ -98,14 +98,15 @@ GLuint texture_ref::get_id() const
     return _texture_id;
 }
 
-image_data load_image_data(std::istringstream& texture_stream)
+image_data load_image_data(const std::vector<char>& image_bytes)
 {
     image_data _data;
     {
+        raw_input_stream _stream(image_bytes);
 #if LUCARIA_JSON
-        cereal::JSONInputArchive _archive(texture_stream);
+        cereal::JSONInputArchive _archive(_stream);
 #else
-        cereal::PortableBinaryInputArchive _archive(texture_stream);
+        cereal::PortableBinaryInputArchive _archive(_stream);
 #endif
         _archive(_data);
     }
@@ -113,10 +114,10 @@ image_data load_image_data(std::istringstream& texture_stream)
     return _data;
 }
 
-image_data load_compressed_image_data(const std::vector<char>& image_raw_data)
+image_data load_compressed_image_data(const std::vector<char>& image_bytes)
 {
     image_data _image_data;
-    const std::vector<uint8_t>& _content = *(reinterpret_cast<const std::vector<uint8_t>*>(&image_raw_data));
+    const std::vector<uint8_t>& _content = *(reinterpret_cast<const std::vector<uint8_t>*>(&image_bytes));
     // try_parse_compressed_texture(_content.data(), _content.size(), _data);
     uint32_t* data32 = (uint32_t*)_content.data();
     if (*data32 == 0x03525650) {
@@ -193,26 +194,26 @@ image_data load_compressed_image_data(const std::vector<char>& image_raw_data)
 
 std::shared_future<std::shared_ptr<texture_ref>> fetch_texture(const std::filesystem::path& image_path, const std::optional<std::filesystem::path>& etc_image_path, const std::optional<std::filesystem::path>& s3tc_image_path)
 {
-    bool _is_fetch_raw;
+    bool _is_compressed;
     std::filesystem::path _image_path;
     if (get_is_etc_supported() && etc_image_path.has_value()) {
-        _is_fetch_raw = true;
+        _is_compressed = true;
         _image_path = etc_image_path.value();
     } else if (get_is_s3tc_supported() && s3tc_image_path.has_value()) {
-        _is_fetch_raw = true;
+        _is_compressed = true;
         _image_path = s3tc_image_path.value();
     } else {
-        _is_fetch_raw = false;
+        _is_compressed = false;
         _image_path = image_path;
     }
     std::promise<std::shared_ptr<texture_ref>>& _promise = detail::promises[_image_path.string()];
-    if (_is_fetch_raw) {
-        fetch_file(_image_path, [&_promise](const std::vector<char>& raw) {
-            _promise.set_value(std::move(std::make_shared<texture_ref>(load_compressed_image_data(raw))));
+    if (_is_compressed) {
+        fetch_file(_image_path, [&_promise](const std::vector<char>& image_bytes) {
+            _promise.set_value(std::move(std::make_shared<texture_ref>(load_compressed_image_data(image_bytes))));
         });
     } else {
-        fetch_file(_image_path, [&_promise](std::istringstream& stream) {
-            _promise.set_value(std::move(std::make_shared<texture_ref>(load_image_data(stream))));
+        fetch_file(_image_path, [&_promise](const std::vector<char>& image_bytes) {
+            _promise.set_value(std::move(std::make_shared<texture_ref>(load_image_data(image_bytes))));
         });
     }
 

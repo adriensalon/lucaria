@@ -9,6 +9,7 @@
 #include <core/fetch.hpp>
 #include <core/hash.hpp>
 #include <core/window.hpp>
+#include <core/load.hpp>
 
 namespace detail {
 
@@ -300,26 +301,27 @@ glm::uint program_ref::get_id() const
     return _program_id;
 }
 
-shader_data load_shader_data(std::istringstream& program_stream)
+shader_data load_shader_data(const std::vector<char>& shader_bytes)
 {
     shader_data _data;
     {
+        raw_input_stream _stream(shader_bytes);
 #if LUCARIA_JSON
-        cereal::JSONInputArchive _archive(program_stream);
+        cereal::JSONInputArchive _archive(_stream);
 #else
-        cereal::PortableBinaryInputArchive _archive(program_stream);
+        cereal::PortableBinaryInputArchive _archive(_stream);
 #endif
         _archive(_data);
     }    
     return _data;
 }
 
-std::future<std::shared_ptr<program_ref>> fetch_program(const std::filesystem::path& vertex_path, const std::filesystem::path& fragment_path)
+std::future<std::shared_ptr<program_ref>> fetch_program(const std::filesystem::path& vertex_shader_path, const std::filesystem::path& fragment_shader_path)
 {
-    const std::size_t _hash = path_vector_hash()({ vertex_path, fragment_path });
+    const std::size_t _hash = path_vector_hash()({ vertex_shader_path, fragment_shader_path });
     std::pair<std::vector<shader_data>, std::promise<std::shared_ptr<program_ref>>>& _promise_pair = detail::promises[_hash];
-    fetch_files({ vertex_path.string(), fragment_path.string() }, [&_promise_pair, _hash](const std::size_t, const std::size_t, std::istringstream& stream) {
-        _promise_pair.first.emplace_back(std::move(load_shader_data(stream)));
+    fetch_files({ vertex_shader_path.string(), fragment_shader_path.string() }, [&_promise_pair, _hash](const std::size_t, const std::size_t, const std::vector<char>& shader_bytes) {
+        _promise_pair.first.emplace_back(std::move(load_shader_data(shader_bytes)));
         if (_promise_pair.first.size() == 2) {
             _promise_pair.second.set_value(std::move(std::make_shared<program_ref>(_promise_pair.first[0], _promise_pair.first[1])));
         }

@@ -52,8 +52,8 @@ btCollisionShape* shape_ref::get_shape() const
 std::shared_future<std::shared_ptr<shape_ref>> fetch_shape(const std::filesystem::path& geometry_path, const shape_type shape)
 {
     std::promise<std::shared_ptr<shape_ref>>& _promise = detail::promises[geometry_path.string()];
-    fetch_file(geometry_path, [&_promise, shape](std::istringstream& stream) {
-        _promise.set_value(std::move(std::make_shared<shape_ref>(load_geometry_data(stream), shape)));
+    fetch_file(geometry_path, [&_promise, shape](const std::vector<char>& geometry_bytes) {
+        _promise.set_value(std::move(std::make_shared<shape_ref>(load_geometry_data(geometry_bytes), shape)));
     });
     return _promise.get_future();
 }

@@ -79,7 +79,7 @@ void splash_system::update()
     if (detail::is_splash_on) {
         const bool _is_fetching_complete = detail::is_fetching_complete();
         detail::draw_splash(_is_fetching_complete);
-        if (_is_fetching_complete && is_audio_locked()) {
+        if (_is_fetching_complete && get_is_audio_locked()) {
             detail::is_splash_on = false;
             // start timer fade out
         }

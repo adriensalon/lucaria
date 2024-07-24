@@ -131,7 +131,7 @@ glm::uint sound_ref::get_id() const
     return _buffer_id;
 }
 
-audio_data load_audio_data(const std::vector<char>& audio_stream)
+audio_data load_compressed_audio_data(const std::vector<char>& audio_stream)
 {
     audio_data _data;
     detail::VorbisStream _stream(audio_stream);
@@ -168,12 +168,12 @@ audio_data load_audio_data(const std::vector<char>& audio_stream)
     return _data;
 }
 
-std::shared_future<std::shared_ptr<sound_ref>> fetch_sound(const std::filesystem::path& sound_path)
+std::shared_future<std::shared_ptr<sound_ref>> fetch_sound(const std::filesystem::path& audio_path)
 {
-    std::promise<std::shared_ptr<sound_ref>>& _promise = detail::promises[sound_path.string()];
-    on_audio_locked([&_promise, sound_path] () {
-        fetch_file(sound_path, [&_promise](const std::vector<char>& stream) {
-            _promise.set_value(std::move(std::make_shared<sound_ref>(load_audio_data(stream))));
+    std::promise<std::shared_ptr<sound_ref>>& _promise = detail::promises[audio_path.string()];
+    on_audio_locked([&_promise, audio_path] () {
+        fetch_file(audio_path, [&_promise](const std::vector<char>& audio_bytes) {
+            _promise.set_value(std::move(std::make_shared<sound_ref>(load_compressed_audio_data(audio_bytes))));
         });
     });
     return _promise.get_future();
