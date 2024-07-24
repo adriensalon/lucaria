@@ -50,6 +50,8 @@ static glm::float64 time_delta = 0.f; // seconds
 static std::function<void()> update_callback = nullptr;
 static std::vector<std::function<void()>> on_audio_locked_callbacks = {};
 
+static bool is_etc_supported = false;
+static bool is_s3tc_supported = false;
 static bool is_audio_locked = false;
 static bool is_mouse_locked = false;
 
@@ -235,24 +237,25 @@ static bool setup_opengl()
         std::terminate();
     }
     emscripten_assert(emscripten_webgl_make_context_current(_webgl_context));
+    if (emscripten_webgl_enable_extension(_webgl_context, "WEBGL_compressed_texture_etc")) {
+        is_etc_supported = true;
+#if LUCARIA_DEBUG
+        std::cout << "Extension WEBGL_compressed_texture_etc is supported." << std::endl;
+#endif
+    }
+    if (emscripten_webgl_enable_extension(_webgl_context, "WEBGL_compressed_texture_s3tc")) {
+        is_s3tc_supported = true;
+#if LUCARIA_DEBUG
+        std::cout << "Extension WEBGL_compressed_texture_s3tc is supported." << std::endl;
+#endif
+    }
+
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui::GetIO().IniFilename = NULL;
     ImGui::StyleColorsLight();
     ImGui_ImplOpenGL3_Init("#version 300 es");
 
-    // Check for the OES_texture_float extension
-    if (!emscripten_webgl_enable_extension(_webgl_context, "WEBGL_compressed_texture_etc")) {
-        std::cout << "WEBGL_compressed_texture_etc  extension is not supported" << std::endl;
-    } else {
-        std::cout << "WEBGL_compressed_texture_etc  extension is supported !!!" << std::endl;
-    }
-    // Check for the OES_texture_float extension
-    if (!emscripten_webgl_enable_extension(_webgl_context, "WEBGL_compressed_texture_s3tc")) {
-        std::cout << "WEBGL_compressed_texture_s3tc  extension is not supported" << std::endl;
-    } else {
-        std::cout << "WEBGL_compressed_texture_s3tc  extension is supported !!!" << std::endl;
-    }
     return true;
 }
 
@@ -434,12 +437,22 @@ glm::float64 get_time_delta()
     return detail::time_delta;
 }
 
+bool get_is_etc_supported()
+{
+    return detail::is_etc_supported;
+}
+
+bool get_is_s3tc_supported()
+{
+    return detail::is_s3tc_supported;
+}
+
 bool is_audio_locked()
 {
     return detail::is_audio_locked;
 }
 
-bool is_mouse_locked()
+bool get_is_mouse_locked()
 {
     return detail::is_mouse_locked;
 }

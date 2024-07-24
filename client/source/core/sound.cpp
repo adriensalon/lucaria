@@ -116,7 +116,7 @@ glm::uint sound_ref::get_id() const
     return _buffer_id;
 }
 
-audio_data load_audio_data(std::istringstream& audio_stream)
+audio_data load_compressed_audio_data(std::istringstream& audio_stream)
 {
     audio_data _data;
     detail::VorbisStream _stream(audio_stream);
@@ -158,7 +158,7 @@ std::shared_future<std::shared_ptr<sound_ref>> fetch_sound(const std::filesystem
     std::promise<std::shared_ptr<sound_ref>>& _promise = detail::promises[sound_path.string()];
     on_audio_locked([&_promise, sound_path] () {
         fetch_file(sound_path, [&_promise](std::istringstream& stream) {
-            _promise.set_value(std::move(std::make_shared<sound_ref>(load_audio_data(stream))));
+            _promise.set_value(std::move(std::make_shared<sound_ref>(load_compressed_audio_data(stream))));
         });
     });
     return _promise.get_future();

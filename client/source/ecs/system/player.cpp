@@ -79,7 +79,7 @@ void player_system::player_radius(const float radius)
 
 void player_system::update()
 {
-    if (is_mouse_locked() && !splash_system::is_splash_on()) {
+    if (get_is_mouse_locked() && !splash_system::is_splash_on()) {
         detail::compute_rotation();
         const glm::vec3 _new_position = detail::compute_position();
         // if (!detail::test_position(_new_position)) {

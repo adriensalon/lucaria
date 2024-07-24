@@ -12,8 +12,11 @@ void level_blockout_test(entt::registry& registry)
 
     // _okokok.emplace(fetch_texture("room_color_compressed.bin"));
 
+
+
     registry.emplace<model_component<model_shader::unlit>>(_wall_entity)
         .color(fetch_texture("assets/room_color_s3tc.bin"))
+        // .color(fetch_texture("assets/room_color.bin", "assets/room_color_etc.bin", "assets/room_color_s3tc.bin"))
         .mesh(fetch_mesh("assets/blockout_test.bin"));
 
     registry.emplace<collider_component>(_wall_entity)
