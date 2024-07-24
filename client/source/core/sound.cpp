@@ -120,7 +120,6 @@ sound_ref::sound_ref(const audio_data& data)
 #endif
     alBufferData(_buffer_id, alGetEnumValue("AL_FORMAT_MONO_FLOAT32"), data.samples.data(), static_cast<ALsizei>(data.samples.size() * sizeof(glm::float32)), data.sample_rate);
 #if LUCARIA_DEBUG
-    audio_assert();
     std::cout << "Created sound buffer of size " << data.samples.size() << " with id " << _buffer_id << std::endl;
 #endif
     _is_instanced = true;

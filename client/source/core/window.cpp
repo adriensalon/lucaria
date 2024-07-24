@@ -337,6 +337,11 @@ void update()
 
     wait_fetched_containers();
     // detail::mouse_position_delta = glm::vec2(0.f);
+
+    graphics_assert();
+    if (is_audio_locked) {
+        audio_assert();
+    }
 }
 
 }

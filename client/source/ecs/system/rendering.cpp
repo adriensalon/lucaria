@@ -75,6 +75,7 @@ static float camera_near = 0.1f;
 static float camera_far = 100.f;
 static glm::mat4x4 camera_projection;
 static glm::mat4x4 camera_view_projection;
+static fetch_container<cubemap_ref> skybox_cubemap = {};
 
 static const std::string unlit_vertex = R"(#version 300 es
     in vec3 vert_position;
@@ -156,11 +157,11 @@ static const std::string pbr_fragment = R"(#version 300 es
 
 static const std::string skybox_vertex = R"(#version 300 es
     in vec3 vert_position;
-    uniform mat4 uniform_projection;
+    uniform mat4 uniform_view;
     out vec3 frag_texcoord;
     void main() {
         frag_texcoord = vert_position;
-        gl_Position = uniform_projection * vec4(vert_position, 1);
+        gl_Position = uniform_view * vec4(vert_position, 1);
     })";
 
 static const std::string skybox_fragment = R"(#version 300 es
@@ -189,27 +190,30 @@ static const std::string guizmo_fragment = R"(#version 300 es
     })";
 #endif
 
-constexpr GLuint skybox_count = 8;
-
-const std::vector<GLfloat> skybox_positions = {
-    -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f,
-    1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, -1.0f,
-    -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f,
-    1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
-    1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f,
-    1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f,
-    -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
-    -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,
-    1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f
+const std::vector<glm::vec3> skybox_positions = {
+    glm::vec3(-1.0f, -1.0f, -1.0f),
+    glm::vec3(1.0f, -1.0f, -1.0f),
+    glm::vec3(1.0f, 1.0f, -1.0f),
+    glm::vec3(-1.0f, 1.0f, -1.0f),
+    glm::vec3(-1.0f, -1.0f, 1.0f),
+    glm::vec3(1.0f, -1.0f, 1.0f),
+    glm::vec3(1.0f, 1.0f, 1.0f),
+    glm::vec3(-1.0f, 1.0f, 1.0f)
 };
 
-const std::vector<GLuint> skybox_indices = {
-    0, 1, 2, 3, 4, 5,
-    6, 7, 8, 9, 10, 11,
-    12, 13, 14, 15, 16, 17,
-    18, 19, 20, 21, 22, 23,
-    24, 25, 26, 27, 28, 29,
-    30, 31, 32, 33, 34, 35
+const std::vector<glm::uvec3> skybox_indices = {
+    glm::uvec3(0, 2, 1),
+    glm::uvec3(0, 3, 2),
+    glm::uvec3(4, 5, 6),
+    glm::uvec3(4, 6, 7),
+    glm::uvec3(0, 7, 3),
+    glm::uvec3(0, 4, 7),
+    glm::uvec3(1, 6, 5),
+    glm::uvec3(1, 2, 6),
+    glm::uvec3(3, 6, 2),
+    glm::uvec3(3, 7, 6),
+    glm::uvec3(0, 1, 5),
+    glm::uvec3(0, 5, 4)
 };
 
 #if LUCARIA_GUIZMO
@@ -244,6 +248,7 @@ void rendering_system::use_clear_depth(const bool is_clearing)
 
 void rendering_system::use_skybox_cubemap(const std::shared_future<std::shared_ptr<cubemap_ref>>& fetched_cubemap)
 {
+    detail::skybox_cubemap.emplace(fetched_cubemap);
 }
 
 void rendering_system::clear_screen()
@@ -270,18 +275,27 @@ void rendering_system::compute_view_projection()
 
 void rendering_system::draw_skybox()
 {
-    // static std::optional<mesh_ref> _skybox_mesh = std::nullopt;
-    // static std::optional<cubemap_ref> _skybox_cubemap = std::nullopt;
-    // static std::optional<program_ref> _skybox_program = std::nullopt;
-    // if (!_skybox_program.has_value()) {
-    //     _skybox_program = program_ref(shader_data { skybox_vertex }, shader_data { skybox_fragment });
-    // }
-    // program_ref& _skybox_program_value = _skybox_program.value();
-    // _skybox_program_value.use();
-    // _skybox_program_value.bind("vert_position", detail::skybox_mesh.value(), mesh_attribute::position);
-    // _skybox_program_value.bind("vert_texcoord", detail::skybox_mesh.value(), mesh_attribute::texcoord);
-    // _skybox_program_value.bind("uniform_color", detail::skybox_cubemap.value(), 0);
-    // _skybox_program_value.draw();
+    if (detail::skybox_cubemap.has_value()) {
+        static bool _is_skybox_setup = false;
+        static std::optional<mesh_ref> _persistent_skybox_mesh = std::nullopt;
+        static std::optional<program_ref> _persistent_skybox_program = std::nullopt;
+        if (!_is_skybox_setup) {
+            geometry_data _skybox_geometry;
+            _skybox_geometry.positions = detail::skybox_positions;
+            _skybox_geometry.indices = detail::skybox_indices;
+            _persistent_skybox_mesh = mesh_ref(_skybox_geometry);
+            _persistent_skybox_program = program_ref(shader_data { detail::skybox_vertex }, shader_data { detail::skybox_fragment });
+            _is_skybox_setup = true;
+        }
+        mesh_ref& _skybox_mesh = _persistent_skybox_mesh.value();
+        program_ref& _skybox_program = _persistent_skybox_program.value();
+        cubemap_ref& _skybox_cubemap = detail::skybox_cubemap.value();
+        _skybox_program.use();
+        _skybox_program.bind("vert_position", _skybox_mesh, mesh_attribute::position);
+        _skybox_program.bind("uniform_color", _skybox_cubemap, 0);
+        _skybox_program.bind("uniform_view", detail::camera_view_projection);
+        _skybox_program.draw();
+    }
 }
 
 void rendering_system::draw_blockout_meshes()

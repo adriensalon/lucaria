@@ -10,20 +10,34 @@
 #include <core/texture.hpp>
 #include <core/fetch.hpp>
 #include <core/hash.hpp>
+#include <core/window.hpp>
+
+constexpr static GLenum COMPRESSED_R11_EAC = 0x9270;
+constexpr static GLenum COMPRESSED_SIGNED_R11_EAC = 0x9271;
+constexpr static GLenum COMPRESSED_RG11_EAC = 0x9272;
+constexpr static GLenum COMPRESSED_SIGNED_RG11_EAC = 0x9273;
+constexpr static GLenum COMPRESSED_RGB8_ETC2 = 0x9274;
+constexpr static GLenum COMPRESSED_SRGB8_ETC2 = 0x9275;
+constexpr static GLenum COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2 = 0x9276;
+constexpr static GLenum COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2 = 0x9277;
+constexpr static GLenum COMPRESSED_RGBA8_ETC2_EAC = 0x9278;
+constexpr static GLenum COMPRESSED_SRGB8_ALPHA8_ETC2_EAC = 0x9279;
+
+constexpr static GLenum COMPRESSED_RGB_S3TC_DXT1_EXT = 0x83F0;
+constexpr static GLenum COMPRESSED_RGBA_S3TC_DXT1_EXT = 0x83F1;
+constexpr static GLenum COMPRESSED_RGBA_S3TC_DXT3_EXT = 0x83F2;
+constexpr static GLenum COMPRESSED_RGBA_S3TC_DXT5_EXT = 0x83F3;
 
 namespace detail {
 
-template <typename T>
-bool all_equal(T first)
-{
-    return true;
-}
-
-template <typename T, typename... Args>
-bool all_equal(T first, Args... args)
-{
-    return ((first == args) && ...);
-}
+const std::array<GLenum, 6> cubemap_enums = {
+    GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+    GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+    GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+    GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+    GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+    GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
+};
 
 static std::unordered_map<std::size_t, std::pair<std::vector<std::pair<cubemap_side, image_data>>, std::promise<std::shared_ptr<cubemap_ref>>>> promises;
 
@@ -52,43 +66,44 @@ cubemap_ref::~cubemap_ref()
 
 cubemap_ref::cubemap_ref(const cubemap_data& data)
 {
-    const image_data& _positive_x = data[static_cast<glm::uint>(cubemap_side::positive_x)];
-    const image_data& _positive_y = data[static_cast<glm::uint>(cubemap_side::positive_y)];
-    const image_data& _positive_z = data[static_cast<glm::uint>(cubemap_side::positive_z)];
-    const image_data& _negative_x = data[static_cast<glm::uint>(cubemap_side::negative_x)];
-    const image_data& _negative_y = data[static_cast<glm::uint>(cubemap_side::negative_y)];
-    const image_data& _negative_z = data[static_cast<glm::uint>(cubemap_side::negative_z)];
     glGenTextures(1, &_cubemap_id);
     glBindTexture(GL_TEXTURE_CUBE_MAP, _cubemap_id);
-    GLenum _format;
-    if (detail::all_equal(_positive_x.channels, _positive_y.channels, _positive_z.channels, _negative_x.channels, _negative_y.channels, _negative_z.channels, 3)) {
-        _format = GL_RGB;
-    } else if (detail::all_equal(_positive_x.channels, _positive_y.channels, _positive_z.channels, _negative_x.channels, _negative_y.channels, _negative_z.channels, 4)) {
-        _format = GL_RGBA;
-    } 
-#if LUCARIA_DEBUG
-    else {
-        std::cout << "Invalid channels across cubemap images or channels != 3 or channels != 4" << std::endl;
-        std::terminate();
-    }
-#endif
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    const GLubyte* __positive_x_ptr = const_cast<const GLubyte*>(_positive_x.pixels.data());
-    const GLubyte* _plus_y_ptr = const_cast<const GLubyte*>(_positive_y.pixels.data());
-    const GLubyte* _plus_z_ptr = const_cast<const GLubyte*>(_positive_z.pixels.data());
-    const GLubyte* _minus_x_ptr = const_cast<const GLubyte*>(_negative_x.pixels.data());
-    const GLubyte* _minus_y_ptr = const_cast<const GLubyte*>(_negative_y.pixels.data());
-    const GLubyte* _minus_z_ptr = const_cast<const GLubyte*>(_negative_z.pixels.data());
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, _format, _positive_x.width, _positive_x.height, 0, _format, GL_UNSIGNED_BYTE, __positive_x_ptr);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, _format, _positive_y.width, _positive_y.height, 0, _format, GL_UNSIGNED_BYTE, _plus_y_ptr);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, _format, _positive_z.width, _positive_z.height, 0, _format, GL_UNSIGNED_BYTE, _plus_z_ptr);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, _format, _negative_x.width, _negative_x.height, 0, _format, GL_UNSIGNED_BYTE, _minus_x_ptr);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, _format, _negative_y.width, _negative_y.height, 0, _format, GL_UNSIGNED_BYTE, _minus_y_ptr);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, _format, _negative_z.width, _negative_z.height, 0, _format, GL_UNSIGNED_BYTE, _minus_z_ptr);
+    for (glm::uint _index = 0; _index < 6; ++_index) {
+        const image_data& _data = data[_index];
+        const GLubyte* _pixels_ptr = _data.pixels.data();
+        const GLenum _side_enum = detail::cubemap_enums[_index];
+        switch (_data.channels) {
+        case 3:
+            if (_data.is_compressed_etc) {
+                glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGB8_ETC2, _data.width, _data.height, 0, _data.pixels.size(), _pixels_ptr);
+            } else if (_data.is_compressed_s3tc) {
+                glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, _data.width, _data.height, 0, _data.pixels.size(), _pixels_ptr);
+            } else {
+                glTexImage2D(_side_enum, 0, GL_RGB, _data.width, _data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
+            }
+            break;
+        case 4:
+            if (_data.is_compressed_etc) {
+                glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGBA8_ETC2_EAC, _data.width, _data.height, 0, _data.pixels.size(), _pixels_ptr);
+            } else if (_data.is_compressed_s3tc) {
+                glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, _data.width, _data.height, 0, _data.pixels.size(), _pixels_ptr);
+            } else {
+                glTexImage2D(_side_enum, 0, GL_RGBA, _data.width, _data.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);
+            }
+            break;
+        default:
+    #if LUCARIA_DEBUG
+            std::cout << "Invalid channels count, must be 3 or 4" << std::endl;
+            std::terminate();
+    #endif
+            break;
+        }
+    }
 }
 
 glm::uint cubemap_ref::get_id() const
@@ -96,13 +111,29 @@ glm::uint cubemap_ref::get_id() const
     return _cubemap_id;
 }
 
-std::shared_future<std::shared_ptr<cubemap_ref>> fetch_cubemap(const std::array<std::filesystem::path, 6>& image_paths)
+std::shared_future<std::shared_ptr<cubemap_ref>> fetch_cubemap(const std::array<std::filesystem::path, 6>& image_paths, const std::optional<std::array<std::filesystem::path, 6>>& etc_image_paths, const std::optional<std::array<std::filesystem::path, 6>>& s3tc_image_paths)
 {
-    const std::vector<std::filesystem::path> _paths(image_paths.begin(), image_paths.end());
+    bool _is_compressed;
+    std::array<std::filesystem::path, 6> _image_paths;
+    if (get_is_etc_supported() && etc_image_paths) {
+        _is_compressed = true;
+        _image_paths = etc_image_paths.value();
+    } else if (get_is_s3tc_supported() && s3tc_image_paths) {
+        _is_compressed = true;
+        _image_paths = s3tc_image_paths.value();
+    } else {
+        _is_compressed = false;
+        _image_paths = image_paths;
+    }
+    const std::vector<std::filesystem::path> _paths(_image_paths.begin(), _image_paths.end());
     const std::size_t _hash = path_vector_hash()(_paths);
     std::pair<std::vector<std::pair<cubemap_side, image_data>>, std::promise<std::shared_ptr<cubemap_ref>>>& _promise_pair = detail::promises[_hash];
-    fetch_files(_paths, [&_promise_pair](const std::size_t _side_index, const std::size_t, const std::vector<char>& image_bytes) {
-        _promise_pair.first.emplace_back(static_cast<cubemap_side>(_side_index), std::move(load_image_data(image_bytes)));
+    fetch_files(_paths, [&_promise_pair, _is_compressed](const std::size_t _side_index, const std::size_t, const std::vector<char>& image_bytes) {
+        if (_is_compressed) {
+            _promise_pair.first.emplace_back(static_cast<cubemap_side>(_side_index), std::move(load_compressed_image_data(image_bytes)));
+        } else {
+            _promise_pair.first.emplace_back(static_cast<cubemap_side>(_side_index), std::move(load_image_data(image_bytes)));
+        }        
         if (_promise_pair.first.size() == 6) {
             std::array<image_data, 6> _images;
             for (glm::uint _index = 0; _index < 6; ++_index) {
