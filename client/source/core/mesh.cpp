@@ -8,6 +8,7 @@
 
 #include <core/mesh.hpp>
 #include <core/fetch.hpp>
+#include <core/load.hpp>
 
 namespace detail {
 
@@ -211,10 +212,30 @@ geometry_data load_geometry_data(std::istringstream& mesh_stream)
     return _data;
 }
 
+geometry_data load_geometry_data(const std::vector<char>& mesh_stream)
+{
+    geometry_data _data;
+    {
+        VectorInputStream stream(mesh_stream);
+        std::cout << "lol" << std::endl;
+#if LUCARIA_JSON
+        cereal::JSONInputArchive _archive(stream);
+#else
+        cereal::PortableBinaryInputArchive _archive(stream);
+#endif
+        _archive(_data);
+    }
+    return _data;
+}
+
 std::shared_future<std::shared_ptr<mesh_ref>> fetch_mesh(const std::filesystem::path& mesh_path)
 {
     std::promise<std::shared_ptr<mesh_ref>>& _promise = detail::promises[mesh_path.string()];
-    fetch_file(mesh_path, [&_promise](std::istringstream& stream) {
+    // fetch_file(mesh_path, [&_promise](std::istringstream& stream) {
+    //     _promise.set_value(std::move(std::make_shared<mesh_ref>(load_geometry_data(stream))));
+    // });
+    fetch_file(mesh_path, [&_promise](const std::vector<char>& stream) {
+
         _promise.set_value(std::move(std::make_shared<mesh_ref>(load_geometry_data(stream))));
     });
     return _promise.get_future();

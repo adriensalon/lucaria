@@ -51,6 +51,7 @@ private:
     friend struct program_ref;
 };
 
+geometry_data load_geometry_data(const std::vector<char>& mesh_stream);
 geometry_data load_geometry_data(std::istringstream& mesh_stream);
 std::shared_future<std::shared_ptr<mesh_ref>> fetch_mesh(const std::filesystem::path& mesh_path);
 
