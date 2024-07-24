@@ -216,7 +216,7 @@ geometry_data load_geometry_data(const std::vector<char>& mesh_stream)
 {
     geometry_data _data;
     {
-        VectorInputStream stream(mesh_stream);
+        raw_input_stream stream(mesh_stream);
         std::cout << "lol" << std::endl;
 #if LUCARIA_JSON
         cereal::JSONInputArchive _archive(stream);
