@@ -157,11 +157,11 @@ static const std::string pbr_fragment = R"(#version 300 es
 
 static const std::string skybox_vertex = R"(#version 300 es
     in vec3 vert_position;
-    uniform mat4 uniform_view;
+    uniform mat4 uniform_projection;
     out vec3 frag_texcoord;
     void main() {
         frag_texcoord = vert_position;
-        gl_Position = uniform_view * vec4(vert_position, 1);
+        gl_Position = uniform_projection * vec4(vert_position, 1);
     })";
 
 static const std::string skybox_fragment = R"(#version 300 es
@@ -202,18 +202,18 @@ const std::vector<glm::vec3> skybox_positions = {
 };
 
 const std::vector<glm::uvec3> skybox_indices = {
-    glm::uvec3(0, 2, 1),
-    glm::uvec3(0, 3, 2),
-    glm::uvec3(4, 5, 6),
-    glm::uvec3(4, 6, 7),
-    glm::uvec3(0, 7, 3),
-    glm::uvec3(0, 4, 7),
-    glm::uvec3(1, 6, 5),
-    glm::uvec3(1, 2, 6),
-    glm::uvec3(3, 6, 2),
-    glm::uvec3(3, 7, 6),
-    glm::uvec3(0, 1, 5),
-    glm::uvec3(0, 5, 4)
+    glm::uvec3(0, 1, 2),
+    glm::uvec3(0, 2, 3),
+    glm::uvec3(4, 6, 5),
+    glm::uvec3(4, 7, 6),
+    glm::uvec3(0, 3, 7),
+    glm::uvec3(0, 7, 4),
+    glm::uvec3(1, 5, 6),
+    glm::uvec3(1, 6, 2),
+    glm::uvec3(3, 2, 6),
+    glm::uvec3(3, 6, 7),
+    glm::uvec3(0, 5, 1),
+    glm::uvec3(0, 4, 5)
 };
 
 #if LUCARIA_GUIZMO
@@ -293,8 +293,8 @@ void rendering_system::draw_skybox()
         _skybox_program.use();
         _skybox_program.bind("vert_position", _skybox_mesh, mesh_attribute::position);
         _skybox_program.bind("uniform_color", _skybox_cubemap, 0);
-        _skybox_program.bind("uniform_view", detail::camera_view_projection);
-        _skybox_program.draw();
+        _skybox_program.bind("uniform_projection", detail::camera_projection);
+        _skybox_program.draw(false);
     }
 }
 

@@ -262,9 +262,20 @@ void program_ref::bind<glm::mat4x4>(const std::string& name, const glm::mat4x4& 
     glUniformMatrix4fv(_location, 1, GL_FALSE, glm::value_ptr(value));
 }
 
-void program_ref::draw() const
+static bool _depth_test_enabled = true;
+
+void program_ref::draw(const bool use_depth) const
 {
-    glEnable(GL_DEPTH_TEST);
+    if (_depth_test_enabled != use_depth) {
+        if (use_depth) {
+            glEnable(GL_DEPTH_TEST);
+            glDepthMask(GL_TRUE);
+        } else {
+            glDisable(GL_DEPTH_TEST);
+            glDepthMask(GL_FALSE);
+        }
+        _depth_test_enabled = use_depth;
+    }
     glBindVertexArray(_array_id);
     glDrawElements(GL_TRIANGLES, _indices_count, GL_UNSIGNED_INT, 0);
 }
@@ -273,7 +284,11 @@ void program_ref::draw() const
 
 void program_ref::draw_guizmo() const
 {
-    glDisable(GL_DEPTH_TEST);
+    if (_depth_test_enabled) {
+        glDisable(GL_DEPTH_TEST);
+        glDepthMask(GL_FALSE);
+        _depth_test_enabled = false;
+    }
     glBindVertexArray(_array_id);
     glDrawElements(GL_LINES, _indices_count, GL_UNSIGNED_INT, 0);
 }

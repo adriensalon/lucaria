@@ -26,7 +26,7 @@ struct program_ref {
     void bind(const std::string& name, const cubemap_ref& cubemap, const glm::uint slot = 0) const;
     void bind(const std::string& name, const texture_ref& texture, const glm::uint slot = 0) const;
     template <typename value_t> void bind(const std::string& name, const value_t& value);
-    void draw() const;
+    void draw(const bool use_depth = true) const;
     glm::uint get_id() const;
 #if LUCARIA_GUIZMO
     void bind_guizmo(const std::string& name, const guizmo_mesh_ref& mesh);
