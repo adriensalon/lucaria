@@ -20,26 +20,29 @@ void level_blockout_test(entt::registry& registry)
         "assets/skyboxes/test/nx.bin",
         "assets/skyboxes/test/ny.bin",
         "assets/skyboxes/test/nz.bin"
-    }, std::array<std::filesystem::path, 6> {
-        "assets/skyboxes/test/px_etc.bin",
-        "assets/skyboxes/test/py_etc.bin",
-        "assets/skyboxes/test/pz_etc.bin",
-        "assets/skyboxes/test/nx_etc.bin",
-        "assets/skyboxes/test/ny_etc.bin",
-        "assets/skyboxes/test/nz_etc.bin"
-    }, std::array<std::filesystem::path, 6> {
-        "assets/skyboxes/test/px_s3tc.bin",
-        "assets/skyboxes/test/py_s3tc.bin",
-        "assets/skyboxes/test/pz_s3tc.bin",
-        "assets/skyboxes/test/nx_s3tc.bin",
-        "assets/skyboxes/test/ny_s3tc.bin",
-        "assets/skyboxes/test/nz_s3tc.bin"
-    }));
+    }
+    ));
+    // std::array<std::filesystem::path, 6> {
+    //     "assets/skyboxes/test/px_etc.bin",
+    //     "assets/skyboxes/test/py_etc.bin",
+    //     "assets/skyboxes/test/pz_etc.bin",
+    //     "assets/skyboxes/test/nx_etc.bin",
+    //     "assets/skyboxes/test/ny_etc.bin",
+    //     "assets/skyboxes/test/nz_etc.bin"
+    // }, std::array<std::filesystem::path, 6> {
+    //     "assets/skyboxes/test/px_s3tc.bin",
+    //     "assets/skyboxes/test/py_s3tc.bin",
+    //     "assets/skyboxes/test/pz_s3tc.bin",
+    //     "assets/skyboxes/test/nx_s3tc.bin",
+    //     "assets/skyboxes/test/ny_s3tc.bin",
+    //     "assets/skyboxes/test/nz_s3tc.bin"
+    // }));
 
 
-    registry.emplace<model_component<model_shader::unlit>>(_wall_entity)
-        .color(fetch_texture("assets/room_color.bin", "assets/room_color_etc.bin", "assets/room_color_s3tc.bin"))
+    registry.emplace<model_component<model_shader::blockout>>(_wall_entity)
+        // .color(fetch_texture("assets/room_color.bin", "assets/room_color_etc.bin", "assets/room_color_s3tc.bin"))
         .mesh(fetch_mesh("assets/blockout_test.bin"));
+
 
 
     registry.emplace<collider_component>(_wall_entity)

@@ -143,10 +143,14 @@ void motion_system::skin_meshes()
 {
     each_level([](entt::registry& registry) {
         registry.view<animator_component, blockout_model_component>().each([](animator_component& animator, blockout_model_component& model) {
-            // std::vector<glm::vec3> _positions;
-            // // todo
-            if (model._mesh.has_value() && animator._armature.has_value())
-            model._mesh.value().update_positions(animator._armature.value().get_positions());
+            if (model._mesh.has_value() && animator._armature.has_value()) {
+                model._mesh.value().update_positions(animator._armature.value().get_positions());
+            }
+        });
+        registry.view<animator_component, unlit_model_component>().each([](animator_component& animator, unlit_model_component& model) {
+            if (model._mesh.has_value() && animator._armature.has_value()) {
+                model._mesh.value().update_positions(animator._armature.value().get_positions());
+            }
         });
     });
 }

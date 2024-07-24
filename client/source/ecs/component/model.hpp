@@ -46,6 +46,7 @@ struct model_component<model_shader::unlit> {
 private:
     fetch_container<texture_ref> _color = {};
     fetch_container<mesh_ref> _mesh = {};
+    friend struct motion_system;
     friend struct rendering_system;
 };
 
@@ -79,6 +80,7 @@ struct model_component<model_shader::pbr> {
 private:
     std::unordered_map<pbr_texture, fetch_container<texture_ref>> _textures = {};
     fetch_container<mesh_ref> _mesh = {};
+    friend struct motion_system;
     friend struct rendering_system;
 };
 
