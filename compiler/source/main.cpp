@@ -11,6 +11,7 @@
 
 #include <export/binary.hpp>
 
+#include <tool/etcpak.hpp>
 #include <tool/gltf2ozz.hpp>
 #include <tool/oggenc.hpp>
 
@@ -18,6 +19,7 @@ namespace detail {
 
 using commands_map = std::unordered_map<std::string, std::vector<std::string>>;
 
+static std::filesystem::path etcpak_executable;
 static std::filesystem::path gltf2ozz_executable;
 static std::filesystem::path oggenc_executable;
 
@@ -50,6 +52,25 @@ bool process_help_command(const commands_map& commands)
     std::cout << "HELP DISPLAY" << std::endl;
     // TODO
     return true;
+}
+
+std::filesystem::path process_etcpak_command(const commands_map& commands)
+{
+    if (commands.find("-etcpak") == commands.end()) {
+        std::cout << "Command -etcpak must be provided" << std::endl;
+        std::terminate();
+    }
+    if (commands.at("-etcpak").size() != 1) {
+        std::cout << "Only one file must be provided with option -etcpak" << std::endl;
+        std::terminate();
+    }
+    std::filesystem::path _etcpak_executable = commands.at("-etcpak").at(0);
+    if (!std::filesystem::exists(_etcpak_executable)) {
+        std::cout << "The path provided with option -etcpak must be an existing application" << std::endl;
+        std::terminate();
+    }
+    std::cout << "-- Tool etcpak provided at " << _etcpak_executable << std::endl;
+    return _etcpak_executable;
 }
 
 std::filesystem::path process_gltf2ozz_command(const commands_map& commands)
@@ -186,6 +207,12 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
     } else if (_extension == ".jpg" || _extension == ".png" || _extension == ".bmp") {
         imported_stb_data _imported_image = import_stb(input_file);
         export_binary(_imported_image.image, output_file);
+        if (_extension == ".png") {
+            execute_etcpak(etcpak_mode::etc, etcpak_executable, input_file, output_file.parent_path() / (output_file.stem().string() + "_etc.bin"));
+            execute_etcpak(etcpak_mode::s3tc, etcpak_executable, input_file, output_file.parent_path() / (output_file.stem().string() + "_s3tc.bin"));
+        } else {
+            std::cout << "   Not exporting to etc/s3tc because image file must be .png" << std::endl;
+        }
 
     } else if (_extension == ".glsl" || _extension == ".txt" || _extension == ".vert" || _extension == ".frag") {
         imported_text_data _imported_shader = import_text(input_file);
@@ -210,6 +237,7 @@ int main(int argc, char* argv[])
     }
     std::filesystem::path _input_dir = detail::process_input_command(_commands);
     std::filesystem::path _output_dir = detail::process_output_command(_commands);
+    detail::etcpak_executable = detail::process_etcpak_command(_commands);
     detail::gltf2ozz_executable = detail::process_gltf2ozz_command(_commands);
     detail::oggenc_executable = detail::process_oggenc_command(_commands);
     detail::iterate_recursive(_input_dir, [&](const std::filesystem::path& _input_file) {

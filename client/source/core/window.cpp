@@ -240,6 +240,19 @@ static bool setup_opengl()
     ImGui::GetIO().IniFilename = NULL;
     ImGui::StyleColorsLight();
     ImGui_ImplOpenGL3_Init("#version 300 es");
+
+    // Check for the OES_texture_float extension
+    if (!emscripten_webgl_enable_extension(_webgl_context, "WEBGL_compressed_texture_etc")) {
+        std::cout << "WEBGL_compressed_texture_etc  extension is not supported" << std::endl;
+    } else {
+        std::cout << "WEBGL_compressed_texture_etc  extension is supported !!!" << std::endl;
+    }
+    // Check for the OES_texture_float extension
+    if (!emscripten_webgl_enable_extension(_webgl_context, "WEBGL_compressed_texture_s3tc")) {
+        std::cout << "WEBGL_compressed_texture_s3tc  extension is not supported" << std::endl;
+    } else {
+        std::cout << "WEBGL_compressed_texture_s3tc  extension is supported !!!" << std::endl;
+    }
     return true;
 }
 
