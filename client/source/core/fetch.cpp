@@ -8,6 +8,7 @@ std::size_t fetch_total = 0;
 std::size_t fetch_completed = 0;
 std::size_t fetch_failed = 0;
 std::unordered_map<std::string, fetch_callback> fetch_requests;
+std::unordered_map<std::string, fetch_raw_callback> fetch_raw_requests;
 std::unordered_map<std::string, multiple_fetch_callback> multiple_fetch_requests;
 
 std::size_t compute_hash(std::size_t lhs, std::size_t rhs)
@@ -26,6 +27,15 @@ void on_fetch_success(emscripten_fetch_t* fetch)
     std::istringstream _stream(std::string(_data.begin(), _data.end()), std::ios::binary);
 #endif
     fetch_requests[fetch->url](_stream);
+    emscripten_fetch_close(fetch);
+}
+
+void on_fetch_raw_success(emscripten_fetch_t* fetch)
+{
+    fetch_completed++;
+    std::cout << "Successfully fetched " << fetch->numBytes << " bytes from " << fetch->url << std::endl;
+    std::vector<char> _data(fetch->data, fetch->data + fetch->numBytes);
+    fetch_raw_requests[fetch->url](_data);
     emscripten_fetch_close(fetch);
 }
 
@@ -87,6 +97,22 @@ void fetch_file(const std::filesystem::path& file, const fetch_callback& callbac
         attr.attributes |= EMSCRIPTEN_FETCH_PERSIST_FILE;
     }
     attr.onsuccess = detail::on_fetch_success;
+    attr.onerror = detail::on_fetch_error;
+    emscripten_fetch(&attr, file.c_str());
+}
+
+void fetch_file(const std::filesystem::path& file, const fetch_raw_callback& callback, const bool persist)
+{
+    detail::fetch_total++;
+    detail::fetch_raw_requests[file.string()] = callback;
+    emscripten_fetch_attr_t attr;
+    emscripten_fetch_attr_init(&attr);
+    strcpy(attr.requestMethod, "GET");
+    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+    if (persist) {
+        attr.attributes |= EMSCRIPTEN_FETCH_PERSIST_FILE;
+    }
+    attr.onsuccess = detail::on_fetch_raw_success;
     attr.onerror = detail::on_fetch_error;
     emscripten_fetch(&attr, file.c_str());
 }

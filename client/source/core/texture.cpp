@@ -83,9 +83,9 @@ GLuint texture_ref::get_id() const
     return _texture_id;
 }
 
-bool try_parse_compressed_texture(uint8_t* data, std::size_t length, glm::uint& width, glm::uint& height, glm::uint& channels, std::size_t& offset) 
+bool try_parse_compressed_texture(const uint8_t* content, const std::size_t length, image_data& image) 
 {
-    auto data32 = (uint32_t*)data;
+    uint32_t* data32 = (uint32_t*)content;
     if (*data32 == 0x03525650) {
         // PVR
         switch (*(data32 + 2)) {
@@ -96,50 +96,56 @@ bool try_parse_compressed_texture(uint8_t* data, std::size_t length, glm::uint& 
         case 7:
             // m_type = Dxt1;
             std::cout << "DXT1" << std::endl;
-            channels = 3;
+            image.channels = 3;
             break;
         case 11:
             // m_type = Dxt5;
             std::cout << "DXT5" << std::endl;
-            channels = 4;
+            image.channels = 4;
             break;
         case 22:
             // m_type = Etc2_RGB;
             std::cout << "ETC2_RGB" << std::endl;
-            channels = 3;
+            image.channels = 3;
             break;
         case 23:
             // m_type = Etc2_RGBA;
             std::cout << "ETC2_RGBA" << std::endl;
-            channels = 4;
+            image.channels = 4;
             break;
         default:
             assert(false);
             break;
         }
-        height = *(data32 + 6);
-        width = *(data32 + 7);
-        offset = 52 + *(data32 + 12);
+        const std::size_t _offset = 52 + *(data32 + 12);
+        const glm::uint8* _data_ptr = content + _offset;
+        const std::size_t _data_size = length - _offset;
+        image.pixels = std::vector<glm::uint8>(_data_ptr, _data_ptr + _data_size);
+        image.height = *(data32 + 6);
+        image.width = *(data32 + 7);
     } else if (*data32 == 0x58544BAB) {
         // KTX
         switch (*(data32 + 7)) {
         case 0x9274:
             // m_type = Etc2_RGB;
             std::cout << "ETC2_RGB" << std::endl;
-            channels = 3;
+            image.channels = 3;
             break;
         case 0x9278:
             // m_type = Etc2_RGBA;
             std::cout << "ETC2_RGBA" << std::endl;
-            channels = 4;
+            image.channels = 4;
             break;
         default:
             assert(false);
             break;
         }
-        width = *(data32 + 9);
-        height = *(data32 + 10);
-        offset = sizeof(uint32_t) * 17 + *(data32 + 15);
+        const std::size_t _offset = sizeof(uint32_t) * 17 + *(data32 + 15);
+        const glm::uint8* _data_ptr = content + _offset;
+        const std::size_t _data_size = length - _offset;
+        image.pixels = std::vector<glm::uint8>(_data_ptr, _data_ptr + _data_size);
+        image.width = *(data32 + 9);
+        image.height = *(data32 + 10);
     } else {
         return false;
     }
@@ -149,37 +155,50 @@ bool try_parse_compressed_texture(uint8_t* data, std::size_t length, glm::uint& 
 image_data load_image_data(std::istringstream& texture_stream)
 {
     image_data _data;
-    std::vector<uint8_t> _content((std::istreambuf_iterator<char>(texture_stream)), std::istreambuf_iterator<char>());
-    std::size_t _offset = 0;
-    if (try_parse_compressed_texture(_content.data(), _content.size(), _data.width, _data.height, _data.channels, _offset)) {
-        std::cout << "width = " << _data.width << std::endl;
-        std::cout << "height = " << _data.height << std::endl;
-        std::cout << "channels = " << _data.channels << std::endl;
-
-        glm::uint8* _data_ptr = _content.data() + _offset;
-        std::size_t _data_size = _content.size() - _offset;
-        _data.pixels = std::vector<glm::uint8>(_data_ptr, _data_ptr + _data_size);
-        std::cout << "offset = " << _offset << std::endl;
-        std::cout << "size = " << _data_size << std::endl;
+    {
+#if LUCARIA_JSON
+        cereal::JSONInputArchive _archive(texture_stream);
+#else
+        cereal::PortableBinaryInputArchive _archive(texture_stream);
+#endif
+        _archive(_data);
     }
-
-//     {
-// #if LUCARIA_JSON        
-//         cereal::JSONInputArchive _archive(texture_stream);
-// #else
-//         cereal::PortableBinaryInputArchive _archive(texture_stream);
-// #endif
-//         _archive(_data);
-//     }
 
     return _data;
 }
 
-std::shared_future<std::shared_ptr<texture_ref>> fetch_texture(const std::filesystem::path& texture_path)
+image_data load_compressed_image_data(const std::vector<char>& image_raw_data)
 {
-    std::promise<std::shared_ptr<texture_ref>>& _promise = detail::promises[texture_path.string()];
-    fetch_file(texture_path, [&_promise](std::istringstream& stream) {
-        _promise.set_value(std::move(std::make_shared<texture_ref>(load_image_data(stream))));
-    });
+    image_data _data;
+    const std::vector<uint8_t>& _content = *(reinterpret_cast<const std::vector<uint8_t>*>(&image_raw_data));
+    try_parse_compressed_texture(_content.data(), _content.size(), _data);
+    return _data;
+}
+
+std::shared_future<std::shared_ptr<texture_ref>> fetch_texture(const std::filesystem::path& image_path, const std::optional<std::filesystem::path>& etc_image_path, const std::optional<std::filesystem::path>& s3tc_image_path)
+{
+    bool _is_fetch_raw;
+    std::filesystem::path _image_path;
+    if (get_is_etc_supported() && etc_image_path.has_value()) {
+        _is_fetch_raw = true;
+        _image_path = etc_image_path.value();
+    } else if (get_is_s3tc_supported() && s3tc_image_path.has_value()) {
+        _is_fetch_raw = true;
+        _image_path = s3tc_image_path.value();
+    } else {
+        _is_fetch_raw = false;
+        _image_path = image_path;
+    }
+    std::promise<std::shared_ptr<texture_ref>>& _promise = detail::promises[_image_path.string()];
+    if (_is_fetch_raw) {
+        fetch_file(_image_path, [&_promise](const std::vector<char>& raw) {
+            _promise.set_value(std::move(std::make_shared<texture_ref>(load_compressed_image_data(raw))));
+        });
+    } else {
+        fetch_file(_image_path, [&_promise](std::istringstream& stream) {
+            _promise.set_value(std::move(std::make_shared<texture_ref>(load_image_data(stream))));
+        });
+    }
+    
     return _promise.get_future();
 }

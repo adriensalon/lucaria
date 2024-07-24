@@ -10,9 +10,11 @@
 #include <vector>
 
 using fetch_callback = std::function<void(std::istringstream&)>;
+using fetch_raw_callback = std::function<void(const std::vector<char>&)>;
 using multiple_fetch_callback = std::function<void(std::size_t, std::size_t, std::istringstream&)>;
 
 void fetch_file(const std::filesystem::path& file, const fetch_callback& callback, const bool persist = true);
+void fetch_file(const std::filesystem::path& file, const fetch_raw_callback& callback, const bool persist = true);
 void fetch_files(const std::vector<std::filesystem::path>& files, const multiple_fetch_callback& callback, const bool persist = true);
 std::size_t get_fetches_completed();
 std::size_t get_fetches_failed();
