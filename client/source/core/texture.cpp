@@ -1,18 +1,31 @@
 #include <fstream>
 
-#include <cereal/archives/portable_binary.hpp>
-#include <cereal/archives/json.hpp>
 #include <GLES3/gl3.h>
+#include <cereal/archives/json.hpp>
+#include <cereal/archives/portable_binary.hpp>
 
-#include <core/texture.hpp>
+
 #include <core/fetch.hpp>
+#include <core/texture.hpp>
 #include <core/window.hpp>
 
-namespace detail {
+constexpr static GLenum COMPRESSED_R11_EAC = 0x9270;
+constexpr static GLenum COMPRESSED_SIGNED_R11_EAC = 0x9271;
+constexpr static GLenum COMPRESSED_RG11_EAC = 0x9272;
+constexpr static GLenum COMPRESSED_SIGNED_RG11_EAC = 0x9273;
+constexpr static GLenum COMPRESSED_RGB8_ETC2 = 0x9274;
+constexpr static GLenum COMPRESSED_SRGB8_ETC2 = 0x9275;
+constexpr static GLenum COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2 = 0x9276;
+constexpr static GLenum COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2 = 0x9277;
+constexpr static GLenum COMPRESSED_RGBA8_ETC2_EAC = 0x9278;
+constexpr static GLenum COMPRESSED_SRGB8_ALPHA8_ETC2_EAC = 0x9279;
 
-void validate_texture(const image_data& data)
-{
-}
+constexpr static GLenum COMPRESSED_RGB_S3TC_DXT1_EXT = 0x83F0;
+constexpr static GLenum COMPRESSED_RGBA_S3TC_DXT1_EXT = 0x83F1;
+constexpr static GLenum COMPRESSED_RGBA_S3TC_DXT3_EXT = 0x83F2;
+constexpr static GLenum COMPRESSED_RGBA_S3TC_DXT5_EXT = 0x83F3;
+
+namespace detail {
 
 static std::unordered_map<std::string, std::promise<std::shared_ptr<texture_ref>>> promises;
 
@@ -39,15 +52,8 @@ texture_ref::~texture_ref()
     }
 }
 
-
-const GLenum COMPRESSED_RGB_S3TC_DXT1_EXT        = 0x83F0;
-const GLenum COMPRESSED_RGBA_S3TC_DXT1_EXT       = 0x83F1;
-const GLenum COMPRESSED_RGBA_S3TC_DXT3_EXT       = 0x83F2;
-const GLenum COMPRESSED_RGBA_S3TC_DXT5_EXT       = 0x83F3;
-
 texture_ref::texture_ref(const image_data& data)
 {
-    detail::validate_texture(data);
     glGenTextures(1, &_texture_id);
     glBindTexture(GL_TEXTURE_2D, _texture_id);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -57,11 +63,22 @@ texture_ref::texture_ref(const image_data& data)
     const GLubyte* _pixels_ptr = &(data.pixels[0]);
     switch (data.channels) {
     case 3:
-        glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, data.width, data.height, 0, data.pixels.size(), /* void ptr to unsigned bytes */ _pixels_ptr);
-        // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, data.width, data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
+        if (data.is_compressed_etc) {
+            glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB8_ETC2, data.width, data.height, 0, data.pixels.size(), _pixels_ptr);
+        } else if (data.is_compressed_s3tc) {
+            glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, data.width, data.height, 0, data.pixels.size(), _pixels_ptr);
+        } else {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, data.width, data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
+        }
         break;
     case 4:
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data.width, data.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);
+        if (data.is_compressed_etc) {
+            glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA8_ETC2_EAC, data.width, data.height, 0, data.pixels.size(), _pixels_ptr);
+        } else if (data.is_compressed_s3tc) {
+            glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, data.width, data.height, 0, data.pixels.size(), _pixels_ptr);
+        } else {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data.width, data.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);
+        }
         break;
     default:
 #if LUCARIA_DEBUG
@@ -71,10 +88,8 @@ texture_ref::texture_ref(const image_data& data)
         break;
     }
 #if LUCARIA_DEBUG
-    std::cout << "Created TEXTURE_2D buffer of size " << data.width << "x" << data.height
-              << " with id " << _texture_id << std::endl;
+    std::cout << "Created TEXTURE_2D buffer of size " << data.width << "x" << data.height << " with id " << _texture_id << std::endl;
 #endif
-    graphics_assert();
     _is_instanced = true;
 }
 
@@ -115,21 +130,25 @@ image_data load_compressed_image_data(const std::vector<char>& image_raw_data)
             // m_type = Dxt1;
             std::cout << "DXT1" << std::endl;
             _image_data.channels = 3;
+            _image_data.is_compressed_s3tc = true;
             break;
         case 11:
             // m_type = Dxt5;
             std::cout << "DXT5" << std::endl;
             _image_data.channels = 4;
+            _image_data.is_compressed_s3tc = true;
             break;
         case 22:
             // m_type = Etc2_RGB;
             std::cout << "ETC2_RGB" << std::endl;
             _image_data.channels = 3;
+            _image_data.is_compressed_etc = true;
             break;
         case 23:
             // m_type = Etc2_RGBA;
             std::cout << "ETC2_RGBA" << std::endl;
             _image_data.channels = 4;
+            _image_data.is_compressed_etc = true;
             break;
         default:
             assert(false);
@@ -148,11 +167,13 @@ image_data load_compressed_image_data(const std::vector<char>& image_raw_data)
             // m_type = Etc2_RGB;
             std::cout << "ETC2_RGB" << std::endl;
             _image_data.channels = 3;
+            _image_data.is_compressed_etc = true;
             break;
         case 0x9278:
             // m_type = Etc2_RGBA;
             std::cout << "ETC2_RGBA" << std::endl;
             _image_data.channels = 4;
+            _image_data.is_compressed_etc = true;
             break;
         default:
             assert(false);
@@ -194,6 +215,6 @@ std::shared_future<std::shared_ptr<texture_ref>> fetch_texture(const std::filesy
             _promise.set_value(std::move(std::make_shared<texture_ref>(load_image_data(stream))));
         });
     }
-    
+
     return _promise.get_future();
 }
