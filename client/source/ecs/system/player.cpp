@@ -28,9 +28,12 @@ static glm::mat4x4 player_view;
 static glm::vec3 compute_position()
 {
     glm::vec3 _position = player_position;
-    std::unordered_map<std::string, bool>& _keys = get_keys();
-    const float _forward_dir = static_cast<float>(_keys[player_forward_key.data()]) - static_cast<float>(_keys[player_backward_key.data()]);
-    const float _right_dir = static_cast<float>(_keys[player_right_key.data()]) - static_cast<float>(_keys[player_left_key.data()]);
+    float _forward_dir, _right_dir;
+    if (get_is_mouse_locked() && !splash_system::is_splash_on()) {
+        std::unordered_map<std::string, bool>& _keys = get_keys();
+        _forward_dir = static_cast<float>(_keys[player_forward_key.data()]) - static_cast<float>(_keys[player_backward_key.data()]);
+        _right_dir = static_cast<float>(_keys[player_right_key.data()]) - static_cast<float>(_keys[player_left_key.data()]);
+    }
     const glm::vec3 _player_right = glm::normalize(glm::cross(player_forward, player_up));
     const float _time_delta = get_time_delta();
     _position += _forward_dir * player_speed * player_forward * _time_delta;
@@ -40,10 +43,12 @@ static glm::vec3 compute_position()
 
 static void compute_rotation()
 {
-    const glm::vec2 _mouse_delta = get_mouse_position_delta();
-    const double _time_delta = get_time_delta();
-    detail::player_yaw += _mouse_delta.x * detail::mouse_sensitivity * _time_delta;
-    detail::player_pitch -= _mouse_delta.y * detail::mouse_sensitivity * _time_delta;
+    if (get_is_mouse_locked() && !splash_system::is_splash_on()) {
+        const glm::vec2 _mouse_delta = get_mouse_position_delta();
+        const double _time_delta = get_time_delta();
+        detail::player_yaw += _mouse_delta.x * detail::mouse_sensitivity * _time_delta;
+        detail::player_pitch -= _mouse_delta.y * detail::mouse_sensitivity * _time_delta;
+    }
     detail::player_pitch = glm::clamp(detail::player_pitch, -89.0f, 89.0f);
     const glm::vec3 _player_direction = {
         glm::cos(glm::radians(detail::player_yaw)) * glm::cos(glm::radians(detail::player_pitch)),
@@ -79,13 +84,8 @@ void player_system::player_radius(const float radius)
 
 void player_system::update()
 {
-    if (get_is_mouse_locked() && !splash_system::is_splash_on()) {
-        detail::compute_rotation();
-        const glm::vec3 _new_position = detail::compute_position();
-        // if (!detail::test_position(_new_position)) {
-        detail::player_position = _new_position;
-        // }
-    }
+    detail::compute_rotation();
+    detail::player_position = detail::compute_position();
 }
 
 glm::mat4x4 player_system::get_view()

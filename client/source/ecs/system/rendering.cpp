@@ -17,6 +17,7 @@
 #include <ecs/component/transform.hpp>
 #include <ecs/system/player.hpp>
 #include <ecs/system/rendering.hpp>
+#include <ecs/system/splash.hpp>
 
 #if LUCARIA_GUIZMO
 class guizmo_debug_draw : public btIDebugDraw {
@@ -74,6 +75,7 @@ static float camera_fov = 60.f;
 static float camera_near = 0.1f;
 static float camera_far = 100.f;
 static glm::mat4x4 camera_projection;
+static glm::mat4x4 camera_view;
 static glm::mat4x4 camera_view_projection;
 static fetch_container<cubemap_ref> skybox_cubemap = {};
 
@@ -165,7 +167,7 @@ static const std::string skybox_vertex = R"(#version 300 es
     })";
 
 static const std::string skybox_fragment = R"(#version 300 es
-    precision mediump float;
+    precision highp float;
     in vec3 frag_texcoord;
     uniform samplerCube uniform_color;
     out vec4 output_color;
@@ -270,7 +272,8 @@ void rendering_system::compute_projection()
 
 void rendering_system::compute_view_projection()
 {
-    detail::camera_view_projection = detail::camera_projection * player_system::get_view();
+    detail::camera_view = player_system::get_view();
+    detail::camera_view_projection = detail::camera_projection * detail::camera_view;
 }
 
 void rendering_system::draw_skybox()
@@ -290,16 +293,20 @@ void rendering_system::draw_skybox()
         mesh_ref& _skybox_mesh = _persistent_skybox_mesh.value();
         program_ref& _skybox_program = _persistent_skybox_program.value();
         cubemap_ref& _skybox_cubemap = detail::skybox_cubemap.value();
+        const glm::mat4 _no_translation_view_projection = detail::camera_projection * glm::mat4(glm::mat3(detail::camera_view));  
         _skybox_program.use();
         _skybox_program.bind("vert_position", _skybox_mesh, mesh_attribute::position);
         _skybox_program.bind("uniform_color", _skybox_cubemap, 0);
-        _skybox_program.bind("uniform_projection", detail::camera_projection);
+        _skybox_program.bind("uniform_projection", _no_translation_view_projection);
         _skybox_program.draw(false);
     }
 }
 
 void rendering_system::draw_blockout_meshes()
 {
+    if (splash_system::is_splash_on()) {
+        return;
+    }
     static bool _is_program_setup = false;
     static std::optional<program_ref> _persistent_blockout_program = std::nullopt;
     if (!_is_program_setup) {
@@ -332,6 +339,9 @@ void rendering_system::draw_blockout_meshes()
 
 void rendering_system::draw_unlit_meshes()
 {
+    if (splash_system::is_splash_on()) {
+        return;
+    }
     static bool _is_program_setup = false;
     static std::optional<program_ref> _persistent_unlit_program = std::nullopt;
     if (!_is_program_setup) {
@@ -385,6 +395,9 @@ void rendering_system::clear_debug_guizmos()
 void rendering_system::draw_debug_guizmos()
 {
 #if LUCARIA_GUIZMO
+    if (splash_system::is_splash_on()) {
+        return;
+    }
     for (const std::pair<const glm::vec3, std::vector<glm::vec3>>& _pair : detail::guizmo_draw.positions) {
         const glm::vec3& _color = _pair.first;
         const std::vector<glm::vec3>& _positions = _pair.second;

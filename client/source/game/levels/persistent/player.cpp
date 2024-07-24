@@ -18,7 +18,7 @@ constexpr glm::uint animationID_player_lol2 = 45;
 
 void level_persistent_player(entt::registry& registry)
 {    
-    rendering_system::use_clear_color({ 0.f, 0.f, 0.f, 1.f });
+    // rendering_system::use_clear_color({ 0.f, 0.f, 0.f, 1.f });
     scripting_system::use_controller_state<runner_controller_state>();
 
     const entt::entity _player_entity = registry.create();
