@@ -12,63 +12,7 @@
 #include <core/window.hpp>
 
 namespace detail {
-
-// struct VorbisStream {
-//     std::istringstream& stream;
-//     std::vector<char> buffer;
-
-//     VorbisStream(std::istringstream& data_stream)
-//         : stream(data_stream)
-//     {
-//         stream.seekg(0, std::ios::end);
-//         size_t _size = stream.tellg();
-//         buffer.resize(_size);
-//         stream.seekg(0, std::ios::beg);
-//         stream.read(buffer.data(), _size);
-//         stream.str(std::string(buffer.begin(), buffer.end()));
-//     }
-// };
-
-// size_t read_func(void* ptr, size_t size, size_t nmemb, void* data_source)
-// {
-//     VorbisStream* _stream = static_cast<VorbisStream*>(data_source);
-//     _stream->stream.read(static_cast<char*>(ptr), size * nmemb);
-//     return _stream->stream.gcount();
-// }
-
-// int seek_func(void* data_source, ogg_int64_t offset, int whence)
-// {
-//     VorbisStream* _stream = static_cast<VorbisStream*>(data_source);
-//     std::istringstream::pos_type _pos;
-//     switch (whence) {
-//     case SEEK_SET:
-//         _pos = offset;
-//         break;
-//     case SEEK_CUR:
-//         _pos = _stream->stream.tellg() + std::istringstream::pos_type(offset);
-//         break;
-//     case SEEK_END:
-//         _pos = _stream->buffer.size() - offset;
-//         break;
-//     default:
-//         return -1;
-//     }
-//     _stream->stream.clear();
-//     _stream->stream.seekg(_pos);
-//     return _stream->stream.good() ? 0 : -1;
-// }
-
-// long tell_func(void* data_source)
-// {
-//     VorbisStream* _stream = static_cast<VorbisStream*>(data_source);
-//     return static_cast<long>(_stream->stream.tellg());
-// }
-
-// int close_func(void* data_source)
-// {
-//     return 0;
-// }
-
+    
 class VorbisStream {
 public:
     VorbisStream(const std::vector<char>& data)
@@ -228,7 +172,6 @@ std::shared_future<std::shared_ptr<sound_ref>> fetch_sound(const std::filesystem
 {
     std::promise<std::shared_ptr<sound_ref>>& _promise = detail::promises[sound_path.string()];
     on_audio_locked([&_promise, sound_path] () {
-        // fetch_file(sound_path, [&_promise](std::istringstream& stream) {
         fetch_file(sound_path, [&_promise](const std::vector<char>& stream) {
             _promise.set_value(std::move(std::make_shared<sound_ref>(load_audio_data(stream))));
         });

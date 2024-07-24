@@ -39,6 +39,13 @@ else()
 		add_subdirectory(../external/vorbistools ${CMAKE_BINARY_DIR}/external/vorbistools)
 		target_include_directories(oggenc PRIVATE ${OGG_INCLUDE_DIRS})
 		target_include_directories(oggenc PRIVATE ${VORBIS_INCLUDE_DIRS})
+		if (MSVC)
+			target_compile_options(oggenc PRIVATE /wd4244)
+			target_compile_options(oggenc PRIVATE /wd4305)
+			target_compile_options(oggenc PRIVATE /wd4996)
+			target_compile_options(oggenc PRIVATE /wd4267)
+			target_compile_options(oggenc PRIVATE /wd4018)
+		endif()
 
 		set(JUST_INSTALL_CEREAL ON)
 		set(SKIP_PERFORMANCE_COMPARISON ON)
@@ -55,7 +62,7 @@ else()
 		set(BUILD_SHARED_LIBS OFF)
 		add_subdirectory(../external/assimp ${CMAKE_BINARY_DIR}/external/assimp)
 
-		add_subdirectory(../external/etcpak ${CMAKE_BINARY_DIR}/external/etcpak) # we use zlib from assimp
+		add_subdirectory(../external/etcpak ${CMAKE_BINARY_DIR}/external/etcpak)
 
 		set(ozz_build_tools ON)
 		set(ozz_build_fbx OFF)
