@@ -5,20 +5,15 @@
 
 namespace detail {
 
-std::size_t fetch_total = 0;
-std::size_t fetch_completed = 0;
-std::size_t fetch_failed = 0;
-std::unordered_map<std::string, fetch_callback> fetch_requests;
-std::unordered_map<std::string, fetch_raw_callback> fetch_raw_requests;
-std::unordered_map<std::string, multiple_fetch_callback> multiple_fetch_requests;
-std::unordered_map<std::string, multiple_fetch_raw_callback> multiple_fetch_raw_requests;
+static std::size_t fetch_total = 0;
+static std::size_t fetch_completed = 0;
+static std::size_t fetch_failed = 0;
+static std::unordered_map<std::string, fetch_callback> fetch_requests;
+static std::unordered_map<std::string, fetch_raw_callback> fetch_raw_requests;
+static std::unordered_map<std::string, multiple_fetch_callback> multiple_fetch_requests;
+static std::unordered_map<std::string, multiple_fetch_raw_callback> multiple_fetch_raw_requests;
 
-std::size_t compute_hash(std::size_t lhs, std::size_t rhs)
-{
-    return lhs ^ (rhs + 0x9e3779b9 + (lhs << 6) + (lhs >> 2));
-}
-
-void on_fetch_success(emscripten_fetch_t* fetch)
+static void on_fetch_success(emscripten_fetch_t* fetch)
 {
     fetch_completed++;
     std::cout << "Successfully fetched " << fetch->numBytes << " bytes from " << fetch->url << std::endl;
@@ -32,7 +27,7 @@ void on_fetch_success(emscripten_fetch_t* fetch)
     emscripten_fetch_close(fetch);
 }
 
-void on_fetch_raw_success(emscripten_fetch_t* fetch)
+static void on_fetch_raw_success(emscripten_fetch_t* fetch)
 {
     fetch_completed++;
     std::cout << "Successfully fetched " << fetch->numBytes << " bytes from " << fetch->url << std::endl;
@@ -41,7 +36,7 @@ void on_fetch_raw_success(emscripten_fetch_t* fetch)
     emscripten_fetch_close(fetch);
 }
 
-void on_multiple_fetch_success(emscripten_fetch_t* fetch)
+static void on_multiple_fetch_success(emscripten_fetch_t* fetch)
 {
     fetch_completed++;
     std::cout << "Successfully fetched MULTI " << fetch->numBytes << " bytes from " << fetch->url << std::endl;
@@ -60,7 +55,7 @@ void on_multiple_fetch_success(emscripten_fetch_t* fetch)
     emscripten_fetch_close(fetch);
 }
 
-void on_multiple_fetch_raw_success(emscripten_fetch_t* fetch)
+static void on_multiple_fetch_raw_success(emscripten_fetch_t* fetch)
 {
     fetch_completed++;
     std::cout << "Successfully fetched MULTI " << fetch->numBytes << " bytes from " << fetch->url << std::endl;
@@ -74,14 +69,14 @@ void on_multiple_fetch_raw_success(emscripten_fetch_t* fetch)
     emscripten_fetch_close(fetch);
 }
 
-void on_fetch_error(emscripten_fetch_t* fetch)
+static void on_fetch_error(emscripten_fetch_t* fetch)
 {
     fetch_failed++;
     std::cout << "Failed to fetch " << fetch->url << " with status " << fetch->status << std::endl;
     emscripten_fetch_close(fetch);
 }
 
-void on_multiple_fetch_error(emscripten_fetch_t* fetch)
+static void on_multiple_fetch_error(emscripten_fetch_t* fetch)
 {
     fetch_failed++;
     std::cout << "Failed to fetch " << fetch->url << " with status " << fetch->status << std::endl;
@@ -90,15 +85,6 @@ void on_multiple_fetch_error(emscripten_fetch_t* fetch)
     emscripten_fetch_close(fetch);
 }
 
-}
-
-std::size_t compute_hash_files(const std::vector<std::filesystem::path>& files)
-{
-    std::size_t _combined_hash = 0;
-    for (const std::filesystem::path& _file : files) {
-        _combined_hash = detail::compute_hash(_combined_hash, std::hash<std::string> {}(_file));
-    }
-    return _combined_hash;
 }
 
 void fetch_file(const std::filesystem::path& file, const fetch_callback& callback, const bool persist)
