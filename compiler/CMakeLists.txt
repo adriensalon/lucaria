@@ -14,8 +14,10 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 	return()
 else()
 	set(MESSAGE_QUIET ON)
+		add_subdirectory(../external/etcpak ${CMAKE_BINARY_DIR}/external/etcpak)
 		add_subdirectory(../external/glm ${CMAKE_BINARY_DIR}/external/glm)
 		add_subdirectory(../external/stb ${CMAKE_BINARY_DIR}/external/stb)
+		add_subdirectory(../external/woff ${CMAKE_BINARY_DIR}/external/woff)
 				
 		add_subdirectory(../external/ogg ${CMAKE_BINARY_DIR}/external/ogg)
 		set(OGG_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/../external/ogg/include)
@@ -62,8 +64,6 @@ else()
 		set(BUILD_SHARED_LIBS OFF)
 		add_subdirectory(../external/assimp ${CMAKE_BINARY_DIR}/external/assimp)
 
-		add_subdirectory(../external/etcpak ${CMAKE_BINARY_DIR}/external/etcpak)
-
 		set(ozz_build_tools ON)
 		set(ozz_build_fbx OFF)
 		set(ozz_build_gltf ON)
@@ -71,6 +71,7 @@ else()
 		set(ozz_build_postfix OFF)
 		set(ozz_run_tests_headless OFF)
 		add_subdirectory(../external/ozz ${CMAKE_BINARY_DIR}/external/ozz)
+		
 	set(MESSAGE_QUIET OFF)
 
 	file(GLOB_RECURSE lucaria_compiler_sources "${CMAKE_CURRENT_LIST_DIR}/source/*.cpp")
@@ -95,6 +96,13 @@ else()
 	add_dependencies(lucaria_compiler etcpak)
 	add_dependencies(lucaria_compiler gltf2ozz)
 	add_dependencies(lucaria_compiler oggenc)
+	add_dependencies(lucaria_compiler woff2_compress)
+
+	# add_custom_command(TARGET lucaria_compiler POST_BUILD
+	# 	COMMAND ${CMAKE_COMMAND} -E copy
+	# 	"$<TARGET_FILE_DIR:etcpak>/etcpak.exe"
+	# 	"$<TARGET_FILE_DIR:lucaria_compiler>/etcpak.exe"
+	# 	MAIN_DEPENDENCY etcpak)
 
 	add_custom_command(TARGET lucaria_compiler POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy
@@ -107,4 +115,10 @@ else()
 		"$<TARGET_FILE_DIR:oggenc>/oggenc.exe"
 		"$<TARGET_FILE_DIR:lucaria_compiler>/oggenc.exe"
 		MAIN_DEPENDENCY oggenc)
+
+	# add_custom_command(TARGET lucaria_compiler POST_BUILD
+	# 	COMMAND ${CMAKE_COMMAND} -E woff2_compress
+	# 	"$<TARGET_FILE_DIR:woff2_compress>/woff2_compress.exe"
+	# 	"$<TARGET_FILE_DIR:lucaria_compiler>/woff2_compress.exe"
+	# 	MAIN_DEPENDENCY woff2_compress)
 endif()

@@ -14,6 +14,7 @@
 #include <tool/etcpak.hpp>
 #include <tool/gltf2ozz.hpp>
 #include <tool/oggenc.hpp>
+#include <tool/woff2_compress.hpp>
 
 namespace detail {
 
@@ -22,6 +23,7 @@ using commands_map = std::unordered_map<std::string, std::vector<std::string>>;
 static std::filesystem::path etcpak_executable;
 static std::filesystem::path gltf2ozz_executable;
 static std::filesystem::path oggenc_executable;
+static std::filesystem::path woff2_compress_executable;
 
 commands_map extract_args(int argc, char* argv[])
 {
@@ -111,6 +113,25 @@ std::filesystem::path process_oggenc_command(const commands_map& commands)
     return _oggenc_executable;
 }
 
+std::filesystem::path process_woff2_compress_command(const commands_map& commands)
+{
+    if (commands.find("-woff2_compress") == commands.end()) {
+        std::cout << "Command -woff2_compress must be provided" << std::endl;
+        std::terminate();
+    }
+    if (commands.at("-woff2_compress").size() != 1) {
+        std::cout << "Only one file must be provided with option -woff2_compress" << std::endl;
+        std::terminate();
+    }
+    std::filesystem::path _woff2_compress_executable = commands.at("-woff2_compress").at(0);
+    if (!std::filesystem::exists(_woff2_compress_executable)) {
+        std::cout << "The path provided with option -woff2_compress must be an existing application" << std::endl;
+        std::terminate();
+    }
+    std::cout << "-- Tool woff2_compress provided at " << _woff2_compress_executable << std::endl;
+    return _woff2_compress_executable;
+}
+
 std::filesystem::path process_input_command(const commands_map& commands)
 {
     if (commands.find("-i") == commands.end()) {
@@ -194,7 +215,7 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
 {
     const std::string _extension = input_file.extension().generic_string();
     if (_extension == ".ttf") {
-        // export_binary(import_font(input_file), output_file);
+        execute_woff2_compress(woff2_compress_executable, input_file, output_file);
 
     } else if (_extension == ".glb" || _extension == ".gltf") {
         imported_assimp_data _imported_geometry = import_assimp(input_file);
@@ -240,6 +261,7 @@ int main(int argc, char* argv[])
     detail::etcpak_executable = detail::process_etcpak_command(_commands);
     detail::gltf2ozz_executable = detail::process_gltf2ozz_command(_commands);
     detail::oggenc_executable = detail::process_oggenc_command(_commands);
+    detail::woff2_compress_executable = detail::process_woff2_compress_command(_commands);
     detail::iterate_recursive(_input_dir, [&](const std::filesystem::path& _input_file) {
         std::cout << std::endl;
         std::filesystem::path _relative_input_file = detail::substract_relative(_input_dir, _input_file);

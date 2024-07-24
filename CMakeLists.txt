@@ -78,24 +78,29 @@ find_program_recursive(COMPILER_EXECUTABLE "${COMPILER_BUILD_DIR}" "lucaria_comp
 find_program_recursive(ETCPAK_EXECUTABLE "${COMPILER_BUILD_DIR}" "etcpak")
 find_program_recursive(GLTF2OZZ_EXECUTABLE "${COMPILER_BUILD_DIR}" "gltf2ozz")
 find_program_recursive(OGGENC_EXECUTABLE "${COMPILER_BUILD_DIR}" "oggenc")
+find_program_recursive(WOFF2COMPRESS_EXECUTABLE "${COMPILER_BUILD_DIR}" "woff2_compress")
 message(STATUS "Found compiler at ${COMPILER_EXECUTABLE}")
 message(STATUS "Found etcpak at ${ETCPAK_EXECUTABLE}")
 message(STATUS "Found gltf2ozz at ${GLTF2OZZ_EXECUTABLE}")
 message(STATUS "Found oggenc at ${OGGENC_EXECUTABLE}")
+message(STATUS "Found woff2_compress at ${WOFF2COMPRESS_EXECUTABLE}")
 get_filename_component(COMPILER_NAME ${COMPILER_EXECUTABLE} NAME)
 get_filename_component(ETCPAK_NAME ${ETCPAK_EXECUTABLE} NAME)
 get_filename_component(GLTF2OZZ_NAME ${GLTF2OZZ_EXECUTABLE} NAME)
 get_filename_component(OGGENC_NAME ${OGGENC_EXECUTABLE} NAME)
+get_filename_component(WOFF2COMPRESS_NAME ${WOFF2COMPRESS_EXECUTABLE} NAME)
 execute_process(
     COMMAND ${CMAKE_COMMAND} -E make_directory ${INSTALL_DIR}/compiler
     COMMAND ${CMAKE_COMMAND} -E rename ${COMPILER_EXECUTABLE} ${INSTALL_DIR}/compiler/${COMPILER_NAME}
     COMMAND ${CMAKE_COMMAND} -E rename ${ETCPAK_EXECUTABLE} ${INSTALL_DIR}/compiler/${ETCPAK_NAME}
     COMMAND ${CMAKE_COMMAND} -E rename ${GLTF2OZZ_EXECUTABLE} ${INSTALL_DIR}/compiler/${GLTF2OZZ_NAME}
-    COMMAND ${CMAKE_COMMAND} -E rename ${OGGENC_EXECUTABLE} ${INSTALL_DIR}/compiler/${OGGENC_NAME})
+    COMMAND ${CMAKE_COMMAND} -E rename ${OGGENC_EXECUTABLE} ${INSTALL_DIR}/compiler/${OGGENC_NAME}
+    COMMAND ${CMAKE_COMMAND} -E rename ${WOFF2COMPRESS_EXECUTABLE} ${INSTALL_DIR}/compiler/${WOFF2COMPRESS_NAME})
 set(COMPILER_EXECUTABLE ${INSTALL_DIR}/compiler/${COMPILER_NAME})
 set(ETCPAK_EXECUTABLE ${INSTALL_DIR}/compiler/${ETCPAK_NAME})
 set(GLTF2OZZ_EXECUTABLE ${INSTALL_DIR}/compiler/${GLTF2OZZ_NAME})
 set(OGGENC_EXECUTABLE ${INSTALL_DIR}/compiler/${OGGENC_NAME})
+set(WOFF2COMPRESS_EXECUTABLE ${INSTALL_DIR}/compiler/${WOFF2COMPRESS_NAME})
 message(" ")
 
 # assets
@@ -108,6 +113,7 @@ execute_process(
         -etcpak ${ETCPAK_EXECUTABLE}
         -gltf2ozz ${GLTF2OZZ_EXECUTABLE}
         -oggenc ${OGGENC_EXECUTABLE}
+        -woff2_compress ${WOFF2COMPRESS_EXECUTABLE}
     WORKING_DIRECTORY ${INSTALL_DIR}
     RESULT_VARIABLE configure_result
     OUTPUT_VARIABLE configure_output
