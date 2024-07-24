@@ -23,5 +23,5 @@ private:
     glm::uint _buffer_id;
 };
 
-audio_data load_compressed_audio_data(std::istringstream& audio_stream);
+audio_data load_audio_data(const std::vector<char>& audio_stream);
 std::shared_future<std::shared_ptr<sound_ref>> fetch_sound(const std::filesystem::path& sound_path);

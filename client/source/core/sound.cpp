@@ -13,61 +13,132 @@
 
 namespace detail {
 
-struct VorbisStream {
-    std::istringstream& stream;
-    std::vector<char> buffer;
+// struct VorbisStream {
+//     std::istringstream& stream;
+//     std::vector<char> buffer;
 
-    VorbisStream(std::istringstream& data_stream)
-        : stream(data_stream)
-    {
-        stream.seekg(0, std::ios::end);
-        size_t _size = stream.tellg();
-        buffer.resize(_size);
-        stream.seekg(0, std::ios::beg);
-        stream.read(buffer.data(), _size);
-        stream.str(std::string(buffer.begin(), buffer.end()));
+//     VorbisStream(std::istringstream& data_stream)
+//         : stream(data_stream)
+//     {
+//         stream.seekg(0, std::ios::end);
+//         size_t _size = stream.tellg();
+//         buffer.resize(_size);
+//         stream.seekg(0, std::ios::beg);
+//         stream.read(buffer.data(), _size);
+//         stream.str(std::string(buffer.begin(), buffer.end()));
+//     }
+// };
+
+// size_t read_func(void* ptr, size_t size, size_t nmemb, void* data_source)
+// {
+//     VorbisStream* _stream = static_cast<VorbisStream*>(data_source);
+//     _stream->stream.read(static_cast<char*>(ptr), size * nmemb);
+//     return _stream->stream.gcount();
+// }
+
+// int seek_func(void* data_source, ogg_int64_t offset, int whence)
+// {
+//     VorbisStream* _stream = static_cast<VorbisStream*>(data_source);
+//     std::istringstream::pos_type _pos;
+//     switch (whence) {
+//     case SEEK_SET:
+//         _pos = offset;
+//         break;
+//     case SEEK_CUR:
+//         _pos = _stream->stream.tellg() + std::istringstream::pos_type(offset);
+//         break;
+//     case SEEK_END:
+//         _pos = _stream->buffer.size() - offset;
+//         break;
+//     default:
+//         return -1;
+//     }
+//     _stream->stream.clear();
+//     _stream->stream.seekg(_pos);
+//     return _stream->stream.good() ? 0 : -1;
+// }
+
+// long tell_func(void* data_source)
+// {
+//     VorbisStream* _stream = static_cast<VorbisStream*>(data_source);
+//     return static_cast<long>(_stream->stream.tellg());
+// }
+
+// int close_func(void* data_source)
+// {
+//     return 0;
+// }
+
+class VorbisStream {
+public:
+    VorbisStream(const std::vector<char>& data)
+        : data_(data), position_(0) {}
+
+    ~VorbisStream() = default;
+
+    size_t Read(void* ptr, size_t size, size_t nmemb) {
+        size_t remaining = data_.size() - position_;
+        size_t to_read = std::min(size * nmemb, remaining);
+        std::memcpy(ptr, data_.data() + position_, to_read);
+        position_ += to_read;
+        return to_read / size;  // Return the number of items read
     }
+
+    int Seek(ogg_int64_t offset, int whence) {
+        ogg_int64_t new_position = 0;
+        switch (whence) {
+            case SEEK_SET:
+                new_position = offset;
+                break;
+            case SEEK_CUR:
+                new_position = position_ + offset;
+                break;
+            case SEEK_END:
+                new_position = data_.size() + offset;
+                break;
+            default:
+                return -1;
+        }
+        if (new_position < 0 || static_cast<size_t>(new_position) > data_.size()) {
+            return -1;
+        }
+        position_ = new_position;
+        return 0;
+    }
+
+    long Tell() const {
+        return static_cast<long>(position_);
+    }
+
+private:
+    const std::vector<char>& data_;
+    size_t position_;
 };
 
-size_t read_func(void* ptr, size_t size, size_t nmemb, void* data_source)
-{
-    VorbisStream* _stream = static_cast<VorbisStream*>(data_source);
-    _stream->stream.read(static_cast<char*>(ptr), size * nmemb);
-    return _stream->stream.gcount();
+// Read function for Vorbis decoder
+size_t read_func(void* ptr, size_t size, size_t nmemb, void* data_source) {
+    VorbisStream* stream = static_cast<VorbisStream*>(data_source);
+    return stream->Read(ptr, size, nmemb);
 }
 
-int seek_func(void* data_source, ogg_int64_t offset, int whence)
-{
-    VorbisStream* _stream = static_cast<VorbisStream*>(data_source);
-    std::istringstream::pos_type _pos;
-    switch (whence) {
-    case SEEK_SET:
-        _pos = offset;
-        break;
-    case SEEK_CUR:
-        _pos = _stream->stream.tellg() + std::istringstream::pos_type(offset);
-        break;
-    case SEEK_END:
-        _pos = _stream->buffer.size() - offset;
-        break;
-    default:
-        return -1;
-    }
-    _stream->stream.clear();
-    _stream->stream.seekg(_pos);
-    return _stream->stream.good() ? 0 : -1;
+// Seek function for Vorbis decoder
+int seek_func(void* data_source, ogg_int64_t offset, int whence) {
+    VorbisStream* stream = static_cast<VorbisStream*>(data_source);
+    return stream->Seek(offset, whence);
 }
 
-long tell_func(void* data_source)
-{
-    VorbisStream* _stream = static_cast<VorbisStream*>(data_source);
-    return static_cast<long>(_stream->stream.tellg());
+// Tell function for Vorbis decoder
+long tell_func(void* data_source) {
+    VorbisStream* stream = static_cast<VorbisStream*>(data_source);
+    return stream->Tell();
 }
 
-int close_func(void* data_source)
-{
+// Close function for Vorbis decoder
+int close_func(void* data_source) {
+    // Nothing to do here since we don't manage the memory for the data
     return 0;
 }
+
 
 static std::unordered_map<std::string, std::promise<std::shared_ptr<sound_ref>>> promises;
 
@@ -116,7 +187,7 @@ glm::uint sound_ref::get_id() const
     return _buffer_id;
 }
 
-audio_data load_compressed_audio_data(std::istringstream& audio_stream)
+audio_data load_audio_data(const std::vector<char>& audio_stream)
 {
     audio_data _data;
     detail::VorbisStream _stream(audio_stream);
@@ -157,8 +228,9 @@ std::shared_future<std::shared_ptr<sound_ref>> fetch_sound(const std::filesystem
 {
     std::promise<std::shared_ptr<sound_ref>>& _promise = detail::promises[sound_path.string()];
     on_audio_locked([&_promise, sound_path] () {
-        fetch_file(sound_path, [&_promise](std::istringstream& stream) {
-            _promise.set_value(std::move(std::make_shared<sound_ref>(load_compressed_audio_data(stream))));
+        // fetch_file(sound_path, [&_promise](std::istringstream& stream) {
+        fetch_file(sound_path, [&_promise](const std::vector<char>& stream) {
+            _promise.set_value(std::move(std::make_shared<sound_ref>(load_audio_data(stream))));
         });
     });
     return _promise.get_future();
