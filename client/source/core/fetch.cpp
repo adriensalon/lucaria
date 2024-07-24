@@ -1,6 +1,7 @@
 #include <emscripten/fetch.h>
 
 #include <core/fetch.hpp>
+#include <core/load.hpp>
 
 namespace detail {
 

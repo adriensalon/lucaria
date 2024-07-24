@@ -1,6 +1,7 @@
 #pragma once
 
 #include <sstream>
+#include <vector>
 
 #include <ozz/base/io/stream.h>
 
@@ -26,3 +27,25 @@ namespace io {
 
 }
 }
+
+class VectorStreamBuf : public std::streambuf {
+public:
+    VectorStreamBuf(const std::vector<char>& data) {
+        // Set the input buffer pointers to the start and end of the vector
+        char* begin = const_cast<char*>(data.data());
+        char* end = begin + data.size();
+        setg(begin, begin, end);
+    }
+};
+
+class VectorInputStream : public std::istream {
+public:
+    VectorInputStream(const std::vector<char>& data)
+        : std::istream(&buffer), buffer(data) {
+        // Ensure the stream state is good
+        this->setstate(std::ios::goodbit);
+    }
+
+private:
+    VectorStreamBuf buffer;
+};
