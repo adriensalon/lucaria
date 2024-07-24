@@ -15,3 +15,5 @@ if (MSVC)
     target_compile_options(woff2enc PRIVATE /wd4244)
     target_compile_options(woff2enc PRIVATE /wd4018)
 endif()
+
+target_include_directories(woff2dec PUBLIC upstream/include)
