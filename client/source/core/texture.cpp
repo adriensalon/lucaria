@@ -83,75 +83,6 @@ GLuint texture_ref::get_id() const
     return _texture_id;
 }
 
-bool try_parse_compressed_texture(const uint8_t* content, const std::size_t length, image_data& image) 
-{
-    uint32_t* data32 = (uint32_t*)content;
-    if (*data32 == 0x03525650) {
-        // PVR
-        switch (*(data32 + 2)) {
-        // case 6:
-        //     // m_type = Etc1;
-        //     std::cout << "ETC1" << std::endl;
-        //     break;
-        case 7:
-            // m_type = Dxt1;
-            std::cout << "DXT1" << std::endl;
-            image.channels = 3;
-            break;
-        case 11:
-            // m_type = Dxt5;
-            std::cout << "DXT5" << std::endl;
-            image.channels = 4;
-            break;
-        case 22:
-            // m_type = Etc2_RGB;
-            std::cout << "ETC2_RGB" << std::endl;
-            image.channels = 3;
-            break;
-        case 23:
-            // m_type = Etc2_RGBA;
-            std::cout << "ETC2_RGBA" << std::endl;
-            image.channels = 4;
-            break;
-        default:
-            assert(false);
-            break;
-        }
-        const std::size_t _offset = 52 + *(data32 + 12);
-        const glm::uint8* _data_ptr = content + _offset;
-        const std::size_t _data_size = length - _offset;
-        image.pixels = std::vector<glm::uint8>(_data_ptr, _data_ptr + _data_size);
-        image.height = *(data32 + 6);
-        image.width = *(data32 + 7);
-    } else if (*data32 == 0x58544BAB) {
-        // KTX
-        switch (*(data32 + 7)) {
-        case 0x9274:
-            // m_type = Etc2_RGB;
-            std::cout << "ETC2_RGB" << std::endl;
-            image.channels = 3;
-            break;
-        case 0x9278:
-            // m_type = Etc2_RGBA;
-            std::cout << "ETC2_RGBA" << std::endl;
-            image.channels = 4;
-            break;
-        default:
-            assert(false);
-            break;
-        }
-        const std::size_t _offset = sizeof(uint32_t) * 17 + *(data32 + 15);
-        const glm::uint8* _data_ptr = content + _offset;
-        const std::size_t _data_size = length - _offset;
-        image.pixels = std::vector<glm::uint8>(_data_ptr, _data_ptr + _data_size);
-        image.width = *(data32 + 9);
-        image.height = *(data32 + 10);
-    } else {
-        return false;
-    }
-    return true;
-}
-
 image_data load_image_data(std::istringstream& texture_stream)
 {
     image_data _data;
@@ -169,10 +100,74 @@ image_data load_image_data(std::istringstream& texture_stream)
 
 image_data load_compressed_image_data(const std::vector<char>& image_raw_data)
 {
-    image_data _data;
+    image_data _image_data;
     const std::vector<uint8_t>& _content = *(reinterpret_cast<const std::vector<uint8_t>*>(&image_raw_data));
-    try_parse_compressed_texture(_content.data(), _content.size(), _data);
-    return _data;
+    // try_parse_compressed_texture(_content.data(), _content.size(), _data);
+    uint32_t* data32 = (uint32_t*)_content.data();
+    if (*data32 == 0x03525650) {
+        // PVR
+        switch (*(data32 + 2)) {
+        // case 6:
+        //     // m_type = Etc1;
+        //     std::cout << "ETC1" << std::endl;
+        //     break;
+        case 7:
+            // m_type = Dxt1;
+            std::cout << "DXT1" << std::endl;
+            _image_data.channels = 3;
+            break;
+        case 11:
+            // m_type = Dxt5;
+            std::cout << "DXT5" << std::endl;
+            _image_data.channels = 4;
+            break;
+        case 22:
+            // m_type = Etc2_RGB;
+            std::cout << "ETC2_RGB" << std::endl;
+            _image_data.channels = 3;
+            break;
+        case 23:
+            // m_type = Etc2_RGBA;
+            std::cout << "ETC2_RGBA" << std::endl;
+            _image_data.channels = 4;
+            break;
+        default:
+            assert(false);
+            break;
+        }
+        const std::size_t _offset = 52 + *(data32 + 12);
+        const glm::uint8* _data_ptr = _content.data() + _offset;
+        const std::size_t _data_size = _content.size() - _offset;
+        _image_data.pixels = std::vector<glm::uint8>(_data_ptr, _data_ptr + _data_size);
+        _image_data.height = *(data32 + 6);
+        _image_data.width = *(data32 + 7);
+    } else if (*data32 == 0x58544BAB) {
+        // KTX
+        switch (*(data32 + 7)) {
+        case 0x9274:
+            // m_type = Etc2_RGB;
+            std::cout << "ETC2_RGB" << std::endl;
+            _image_data.channels = 3;
+            break;
+        case 0x9278:
+            // m_type = Etc2_RGBA;
+            std::cout << "ETC2_RGBA" << std::endl;
+            _image_data.channels = 4;
+            break;
+        default:
+            assert(false);
+            break;
+        }
+        const std::size_t _offset = sizeof(uint32_t) * 17 + *(data32 + 15);
+        const glm::uint8* _data_ptr = _content.data() + _offset;
+        const std::size_t _data_size = _content.size() - _offset;
+        _image_data.pixels = std::vector<glm::uint8>(_data_ptr, _data_ptr + _data_size);
+        _image_data.width = *(data32 + 9);
+        _image_data.height = *(data32 + 10);
+    } else {
+        assert(false);
+    }
+    return _image_data;
 }
 
 std::shared_future<std::shared_ptr<texture_ref>> fetch_texture(const std::filesystem::path& image_path, const std::optional<std::filesystem::path>& etc_image_path, const std::optional<std::filesystem::path>& s3tc_image_path)
