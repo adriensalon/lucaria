@@ -71,6 +71,8 @@ else()
 		set(ozz_build_postfix OFF)
 		set(ozz_run_tests_headless OFF)
 		add_subdirectory(../external/ozz ${CMAKE_BINARY_DIR}/external/ozz)
+
+		add_subdirectory(../external/woff ${CMAKE_BINARY_DIR}/external/woff)
 	set(MESSAGE_QUIET OFF)
 
 	file(GLOB_RECURSE lucaria_compiler_sources "${CMAKE_CURRENT_LIST_DIR}/source/*.cpp")
@@ -83,10 +85,8 @@ else()
 
 	target_link_libraries(lucaria_compiler PRIVATE cereal)
 	target_link_libraries(lucaria_compiler PRIVATE glm)
-	target_link_libraries(lucaria_compiler PRIVATE ogg)
 	target_link_libraries(lucaria_compiler PRIVATE stb_image)
 	target_link_libraries(lucaria_compiler PRIVATE assimp)
-	target_link_libraries(lucaria_compiler PRIVATE vorbis vorbisenc vorbisfile)
 
 	# target_compile_definitions(lucaria_compiler PRIVATE LUCARIA_DEBUG)
 	# target_compile_definitions(lucaria_compiler PRIVATE LUCARIA_JSON)
@@ -95,16 +95,17 @@ else()
 	add_dependencies(lucaria_compiler etcpak)
 	add_dependencies(lucaria_compiler gltf2ozz)
 	add_dependencies(lucaria_compiler oggenc)
+	add_dependencies(lucaria_compiler woff2_compress)
 
-	add_custom_command(TARGET lucaria_compiler POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy
-		"$<TARGET_FILE_DIR:gltf2ozz>/gltf2ozz.exe"
-		"$<TARGET_FILE_DIR:lucaria_compiler>/gltf2ozz.exe"
-		MAIN_DEPENDENCY gltf2ozz)
+	# add_custom_command(TARGET lucaria_compiler POST_BUILD
+	# 	COMMAND ${CMAKE_COMMAND} -E copy
+	# 	"$<TARGET_FILE_DIR:gltf2ozz>/gltf2ozz.exe"
+	# 	"$<TARGET_FILE_DIR:lucaria_compiler>/gltf2ozz.exe"
+	# 	MAIN_DEPENDENCY gltf2ozz)
 
-	add_custom_command(TARGET lucaria_compiler POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy
-		"$<TARGET_FILE_DIR:oggenc>/oggenc.exe"
-		"$<TARGET_FILE_DIR:lucaria_compiler>/oggenc.exe"
-		MAIN_DEPENDENCY oggenc)
+	# add_custom_command(TARGET lucaria_compiler POST_BUILD
+	# 	COMMAND ${CMAKE_COMMAND} -E copy
+	# 	"$<TARGET_FILE_DIR:oggenc>/oggenc.exe"
+	# 	"$<TARGET_FILE_DIR:lucaria_compiler>/oggenc.exe"
+	# 	MAIN_DEPENDENCY oggenc)
 endif()
