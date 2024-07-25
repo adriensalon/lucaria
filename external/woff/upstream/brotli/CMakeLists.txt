@@ -137,10 +137,6 @@ endfunction()
 transform_sources_list("scripts/sources.lst" "${CMAKE_CURRENT_BINARY_DIR}/sources.lst.cmake")
 include("${CMAKE_CURRENT_BINARY_DIR}/sources.lst.cmake")
 
-add_library(brotlicommon SHARED ${BROTLI_COMMON_C})
-add_library(brotlidec SHARED ${BROTLI_DEC_C})
-add_library(brotlienc SHARED ${BROTLI_ENC_C})
-
 add_library(brotlicommon-static STATIC ${BROTLI_COMMON_C})
 add_library(brotlidec-static STATIC ${BROTLI_DEC_C})
 add_library(brotlienc-static STATIC ${BROTLI_ENC_C})
@@ -148,13 +144,7 @@ add_library(brotlienc-static STATIC ${BROTLI_ENC_C})
 # Older CMake versions does not understand INCLUDE_DIRECTORIES property.
 include_directories(${BROTLI_INCLUDE_DIRS})
 
-foreach(lib brotlicommon brotlidec brotlienc)
-  target_compile_definitions(${lib} PUBLIC "BROTLI_SHARED_COMPILATION" )
-  string(TOUPPER "${lib}" LIB)
-  set_target_properties (${lib} PROPERTIES DEFINE_SYMBOL "${LIB}_SHARED_COMPILATION" )
-endforeach()
-
-foreach(lib brotlicommon brotlidec brotlienc brotlicommon-static brotlidec-static brotlienc-static)
+foreach(lib brotlicommon-static brotlidec-static brotlienc-static)
   target_link_libraries(${lib} ${LIBM_LIBRARY})
   set_property(TARGET ${lib} APPEND PROPERTY INCLUDE_DIRECTORIES ${BROTLI_INCLUDE_DIRS})
   set_target_properties(${lib} PROPERTIES
@@ -163,9 +153,6 @@ foreach(lib brotlicommon brotlidec brotlienc brotlicommon-static brotlidec-stati
     POSITION_INDEPENDENT_CODE TRUE)
   set_property(TARGET ${lib} APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${BROTLI_INCLUDE_DIRS}")
 endforeach()
-
-target_link_libraries(brotlidec brotlicommon)
-target_link_libraries(brotlienc brotlicommon)
 
 target_link_libraries(brotlidec-static brotlicommon-static)
 target_link_libraries(brotlienc-static brotlicommon-static)
@@ -189,13 +176,6 @@ target_link_libraries(brotli ${BROTLI_LIBRARIES_STATIC})
 if(NOT BROTLI_BUNDLED_MODE)
   install(
     TARGETS brotli
-    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-  )
-
-  install(
-    TARGETS ${BROTLI_LIBRARIES_CORE}
-    ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-    LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
   )
 

@@ -5,6 +5,7 @@ set(BROTLIENC_INCLUDE_DIRS ${BROTLI_INCLUDE_DIRS})
 set(BROTLIDEC_LIBRARIES brotlidec-static brotlicommon-static)
 set(BROTLIENC_LIBRARIES brotlienc-static brotlicommon-static)
 
+option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 add_subdirectory(upstream)
 
 if (MSVC)

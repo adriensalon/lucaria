@@ -128,7 +128,7 @@ std::filesystem::path process_woff2_compress_command(const commands_map& command
         std::cout << "The path provided with option -woff2_compress must be an existing application" << std::endl;
         std::terminate();
     }
-    std::cout << "-- Tool woff2_compress provided at " << _woff2_compress_executable << std::endl;
+    std::cout << "-- Tool woff2compress provided at " << _woff2_compress_executable << std::endl;
     return _woff2_compress_executable;
 }
 
