@@ -1,4 +1,6 @@
 
+#include <imgui.h>
+
 #include <entt/entt.hpp>
 
 #include <ecs/component/animator.hpp>
@@ -10,11 +12,14 @@
 #include <ecs/system/mixer.hpp>
 #include <ecs/system/rendering.hpp>
 #include <ecs/system/scripting.hpp>
+#include <core/font.hpp>
 
 #include <game/gameplay/runner.hpp>
 
 constexpr glm::uint animationID_player_lol1 = 44;
 constexpr glm::uint animationID_player_lol2 = 45;
+
+fetch_container<font_ref> okok;
 
 void level_persistent_player(entt::registry& registry)
 {    
@@ -22,6 +27,8 @@ void level_persistent_player(entt::registry& registry)
     scripting_system::use_controller_state<runner_controller_state>();
 
     const entt::entity _player_entity = registry.create();
+
+    okok.emplace(fetch_font("assets/rushbold.bin"));
 
     transform_component& _player_transform = registry.emplace<transform_component>(_player_entity)
         .position_warp(glm::vec3(-14.f, 6.2f, 3.f));
@@ -54,6 +61,17 @@ void level_persistent_player(entt::registry& registry)
         .state(runner_controller_state())
         .resolve([&] (runner_controller_state& state) {
             // _player_transform.position_relative({ 0.f, -0.01f, 0.f });
+            ImGui::SetNextWindowSize({ 500.f, 500.f });
+            if (ImGui::Begin("okokdddddddddddddddddd")) {
+
+                if (okok.has_value()) {
+                    ImGui::PushFont(&okok.value());
+                    ImGui::Text("Yooooooooooo");
+                    ImGui::PopFont();
+                }
+
+                ImGui::End();
+            }
             _player_transform.position_relative({ 0.03f, 0.f, -0.005f });
         });
 

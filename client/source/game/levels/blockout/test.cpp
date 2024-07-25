@@ -4,6 +4,7 @@
 #include <ecs/component/model.hpp>
 #include <ecs/component/collider.hpp>
 #include <ecs/system/rendering.hpp>
+#include <core/font.hpp>
 
 fetch_container<texture_ref> _okokok;
 
@@ -12,6 +13,7 @@ void level_blockout_test(entt::registry& registry)
     const entt::entity _wall_entity = registry.create();
 
     // _okokok.emplace(fetch_texture("room_color_compressed.bin"));
+
 
     rendering_system::use_skybox_cubemap(fetch_cubemap({
         "assets/skyboxes/test/px.bin",
