@@ -20,9 +20,8 @@ int main()
     register_level(levelID_blockout_test, level_blockout_test);
 
     add_level(levelID_menu_splash);
-    
 
-    run([]() {
+    run([&_time, &_lol]() {
         player_system::update();
         
         rendering_system::clear_debug_guizmos();
