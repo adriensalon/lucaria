@@ -8,7 +8,10 @@
 #include <ecs/component/model.hpp>
 #include <ecs/system/splash.hpp>
 #include <core/fetch.hpp>
+#include <core/font.hpp>
 #include <core/window.hpp>
+
+fetch_container<font_ref> okok;
 
 namespace detail {
 
@@ -48,7 +51,15 @@ static void draw_splash(const bool is_fetching_complete)
         const ImVec2 _text_size = ImGui::CalcTextSize(_text.c_str());
         const ImVec2 _text_pos = (_display_size - _text_size) / 2.f;
         ImGui::SetCursorPos(_text_pos);        
-        ImGui::Text(_text.c_str());
+            
+        if (okok.has_value()) {
+            ImGui::PushFont(okok.value().get_font(1));
+            ImGui::Text(_text.c_str());
+            ImGui::PopFont();
+            ImGui::PushFont(okok.value().get_font(0));
+            ImGui::Text("Lucaria");
+            ImGui::PopFont();
+        }
         // if (texture.has_value())
         //     ImGui::Image((ImTextureID)(texture.value().get_id()), { 500, 500 });
         ImGui::End();
@@ -75,6 +86,11 @@ void splash_system::trigger_splash(const bool titlescreen)
 
 void splash_system::update()
 {    
+    static bool _is_setup = false;
+    if (!_is_setup) {        
+        okok.emplace(fetch_font({ "assets/planet.bin", "assets/sfprolight.bin" }, 110.f));
+        _is_setup = true;
+    }
     detail::update_texture_if_needed();
     if (detail::is_splash_on) {
         const bool _is_fetching_complete = detail::is_fetching_complete();
