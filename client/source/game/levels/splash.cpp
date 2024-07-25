@@ -96,9 +96,11 @@ static void add_next_level()
 
 void level_menu_splash(entt::registry& registry)
 {
-    detail::big_splash_font.emplace(fetch_font({ "assets/planet.bin" }, 160.f));
-    detail::small_menu_font.emplace(fetch_font({ "assets/sfprolight.bin" }, 22.f));
-    detail::background_splash_texture.emplace(fetch_texture("assets/splash.bin"));
+    if (!detail::is_splash_resources_fetched) {
+        detail::big_splash_font.emplace(fetch_font({ "assets/planet.bin" }, 160.f));
+        detail::small_menu_font.emplace(fetch_font({ "assets/sfprolight.bin" }, 22.f));
+        detail::background_splash_texture.emplace(fetch_texture("assets/splash.bin"));
+    }
 
     const entt::entity _splash_entity = registry.create();
 
@@ -106,14 +108,18 @@ void level_menu_splash(entt::registry& registry)
         .gui([] () {
             if (detail::is_splash_resources_fetched) {
                 const bool _is_ready = get_fetches_completed() == get_fetches_total();
-                detail::draw_splash_menu(_is_ready);
+                bool _last_frame = false;
                 if (_is_ready && get_is_audio_locked()) {
                     if (get_fetches_completed() > 3) {
                         mark_remove_level(levelID_menu_splash);
+                        _last_frame = true;
                     } else if (!detail::is_next_level_fetched) {
                         detail::add_next_level();
                         detail::is_next_level_fetched = true;
                     }
+                } 
+                if (!_last_frame) {
+                    detail::draw_splash_menu(_is_ready);
                 }
             } else {
                 if (detail::big_splash_font.has_value() && detail::small_menu_font.has_value() && detail::background_splash_texture.has_value()) {
@@ -121,6 +127,5 @@ void level_menu_splash(entt::registry& registry)
                     detail::is_splash_resources_fetched = true;
                 }
             }
-
         });
 }
