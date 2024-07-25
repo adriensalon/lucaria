@@ -69,14 +69,14 @@ void level_persistent_player(entt::registry& registry)
             if (ImGui::Begin("okokdddddddddddddddddd")) {
 
                 if (okok.has_value()) {
-                    ImGui::PushFont(okok.value().ptrs[0]);
+                    ImGui::PushFont(okok.value().get_font(0));
                     ImGui::Text("Lucaria");
                     ImGui::PopFont();
                     // ImGui::PushFont(&okok1.value());
                     // ImGui::Text("Press any button to enter");
                     // ImGui::PopFont();
 
-                    ImGui::PushFont(okok.value().ptrs[1]);
+                    ImGui::PushFont(okok.value().get_font(1));
                     ImGui::Text("Lucariaaaaaaaaaaa");
                     ImGui::PopFont();
                     // ImGui::PushFont(&okok1.value());
@@ -86,7 +86,7 @@ void level_persistent_player(entt::registry& registry)
                 }
 
                 if (okok1.has_value()) {
-                    ImGui::PushFont(okok1.value().ptrs[0]);
+                    ImGui::PushFont(okok1.value().get_font(0));
                     ImGui::Text("Lucaria");
                     ImGui::PopFont();
 

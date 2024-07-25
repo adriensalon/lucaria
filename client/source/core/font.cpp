@@ -14,6 +14,21 @@ static std::unordered_map<std::size_t, std::pair<std::vector<std::string>, std::
 
 }
 
+font_ref::font_ref(const font_data& data)
+    : _ptrs(data)
+{
+}
+
+ImFont* font_ref::get_font(const glm::uint index) const
+{
+    return _ptrs[index];
+}
+
+glm::uint font_ref::get_count() const
+{
+    return _ptrs.size();
+}
+
 std::shared_future<std::shared_ptr<font_ref>> fetch_font(const std::vector<std::filesystem::path>& font_paths, const glm::float32 font_size)
 {
     const std::size_t _hash = path_vector_hash()(font_paths);
@@ -27,18 +42,16 @@ std::shared_future<std::shared_ptr<font_ref>> fetch_font(const std::vector<std::
             std::cout << "Impossible to decode woff2 font." << std::endl;
             std::terminate();
 #endif
-        }        
+        }
         // if (detail::fonts.empty()) {
         //     detail::fonts.emplace_back(std::shared_ptr<ImFont>(ImGui::GetIO().Fonts->AddFontDefault()));
         // }
 
         _promise.first.push_back(_output_str);
 
-        
         // detail::fonts.emplace_back(_font_ptr);
         // ImGui::GetIO().Fonts->AddFontDefault();
         // ImGui::GetIO().Fonts->
-        
 
         if (_promise.first.size() == total) {
             std::vector<ImFont*> _fonts;
