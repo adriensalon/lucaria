@@ -1,23 +1,24 @@
 #include <chrono>
 
 #define IMGUI_DEFINE_MATH_OPERATORS
+#include <entt/entt.hpp>
 #include <imgui.h>
 #include <imgui_internal.h>
-#include <entt/entt.hpp>
 
+#include <core/weight.hpp>
 #include <core/window.hpp>
 
 #include <ecs/component/animator.hpp>
 #include <ecs/component/controller.hpp>
 #include <ecs/component/model.hpp>
-#include <ecs/component/transform.hpp>
 #include <ecs/component/rigidbody.hpp>
 #include <ecs/component/speaker.hpp>
+#include <ecs/component/transform.hpp>
 #include <ecs/component/widget.hpp>
+#include <ecs/system/interface.hpp>
 #include <ecs/system/mixer.hpp>
 #include <ecs/system/rendering.hpp>
 #include <ecs/system/scripting.hpp>
-#include <ecs/system/interface.hpp>
 
 #include <game/levels/levels.hpp>
 
@@ -29,21 +30,20 @@ fetch_container<texture_ref> background_splash_texture = {};
 
 const ImVec4 white_text_color = { 1.f, 1.f, 1.f, 0.98f };
 
-constexpr ImGuiWindowFlags fullscreen_window_flags = ImGuiWindowFlags_NoTitleBar |
-                                        ImGuiWindowFlags_NoResize |
-                                        ImGuiWindowFlags_NoMove |
-                                        ImGuiWindowFlags_NoCollapse |
-                                        ImGuiWindowFlags_NoScrollbar |
-                                        ImGuiWindowFlags_NoBringToFrontOnFocus |
-                                        ImGuiWindowFlags_NoNavFocus;
+constexpr ImGuiWindowFlags fullscreen_window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
 static bool is_splash_resources_fetched = false;
 static bool is_next_level_fetched = false;
 static glm::float32 splash_resources_fetched_timestamp = 0.f;
+static fadein_weight splash_background_fadein = { 3.f };
 
 static void draw_background(const ImVec2& display_size)
 {
-    ImGui::Image((ImTextureID)background_splash_texture.value().get_id(), display_size);
+    const glm::float32 _weight = splash_background_fadein.compute_weight(splash_resources_fetched_timestamp);
+    const ImVec4 _tint = { 1.f, 1.f, 1.f, _weight };
+    ImGui::Image((ImTextureID)background_splash_texture.value().get_id(), display_size, { 0.001f, 0.001f }, { 0.999f, 0.999f }, _tint, { 1.f, 1.f, 1.f, 1.f });
+    splash_resources_fetched_timestamp += get_time_delta();
+    
 }
 
 static void draw_title(const ImVec2& display_size)
@@ -63,7 +63,7 @@ static void draw_text(const ImVec2& display_size, const bool is_ready)
     ImGui::PushFont(small_menu_font.value().get_font());
     const ImVec2 _text_size = ImGui::CalcTextSize(_text.c_str());
     const ImVec2 _text_pos = (display_size - _text_size) / 2.f + ImVec2(0.f, 100.f);
-    ImGui::SetCursorPos(_text_pos); 
+    ImGui::SetCursorPos(_text_pos);
     ImGui::Text(_text.c_str());
     ImGui::PopFont();
 }
@@ -72,16 +72,17 @@ static void draw_splash_menu(const bool is_ready)
 {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
     ImGui::PushStyleColor(ImGuiCol_Text, white_text_color);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, white_text_color);
     const ImVec2 _display_size = ImGui::GetIO().DisplaySize;
     ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(_display_size);    
+    ImGui::SetNextWindowSize(_display_size);
     if (ImGui::Begin("Lucaria splash", nullptr, fullscreen_window_flags)) {
         draw_background(_display_size);
         draw_title(_display_size);
         draw_text(_display_size, is_ready);
         ImGui::End();
     }
-    ImGui::PopStyleColor();
+    ImGui::PopStyleColor(2);
     ImGui::PopStyleVar();
 }
 
@@ -105,7 +106,7 @@ void level_menu_splash(entt::registry& registry)
     const entt::entity _splash_entity = registry.create();
 
     registry.emplace<widget_component>(_splash_entity)
-        .gui([] () {
+        .gui([]() {
             if (detail::is_splash_resources_fetched) {
                 const bool _is_ready = get_fetches_completed() == get_fetches_total();
                 bool _last_frame = false;
@@ -117,13 +118,12 @@ void level_menu_splash(entt::registry& registry)
                         detail::add_next_level();
                         detail::is_next_level_fetched = true;
                     }
-                } 
+                }
                 if (!_last_frame) {
                     detail::draw_splash_menu(_is_ready);
                 }
             } else {
                 if (detail::big_splash_font.has_value() && detail::small_menu_font.has_value() && detail::background_splash_texture.has_value()) {
-                    detail::splash_resources_fetched_timestamp = get_time_delta(); // time now !
                     detail::is_splash_resources_fetched = true;
                 }
             }

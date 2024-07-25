@@ -21,7 +21,7 @@ int main()
 
     add_level(levelID_menu_splash);
 
-    run([&_time, &_lol]() {
+    run([]() {
         player_system::update();
         
         rendering_system::clear_debug_guizmos();
