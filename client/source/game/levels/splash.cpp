@@ -34,16 +34,16 @@ constexpr ImGuiWindowFlags fullscreen_window_flags = ImGuiWindowFlags_NoTitleBar
 
 static bool is_splash_resources_fetched = false;
 static bool is_next_level_fetched = false;
-static glm::float32 splash_resources_fetched_timestamp = 0.f;
+static glm::float32 splash_resources_fetched_cursor = 0.f;
 static fadein_weight splash_background_fadein = { 3.f };
+static oscillate_weight small_text_oscillate = { 2.f };
 
 static void draw_background(const ImVec2& display_size)
 {
-    const glm::float32 _weight = splash_background_fadein.compute_weight(splash_resources_fetched_timestamp);
+    const glm::float32 _weight = splash_background_fadein.compute_weight(splash_resources_fetched_cursor);
     const ImVec4 _tint = { 1.f, 1.f, 1.f, _weight };
     ImGui::Image((ImTextureID)background_splash_texture.value().get_id(), display_size, { 0.001f, 0.001f }, { 0.999f, 0.999f }, _tint, { 1.f, 1.f, 1.f, 1.f });
-    splash_resources_fetched_timestamp += get_time_delta();
-    
+
 }
 
 static void draw_title(const ImVec2& display_size)
@@ -59,12 +59,15 @@ static void draw_title(const ImVec2& display_size)
 
 static void draw_text(const ImVec2& display_size, const bool is_ready)
 {
+    const glm::float32 _weight = small_text_oscillate.compute_weight(splash_resources_fetched_cursor);
     const std::string _text = is_ready ? "Press any key to enter" : "Loading assets (" + std::to_string(get_fetches_completed()) + "/" + std::to_string(get_fetches_total()) + ")";
     ImGui::PushFont(small_menu_font.value().get_font());
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 1.f, 1.f, _weight));
     const ImVec2 _text_size = ImGui::CalcTextSize(_text.c_str());
     const ImVec2 _text_pos = (display_size - _text_size) / 2.f + ImVec2(0.f, 100.f);
     ImGui::SetCursorPos(_text_pos);
     ImGui::Text(_text.c_str());
+    ImGui::PopStyleColor();
     ImGui::PopFont();
 }
 
@@ -113,6 +116,7 @@ void level_menu_splash(entt::registry& registry)
                 if (_is_ready && get_is_audio_locked()) {
                     if (get_fetches_completed() > 3) {
                         mark_remove_level(levelID_menu_splash);
+                        detail::splash_resources_fetched_cursor = 0.f;
                         _last_frame = true;
                     } else if (!detail::is_next_level_fetched) {
                         detail::add_next_level();
@@ -121,6 +125,7 @@ void level_menu_splash(entt::registry& registry)
                 }
                 if (!_last_frame) {
                     detail::draw_splash_menu(_is_ready);
+                    detail::splash_resources_fetched_cursor += get_time_delta();
                 }
             } else {
                 if (detail::big_splash_font.has_value() && detail::small_menu_font.has_value() && detail::background_splash_texture.has_value()) {
