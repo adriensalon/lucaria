@@ -17,7 +17,6 @@
 #include <ecs/component/transform.hpp>
 #include <ecs/system/player.hpp>
 #include <ecs/system/rendering.hpp>
-#include <ecs/system/splash.hpp>
 
 #if LUCARIA_GUIZMO
 class guizmo_debug_draw : public btIDebugDraw {
@@ -389,9 +388,6 @@ void rendering_system::clear_debug_guizmos()
 void rendering_system::draw_debug_guizmos()
 {
 #if LUCARIA_GUIZMO
-    if (splash_system::is_splash_on()) {
-        return;
-    }
     for (const std::pair<const glm::vec3, std::vector<glm::vec3>>& _pair : detail::guizmo_draw.positions) {
         const glm::vec3& _color = _pair.first;
         const std::vector<glm::vec3>& _positions = _pair.second;

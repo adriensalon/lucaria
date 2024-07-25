@@ -7,7 +7,6 @@
 #include <core/window.hpp>
 
 #include <ecs/system/player.hpp>
-#include <ecs/system/splash.hpp>
 
 namespace detail {
 

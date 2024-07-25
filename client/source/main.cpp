@@ -9,7 +9,6 @@
 #include <ecs/system/player.hpp>
 #include <ecs/system/rendering.hpp>
 #include <ecs/system/scripting.hpp>
-#include <ecs/system/splash.hpp>
 
 #include <game/gameplay/runner.hpp>
 #include <game/levels/levels.hpp>
@@ -56,7 +55,6 @@ int main()
         mixer_system::apply_speaker_transforms();
         mixer_system::apply_listener_transform();
 
-        // splash_system::update();
     });
     return 0;
 }
