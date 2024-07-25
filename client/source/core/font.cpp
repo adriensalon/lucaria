@@ -5,17 +5,20 @@
 
 #include <core/fetch.hpp>
 #include <core/font.hpp>
+#include <core/hash.hpp>
 
 namespace detail {
 
-static std::unordered_map<std::string, std::promise<std::shared_ptr<font_ref>>> promises;
+// static std::vector<std::shared_ptr<ImFont>> fonts;
+static std::unordered_map<std::size_t, std::pair<std::vector<std::string>, std::promise<std::shared_ptr<font_ref>>>> promises;
 
 }
 
-std::shared_future<std::shared_ptr<font_ref>> fetch_font(const std::filesystem::path& font_path, const glm::float32 font_size)
+std::shared_future<std::shared_ptr<font_ref>> fetch_font(const std::vector<std::filesystem::path>& font_paths, const glm::float32 font_size)
 {
-    std::promise<std::shared_ptr<font_ref>>& _promise = detail::promises[font_path.string()];
-    fetch_file(font_path, [&_promise, font_size](const std::vector<char>& font_bytes) {
+    const std::size_t _hash = path_vector_hash()(font_paths);
+    std::pair<std::vector<std::string>, std::promise<std::shared_ptr<font_ref>>>& _promise = detail::promises[_hash];
+    fetch_files(font_paths, [&_promise, font_size](std::size_t index, std::size_t total, const std::vector<char>& font_bytes) {
         const std::uint8_t* _raw_ptr = reinterpret_cast<const uint8_t*>(font_bytes.data());
         std::string _output_str(std::min(woff2::ComputeWOFF2FinalSize(_raw_ptr, font_bytes.size()), woff2::kDefaultMaxSize), 0);
         woff2::WOFF2StringOut _woff2out(&_output_str);
@@ -24,19 +27,30 @@ std::shared_future<std::shared_ptr<font_ref>> fetch_font(const std::filesystem::
             std::cout << "Impossible to decode woff2 font." << std::endl;
             std::terminate();
 #endif
-        }
-        _promise.set_value(std::shared_ptr<ImFont>(ImGui::GetIO().Fonts->AddFontFromMemoryTTF(_output_str.data(), _output_str.size(), font_size)));
-        ImGui::GetIO().Fonts->AddFontDefault();
-        if (!ImGui::GetIO().Fonts->Build()) {
-#if LUCARIA_DEBUG
-            std::cout << "Impossible build ImGui font." << std::endl;
-            std::terminate();
-#endif
-        } else {
+        }        
+        // if (detail::fonts.empty()) {
+        //     detail::fonts.emplace_back(std::shared_ptr<ImFont>(ImGui::GetIO().Fonts->AddFontDefault()));
+        // }
+
+        _promise.first.push_back(_output_str);
+
+        
+        // detail::fonts.emplace_back(_font_ptr);
+        // ImGui::GetIO().Fonts->AddFontDefault();
+        // ImGui::GetIO().Fonts->
+        
+
+        if (_promise.first.size() == total) {
+            std::vector<ImFont*> _fonts;
+            for (std::string& _str : _promise.first) {
+                _fonts.emplace_back(ImGui::GetIO().Fonts->AddFontFromMemoryTTF(_str.data(), _str.size(), font_size));
+            }
+            ImGui::GetIO().Fonts->Build();
             ImGui_ImplOpenGL3_DestroyFontsTexture(); // un peu sale mdr
             ImGui_ImplOpenGL3_CreateFontsTexture();
+            _promise.second.set_value(std::make_shared<font_ref>(_fonts));
         }
     });
 
-    return _promise.get_future();
+    return _promise.second.get_future();
 }

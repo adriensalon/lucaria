@@ -311,6 +311,11 @@ void update()
 
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = ImVec2(detail::screen_size.x, detail::screen_size.y);
+
+
+    
+
+
     ImGui_ImplOpenGL3_NewFrame();
     ImGui::NewFrame();
     // io.
@@ -346,8 +351,22 @@ void update()
 
 }
 
+void rebuild2()
+{
+//     ImGui::GetIO().Fonts->AddFontDefault();
+//     if (!ImGui::GetIO().Fonts->Build()) {
+// #if LUCARIA_DEBUG
+//         std::cout << "Impossible build ImGui font." << std::endl;
+//         std::terminate();
+// #endif
+//     }    
+//     ImGui_ImplOpenGL3_DestroyFontsTexture(); // un peu sale mdr
+//     ImGui_ImplOpenGL3_CreateFontsTexture();
+}
+
 void run(std::function<void()> update)
 {
+
     detail::update_callback = update;
     emscripten_set_main_loop(detail::update, 0, EM_TRUE);
 }

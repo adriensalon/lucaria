@@ -6,7 +6,7 @@
 #include <string>
 #include <unordered_map>
 
-
+void rebuild();
 void run(std::function<void()> update);
 void graphics_assert();
 void audio_assert();
