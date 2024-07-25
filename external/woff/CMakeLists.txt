@@ -1,5 +1,4 @@
 add_subdirectory(upstream/brotli)
-
 set(BROTLIDEC_INCLUDE_DIRS ${BROTLI_INCLUDE_DIRS})
 set(BROTLIENC_INCLUDE_DIRS ${BROTLI_INCLUDE_DIRS})
 set(BROTLIDEC_LIBRARIES brotlidec-static brotlicommon-static)
@@ -7,7 +6,7 @@ set(BROTLIENC_LIBRARIES brotlienc-static brotlicommon-static)
 
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 add_subdirectory(upstream)
-
+target_include_directories(woff2dec PUBLIC upstream/include)
 if (MSVC)
     target_compile_options(woff2dec PRIVATE /wd4267)
     target_compile_options(woff2dec PRIVATE /wd4477)
