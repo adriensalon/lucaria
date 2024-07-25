@@ -27,7 +27,7 @@ void level_persistent_player(entt::registry& registry)
 
     const entt::entity _player_entity = registry.create();
 
-    okok.emplace(fetch_font("assets/rushbold.bin"));
+    okok.emplace(fetch_font("assets/planet.bin", 110.f));
 
     transform_component& _player_transform = registry.emplace<transform_component>(_player_entity)
         .position_warp(glm::vec3(-14.f, 6.2f, 3.f));
@@ -65,7 +65,7 @@ void level_persistent_player(entt::registry& registry)
 
                 if (okok.has_value()) {
                     ImGui::PushFont(&okok.value());
-                    ImGui::Text("Yooooooooooo");
+                    ImGui::Text("Lucaria");
                     ImGui::PopFont();
                 }
 
