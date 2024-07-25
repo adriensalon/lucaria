@@ -1,3 +1,4 @@
+#include <ecs/component/controller.hpp>
 #include <ecs/system/scripting.hpp>
 
 void scripting_system::resolve_controller_states()

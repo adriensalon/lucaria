@@ -14,13 +14,10 @@ struct controller_component {
     controller_component(controller_component&& other) = default;
     controller_component& operator=(controller_component&& other) = default;
 
-    controller_component& state(const state_t& new_state);
-    controller_component& add_script(const std::function<void(state_t&)>& script);
+    controller_component& state(state_t* state_ptr);
 
 private:
-    state_t _state = {};
-    std::function<void(state_t&)> _resolver = nullptr;
-    std::vector<std::function<void(state_t&)>> _scripts = {};
+    state_t* _state = nullptr;
     friend struct scripting_system;
 };
 

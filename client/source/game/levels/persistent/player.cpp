@@ -1,4 +1,6 @@
 
+#include <ecs/system/mixer.hpp>
+
 #include <game/gameplay/runner.hpp>
 
 #include <core/font.hpp>
@@ -7,19 +9,17 @@
 constexpr glm::uint animationID_player_lol1 = 44;
 constexpr glm::uint animationID_player_lol2 = 45;
 
-std::unique_ptr<runner> faith = nullptr;
+std::unique_ptr<runner_actor> faith = nullptr;
 
 void level_persistent_player(entt::registry& registry)
-{    
-    faith = std::make_unique<runner>(registry);
+{
+    faith = std::make_unique<runner_actor>(registry);
 
-    transform_component* _faith_transform = &faith->get_transform();
-
-    faith->add_script([_faith_transform] (runner_controller_state& state) {
+    faith->add_script([](runner_actor& runner) {
         if (get_keys()["i"]) {
-            _faith_transform->position_relative({ 0.03f, 0.f, -0.005f });
+            runner.get_transform().position_relative({ 0.03f, 0.f, -0.005f });
         }
     });
 
-    mixer_system::use_listener_transform(*_faith_transform);
+    mixer_system::use_listener_transform(faith->get_transform());
 }

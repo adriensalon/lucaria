@@ -8,7 +8,7 @@
 
 fetch_container<texture_ref> _okokok;
 
-extern std::unique_ptr<runner> faith;
+extern std::unique_ptr<runner_actor> faith;
 
 void level_blockout_test(entt::registry& registry)
 {
