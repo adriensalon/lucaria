@@ -51,7 +51,7 @@ int main()
         mixer_system::apply_speaker_transforms();
         mixer_system::apply_listener_transform();
 
-        splash_system::update();
+        // splash_system::update();
     });
     return 0;
 }
