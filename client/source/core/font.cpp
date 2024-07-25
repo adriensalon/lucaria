@@ -26,16 +26,16 @@ std::shared_future<std::shared_ptr<font_ref>> fetch_font(const std::filesystem::
 #endif
         }
         _promise.set_value(std::shared_ptr<ImFont>(ImGui::GetIO().Fonts->AddFontFromMemoryTTF(_output_str.data(), _output_str.size(), 16.f)));
-//         ImGui::GetIO().Fonts->AddFontDefault();
-//         if (!ImGui::GetIO().Fonts->Build()) {
-// #if LUCARIA_DEBUG
-//             std::cout << "Impossible build ImGui font." << std::endl;
-//             std::terminate();
-// #endif
-//         } else {
-//             ImGui_ImplOpenGL3_DestroyFontsTexture(); // un peu sale mdr
-//             ImGui_ImplOpenGL3_CreateFontsTexture();
-//         }
+        ImGui::GetIO().Fonts->AddFontDefault();
+        if (!ImGui::GetIO().Fonts->Build()) {
+#if LUCARIA_DEBUG
+            std::cout << "Impossible build ImGui font." << std::endl;
+            std::terminate();
+#endif
+        } else {
+            ImGui_ImplOpenGL3_DestroyFontsTexture();
+            ImGui_ImplOpenGL3_CreateFontsTexture();
+        }
     });
 
     return _promise.get_future();
