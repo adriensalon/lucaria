@@ -55,8 +55,6 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 		set(ozz_run_tests_headless OFF)
 		add_subdirectory(../external/ozz ${CMAKE_BINARY_DIR}/external/ozz)
 		target_compile_options(ozz_base PRIVATE "-Wno-#pragma-messages")
-		
-		add_subdirectory(../external/woff ${CMAKE_BINARY_DIR}/external/woff)
 	set(MESSAGE_QUIET OFF)
 
 	file(GLOB_RECURSE lucaria_sources "${CMAKE_CURRENT_LIST_DIR}/source/*.cpp")
@@ -79,7 +77,6 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 	target_link_libraries(lucaria PRIVATE ogg)
 	target_link_libraries(lucaria PRIVATE vorbis vorbisenc vorbisfile)
 	target_link_libraries(lucaria PRIVATE ozz_animation)
-	target_link_libraries(lucaria PRIVATE woff2dec)
 
 	target_compile_definitions(lucaria PRIVATE LUCARIA_DEBUG)
 	target_compile_definitions(lucaria PRIVATE LUCARIA_GUIZMO)
