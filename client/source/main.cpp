@@ -30,6 +30,7 @@ int main()
         rendering_system::clear_screen();
         rendering_system::compute_projection();
         
+        
         scripting_system::resolve_controller_states();
 
         motion_system::blend_animations();
@@ -42,6 +43,9 @@ int main()
         
         motion_system::apply_foot_ik();
         motion_system::skin_meshes();
+
+        // gui
+        
 
         rendering_system::compute_view_projection();
         rendering_system::draw_skybox();

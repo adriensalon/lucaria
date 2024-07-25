@@ -4,11 +4,16 @@
 #include <ecs/component/model.hpp>
 #include <ecs/component/collider.hpp>
 #include <ecs/system/rendering.hpp>
+#include <game/gameplay/runner.hpp>
 
 fetch_container<texture_ref> _okokok;
 
+extern std::unique_ptr<runner> faith;
+
 void level_blockout_test(entt::registry& registry)
 {
+    faith->get_transform().position_relative({ -5.f, 1.f, 0.f });
+
     const entt::entity _wall_entity = registry.create();
 
     // _okokok.emplace(fetch_texture("room_color_compressed.bin"));
