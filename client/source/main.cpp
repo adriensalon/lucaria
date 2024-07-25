@@ -20,8 +20,6 @@ int main()
     register_level(levelID_blockout_test, level_blockout_test);
 
     add_level(levelID_menu_splash);
-    add_level(levelID_persistent_player);
-    add_level(levelID_blockout_test);
     
 
     run([]() {

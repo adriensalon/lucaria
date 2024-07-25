@@ -8,6 +8,7 @@ namespace detail {
 
 std::vector<glm::uint> to_remove = {};
 std::unordered_map<glm::uint, std::pair<entt::registry, std::function<void(entt::registry&)>>> levels = {};
+std::unordered_set<glm::uint> loaded_levels = {};
 
 }
 
@@ -24,8 +25,11 @@ void add_level(const glm::uint id)
         std::terminate();
     }
 #endif
-    std::pair<entt::registry, std::function<void(entt::registry&)>>& _pair = detail::levels.at(id);
-    _pair.second(_pair.first);
+    if (detail::loaded_levels.find(id) == detail::loaded_levels.end()) {
+        std::pair<entt::registry, std::function<void(entt::registry&)>>& _pair = detail::levels.at(id);
+        _pair.second(_pair.first);
+        detail::loaded_levels.emplace(id);
+    }
 }
 
 void mark_remove_level(const glm::uint id)
@@ -37,6 +41,7 @@ void mark_remove_level(const glm::uint id)
     }
 #endif    
     detail::to_remove.emplace_back(id);
+    detail::loaded_levels.erase(id);
 }
 
 void remove_levels()
