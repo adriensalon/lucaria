@@ -304,9 +304,6 @@ void rendering_system::draw_skybox()
 
 void rendering_system::draw_blockout_meshes()
 {
-    if (splash_system::is_splash_on()) {
-        return;
-    }
     static bool _is_program_setup = false;
     static std::optional<program_ref> _persistent_blockout_program = std::nullopt;
     if (!_is_program_setup) {
@@ -339,9 +336,6 @@ void rendering_system::draw_blockout_meshes()
 
 void rendering_system::draw_unlit_meshes()
 {
-    if (splash_system::is_splash_on()) {
-        return;
-    }
     static bool _is_program_setup = false;
     static std::optional<program_ref> _persistent_unlit_program = std::nullopt;
     if (!_is_program_setup) {

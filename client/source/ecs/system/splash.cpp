@@ -15,7 +15,7 @@ fetch_container<font_ref> okok;
 
 namespace detail {
 
-static bool is_splash_on = true;
+static bool is_splash_on = false;
 static std::optional<std::future<image_data>> future_texture = std::nullopt;
 static std::optional<texture_ref> texture = std::nullopt;
 

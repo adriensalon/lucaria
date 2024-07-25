@@ -11,6 +11,7 @@
 
 #include <core/fetch.hpp>
 #include <core/window.hpp>
+#include <core/world.hpp>
 
 namespace detail {
 
@@ -341,7 +342,7 @@ void update()
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     wait_fetched_containers();
-    // detail::mouse_position_delta = glm::vec2(0.f);
+    remove_levels();
 
     graphics_assert();
     if (is_audio_locked) {
