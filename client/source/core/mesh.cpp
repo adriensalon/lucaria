@@ -12,10 +12,6 @@
 
 namespace detail {
 
-void validate_mesh(const geometry_data& data)
-{
-}
-
 glm::uint create_vertex_array()
 {
     glm::uint _array_id;
@@ -38,18 +34,18 @@ glm::uint create_attribute_buffer(const std::vector<glm::vec2>& attribute)
     return _attribute_id;
 }
 
-glm::uint create_empty_vec3_attribute_buffer(const glm::uint vertex_count)
-{
-    glm::uint _attribute_id;
-    glGenBuffers(1, &_attribute_id);
-    glBindBuffer(GL_ARRAY_BUFFER, _attribute_id);
-    glBufferData(GL_ARRAY_BUFFER, 3 * sizeof(glm::float32) * vertex_count, nullptr, GL_STATIC_DRAW);
-#if LUCARIA_DEBUG
-    std::cout << "Created EMPTY VEC3 ARRAY_BUFFER buffer of size " << vertex_count
-              << " with id " << _attribute_id << std::endl;
-#endif
-    return _attribute_id;
-}
+// glm::uint create_empty_vec3_attribute_buffer(const glm::uint vertex_count)
+// {
+//     glm::uint _attribute_id;
+//     glGenBuffers(1, &_attribute_id);
+//     glBindBuffer(GL_ARRAY_BUFFER, _attribute_id);
+//     glBufferData(GL_ARRAY_BUFFER, 3 * sizeof(glm::float32) * vertex_count, nullptr, GL_STATIC_DRAW);
+// #if LUCARIA_DEBUG
+//     std::cout << "Created EMPTY VEC3 ARRAY_BUFFER buffer of size " << vertex_count
+//               << " with id " << _attribute_id << std::endl;
+// #endif
+//     return _attribute_id;
+// }
 
 glm::uint create_attribute_buffer(const std::vector<glm::vec3>& attribute)
 {
@@ -74,6 +70,20 @@ glm::uint create_attribute_buffer(const std::vector<glm::vec4>& attribute)
     glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(glm::float32) * attribute.size(), _attribute_ptr, GL_STATIC_DRAW);
 #if LUCARIA_DEBUG
     std::cout << "Created VEC4 ARRAY_BUFFER buffer of size " << attribute.size()
+              << " with id " << _attribute_id << std::endl;
+#endif
+    return _attribute_id;
+}
+
+glm::uint create_attribute_buffer(const std::vector<glm::uvec4>& attribute)
+{
+    glm::uint _attribute_id;
+    glm::uint* _attribute_ptr = reinterpret_cast<glm::uint*>(const_cast<glm::uvec4*>(attribute.data()));
+    glGenBuffers(1, &_attribute_id);
+    glBindBuffer(GL_ARRAY_BUFFER, _attribute_id);
+    glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(glm::uint) * attribute.size(), _attribute_ptr, GL_STATIC_DRAW);
+#if LUCARIA_DEBUG
+    std::cout << "Created UVEC4 ARRAY_BUFFER buffer of size " << attribute.size()
               << " with id " << _attribute_id << std::endl;
 #endif
     return _attribute_id;
@@ -148,39 +158,42 @@ mesh_ref::~mesh_ref()
 
 mesh_ref::mesh_ref(const geometry_data& data)
 {
-    detail::validate_mesh(data);
     _indices_count = 3 * data.indices.size();
     _array_id = detail::create_vertex_array();
     _elements_id = detail::create_elements_buffer(data.indices);
     if (!data.positions.empty()) {
         _attribute_ids[mesh_attribute::position] = detail::create_attribute_buffer(data.positions);
-    } else {
-        _attribute_ids[mesh_attribute::position] = detail::create_empty_vec3_attribute_buffer(data.count);
+        std::cout << "Creating positions attribute" << std::endl;
     }
     if (!data.colors.empty()) {
         _attribute_ids[mesh_attribute::color] = detail::create_attribute_buffer(data.colors);
+        std::cout << "Creating colors attribute" << std::endl;
     }
     if (!data.normals.empty()) {
         _attribute_ids[mesh_attribute::normal] = detail::create_attribute_buffer(data.normals);
+        std::cout << "Creating normals attribute" << std::endl;
     }
     if (!data.tangents.empty()) {
         _attribute_ids[mesh_attribute::tangent] = detail::create_attribute_buffer(data.tangents);
+        std::cout << "Creating tangents attribute" << std::endl;
     }
     if (!data.bitangents.empty()) {
         _attribute_ids[mesh_attribute::bitangent] = detail::create_attribute_buffer(data.bitangents);
+        std::cout << "Creating bitangents attribute" << std::endl;
     }
     if (!data.texcoords.empty()) {
         _attribute_ids[mesh_attribute::texcoord] = detail::create_attribute_buffer(data.texcoords);
+        std::cout << "Creating texcoords attribute" << std::endl;
+    }
+    if (!data.bones.empty()) {
+        _attribute_ids[mesh_attribute::bones] = detail::create_attribute_buffer(data.bones);
+        std::cout << "Creating bones attribute" << std::endl;
+    }
+    if (!data.weights.empty()) {
+        _attribute_ids[mesh_attribute::weights] = detail::create_attribute_buffer(data.weights);
+        std::cout << "Creating weights attribute" << std::endl;
     }
     _is_instanced = true;
-}
-
-void mesh_ref::update_positions(const std::vector<glm::vec3>& new_positions)
-{
-    glm::uint _attribute_id = _attribute_ids.at(mesh_attribute::position);
-    glm::float32* _attribute_ptr = reinterpret_cast<glm::float32*>(const_cast<glm::vec3*>(new_positions.data()));
-    glBindBuffer(GL_ARRAY_BUFFER, _attribute_id);
-    glBufferData(GL_ARRAY_BUFFER, 3 * sizeof(glm::float32) * new_positions.size(), _attribute_ptr, GL_STATIC_DRAW);
 }
 
 std::unordered_map<mesh_attribute, glm::uint> mesh_ref::get_buffer_ids() const
@@ -251,7 +264,6 @@ guizmo_mesh_ref::~guizmo_mesh_ref()
 
 guizmo_mesh_ref::guizmo_mesh_ref(const geometry_data& data)
 {
-    detail::validate_mesh(data);
     _array_id = detail::create_vertex_array();
     std::vector<glm::uvec2> _line_indices = detail::generate_line_indices(data.indices);
     _indices_count = 2 * _line_indices.size();

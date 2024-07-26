@@ -90,27 +90,26 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 	set(CXX_STANDARD ".html")
 	set(CMAKE_EXECUTABLE_SUFFIX ".html")
 	set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "--use-preload-cache")
-	# set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
-	# 	-g \
-	# 	--shell-file ${CMAKE_CURRENT_LIST_DIR}/source/shell.html \
-	# 	-s LLD_REPORT_UNDEFINED \
-	# 	-s ALLOW_MEMORY_GROWTH=1 \
-	# 	-s MAX_WEBGL_VERSION=2 \
-	# 	-s USE_WEBGL2=1 \
-	# 	-s GL_DEBUG=1 \
-	# 	-s FETCH \
-	# 	-s NO_DISABLE_EXCEPTION_CATCHING \
-	# 	-lopenal")
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
-	 	-g \
-		-O3 \
+		-g \
 		--shell-file ${CMAKE_CURRENT_LIST_DIR}/source/shell.html \
 		-s LLD_REPORT_UNDEFINED \
 		-s ALLOW_MEMORY_GROWTH=1 \
 		-s MAX_WEBGL_VERSION=2 \
 		-s USE_WEBGL2=1 \
+		-s GL_DEBUG=1 \
 		-s FETCH \
+		-s NO_DISABLE_EXCEPTION_CATCHING \
 		-lopenal")
+	# set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
+	# 	-O3 \
+	# 	--shell-file ${CMAKE_CURRENT_LIST_DIR}/source/shell.html \
+	# 	-s LLD_REPORT_UNDEFINED \
+	# 	-s ALLOW_MEMORY_GROWTH=1 \
+	# 	-s MAX_WEBGL_VERSION=2 \
+	# 	-s USE_WEBGL2=1 \
+	# 	-s FETCH \
+	# 	-lopenal")
 
 # -O3 \
 # --preload-file ${CMAKE_CURRENT_LIST_DIR}/../install/assets@/ \

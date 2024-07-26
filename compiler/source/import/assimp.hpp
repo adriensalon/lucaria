@@ -7,7 +7,7 @@
 
 struct imported_assimp_data {
     geometry_data mesh_geometry;
-    std::optional<geometry_data> armature_geometry = std::nullopt;
+    bool has_skeleton = false;
 };
 
 imported_assimp_data import_assimp(const std::filesystem::path& assimp_path);

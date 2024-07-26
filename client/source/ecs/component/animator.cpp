@@ -23,12 +23,6 @@ animator_component& animator_component::animations(const std::unordered_map<glm:
     return *this;
 }
 
-animator_component& animator_component::armature(const std::shared_future<std::shared_ptr<armature_ref>>& fetched_armature)
-{
-    _armature.emplace(fetched_armature);
-    return *this;
-}
-
 animator_component& animator_component::skeleton(const std::shared_future<std::shared_ptr<skeleton_ref>>& fetched_skeleton)
 {
     _skeleton.emplace(fetched_skeleton, [this] () {

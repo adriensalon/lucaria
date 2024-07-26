@@ -220,8 +220,7 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
     } else if (_extension == ".glb" || _extension == ".gltf") {
         imported_assimp_data _imported_geometry = import_assimp(input_file);
         export_binary(_imported_geometry.mesh_geometry, output_file);
-        if (_imported_geometry.armature_geometry.has_value()) {
-            export_binary(_imported_geometry.armature_geometry.value(), output_file.parent_path() / (output_file.stem().string() + "_armature.bin"));
+        if (_imported_geometry.has_skeleton) {
             execute_gltf2ozz(input_file, output_file.parent_path());
         }
 

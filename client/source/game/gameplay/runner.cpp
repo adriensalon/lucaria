@@ -21,7 +21,6 @@ runner_actor::runner_actor(entt::registry& registry)
 
     _animator = &registry.emplace<animator_component>(_entity)
                      .motion_bone_index(4)
-                     .armature(fetch_armature("assets/player_armature.bin"))
                      .skeleton(fetch_skeleton("assets/player_skeleton.bin"))
                      .animations({
                          { 444, fetch_animation("assets/player_animation_AnimLol.bin") },

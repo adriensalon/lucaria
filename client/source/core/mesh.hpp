@@ -17,6 +17,8 @@ enum struct mesh_attribute {
     tangent,
     bitangent,
     texcoord,
+    bones,
+    weights
 };
 
 inline const std::unordered_map<mesh_attribute, std::size_t> mesh_attribute_sizes = {
@@ -26,6 +28,8 @@ inline const std::unordered_map<mesh_attribute, std::size_t> mesh_attribute_size
     { mesh_attribute::tangent, 3 },
     { mesh_attribute::bitangent, 3 },
     { mesh_attribute::texcoord, 2 },
+    { mesh_attribute::bones, 4 },
+    { mesh_attribute::weights, 4 },
 };
 
 struct mesh_ref {
@@ -37,7 +41,6 @@ struct mesh_ref {
     ~mesh_ref();
 
     mesh_ref(const geometry_data& data);
-    void update_positions(const std::vector<glm::vec3>& new_positions);
     std::unordered_map<mesh_attribute, glm::uint> get_buffer_ids() const;
     glm::uint get_array_id() const;
     glm::uint get_indices_count() const;
