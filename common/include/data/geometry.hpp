@@ -14,9 +14,10 @@ struct geometry_data {
     std::vector<glm::vec3> tangents = {};
     std::vector<glm::vec3> bitangents = {};
     std::vector<glm::vec2> texcoords = {};
-    std::vector<glm::uvec4> bones = {};
+    std::vector<glm::ivec4> bones = {};
     std::vector<glm::vec4> weights = {};
     std::vector<glm::uvec3> indices = {};
+    std::vector<glm::mat4> invposes = {};
     
     template <typename archive_t>
     void serialize(archive_t& archive)
@@ -31,5 +32,6 @@ struct geometry_data {
         archive(cereal::make_nvp("bones", bones));
         archive(cereal::make_nvp("weights", weights));
         archive(cereal::make_nvp("indices", indices));
+        archive(cereal::make_nvp("invposes", invposes));
     }
 };

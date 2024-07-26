@@ -89,6 +89,20 @@ glm::uint create_attribute_buffer(const std::vector<glm::uvec4>& attribute)
     return _attribute_id;
 }
 
+glm::uint create_attribute_buffer(const std::vector<glm::ivec4>& attribute)
+{
+    glm::uint _attribute_id;
+    glm::int32* _attribute_ptr = reinterpret_cast<glm::int32*>(const_cast<glm::ivec4*>(attribute.data()));
+    glGenBuffers(1, &_attribute_id);
+    glBindBuffer(GL_ARRAY_BUFFER, _attribute_id);
+    glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(glm::int32) * attribute.size(), _attribute_ptr, GL_STATIC_DRAW);
+#if LUCARIA_DEBUG
+    std::cout << "Created IVEC4 ARRAY_BUFFER buffer of size " << attribute.size()
+              << " with id " << _attribute_id << std::endl;
+#endif
+    return _attribute_id;
+}
+
 glm::uint create_elements_buffer(const std::vector<glm::uvec2>& indices)
 {
     glm::uint _elements_id;
@@ -161,6 +175,7 @@ mesh_ref::mesh_ref(const geometry_data& data)
     _indices_count = 3 * data.indices.size();
     _array_id = detail::create_vertex_array();
     _elements_id = detail::create_elements_buffer(data.indices);
+    _invposes = data.invposes;
     if (!data.positions.empty()) {
         _attribute_ids[mesh_attribute::position] = detail::create_attribute_buffer(data.positions);
         std::cout << "Creating positions attribute" << std::endl;
@@ -209,6 +224,11 @@ glm::uint mesh_ref::get_array_id() const
 glm::uint mesh_ref::get_indices_count() const
 {
     return _indices_count;
+}
+
+const std::vector<glm::mat4>& mesh_ref::get_invposes() const
+{
+    return _invposes;
 }
 
 geometry_data load_geometry_data(const std::vector<char>& geometry_bytes)

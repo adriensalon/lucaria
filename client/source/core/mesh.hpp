@@ -44,6 +44,7 @@ struct mesh_ref {
     std::unordered_map<mesh_attribute, glm::uint> get_buffer_ids() const;
     glm::uint get_array_id() const;
     glm::uint get_indices_count() const;
+    const std::vector<glm::mat4>& get_invposes() const;
 
 private:
     bool _is_instanced;
@@ -51,6 +52,7 @@ private:
     glm::uint _array_id;
     glm::uint _elements_id;
     std::unordered_map<mesh_attribute, glm::uint> _attribute_ids;
+    std::vector<glm::mat4> _invposes;
     friend struct program_ref;
 };
 

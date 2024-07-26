@@ -4,6 +4,7 @@
 #include <assimp/importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
+#include <glm/gtc/type_ptr.hpp>
 #include <ozz/animation/runtime/skeleton.h>
 #include <ozz/base/io/archive.h>
 #include <ozz/base/io/stream.h>
@@ -41,10 +42,10 @@ public:
                 new_position = offset;
                 break;
             case kCurrent:
-                new_position = position_ + offset;
+                new_position = static_cast<int>(position_) + offset;
                 break;
             case kEnd:
-                new_position = data_.size() + offset;
+                new_position = static_cast<int>(data_.size()) + offset;
                 break;
             default:
                 return -1;
@@ -57,7 +58,7 @@ public:
     }
 
     int Tell() const override {
-        return position_;
+        return static_cast<int>(position_);
     }
     
     size_t Size() const override {
@@ -68,6 +69,21 @@ private:
     const std::vector<char>& data_;
     size_t position_;
 };
+
+void print_matrix(const glm::mat4& matrix)
+{
+    const float* p = glm::value_ptr(matrix); // Get a pointer to the matrix data
+
+    std::cout << std::fixed << std::setprecision(2); // Format for better readability
+
+    for (int row = 0; row < 4; ++row) {
+        for (int col = 0; col < 4; ++col) {
+            std::cout << std::setw(8) << p[row + col * 4] << " "; // Print each element with padding
+        }
+        std::cout << std::endl; // New line after each row
+    }
+
+}
 
 bool LoadBinaryFile(const std::filesystem::path& filename, std::vector<char>& buffer) {
     // Open the file in binary mode at the end to determine the file size
@@ -140,9 +156,8 @@ geometry_data import_assimp(const std::filesystem::path& assimp_path, const std:
         std::terminate();
     }
     const aiMesh* _mesh = _scene->mMeshes[0];
-    // PrintBoneNames(_mesh);
 
-    std::unordered_map<std::string, glm::uint> _skeleton_reindex = {};
+    std::unordered_map<std::string, glm::int32> _skeleton_reindex = {};
     if (skeleton_path.has_value()) {
         std::vector<char> _skeleton_bytes;
         LoadBinaryFile(skeleton_path.value(), _skeleton_bytes);
@@ -152,43 +167,39 @@ geometry_data import_assimp(const std::filesystem::path& assimp_path, const std:
             ozz::io::IArchive _ozz_archive(&_ozz_stream);
             _ozz_archive >> _skeleton;
         }
-        // PrintBoneNames(_skeleton);
         for (int i = 0; i < _skeleton.num_joints(); ++i) {
-            _skeleton_reindex[_skeleton.joint_names()[i]] = static_cast<glm::uint>(i);
+            _skeleton_reindex[_skeleton.joint_names()[i]] = i;
         }
+        // PrintBoneNames(_skeleton);
     }
-    
+    // PrintBoneNames(_mesh);
 
     const aiMatrix4x4 _root_transform = _scene->mRootNode->mTransformation;
     _data.count = _mesh->mNumVertices;
     _data.bones.resize(_data.count);
     _data.weights.resize(_data.count, glm::vec4(0.f));
+    _data.invposes.resize(_skeleton_reindex.size(), glm::mat4(1.f));
     for (glm::uint _b = 0; _b < _mesh->mNumBones; ++_b) {
         const aiBone* _bone = _mesh->mBones[_b];
-        const glm::uint _bone_reindex = _skeleton_reindex.at(std::string(_bone->mName.C_Str()));
-        // std::cout << "bone n" << _b << " influences " << _bone->mNumWeights << "vertices : ";
+        const glm::int32 _bone_reindex = _skeleton_reindex.at(std::string(_bone->mName.C_Str()));
+        _data.invposes[_bone_reindex] = glm::transpose(*(reinterpret_cast<const glm::mat4*>(&(_bone->mOffsetMatrix))));
         for (glm::uint w = 0; w < _bone->mNumWeights; ++w) {
-
             const glm::uint _vertex_id = _bone->mWeights[w].mVertexId;
             const glm::float32 _weight = _bone->mWeights[w].mWeight;
-
-            // std::cout << _vertex_id << ", ";
             for (int l = 0; l < 4; ++l) {
                 if (_data.weights[_vertex_id][l] == 0.0f) {
-                    // _data.bones[_vertex_id][l] = _b; // OFFSET WITH OZZ SKELETON NAME
                     _data.bones[_vertex_id][l] = _bone_reindex;
                     _data.weights[_vertex_id][l] = _weight;
                     break;
                 }
             }
         }
-        // std::cout << std::endl;
     }
+
     for (glm::uint _i = 0; _i < _mesh->mNumVertices; ++_i) {
-        // _data.weights.insert(_data.weights.end(), _vertex_weights[_i].begin(), _vertex_weights[_i].end());
-        // _data.bones.insert(_data.bones.end(), _vertex_bones[_i].begin(), _vertex_bones[_i].end());
         if (_mesh->HasPositions()) {
-            const aiVector3D _position = _root_transform * _mesh->mVertices[_i];
+            // const aiVector3D _position = _root_transform * _mesh->mVertices[_i];
+            const aiVector3D _position = _mesh->mVertices[_i];
             _data.positions.push_back(glm::vec3(_position.x, _position.y, _position.z));
         }
         if (_mesh->HasVertexColors(0)) {
@@ -209,6 +220,7 @@ geometry_data import_assimp(const std::filesystem::path& assimp_path, const std:
             _data.texcoords.push_back(glm::vec2(_mesh->mTextureCoords[0][_i].x, 1.f - _mesh->mTextureCoords[0][_i].y));
         }
     }
+
     for (glm::uint _i = 0; _i < _mesh->mNumFaces; ++_i) {
         const aiFace& _face = _mesh->mFaces[_i];
         if (_face.mNumIndices != 3) {

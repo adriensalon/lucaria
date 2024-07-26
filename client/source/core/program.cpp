@@ -4,6 +4,8 @@
 #include <cereal/cereal.hpp>
 #include <cereal/types/string.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <ozz/base/containers/vector.h>
+#include <ozz/base/maths/simd_math.h>
 
 #include <core/program.hpp>
 #include <core/fetch.hpp>
@@ -28,7 +30,9 @@ glm::uint create_shader(const GLenum type, const std::string& text)
         std::vector<GLchar> _result_error_msg(_log_length + 1);
         glGetShaderInfoLog(_shader_id, _log_length, NULL, &_result_error_msg[0]);
         std::cout << "Invalid shader '" << std::string(&_result_error_msg[0]) << "'" << std::endl;
-        std::terminate();
+        if (!_result) {
+            std::terminate();
+        }
     }
 #endif
     return _shader_id;
@@ -148,11 +152,27 @@ void program_ref::bind(const std::string& name, const mesh_ref& mesh, const mesh
     _indices_count = mesh.get_indices_count();
     _array_id = mesh.get_array_id();
     std::unordered_map<mesh_attribute, glm::uint> _buffer_ids = mesh.get_buffer_ids();
+#if LUCARIA_DEBUG
+    if (_program_attributes.find(name) == _program_attributes.end()) {
+        std::cout << "Name " << name << " not found in shader." << std::endl;
+        std::terminate();
+    }
+#endif
     glm::int32 _location = _program_attributes.at(name);
     glm::uint _size = mesh_attribute_sizes.at(attribute);
     glBindVertexArray(_array_id);
+#if LUCARIA_DEBUG
+    if (_buffer_ids.find(attribute) == _buffer_ids.end()) {
+        std::cout << "Attribute " << (int)attribute << " is not in mesh." << std::endl;
+        std::terminate();
+    }
+#endif
     glBindBuffer(GL_ARRAY_BUFFER, _buffer_ids.at(attribute));
-    glVertexAttribPointer(_location, _size, GL_FLOAT, GL_FALSE, _size * sizeof(GLfloat), (void*)0);
+    if (attribute == mesh_attribute::bones) {
+        glVertexAttribIPointer(_location, _size, GL_INT, _size * sizeof(glm::int32), (void*)0);
+    } else {
+        glVertexAttribPointer(_location, _size, GL_FLOAT, GL_FALSE, _size * sizeof(glm::float32), (void*)0);
+    }
     glEnableVertexAttribArray(_location);
 }
 
@@ -187,6 +207,13 @@ void program_ref::bind(const std::string& name, const texture_ref& texture, cons
     glUniform1i(_location, slot);
     glActiveTexture(GL_TEXTURE0 + slot);
     glBindTexture(GL_TEXTURE_2D, texture.get_id());
+}
+
+template <>
+void program_ref::bind<glm::int32>(const std::string& name, const glm::int32& value)
+{
+    const glm::int32 _location = _program_uniforms.at(name);
+    glUniform1i(_location, value);
 }
 
 template <>
@@ -260,6 +287,25 @@ void program_ref::bind<glm::mat4x4>(const std::string& name, const glm::mat4x4& 
 {
     const glm::int32 _location = _program_uniforms.at(name);
     glUniformMatrix4fv(_location, 1, GL_FALSE, glm::value_ptr(value));
+}
+
+template <>
+void program_ref::bind<std::vector<glm::mat4x4>>(const std::string& name, const std::vector<glm::mat4x4>& value)
+{
+    const glm::int32 _location = _program_uniforms.at(name);
+    const glm::uint _count = value.size();
+    const glm::float32* _ptr = reinterpret_cast<const glm::float32*>(value.data());
+    glUniformMatrix4fv(_location, _count, GL_FALSE, _ptr);
+}
+
+template <>
+void program_ref::bind<ozz::vector<ozz::math::Float4x4>>(const std::string& name, const ozz::vector<ozz::math::Float4x4>& value)
+{
+    const glm::int32 _location = _program_uniforms.at(name);
+    const glm::uint _count = value.size();
+    const glm::float32* _ptr = reinterpret_cast<const glm::float32*>(value.data());
+    glUniformMatrix4fv(_location, _count, GL_FALSE, _ptr);
+    
 }
 
 static bool _depth_test_enabled = true;

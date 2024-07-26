@@ -11,6 +11,7 @@
 #include <core/window.hpp>
 #include <core/world.hpp>
 
+#include <ecs/component/animator.hpp>
 #include <ecs/component/collider.hpp>
 #include <ecs/component/model.hpp>
 #include <ecs/component/rigidbody.hpp>
@@ -87,6 +88,77 @@ static const std::string unlit_vertex = R"(#version 300 es
         frag_texcoord = vert_texcoord;
         gl_Position = uniform_view * vec4(vert_position, 1);
     })";
+
+static const std::string unlit_skinned_vertex = R"(#version 300 es
+    in vec3 vert_position;
+    in vec2 vert_texcoord;
+    in ivec4 vert_bones;
+    in vec4 vert_weights;
+    uniform mat4 uniform_view;
+    uniform mat4 uniform_bones_transforms[100];
+    uniform mat4 uniform_bones_invposes[100];
+    out vec2 frag_texcoord;
+    void main() {
+        frag_texcoord = vert_texcoord;
+        vec4 skinned_position = vec4(0.0);
+        for (int i = 0; i < 4; ++i) {
+            if (vert_weights[i] > 0.0) {
+                int _index = vert_bones[i];
+                // skinned_position += vert_weights[i] * uniform_bones_transforms[_index] * vec4(vert_position, 1.0);
+                skinned_position += vert_weights[i] * uniform_bones_transforms[_index] * uniform_bones_invposes[_index] * vec4(vert_position, 1.0);
+            }
+        }
+        gl_Position = uniform_view * skinned_position;
+    })";
+// static const std::string unlit_skinned_vertex = R"(#version 300 es
+//     in vec3 vert_position;
+//     in vec2 vert_texcoord;
+//     in ivec4 vert_bones;
+//     in vec4 vert_weights;
+//     uniform mat4 uniform_view;
+//     uniform mat4 uniform_bones_transforms[10];
+//     uniform mat4 uniform_bones_invposes[10];
+//     out vec2 frag_texcoord;
+
+//     // vec4 addto(const float weight, const int bone)
+//     // {
+//     //     if (weight > 0.0) {
+//     //         if (bone == 0) {
+//     //             return weight * uniform_bones_transforms[0] * uniform_bones_invposes[0] * vec4(vert_position, 1.0);
+//     //         } else if (bone == 1) {
+//     //             return weight * uniform_bones_transforms[1] * uniform_bones_invposes[1] * vec4(vert_position, 1.0);
+//     //         } else if (bone == 2) {
+//     //             return weight * uniform_bones_transforms[2] * uniform_bones_invposes[2] * vec4(vert_position, 1.0);
+//     //         } else if (bone == 3) {
+//     //             return weight * uniform_bones_transforms[3] * uniform_bones_invposes[3] * vec4(vert_position, 1.0);
+//     //         } else if (bone == 4) {
+//     //             return weight * uniform_bones_transforms[4] * uniform_bones_invposes[4] * vec4(vert_position, 1.0);
+//     //         } else if (bone == 5) {
+//     //             return weight * uniform_bones_transforms[5] * uniform_bones_invposes[5] * vec4(vert_position, 1.0);
+//     //         } else if (bone == 6) {
+//     //             return weight * uniform_bones_transforms[6] * uniform_bones_invposes[6] * vec4(vert_position, 1.0);
+//     //         } else if (bone == 7) {
+//     //             return weight * uniform_bones_transforms[7] * uniform_bones_invposes[7] * vec4(vert_position, 1.0);
+//     //         } else if (bone == 8) {
+//     //             return weight * uniform_bones_transforms[8] * uniform_bones_invposes[8] * vec4(vert_position, 1.0);
+//     //         } else if (bone == 9) {
+//     //             return weight * uniform_bones_transforms[9] * uniform_bones_invposes[9] * vec4(vert_position, 1.0);
+//     //         }
+//     //     }
+//     // } 
+
+//     void main() {
+//         frag_texcoord = vert_texcoord;
+//         // vec4 skinned_position = vec4(0.0);
+//         vec4 skinned_position = vec4(vert_position, 0.0);
+
+//         skinned_position += addto(vert_weights.x, vert_bones.x);
+//         skinned_position += addto(vert_weights.y, vert_bones.y);
+//         skinned_position += addto(vert_weights.z, vert_bones.z);
+//         skinned_position += addto(vert_weights.w, vert_bones.w);
+
+//         gl_Position = uniform_view * skinned_position;
+//     })";
 
 static const std::string unlit_fragment = R"(#version 300 es
     precision mediump float;
@@ -337,13 +409,33 @@ void rendering_system::draw_unlit_meshes()
 {
     static bool _is_program_setup = false;
     static std::optional<program_ref> _persistent_unlit_program = std::nullopt;
+    static std::optional<program_ref> _persistent_unlit_skinned_program = std::nullopt;
     if (!_is_program_setup) {
         _persistent_unlit_program = program_ref(shader_data { detail::unlit_vertex }, shader_data { detail::unlit_fragment });
+        _persistent_unlit_skinned_program = program_ref(shader_data { detail::unlit_skinned_vertex }, shader_data { detail::unlit_fragment });
         _is_program_setup = true;
     }
     program_ref& _unlit_program = _persistent_unlit_program.value();
+    program_ref& _unlit_skinned_program = _persistent_unlit_skinned_program.value();
     each_level([&](entt::registry& _registry) {
-        _registry.view<model_component<model_shader::unlit>, transform_component>().each([&](model_component<model_shader::unlit>& _model, transform_component& _transform) {
+        _registry.view<model_component<model_shader::unlit>, transform_component, animator_component>().each([&](model_component<model_shader::unlit>& _model, transform_component& _transform, animator_component& animator) {
+            if (_model._mesh.has_value() && _model._color.has_value() && animator._skeleton.has_value()) {
+                const glm::mat4 _model_view_projection = detail::camera_view_projection * _transform._transform;
+                const mesh_ref& _mesh = _model._mesh.value();
+                const texture_ref& _color = _model._color.value();
+                _unlit_skinned_program.use();
+                _unlit_skinned_program.bind("vert_position", _mesh, mesh_attribute::position);
+                _unlit_skinned_program.bind("vert_texcoord", _mesh, mesh_attribute::texcoord);
+                _unlit_skinned_program.bind("vert_bones", _mesh, mesh_attribute::bones);
+                _unlit_skinned_program.bind("vert_weights", _mesh, mesh_attribute::weights);
+                _unlit_skinned_program.bind("uniform_view", _model_view_projection);
+                _unlit_skinned_program.bind("uniform_bones_invposes[0]", _mesh.get_invposes()); // std::vector<glm::mat4>
+                _unlit_skinned_program.bind("uniform_bones_transforms[0]", animator._model_transforms); // std::vector<ozz::math::Float4x4>
+                _unlit_skinned_program.bind("uniform_color", _color, 0);
+                _unlit_skinned_program.draw();
+            }
+        });
+        _registry.view<model_component<model_shader::unlit>, transform_component>(entt::exclude<animator_component>).each([&](model_component<model_shader::unlit>& _model, transform_component& _transform) {
             if (_model._mesh.has_value() && _model._color.has_value()) {
                 const glm::mat4 _model_view_projection = detail::camera_view_projection * _transform._transform;
                 const mesh_ref& _mesh = _model._mesh.value();
@@ -356,7 +448,23 @@ void rendering_system::draw_unlit_meshes()
                 _unlit_program.draw();
             }
         });
-        _registry.view<model_component<model_shader::unlit>>(entt::exclude<transform_component>).each([&](model_component<model_shader::unlit>& _model) {
+        _registry.view<model_component<model_shader::unlit>, animator_component>(entt::exclude<transform_component>).each([&](model_component<model_shader::unlit>& _model, animator_component& animator) {
+            if (_model._mesh.has_value() && _model._color.has_value() && animator._skeleton.has_value()) {
+                const mesh_ref& _mesh = _model._mesh.value();
+                const texture_ref& _color = _model._color.value();
+                _unlit_skinned_program.use();
+                _unlit_skinned_program.bind("vert_position", _mesh, mesh_attribute::position);
+                _unlit_skinned_program.bind("vert_texcoord", _mesh, mesh_attribute::texcoord);
+                _unlit_skinned_program.bind("vert_bones", _mesh, mesh_attribute::bones);
+                _unlit_skinned_program.bind("vert_weights", _mesh, mesh_attribute::weights);
+                _unlit_skinned_program.bind("uniform_color", _color, 0);
+                _unlit_skinned_program.bind("uniform_view", detail::camera_view_projection);
+                _unlit_skinned_program.bind("uniform_bones_transforms[0]", animator._model_transforms); // std::vector<ozz::math::Float4x4>
+                _unlit_skinned_program.bind("uniform_bones_invposes[0]", _mesh.get_invposes()); // std::vector<glm::mat4>
+                _unlit_skinned_program.draw();
+            }
+        });
+        _registry.view<model_component<model_shader::unlit>>(entt::exclude<transform_component, animator_component>).each([&](model_component<model_shader::unlit>& _model) {
             if (_model._mesh.has_value() && _model._color.has_value()) {
                 const mesh_ref& _mesh = _model._mesh.value();
                 const texture_ref& _color = _model._color.value();

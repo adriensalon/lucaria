@@ -44,4 +44,5 @@ private:
     std::unordered_map<glm::uint, fetch_container<animation_ref>> _animations = {};
     std::unordered_map<glm::uint, ozz::vector<ozz::math::SoaTransform>> _local_transforms = {};
     friend struct motion_system;
+    friend struct rendering_system;
 };

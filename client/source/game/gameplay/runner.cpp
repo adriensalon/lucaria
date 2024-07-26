@@ -13,17 +13,17 @@ runner_actor::runner_actor(entt::registry& registry)
                       .capsule(0.5f, 1.83f);
 
     _model = &registry.emplace<model_component<model_shader::unlit>>(_entity)
-                  .color(fetch_texture("assets/room_color.bin", "assets/room_color_etc.bin", "assets/room_color_s3tc.bin"))
-                  .mesh(fetch_mesh("assets/player.bin"));
+                  .color(fetch_texture("assets/sophie_color.bin", "assets/sophie_color_etc.bin", "assets/sophie_color_s3tc.bin"))
+                  .mesh(fetch_mesh("assets/sophie.bin"));
 
     _speaker = &registry.emplace<speaker_component>(_entity)
                     .sounds({ { 666, fetch_sound("assets/anorlondo.bin") } });
 
     _animator = &registry.emplace<animator_component>(_entity)
                      .motion_bone_index(4)
-                     .skeleton(fetch_skeleton("assets/player_skeleton.bin"))
+                     .skeleton(fetch_skeleton("assets/sophie_skeleton.bin"))
                      .animations({
-                         { 444, fetch_animation("assets/player_animation_AnimLol.bin") },
+                         { 444, fetch_animation("assets/sophie_animation_Anim1.bin") },
                      });
 
     _controller = &registry.emplace<controller_component<runner_actor>>(_entity)
