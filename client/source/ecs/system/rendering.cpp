@@ -99,54 +99,53 @@ static const std::string unlit_fragment = R"(#version 300 es
 
 static const std::string blockout_vertex = R"(#version 300 es
     in vec3 vert_position;
+    in vec3 vert_normal;
     uniform mat4 uniform_view;
     out vec3 frag_position;
+    out vec3 frag_normal;
+    out vec3 uv_x;
+    out vec3 uv_y;
+    out vec3 uv_z;
+    
     void main() {
         frag_position = vert_position;
+        frag_normal = normalize(vert_normal);
+        vec3 abs_normal = abs(frag_normal);
+        vec3 uv = frag_position;
+        uv_x = vec3(uv.y, uv.z, abs_normal.x);
+        uv_y = vec3(uv.x, uv.z, abs_normal.y);
+        uv_z = vec3(uv.x, uv.y, abs_normal.z);
         gl_Position = uniform_view * vec4(vert_position, 1.0);
     })";
-
-// static const std::string blockout_fragment = R"(#version 300 es
-//     precision highp float;
-//     in vec3 frag_position;
-//     out vec4 output_color;
-//     void main() {
-//         vec3 abs_position = abs(frag_position);
-//         vec3 blend = normalize(max(abs_position, 0.00001));
-//         blend /= (abs_position.x + abs_position.y + abs_position.z);
-//         float grid_scale = 1.0;
-//         vec3 scaled_position = frag_position * grid_scale;
-//         float line_thickness = 0.7;
-//         vec3 grid = abs(fract(scaled_position - 0.5) - 0.5) / fwidth(scaled_position);
-//         float grid_factor = min(min(grid.x, grid.y), grid.z);
-//         vec3 base_color = vec3(0.5); // Grey color
-//         vec3 line_color = vec3(1.0); // White color
-//         float grid_line = smoothstep(0.0, line_thickness, grid_factor);
-//         // vec3 final_color = mix(line_color, base_color, grid_line);
-//         vec3 final_color = base_color;
-//         output_color = vec4(final_color, 1.0);
-//     })";
 
 static const std::string blockout_fragment = R"(#version 300 es
     precision highp float;
     in vec3 frag_position;
+    in vec3 frag_normal;
+    in vec3 uv_x;
+    in vec3 uv_y;
+    in vec3 uv_z;
     out vec4 output_color;
     void main() {
-        vec3 abs_position = abs(frag_position);
-        vec3 blend = normalize(max(abs_position, 0.00001));
-        blend /= (abs_position.x + abs_position.y + abs_position.z);
+        vec3 abs_normal = abs(frag_normal);
+        float total = abs_normal.x + abs_normal.y + abs_normal.z;
+        vec3 blend_weights = abs_normal / total;
         float grid_scale = 1.0;
-        vec3 scaled_position = frag_position * grid_scale;
-        float line_thickness = 0.7;
-        
-        // Calculate grid only for horizontal lines
-        float grid = abs(fract(scaled_position.y - 0.5) - 0.5) / fwidth(scaled_position.y);
-        float grid_factor = grid;
-        
-        vec3 base_color = vec3(0.5); // Grey color
-        vec3 line_color = vec3(0.02); // White color
+        float line_thickness = 0.02;
+        vec2 uv_x2 = uv_x.xy / uv_x.z;
+        vec2 uv_y2 = uv_y.xy / uv_y.z;
+        vec2 uv_z2 = uv_z.xy / uv_z.z;
+        vec2 grid_x = abs(fract(uv_x2 / grid_scale) - 0.5);
+        vec2 grid_y = abs(fract(uv_y2 / grid_scale) - 0.5);
+        vec2 grid_z = abs(fract(uv_z2 / grid_scale) - 0.5);
+        float grid_x_factor = min(grid_x.x, grid_x.y);
+        float grid_y_factor = min(grid_y.x, grid_y.y);
+        float grid_z_factor = min(grid_z.x, grid_z.y);
+        float grid_factor = min(min(grid_x_factor, grid_y_factor), grid_z_factor);
         float grid_line = smoothstep(0.0, line_thickness, grid_factor);
-        vec3 final_color = mix(line_color, base_color, grid_line);    
+        vec3 base_color = vec3(0.9); // Grey color for the grid background
+        vec3 line_color = vec3(0.3); // White color for the grid lines
+        vec3 final_color = mix(base_color, line_color, grid_line);
         output_color = vec4(final_color, 1.0);
     })";
 
@@ -292,7 +291,7 @@ void rendering_system::draw_skybox()
         mesh_ref& _skybox_mesh = _persistent_skybox_mesh.value();
         program_ref& _skybox_program = _persistent_skybox_program.value();
         cubemap_ref& _skybox_cubemap = detail::skybox_cubemap.value();
-        const glm::mat4 _no_translation_view_projection = detail::camera_projection * glm::mat4(glm::mat3(detail::camera_view));  
+        const glm::mat4 _no_translation_view_projection = detail::camera_projection * glm::mat4(glm::mat3(detail::camera_view));
         _skybox_program.use();
         _skybox_program.bind("vert_position", _skybox_mesh, mesh_attribute::position);
         _skybox_program.bind("uniform_color", _skybox_cubemap, 0);
@@ -317,6 +316,7 @@ void rendering_system::draw_blockout_meshes()
                 const mesh_ref& _mesh = _model._mesh.value();
                 _blockout_program.use();
                 _blockout_program.bind("vert_position", _mesh, mesh_attribute::position);
+                _blockout_program.bind("vert_normal", _mesh, mesh_attribute::normal);
                 _blockout_program.bind("uniform_view", _model_view_projection);
                 _blockout_program.draw();
             }
@@ -326,6 +326,7 @@ void rendering_system::draw_blockout_meshes()
                 const mesh_ref& _mesh = _model._mesh.value();
                 _blockout_program.use();
                 _blockout_program.bind("vert_position", _mesh, mesh_attribute::position);
+                _blockout_program.bind("vert_normal", _mesh, mesh_attribute::normal);
                 _blockout_program.bind("uniform_view", detail::camera_view_projection);
                 _blockout_program.draw();
             }
