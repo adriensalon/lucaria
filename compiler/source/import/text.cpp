@@ -5,9 +5,9 @@
 
 #include <import/text.hpp>
 
-imported_text_data import_text(const std::filesystem::path& text_path)
+shader_data import_text(const std::filesystem::path& text_path)
 {
-    imported_text_data _data;
+    shader_data _data;
     std::ifstream _stream(text_path);
     if (!_stream) {
         std::cout << "Impossible to import shader '" << text_path.string() << "'" << std::endl;
@@ -15,7 +15,6 @@ imported_text_data import_text(const std::filesystem::path& text_path)
     }
     std::stringstream _buffer;
     _buffer << _stream.rdbuf();
-    _data.shader.text = _buffer.str();
-    // todo extract version
+    _data.text = _buffer.str();
     return _data;
 }

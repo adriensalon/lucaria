@@ -5,9 +5,5 @@
 
 #include <data/geometry.hpp>
 
-struct imported_assimp_data {
-    geometry_data mesh_geometry;
-    bool has_skeleton = false;
-};
-
-imported_assimp_data import_assimp(const std::filesystem::path& assimp_path);
+bool assimp_has_skeleton(const std::filesystem::path& assimp_path);
+geometry_data import_assimp(const std::filesystem::path& assimp_path, const std::optional<std::filesystem::path>& skeleton_path);

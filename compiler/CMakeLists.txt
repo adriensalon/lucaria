@@ -89,6 +89,7 @@ else()
 	target_link_libraries(lucaria_compiler PRIVATE glm)
 	target_link_libraries(lucaria_compiler PRIVATE stb_image)
 	target_link_libraries(lucaria_compiler PRIVATE assimp)
+	target_link_libraries(lucaria_compiler PRIVATE ozz_animation)
 
 	# target_compile_definitions(lucaria_compiler PRIVATE LUCARIA_DEBUG)
 	# target_compile_definitions(lucaria_compiler PRIVATE LUCARIA_JSON)

@@ -218,15 +218,16 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
         execute_woff2_compress(woff2_compress_executable, input_file, output_file);
 
     } else if (_extension == ".glb" || _extension == ".gltf") {
-        imported_assimp_data _imported_geometry = import_assimp(input_file);
-        export_binary(_imported_geometry.mesh_geometry, output_file);
-        if (_imported_geometry.has_skeleton) {
+        if (assimp_has_skeleton(input_file)) {
+            const std::filesystem::path _skeleton_path = output_file.parent_path() / (input_file.stem().string() + "_skeleton.bin");
             execute_gltf2ozz(input_file, output_file.parent_path());
+            export_binary(import_assimp(input_file, _skeleton_path), output_file);
+        } else {
+            export_binary(import_assimp(input_file, std::nullopt), output_file);
         }
 
     } else if (_extension == ".jpg" || _extension == ".png" || _extension == ".bmp") {
-        imported_stb_data _imported_image = import_stb(input_file);
-        export_binary(_imported_image.image, output_file);
+        export_binary(import_stb(input_file), output_file);
         if (_extension == ".png") {
             execute_etcpak(etcpak_mode::etc, etcpak_executable, input_file, output_file.parent_path() / (output_file.stem().string() + "_etc.bin"));
             execute_etcpak(etcpak_mode::s3tc, etcpak_executable, input_file, output_file.parent_path() / (output_file.stem().string() + "_s3tc.bin"));
@@ -235,8 +236,7 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
         }
 
     } else if (_extension == ".glsl" || _extension == ".txt" || _extension == ".vert" || _extension == ".frag") {
-        imported_text_data _imported_shader = import_text(input_file);
-        export_binary(_imported_shader.shader, output_file);
+        export_binary(import_text(input_file), output_file);
 
     } else if (_extension == ".wav" || _extension == ".aiff") {
         execute_oggenc(input_file, output_file.parent_path());

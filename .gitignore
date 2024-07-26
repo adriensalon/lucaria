@@ -3,5 +3,6 @@ build/
 install/
 scans/
 assets/
+assets_ok/
 blender/
 todo

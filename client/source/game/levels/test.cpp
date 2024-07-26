@@ -19,12 +19,12 @@ void level_blockout_test(entt::registry& registry)
     // _okokok.emplace(fetch_texture("room_color_compressed.bin"));
 
     rendering_system::use_skybox_cubemap(fetch_cubemap({
-        "assets/skyboxes/test/px.bin",
-        "assets/skyboxes/test/py.bin",
-        "assets/skyboxes/test/pz.bin",
-        "assets/skyboxes/test/nx.bin",
-        "assets/skyboxes/test/ny.bin",
-        "assets/skyboxes/test/nz.bin"
+        "assets/px.bin",
+        "assets/py.bin",
+        "assets/pz.bin",
+        "assets/nx.bin",
+        "assets/ny.bin",
+        "assets/nz.bin"
     }
     ));
     // std::array<std::filesystem::path, 6> {

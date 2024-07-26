@@ -22,6 +22,14 @@ animator_component& animator_component::animations(const std::unordered_map<glm:
     }
     return *this;
 }
+void PrintBoneNames(const ozz::animation::Skeleton& skeleton) {
+    const int num_joints = skeleton.num_joints();
+    for (int i = 0; i < num_joints; ++i) {
+        const char* joint_name = skeleton.joint_names()[i];
+        printf("Bone %d: %s\n", i, joint_name);
+    }
+}
+
 
 animator_component& animator_component::skeleton(const std::shared_future<std::shared_ptr<skeleton_ref>>& fetched_skeleton)
 {
@@ -40,6 +48,7 @@ animator_component& animator_component::skeleton(const std::shared_future<std::s
             }
         }
         const int _num_joints = _skeleton.value().num_joints();
+        PrintBoneNames(_skeleton.value());
         _sampling_context = std::make_unique<ozz::animation::SamplingJob::Context>();
         _sampling_context->Resize(_num_joints);
         _model_transforms.resize(_num_joints);
