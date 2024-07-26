@@ -74,8 +74,12 @@ static void draw_text(const ImVec2& display_size, const bool is_ready)
 static void draw_splash_menu(const bool is_ready)
 {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.f);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.f, 0.f));
     ImGui::PushStyleColor(ImGuiCol_Text, white_text_color);
     ImGui::PushStyleColor(ImGuiCol_WindowBg, white_text_color);
+    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.f, 1.f, 1.f, 0.f));
     const ImVec2 _display_size = ImGui::GetIO().DisplaySize;
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(_display_size);
@@ -85,8 +89,8 @@ static void draw_splash_menu(const bool is_ready)
         draw_text(_display_size, is_ready);
         ImGui::End();
     }
-    ImGui::PopStyleColor(2);
-    ImGui::PopStyleVar();
+    ImGui::PopStyleColor(3);
+    ImGui::PopStyleVar(4);
 }
 
 static void add_next_level()

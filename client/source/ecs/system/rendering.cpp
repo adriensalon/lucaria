@@ -105,8 +105,7 @@ static const std::string blockout_vertex = R"(#version 300 es
     out vec3 frag_normal;
     out vec3 uv_x;
     out vec3 uv_y;
-    out vec3 uv_z;
-    
+    out vec3 uv_z;    
     void main() {
         frag_position = vert_position;
         frag_normal = normalize(vert_normal);
@@ -143,8 +142,8 @@ static const std::string blockout_fragment = R"(#version 300 es
         float grid_z_factor = min(grid_z.x, grid_z.y);
         float grid_factor = min(min(grid_x_factor, grid_y_factor), grid_z_factor);
         float grid_line = smoothstep(0.0, line_thickness, grid_factor);
-        vec3 base_color = vec3(0.9); // Grey color for the grid background
-        vec3 line_color = vec3(0.3); // White color for the grid lines
+        vec3 base_color = vec3(0.8); // Grey color for the grid background
+        vec3 line_color = vec3(0.5); // White color for the grid lines
         vec3 final_color = mix(base_color, line_color, grid_line);
         output_color = vec4(final_color, 1.0);
     })";
