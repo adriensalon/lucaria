@@ -10,7 +10,7 @@ runner_actor::runner_actor(entt::registry& registry)
                       .collide_walls()
                       .collide_grounds()
                       .collide_layer(kinematic_layer::layer_0)
-                      .capsule(0.5f, 1.83f);
+                      .capsule(0.5f, 1.75f);
 
     _model = &registry.emplace<model_component<model_shader::unlit>>(_entity)
                   .color(fetch_texture("assets/sophie_color.bin", "assets/sophie_color_etc.bin", "assets/sophie_color_s3tc.bin"))

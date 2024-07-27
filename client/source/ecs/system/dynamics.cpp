@@ -126,7 +126,7 @@ static void compute_collide_wall(const kinematic_collision& collision, glm::mat4
 static bool compute_snap_ground(glm::mat4& transform, kinematic_collision& collision, const glm::float32 half_height)
 {
     glm::vec3 position = glm::vec3(transform[3]);
-    btVector3 start(position.x, position.y, position.z);
+    btVector3 start(position.x, position.y + half_height, position.z);
     btVector3 end(position.x, position.y - detail::snap_ground_distance - half_height, position.z);
     btCollisionWorld::ClosestRayResultCallback rayCallback(start, end);
     rayCallback.m_collisionFilterGroup = bulletgroupID_kinematic_rigidbody;
@@ -136,7 +136,7 @@ static bool compute_snap_ground(glm::mat4& transform, kinematic_collision& colli
         collision.distance = glm::distance(position, collision.position);
         collision.position = glm::vec3(rayCallback.m_hitPointWorld.x(), rayCallback.m_hitPointWorld.y(), rayCallback.m_hitPointWorld.z());
         collision.normal = glm::vec3(rayCallback.m_hitNormalWorld.x(), rayCallback.m_hitNormalWorld.y(), rayCallback.m_hitNormalWorld.z());
-        transform[3][1] = collision.position.y + half_height;
+        transform[3][1] = collision.position.y;
         return true;
     }
     return false;
@@ -158,7 +158,7 @@ void dynamics_system::step_simulation()
 {
     each_level([](entt::registry& registry) {
         registry.view<transform_component, kinematic_rigidbody_component>().each([](transform_component& transform, kinematic_rigidbody_component& rigidbody) {
-            const btTransform _transform = detail::glm_to_bullet(transform._transform);
+            const btTransform _transform = detail::glm_to_bullet(glm::translate(glm::mat4(1.f), glm::vec3(0.f, rigidbody._half_height, 0.f)) * transform._transform);
             rigidbody._ghost->setWorldTransform(_transform);
         });
     });
