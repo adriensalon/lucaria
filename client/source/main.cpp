@@ -26,7 +26,7 @@ int main()
         
         rendering_system::clear_debug_guizmos();
         rendering_system::clear_screen();
-        rendering_system::compute_projection();        
+        rendering_system::compute_projection();
         
         scripting_system::resolve_controller_states();
 
@@ -40,9 +40,6 @@ int main()
         dynamics_system::compute_kinematic_collisions();
         dynamics_system::collect_debug_guizmos();
         
-        motion_system::apply_foot_ik();
-        motion_system::skin_meshes();
-
         rendering_system::compute_view_projection();
         rendering_system::draw_skybox();
         rendering_system::draw_blockout_meshes();
