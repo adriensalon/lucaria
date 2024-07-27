@@ -5,6 +5,8 @@
 
 #include <glm/glm.hpp>
 
+struct animator_component;
+
 struct transform_component {
     transform_component() = default;
     transform_component(const transform_component& other) = delete;
@@ -13,6 +15,7 @@ struct transform_component {
     transform_component& operator=(transform_component&& other) = default;
 
     transform_component& parent(transform_component& parent_component);
+    transform_component& parent(animator_component& animator, const glm::uint bone_index);
     transform_component& position_relative(const glm::vec3& position);
     transform_component& position_warp(const glm::vec3& position);
     transform_component& rotation_relative(const glm::vec3& rotation);
@@ -26,7 +29,6 @@ struct transform_component {
 
 private:
     glm::mat4 _transform = glm::mat4(1.0f);
-    std::optional<std::reference_wrapper<transform_component>> _parent = std::nullopt; // remove only children
     std::vector<std::reference_wrapper<transform_component>> _children = {};
     friend struct dynamics_system;
     friend struct interface_system;
