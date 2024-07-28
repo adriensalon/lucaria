@@ -220,7 +220,7 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
     } else if (_extension == ".glb" || _extension == ".gltf") {
         if (assimp_has_skeleton(input_file)) {
             const std::filesystem::path _skeleton_path = output_file.parent_path() / (input_file.stem().string() + "_skeleton.bin");
-            execute_gltf2ozz(detail::gltf2ozz_executable, input_file, output_file.parent_path());
+            execute_gltf2ozz(gltf2ozz_executable, input_file, output_file.parent_path());
             export_binary(import_assimp(input_file, _skeleton_path), output_file);
         } else {
             export_binary(import_assimp(input_file, std::nullopt), output_file);
