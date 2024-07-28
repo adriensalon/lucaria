@@ -114,5 +114,5 @@ animator_component& animator_component::motion_bone(const std::optional<std::str
 
 animation_controller& animator_component::get_controller(const glm::uint name)
 {
-    return _controllers.at(_name);
+    return _controllers.at(name);
 }
