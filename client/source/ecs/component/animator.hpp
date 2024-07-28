@@ -20,7 +20,7 @@
 struct animation_controller {
     bool is_playing = true;
     bool is_looping = true;
-    glm::float32 time_ratio = 0.5f;
+    glm::float32 time_ratio = 0.f;
     glm::float32 playback_speed = 1.f;
 };
 
@@ -33,15 +33,25 @@ struct animator_component {
 
     animator_component& animations(const std::unordered_map<glm::uint, std::shared_future<std::shared_ptr<animation_ref>>>& fetched_animations);
     animator_component& skeleton(const std::shared_future<std::shared_ptr<skeleton_ref>>& fetched_skeleton);
-    animator_component& motion_bone_index(const std::optional<glm::uint> bone_index);
+    animator_component& motion_bone(const std::optional<glm::uint>& bone_index);
+    animator_component& motion_bone(const std::optional<std::string>& bone_name);
 
     animation_controller& get_controller(const glm::uint name);
 
 private:
+    bool _just_started = false;
     fetch_container<skeleton_ref> _skeleton = {};
+    ozz::vector<ozz::math::SoaTransform> _blended_local_transforms = {};
     ozz::vector<ozz::math::Float4x4> _model_transforms = {};
+    ozz::vector<ozz::math::Float4x4> _model_transforms_copy = {};
+    ozz::vector<ozz::math::Float4x4> _model_output_transforms = {};
+    ozz::vector<ozz::math::Float4x4> _model_last_transforms = {};
     std::vector<std::vector<std::reference_wrapper<transform_component>>> _children_transforms = {};
+    std::optional<std::string> _motion_bone_name = std::nullopt;
     std::optional<glm::uint> _motion_bone_index = std::nullopt;
+    std::optional<glm::mat4> _motion_last_transform = std::nullopt;
+    std::optional<glm::mat4> _motion_last_transform_copy = std::nullopt;
+    glm::mat4 _accumulated = glm::mat4(1.f);
     std::unique_ptr<ozz::animation::SamplingJob::Context> _sampling_context = nullptr;
     std::unordered_map<glm::uint, animation_controller> _controllers = {};
     std::unordered_map<glm::uint, fetch_container<animation_ref>> _animations = {};

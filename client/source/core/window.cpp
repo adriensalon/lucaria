@@ -346,7 +346,7 @@ void update()
 
     graphics_assert();
     if (is_audio_locked) {
-        audio_assert();
+        // audio_assert();
     }
 }
 

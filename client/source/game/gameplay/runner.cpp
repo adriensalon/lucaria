@@ -20,10 +20,11 @@ runner_actor::runner_actor(entt::registry& registry)
                     .sounds({ { 666, fetch_sound("assets/anorlondo.bin") } });
 
     _animator = &registry.emplace<animator_component>(_entity)
-                     .motion_bone_index(4)
+                     .motion_bone("mixamorig:Hips")
+                    //  .motion_bone(1)
                      .skeleton(fetch_skeleton("assets/sophie_skeleton.bin"))
                      .animations({
-                         { 444, fetch_animation("assets/sophie_animation_Anim1.bin") },
+                         { 444, fetch_animation("assets/sophie_animation_Anim3.bin") },
                      });
 
     _controller = &registry.emplace<controller_component<runner_actor>>(_entity)

@@ -48,16 +48,23 @@ animator_component& animator_component::skeleton(const std::shared_future<std::s
             }
         }
         const int _num_joints = _skeleton.value().num_joints();
-        PrintBoneNames(_skeleton.value());
         _sampling_context = std::make_unique<ozz::animation::SamplingJob::Context>();
         _sampling_context->Resize(_num_joints);
-        _model_transforms.resize(_num_joints);
+        _model_output_transforms.resize(_num_joints);
+        _model_transforms.resize(_num_joints, ozz::math::Float4x4::identity());
+        _model_last_transforms.resize(_num_joints, ozz::math::Float4x4::identity());
     });
     return *this;
 }
 
-animator_component& animator_component::motion_bone_index(const std::optional<glm::uint> bone_index)
+animator_component& animator_component::motion_bone(const std::optional<glm::uint>& bone_index)
 {
     _motion_bone_index = bone_index;
+    return *this;
+}
+
+animator_component& animator_component::motion_bone(const std::optional<std::string>& bone_name)
+{
+    _motion_bone_name = bone_name;
     return *this;
 }
