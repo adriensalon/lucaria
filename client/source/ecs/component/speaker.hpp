@@ -4,6 +4,9 @@
 #include <core/sound.hpp>
 
 struct sound_controller {
+
+    // do the same as animation_controller
+
     bool is_playing = true;
     bool is_looping = false;
 };

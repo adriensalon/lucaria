@@ -75,16 +75,16 @@ void motion_system::blend_animations()
                         // update controller with delta_time
 
                         if (get_is_audio_locked() && (get_fetches_completed() == get_fetches_total()))
-                            _controller.time_ratio += 0.01f;
-                        if (_controller.time_ratio > 1.f) {
+                            _controller._time_ratio += 0.01f;
+                        if (_controller._time_ratio > 1.f) {
                             animator._just_started = true;
                         }
-                        _controller.time_ratio = glm::mod(_controller.time_ratio, 1.f);
+                        _controller._time_ratio = glm::mod(_controller._time_ratio, 1.f);
 
                         ozz::animation::SamplingJob sampling_job;
                         sampling_job.animation = &_animation;
                         sampling_job.context = animator._sampling_context.get();
-                        sampling_job.ratio = _controller.time_ratio;
+                        sampling_job.ratio = _controller._time_ratio;
                         sampling_job.output = make_span(_local_transforms);
                         if (!sampling_job.Run()) {
 #if LUCARIA_DEBUG

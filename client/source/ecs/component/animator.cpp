@@ -1,6 +1,49 @@
 #include <ecs/component/animator.hpp>
 #include <core/fetch.hpp>
 
+animation_controller& animation_controller::play()
+{
+    _is_playing = true;
+    return *this;
+}
+
+animation_controller& animation_controller::pause()
+{
+    _is_playing = false;
+    return *this;
+}
+
+animation_controller& animation_controller::stop()
+{
+    _is_playing = false;
+    _time_ratio = 0.f;
+    return *this;
+}
+
+animation_controller& animation_controller::time_warp(const glm::float32 ratio)
+{
+    _time_ratio = ratio;
+    return *this;
+}
+
+animation_controller& animation_controller::time_relative(const glm::float32 ratio)
+{
+    _time_ratio += ratio;
+    return *this;
+}
+
+animation_controller& animation_controller::loop(const bool enabled)
+{
+    _is_looping = enabled;
+    return *this;
+}
+
+animation_controller& animation_controller::speed(const glm::float32 ratio)
+{
+    _playback_speed = ratio;
+    return *this;
+}
+
 animator_component& animator_component::animations(const std::unordered_map<glm::uint, std::shared_future<std::shared_ptr<animation_ref>>>& fetched_animations)
 {
     for (const std::pair<const glm::uint, std::shared_future<std::shared_ptr<animation_ref>>>& _pair : fetched_animations) {
@@ -18,7 +61,7 @@ animator_component& animator_component::animations(const std::unordered_map<glm:
                 _local_transforms[_name].resize(_skeleton.value().num_soa_joints());
             }
         });
-        _controllers[_name] = animation_controller();
+        _controllers[_name]._local_transforms.resize(_skeleton.value().num_soa_joints());
     }
     return *this;
 }
@@ -67,4 +110,9 @@ animator_component& animator_component::motion_bone(const std::optional<std::str
 {
     _motion_bone_name = bone_name;
     return *this;
+}
+
+animation_controller& animator_component::get_controller(const glm::uint name)
+{
+    return _controllers.at(_name);
 }
