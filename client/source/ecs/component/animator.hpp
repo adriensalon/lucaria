@@ -7,6 +7,7 @@
 
 #include <glm/glm.hpp>
 #include <ozz/animation/runtime/sampling_job.h>
+#include <ozz/animation/runtime/track.h>
 #include <ozz/base/containers/vector.h>
 #include <ozz/base/maths/simd_math.h>
 #include <ozz/base/maths/soa_transform.h>
@@ -42,6 +43,7 @@ private:
     bool _has_looped = false;
     glm::float32 _last_time_ratio = 0.f;
     fetch_container<animation_ref> _animation = {};
+    // fetch_container<animation_track_motion_ref> _motion = {};
     ozz::vector<ozz::math::SoaTransform> _local_transforms = {};
 };
 

@@ -61,7 +61,8 @@ animator_component& animator_component::animations(const std::unordered_map<glm:
                 _local_transforms[_name].resize(_skeleton.value().num_soa_joints());
             }
         });
-        _controllers[_name]._local_transforms.resize(_skeleton.value().num_soa_joints());
+        // _controllers[_name]._local_transforms.resize(_skeleton.value().num_soa_joints());
+        _controllers[_name] = animation_controller();
     }
     return *this;
 }
