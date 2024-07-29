@@ -127,68 +127,7 @@ void motion_system::apply_root_motion()
     each_level([](entt::registry& registry) {
         registry.view<animator_component, transform_component>().each([](animator_component& animator, transform_component& transform) {
             
-            
-            // move to animator
-            if (animator._motion_bone_name.has_value() && animator._skeleton.has_value()) {
-                bool _found = false;
-                glm::uint _index = 0;
-                for (const char* _name : animator._skeleton.value().joint_names()) {
-                    if (std::string(_name) == animator._motion_bone_name.value()) {
-                        animator._motion_bone_index = _index;
-                        animator._motion_bone_name = std::nullopt;
-                        _found = true;
-                        std::cout << "motion bone index = " << _index << std::endl;
-                        // const ozz::math::Float4x4& _ozz_motion_transform = animator._model_transforms[animator._motion_bone_index.value()];
-                        // const ozz::math::Float4x4& _ozz_motion_transform_copy = animator._model_transforms_copy[animator._motion_bone_index.value()];
-                        // animator._motion_last_transform = *(reinterpret_cast<const glm::mat4*>(&_ozz_motion_transform));
-                        // animator._motion_last_transform_copy = *(reinterpret_cast<const glm::mat4*>(&_ozz_motion_transform_copy));
-                        break;
-                    }
-                    _index++;
-                }
-#if LUCARIA_DEBUG
-                if (!_found) {
-                    std::cout << "Bone name '" << animator._motion_bone_name.value() << "' not found in skeleton." << std::endl;
-                    std::terminate();
-                }
-#endif
-            }
-            if (animator._motion_bone_index.has_value()) {
-                // const ozz::math::Float4x4& _ozz_motion_transform = animator._model_transforms[animator._motion_bone_index.value()];
-                // const ozz::math::Float4x4& _ozz_motion_transform_copy = animator._model_transforms_copy[animator._motion_bone_index.value()];
-                // const glm::mat4& _motion_transform = *(reinterpret_cast<const glm::mat4*>(&_ozz_motion_transform));
-                // const glm::mat4& _motion_transform_copy = *(reinterpret_cast<const glm::mat4*>(&_ozz_motion_transform_copy));
-
-                // // print_matrix(_ozz_motion_transform);
-
-                // if (animator._just_started && animator._motion_last_transform) {
-                //     // todo : reset motion_last_transform to its transform at keyframe 0
-                //     // transform.transform_relative(animator._motion_last_transform.value());
-                //     std::cout << "just started !" << std::endl;
-                //     animator._just_started = false;
-                // }
-
-                // if (animator._motion_last_transform.has_value()) {
-                //     const glm::mat4 _delta_transform_transform = _motion_transform_copy * glm::inverse(animator._motion_last_transform_copy.value());
-                //     const glm::mat4 _delta_transform_models = _motion_transform * glm::inverse(animator._motion_last_transform.value());
-                    
-                    
-                //     transform.transform_relative(_delta_transform_transform);
-                    
-                //     const glm::mat4 _inv_delta_transform = glm::inverse(_delta_transform_models);
-                //     const ozz::math::Float4x4& _ozz_inv_delta_transform = *(reinterpret_cast<const ozz::math::Float4x4*>(&_inv_delta_transform));
-                //     for (glm::uint _index = 0; _index < animator._model_transforms.size(); ++_index) {
-                //         animator._model_transforms[_index] = _ozz_inv_delta_transform * animator._model_transforms[_index];
-                //     }
-                    
-                //     // print_matrix(animator._model_transforms[animator._motion_bone_index.value()]);
-                // } 
-                
-                // animator._motion_last_transform = _motion_transform;
-                // animator._motion_last_transform_copy = _motion_transform_copy;
-            } else {
-                
-            }
+            // todo
         });
     });
 }

@@ -28,23 +28,23 @@ struct animation_controller {
     animation_controller& play();
     animation_controller& pause();
     animation_controller& stop();
-    animation_controller& time(const glm::float32 ratio);
+    animation_controller& time(const float ratio);
     animation_controller& loop(const bool enabled = true);
-    animation_controller& speed(const glm::float32 ratio);
-    animation_controller& fade_in(const glm::float32 duration = 0.1f); // trigger once then disappear
-    animation_controller& fade_out(const glm::float32 duration = 0.1f); // trigger once then disappear
-    animation_controller& weight(const glm::float32 ratio);
+    animation_controller& speed(const float ratio);
+    animation_controller& fade_in(const float duration = 0.1f); // trigger once then disappear
+    animation_controller& fade_out(const float duration = 0.1f); // trigger once then disappear
+    animation_controller& weight(const float ratio);
 
 private:
     friend struct motion_system;
     bool _is_playing = true; // for testing
     bool _is_looping = true; // for testing
-    glm::float32 _playback_speed = 1.f;
-    glm::float32 _weight = 1.f;
-    glm::float32 _time_ratio = 0.f;
-    std::optional<std::pair<glm::float32, glm::float32>> _fade_in_time_and_duration = std::nullopt;
-    std::optional<std::pair<glm::float32, glm::float32>> _fade_out_time_and_duration = std::nullopt;
-    glm::float32 _last_time_ratio = 0.f;
+    float _playback_speed = 1.f;
+    float _weight = 1.f;
+    float _time_ratio = 0.f;
+    std::optional<std::pair<float, float>> _fade_in_time_and_duration = std::nullopt;
+    std::optional<std::pair<float, float>> _fade_out_time_and_duration = std::nullopt;
+    float _last_time_ratio = 0.f;
     bool _has_looped = false;
 };
 
@@ -55,24 +55,22 @@ struct animator_component {
     animator_component(animator_component&& other) = default;
     animator_component& operator=(animator_component&& other) = default;
 
-    animator_component& animations(const std::unordered_map<glm::uint, std::shared_future<std::shared_ptr<animation_ref>>>& fetched_animations);
+    animator_component& animation(const unsigned int name, const std::shared_future<std::shared_ptr<animation_ref>>& fetched_animation);
+    animator_component& motion_track(const unsigned int name, const std::shared_future<std::shared_ptr<motion_track_ref>>& fetched_motion_track);
     animator_component& skeleton(const std::shared_future<std::shared_ptr<skeleton_ref>>& fetched_skeleton);
-    animator_component& motion_bone(const std::optional<glm::uint>& bone_index);
-    animator_component& motion_bone(const std::optional<std::string>& bone_name);
 
-    animation_controller& get_controller(const glm::uint name);
+    animation_controller& get_controller(const unsigned int name);
 
 private:
     fetch_container<skeleton_ref> _skeleton = {};
     ozz::vector<ozz::math::SoaTransform> _blended_local_transforms = {};
     ozz::vector<ozz::math::Float4x4> _model_transforms = {};
     std::vector<std::vector<std::reference_wrapper<transform_component>>> _children_transforms = {};
-    std::optional<std::string> _motion_bone_name = std::nullopt;
-    std::optional<glm::uint> _motion_bone_index = std::nullopt;    
     std::unique_ptr<ozz::animation::SamplingJob::Context> _sampling_context = nullptr;
-    std::unordered_map<glm::uint, animation_controller> _controllers = {};
-    std::unordered_map<glm::uint, fetch_container<animation_ref>> _animations = {};
-    std::unordered_map<glm::uint, ozz::vector<ozz::math::SoaTransform>> _local_transforms = {};
+    std::unordered_map<unsigned int, animation_controller> _controllers = {};
+    std::unordered_map<unsigned int, fetch_container<animation_ref>> _animations = {};
+    std::unordered_map<unsigned int, fetch_container<motion_track_ref>> _motion_tracks = {};
+    std::unordered_map<unsigned int, ozz::vector<ozz::math::SoaTransform>> _local_transforms = {};
     friend struct transform_component;
     friend struct motion_system;
     friend struct rendering_system;

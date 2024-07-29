@@ -54,7 +54,6 @@ std::shared_future<std::shared_ptr<motion_track_ref>> fetch_motion_track(const s
 #endif
             _ozz_archive >> _motion_track->first;
 #if LUCARIA_DEBUG
-            std::cout << "Loaded motion track position." << std::endl;
             if (!_ozz_archive.TestTag<ozz::animation::QuaternionTrack>()) {
                 std::cout << "Impossible to load QuaternionTrack, archive doesn't contain the expected object type." << std::endl;
                 std::terminate();
@@ -62,7 +61,7 @@ std::shared_future<std::shared_ptr<motion_track_ref>> fetch_motion_track(const s
 #endif
             _ozz_archive >> _motion_track->second;
 #if LUCARIA_DEBUG
-            std::cout << "Loaded motion track rotation." << std::endl;
+            std::cout << "Loaded motion track with position, rotation." << std::endl;
 #endif
         }
         _promise.set_value(_motion_track);
