@@ -20,15 +20,9 @@ animation_controller& animation_controller::stop()
     return *this;
 }
 
-animation_controller& animation_controller::time_warp(const glm::float32 ratio)
+animation_controller& animation_controller::time(const glm::float32 ratio)
 {
     _time_ratio = ratio;
-    return *this;
-}
-
-animation_controller& animation_controller::time_relative(const glm::float32 ratio)
-{
-    _time_ratio += ratio;
     return *this;
 }
 
@@ -43,6 +37,10 @@ animation_controller& animation_controller::speed(const glm::float32 ratio)
     _playback_speed = ratio;
     return *this;
 }
+
+// animation_controller& fade_in(const glm::float32 duration = 0.1f); // trigger once then disappear
+// animation_controller& fade_out(const glm::float32 duration = 0.1f); // trigger once then disappear
+// animation_controller& weight(const glm::float32 ratio);
 
 animator_component& animator_component::animations(const std::unordered_map<glm::uint, std::shared_future<std::shared_ptr<animation_ref>>>& fetched_animations)
 {
@@ -61,7 +59,6 @@ animator_component& animator_component::animations(const std::unordered_map<glm:
                 _local_transforms[_name].resize(_skeleton.value().num_soa_joints());
             }
         });
-        // _controllers[_name]._local_transforms.resize(_skeleton.value().num_soa_joints());
         _controllers[_name] = animation_controller();
     }
     return *this;
@@ -94,9 +91,7 @@ animator_component& animator_component::skeleton(const std::shared_future<std::s
         const int _num_joints = _skeleton.value().num_joints();
         _sampling_context = std::make_unique<ozz::animation::SamplingJob::Context>();
         _sampling_context->Resize(_num_joints);
-        _model_output_transforms.resize(_num_joints);
         _model_transforms.resize(_num_joints, ozz::math::Float4x4::identity());
-        _model_last_transforms.resize(_num_joints, ozz::math::Float4x4::identity());
     });
     return *this;
 }

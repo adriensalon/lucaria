@@ -28,23 +28,24 @@ struct animation_controller {
     animation_controller& play();
     animation_controller& pause();
     animation_controller& stop();
-    animation_controller& time_warp(const glm::float32 ratio);
-    animation_controller& time_relative(const glm::float32 ratio);
+    animation_controller& time(const glm::float32 ratio);
     animation_controller& loop(const bool enabled = true);
-    animation_controller& speed(const glm::float32 ratio = 1.f);
+    animation_controller& speed(const glm::float32 ratio);
+    animation_controller& fade_in(const glm::float32 duration = 0.1f); // trigger once then disappear
+    animation_controller& fade_out(const glm::float32 duration = 0.1f); // trigger once then disappear
+    animation_controller& weight(const glm::float32 ratio);
 
 private:
-    friend struct animator_component;
     friend struct motion_system;
     bool _is_playing = true; // for testing
     bool _is_looping = true; // for testing
-    glm::float32 _time_ratio = 0.f;
     glm::float32 _playback_speed = 1.f;
-    bool _has_looped = false;
+    glm::float32 _weight = 1.f;
+    glm::float32 _time_ratio = 0.f;
+    std::optional<std::pair<glm::float32, glm::float32>> _fade_in_time_and_duration = std::nullopt;
+    std::optional<std::pair<glm::float32, glm::float32>> _fade_out_time_and_duration = std::nullopt;
     glm::float32 _last_time_ratio = 0.f;
-    fetch_container<animation_ref> _animation = {};
-    // fetch_container<animation_track_motion_ref> _motion = {};
-    ozz::vector<ozz::math::SoaTransform> _local_transforms = {};
+    bool _has_looped = false;
 };
 
 struct animator_component {
@@ -70,15 +71,6 @@ private:
     std::optional<glm::uint> _motion_bone_index = std::nullopt;    
     std::unique_ptr<ozz::animation::SamplingJob::Context> _sampling_context = nullptr;
     std::unordered_map<glm::uint, animation_controller> _controllers = {};
-
-    // to remove
-    bool _just_started = false;
-    ozz::vector<ozz::math::Float4x4> _model_transforms_copy = {};
-    ozz::vector<ozz::math::Float4x4> _model_output_transforms = {};
-    ozz::vector<ozz::math::Float4x4> _model_last_transforms = {};
-    std::optional<glm::mat4> _motion_last_transform = std::nullopt;
-    std::optional<glm::mat4> _motion_last_transform_copy = std::nullopt;
-    glm::mat4 _accumulated = glm::mat4(1.f);
     std::unordered_map<glm::uint, fetch_container<animation_ref>> _animations = {};
     std::unordered_map<glm::uint, ozz::vector<ozz::math::SoaTransform>> _local_transforms = {};
     friend struct transform_component;
