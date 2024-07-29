@@ -7,87 +7,72 @@
 namespace detail {
 
 static const std::string gltf2ozz_config = R"({
-  "skeleton" : 
-  {
-    "filename" : "skeleton.ozz",
-    "import" : 
-    {
-      "enable" : true,
-      "raw" : false,
-      "types" : 
-      {
-        "skeleton" : true,
-        "marker" : false,
-        "camera" : false,
-        "geometry" : false,
-        "light" : false,
-        "null" : false,
-        "any" : false
+  "skeleton": {
+    "import": {
+      "enable": true,
+      "raw": false,
+      "types": {
+        "skeleton": true,
+        "marker": false,
+        "camera": false,
+        "geometry": false,
+        "light": false,
+        "null": false,
+        "any": false
       }
     }
   },
-  "animations" : 
-  [
+  "animations": [
     {
-      "clip" : "*",
-      "filename" : "*.ozz",
-      "raw" : false,
-      "additive" : false,
-      "additive_reference" : "animation",
-      "sampling_rate" : 0,
-      "iframe_interval" : 10,
-      "optimize" : true,
-      "optimization_settings" : 
-      {
-        "tolerance" : 0.001,
-        "distance" : 0.1,
-        "override" : 
-        [
+      "clip": "*",
+      "raw": false,
+      "additive": false,
+      "additive_reference": "animation",
+      "sampling_rate": 0,
+      "iframe_interval": 10,
+      "optimize": true,
+      "optimization_settings": {
+        "tolerance": 0.001,
+        "distance": 0.1,
+        "override": [
           {
-            "name" : "*",
-            "tolerance" : 0.001,
-            "distance" : 0.1
+            "name": "*",
+            "tolerance": 0.001,
+            "distance": 0.1
           }
         ]
       },
-      "tracks" : 
-      {
-        "properties" : 
-        [
+      "tracks": {
+        "properties": [
           {
-            "filename" : "*.ozz",
-            "joint_name" : "*",
-            "property_name" : "*",
-            "type" : "float1",
-            "raw" : false,
-            "optimize" : true,
-            "optimization_tolerance" : 0.001
+            "joint_name": "*",
+            "property_name": "*",
+            "type": "float1",
+            "raw": false,
+            "optimize": true,
+            "optimization_tolerance": 0.001
           }
         ],
-        "motion" : 
-        {
-          "enable" : true,
-          "filename" : "*_track_motion.ozz",
-          "joint_name" : "",
-          "position" : 
-          {
-            "components" : "xyz",
-            "reference" : "skeleton",
-            "bake" : true,
-            "loop" : false,
-            "raw" : false,
-            "optimize" : true,
-            "optimization_tolerance" : 0.001
+        "motion": {
+          "enable": false,
+          "joint_name": "",
+          "position": {
+            "components": "xyz",
+            "reference": "skeleton",
+            "bake": true,
+            "loop": false,
+            "raw": false,
+            "optimize": true,
+            "optimization_tolerance": 0.001
           },
-          "rotation" : 
-          {
-            "components" : "y",
-            "reference" : "skeleton",
-            "bake" : true,
-            "loop" : false,
-            "raw" : false,
-            "optimize" : true,
-            "optimization_tolerance" : 0.001
+          "rotation": {
+            "components": "y",
+            "reference": "skeleton",
+            "bake": true,
+            "loop": false,
+            "raw": false,
+            "optimize": true,
+            "optimization_tolerance": 0.001
           }
         }
       }
