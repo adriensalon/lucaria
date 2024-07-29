@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include <glm/glm.hpp>
+#include <ozz/animation/runtime/blending_job.h>
 #include <ozz/animation/runtime/sampling_job.h>
 #include <ozz/animation/runtime/track.h>
 #include <ozz/base/containers/vector.h>
@@ -37,10 +38,11 @@ struct animation_controller {
 
 private:
     friend struct motion_system;
-    bool _is_playing = true; // for testing
+    bool _is_playing = false; // for testing
     bool _is_looping = true; // for testing
     float _playback_speed = 1.f;
-    float _weight = 1.f;
+    float _weight = 0.1f;
+    float _computed_weight = 1.f;
     float _time_ratio = 0.f;
     std::optional<std::pair<float, float>> _fade_in_time_and_duration = std::nullopt;
     std::optional<std::pair<float, float>> _fade_out_time_and_duration = std::nullopt;
@@ -71,6 +73,7 @@ private:
     std::unordered_map<unsigned int, fetch_container<animation_ref>> _animations = {};
     std::unordered_map<unsigned int, fetch_container<motion_track_ref>> _motion_tracks = {};
     std::unordered_map<unsigned int, ozz::vector<ozz::math::SoaTransform>> _local_transforms = {};
+    ozz::vector<ozz::animation::BlendingJob::Layer> _blend_layers = {};
     friend struct transform_component;
     friend struct motion_system;
     friend struct rendering_system;

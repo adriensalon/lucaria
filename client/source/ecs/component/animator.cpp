@@ -23,13 +23,14 @@ animation_controller& animation_controller::play()
 animation_controller& animation_controller::pause()
 {
     _is_playing = false;
+    _last_time_ratio = _time_ratio;
     return *this;
 }
 
 animation_controller& animation_controller::stop()
 {
     _is_playing = false;
-    _time_ratio = 0.f;
+    _last_time_ratio = _time_ratio;
     return *this;
 }
 
@@ -105,6 +106,7 @@ animator_component& animator_component::skeleton(const std::shared_future<std::s
         const int _num_joints = _skeleton.value().num_joints();
         _sampling_context = std::make_unique<ozz::animation::SamplingJob::Context>();
         _sampling_context->Resize(_num_joints);
+        _blended_local_transforms.resize(_num_joints);
         _model_transforms.resize(_num_joints, ozz::math::Float4x4::identity());
     });
     return *this;

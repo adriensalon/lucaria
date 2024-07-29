@@ -41,6 +41,11 @@ void runner_actor::update()
     }
 }
 
+animator_component& runner_actor::get_animator()
+{
+    return *_animator;
+}
+
 transform_component& runner_actor::get_transform()
 {
     return *_transform;

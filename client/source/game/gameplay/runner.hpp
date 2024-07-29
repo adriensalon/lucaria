@@ -19,6 +19,7 @@ struct runner_actor {
     runner_actor(entt::registry& registry);
     void update();
 
+    animator_component& get_animator();
     transform_component& get_transform();
     void add_script(const std::function<void(runner_actor&)>& script);
 

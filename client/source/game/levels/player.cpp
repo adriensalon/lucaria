@@ -19,6 +19,11 @@ void level_persistent_player(entt::registry& registry)
         if (get_keys()["i"]) {
             runner.get_transform().position_relative({ 0.03f, 0.f, -0.005f });
         }
+        if (get_keys()["k"]) {
+            runner.get_animator().get_controller(444).play();
+        } else {
+            runner.get_animator().get_controller(444).pause();
+        }
     });
 
     mixer_system::use_listener_transform(faith->get_transform());

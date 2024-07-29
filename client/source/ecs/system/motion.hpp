@@ -7,7 +7,8 @@ struct motion_system {
     motion_system(motion_system&& other) = delete;
     motion_system& operator=(motion_system&& other) = delete;
     
-    static void blend_animations();
-    static void apply_root_motion();
+    static void advance_controllers();
+    static void apply_animations(); // can be executed in parallel
+    static void apply_motion_tracks(); // can be executed in parallel
     static void collect_debug_guizmos();
 };

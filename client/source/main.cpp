@@ -32,8 +32,9 @@ int main()
 
         interface_system::collect_gui_widgets();
         
-        motion_system::blend_animations();
-        motion_system::apply_root_motion();
+        motion_system::advance_controllers();
+        motion_system::apply_animations();
+        motion_system::apply_motion_tracks();
         motion_system::collect_debug_guizmos();
 
         dynamics_system::step_simulation();
