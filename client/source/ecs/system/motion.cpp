@@ -4,7 +4,8 @@
 #include <btBulletDynamicsCommon.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <ozz/animation/runtime/local_to_model_job.h>
-
+#include <ozz/animation/runtime/track_sampling_job.h>
+#include <ozz/base/maths/transform.h>
 
 #include <core/window.hpp>
 #include <core/world.hpp>
@@ -13,7 +14,8 @@
 #include <ecs/component/transform.hpp>
 #include <ecs/system/motion.hpp>
 
-btVector3 get_random_color() {
+btVector3 get_random_color()
+{
     // Create a random number generator with a uniform distribution between 0.0 and 1.0
     static std::random_device rd; // Obtain a random number from hardware
     static std::mt19937 generator(rd()); // Seed the generator
@@ -22,9 +24,6 @@ btVector3 get_random_color() {
     // Generate random colors
     return btVector3(distribution(generator), distribution(generator), distribution(generator));
 }
-
-
-
 
 namespace detail {
 
@@ -38,11 +37,34 @@ void draw_guizmo_cone(const btVector3& from, const btVector3& to, const btVector
 
 #endif
 
-glm::mat4 ozz_to_glm(const ozz::math::Float4x4& matrix)
+glm::mat4 sample_motion_track(const motion_track_ref& motion_track, float ratio) // on pourrait le mettre dans le motion_track_ref jsp...
 {
-    glm::mat4 _matrix;
-    std::memcpy(glm::value_ptr(_matrix), matrix.cols, sizeof(matrix.cols));
-    return _matrix;
+    glm::mat4 _transform;
+    ozz::animation::Float3TrackSamplingJob position_sampler;
+    ozz::animation::QuaternionTrackSamplingJob rotation_sampler;
+    ozz::math::Transform _ozz_affine_transform;
+    ozz::math::Float4x4& _ozz_transform = *(reinterpret_cast<ozz::math::Float4x4*>(&_transform));
+    position_sampler.track = &(motion_track.first);
+    position_sampler.result = &(_ozz_affine_transform.translation);
+    position_sampler.ratio = ratio;
+    if (!position_sampler.Run()) {
+#if LUCARIA_DEBUG
+        std::cout << "Impossible to run vec3 track sampling job." << std::endl;
+        std::terminate();
+#endif
+    }
+    rotation_sampler.track = &(motion_track.second);
+    rotation_sampler.result = &(_ozz_affine_transform.rotation);
+    rotation_sampler.ratio = ratio;
+    if (!rotation_sampler.Run()) {
+#if LUCARIA_DEBUG
+        std::cout << "Impossible to run quat track sampling job." << std::endl;
+        std::terminate();
+#endif
+    }
+    _ozz_affine_transform.scale = ozz::math::Float3::one();
+    _ozz_transform = ozz::math::Float4x4::FromAffine(_ozz_affine_transform);
+    return _transform;
 }
 
 }
@@ -59,6 +81,12 @@ void print_matrix(const ozz::math::Float4x4& matrix)
     std::cout << "[ " << matrix.cols[0].w << " " << matrix.cols[1].w << " " << matrix.cols[2].w << " " << matrix.cols[3].w << " ]" << std::endl;
 }
 
+void print_matrix(const glm::mat4& matrix)
+{
+    const ozz::math::Float4x4& _ozz_matrix = *(reinterpret_cast<const ozz::math::Float4x4*>(&matrix));
+    print_matrix(_ozz_matrix);
+}
+
 void motion_system::blend_animations()
 {
     glm::float32 _time_delta = get_time_delta();
@@ -66,19 +94,19 @@ void motion_system::blend_animations()
         registry.view<animator_component>().each([](animator_component& animator) {
             if (animator._skeleton.has_value()) {
                 ozz::animation::Skeleton& _skeleton = animator._skeleton.value();
-                for (std::pair<const glm::uint, fetch_container<animation_ref>>& _pair : animator._animations) {
+                for (std::pair<const unsigned int, fetch_container<animation_ref>>& _pair : animator._animations) {
                     if (_pair.second.has_value()) {
                         animation_controller& _controller = animator._controllers[_pair.first];
                         ozz::animation::Animation& _animation = _pair.second.value();
                         ozz::vector<ozz::math::SoaTransform>& _local_transforms = animator._local_transforms[_pair.first];
 
                         // update controller with delta_time
-
+                        _controller._last_time_ratio = _controller._time_ratio;
                         if (get_is_audio_locked() && (get_fetches_completed() == get_fetches_total()))
                             _controller._time_ratio += 0.01f;
-                        if (_controller._time_ratio > 1.f) {
-                            _controller._has_looped = true;
-                        }
+                            
+
+                        _controller._has_looped = _controller._time_ratio > 1.f;
                         _controller._time_ratio = glm::mod(_controller._time_ratio, 1.f);
 
                         ozz::animation::SamplingJob sampling_job;
@@ -115,8 +143,25 @@ void motion_system::apply_root_motion()
 {
     each_level([](entt::registry& registry) {
         registry.view<animator_component, transform_component>().each([](animator_component& animator, transform_component& transform) {
-            
-            // todo
+            if (animator._skeleton.has_value()) {
+                ozz::animation::Skeleton& _skeleton = animator._skeleton.value();
+                for (std::pair<const unsigned int, fetch_container<animation_ref>>& _pair : animator._animations) {
+                    const unsigned int _name = _pair.first;
+                    if (_pair.second.has_value() && (animator._motion_tracks.find(_name) != animator._motion_tracks.end()) && animator._motion_tracks.at(_name).has_value()) {
+                        animation_controller& _controller = animator._controllers.at(_name);
+                        const motion_track_ref& _motion_track = animator._motion_tracks.at(_name).value();
+                        const glm::mat4 _new_transform = transform._transform * detail::sample_motion_track(_motion_track, _controller._time_ratio);
+                        const glm::mat4 _last_transform = transform._transform * detail::sample_motion_track(_motion_track, _controller._last_time_ratio);
+                        glm::mat4 _delta_transform = _new_transform * glm::inverse(_last_transform);
+                        if (_controller._has_looped) {
+                            const glm::mat4 _end_transform = transform._transform * detail::sample_motion_track(_motion_track, 1.f);
+                            const glm::mat4 _begin_transform = transform._transform * detail::sample_motion_track(_motion_track, 0.f);
+                            _delta_transform = _end_transform * glm::inverse(_begin_transform) * _delta_transform;
+                        }
+                        transform.transform_relative(_delta_transform);
+                    }
+                }
+            }
         });
     });
 }
