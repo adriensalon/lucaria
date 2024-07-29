@@ -77,7 +77,7 @@ void motion_system::blend_animations()
                         if (get_is_audio_locked() && (get_fetches_completed() == get_fetches_total()))
                             _controller._time_ratio += 0.01f;
                         if (_controller._time_ratio > 1.f) {
-                            // animator._just_started = true;
+                            _controller._has_looped = true;
                         }
                         _controller._time_ratio = glm::mod(_controller._time_ratio, 1.f);
 
@@ -97,7 +97,6 @@ void motion_system::blend_animations()
                         ozz::animation::LocalToModelJob ltm_job;
                         ltm_job.skeleton = &_skeleton;
                         ltm_job.input = make_span(_local_transforms);
-                        // ltm_job.output = make_span(animator._model_output_transforms);
                         ltm_job.output = make_span(animator._model_transforms);
                         if (!ltm_job.Run()) {
 #if LUCARIA_DEBUG
@@ -105,18 +104,8 @@ void motion_system::blend_animations()
                             std::terminate();
 #endif
                         }
-                        // animator._model_transforms_copy = animator._model_transforms;
                     }
                 }
-
-                // for (glm::uint _index = 0; _index < animator._model_transforms.size(); ++_index) {
-                //     ozz::math::Float4x4& a = animator._model_last_transforms[_index];
-                //     ozz::math::Float4x4& b = animator._model_output_transforms[_index];
-                //     const ozz::math::Float4x4 _delta = b * ozz::math::Invert(a);
-                //     animator._model_transforms[_index] = _delta * animator._model_transforms[_index];
-                // }
-                // animator._model_last_transforms = animator._model_output_transforms;
-                
             }
         });
     });
