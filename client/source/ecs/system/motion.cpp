@@ -3,6 +3,7 @@
 
 #include <btBulletDynamicsCommon.h>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/matrix_interpolation.hpp>
 #include <ozz/animation/runtime/blending_job.h>
 #include <ozz/animation/runtime/local_to_model_job.h>
 #include <ozz/animation/runtime/track_sampling_job.h>
@@ -79,11 +80,11 @@ void motion_system::advance_controllers()
                 animation_controller& _controller = animator._controllers[_pair.first];
                 if (_controller._is_playing) {
                     _controller._last_time_ratio = _controller._time_ratio;
-                    _controller._time_ratio += get_time_delta();
+                    _controller._time_ratio += get_time_delta() * 0.1f; // c'est bien le temps qu'il faut multiplier par le weight des fadeins
                 }
                 _controller._has_looped = _controller._time_ratio > 1.f;
                 _controller._time_ratio = glm::mod(_controller._time_ratio, 1.f);
-                _controller._computed_weight = 0.1f;
+                _controller._computed_weight = 1.f;
                 // _controller._computed_weight = _controller._weight; // add fade in and fade out
             }
         });
@@ -161,7 +162,7 @@ void motion_system::apply_motion_tracks()
                         const glm::mat4 _begin_transform = transform._transform * detail::sample_motion_track(_motion_track, 0.f);
                         _delta_transform = _end_transform * glm::inverse(_begin_transform) * _delta_transform;
                     }
-                    // account for computed weight!
+                    // _delta_transform = glm::interpolate(glm::mat4(1.f), _delta_transform, _controller._computed_weight);
                     transform.transform_relative(_delta_transform);
                 }
             }
