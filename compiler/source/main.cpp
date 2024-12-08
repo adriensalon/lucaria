@@ -1,6 +1,8 @@
 #include <filesystem>
+#include <fstream>
 #include <functional>
 #include <iostream>
+#include <regex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -24,6 +26,45 @@ static std::filesystem::path etcpak_executable;
 static std::filesystem::path gltf2ozz_executable;
 static std::filesystem::path oggenc_executable;
 static std::filesystem::path woff2_compress_executable;
+
+std::vector<std::string> get_ignore_codes(const std::filesystem::path& input_dir)
+{
+    std::filesystem::path _assetignore_path = input_dir / ".assetignore";
+    std::vector<std::string> _ignore_codes;
+    if (std::filesystem::exists(_assetignore_path)) {
+        std::ifstream _assetignore_file(_assetignore_path);
+        if (!_assetignore_file) {
+            std::cout << "Could not open assetignore file" << std::endl;
+            std::terminate();
+        }
+        std::string _line;
+        while (std::getline(_assetignore_file, _line)) {
+            _ignore_codes.emplace_back(_line);
+        }
+    }
+    return _ignore_codes;
+}
+
+bool matches_regex(const std::filesystem::path& path, const std::string& pattern)
+{
+    try {
+        std::regex _pattern(pattern);
+        return std::regex_match(path.string(), _pattern);
+    } catch (const std::regex_error& _error) {
+        std::cout << "Invalid regex " << _error.what() << std::endl;
+        std::terminate();
+    }
+}
+
+bool matches_regex(const std::filesystem::path& path, const std::vector<std::string>& patterns)
+{
+    for (const std::string& _pattern : patterns) {
+        if (matches_regex(path, _pattern)) {
+            return true;
+        }
+    }
+    return false;
+}
 
 commands_map extract_args(int argc, char* argv[])
 {
@@ -170,11 +211,14 @@ std::filesystem::path process_output_command(const commands_map& commands)
     return _output_dir;
 }
 
-void iterate_recursive(const std::filesystem::path base_dir, const std::function<void(const std::filesystem::path&)> callback)
+void iterate_recursive(const std::vector<std::string>& ignore_patterns, const std::filesystem::path base_dir, const std::function<void(const std::filesystem::path&)> callback)
 {
     try {
         for (const std::filesystem::directory_entry& _entry : std::filesystem::recursive_directory_iterator(base_dir)) {
             if (std::filesystem::is_regular_file(_entry.status())) {
+                if (detail::matches_regex(_entry.path(), ignore_patterns)) {
+                    continue;
+                }
                 callback(_entry.path());
                 std::cout << "   Compiled " << _entry.path() << std::endl;
             }
@@ -243,7 +287,7 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
 
     } else {
         std::cout << "Invalid input file with extension " << _extension << std::endl;
-        std::terminate();
+        // std::terminate();
     }
 }
 
@@ -261,12 +305,18 @@ int main(int argc, char* argv[])
     detail::gltf2ozz_executable = detail::process_gltf2ozz_command(_commands);
     detail::oggenc_executable = detail::process_oggenc_command(_commands);
     detail::woff2_compress_executable = detail::process_woff2_compress_command(_commands);
-    detail::iterate_recursive(_input_dir, [&](const std::filesystem::path& _input_file) {
+    std::vector<std::string> _patterns = detail::get_ignore_codes(_input_dir);
+
+    detail::iterate_recursive(_patterns, _input_dir, [&](const std::filesystem::path& _input_file) {
         std::cout << std::endl;
         std::filesystem::path _relative_input_file = detail::substract_relative(_input_dir, _input_file);
         std::filesystem::path _relative_output_file = _relative_input_file;
         _relative_output_file.replace_extension(".bin");
         std::filesystem::path _output_file = _output_dir / _relative_output_file;
+        std::filesystem::path _parent_path = _output_file.parent_path();
+        if (!std::filesystem::exists(_parent_path)) {
+            std::filesystem::create_directory(_parent_path);
+        }
         detail::compile_resource(_input_file, _output_file);
     });
     return 0;

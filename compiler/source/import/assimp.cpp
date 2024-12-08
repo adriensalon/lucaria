@@ -11,6 +11,8 @@
 
 #include <import/assimp.hpp>
 
+namespace {
+    
 class ozz_raw_input_stream : public ozz::io::Stream {
 public:
     ozz_raw_input_stream(const std::vector<char>& data)
@@ -85,7 +87,7 @@ void print_matrix(const glm::mat4& matrix)
 
 }
 
-bool LoadBinaryFile(const std::filesystem::path& filename, std::vector<char>& buffer) {
+bool load_binary_file(const std::filesystem::path& filename, std::vector<char>& buffer) {
     // Open the file in binary mode at the end to determine the file size
     std::ifstream file(filename.string(), std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
@@ -109,7 +111,7 @@ bool LoadBinaryFile(const std::filesystem::path& filename, std::vector<char>& bu
     return true;
 }
 
-void PrintBoneNames(const ozz::animation::Skeleton& skeleton) {
+void print_bone_names(const ozz::animation::Skeleton& skeleton) {
     const int num_joints = skeleton.num_joints();
     for (int i = 0; i < num_joints; ++i) {
         const char* joint_name = skeleton.joint_names()[i];
@@ -118,12 +120,13 @@ void PrintBoneNames(const ozz::animation::Skeleton& skeleton) {
     std::cout << std::endl;
 }
 
-void PrintBoneNames(const aiMesh* mesh) {
+void print_bone_names(const aiMesh* mesh) {
     for (unsigned int j = 0; j < mesh->mNumBones; ++j) {
         aiBone* bone = mesh->mBones[j];
         std::cout << "Bone " << j << ": " << bone->mName.C_Str() << std::endl;
     }
     std::cout << std::endl;
+}
 }
 
 bool assimp_has_skeleton(const std::filesystem::path& assimp_path)
@@ -160,7 +163,7 @@ geometry_data import_assimp(const std::filesystem::path& assimp_path, const std:
     std::unordered_map<std::string, glm::int32> _skeleton_reindex = {};
     if (skeleton_path.has_value()) {
         std::vector<char> _skeleton_bytes;
-        LoadBinaryFile(skeleton_path.value(), _skeleton_bytes);
+        load_binary_file(skeleton_path.value(), _skeleton_bytes);
         ozz::animation::Skeleton _skeleton;
         ozz_raw_input_stream _ozz_stream(_skeleton_bytes);
         {
@@ -170,9 +173,9 @@ geometry_data import_assimp(const std::filesystem::path& assimp_path, const std:
         for (int i = 0; i < _skeleton.num_joints(); ++i) {
             _skeleton_reindex[_skeleton.joint_names()[i]] = i;
         }
-        // PrintBoneNames(_skeleton);
+        // print_bone_names(_skeleton);
     }
-    // PrintBoneNames(_mesh);
+    // print_bone_names(_mesh);
 
     const aiMatrix4x4 _root_transform = _scene->mRootNode->mTransformation;
     _data.count = _mesh->mNumVertices;
