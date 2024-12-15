@@ -95,10 +95,11 @@ static void draw_splash_menu(const bool is_ready)
 
 static void add_next_level()
 {
-    add_level(levelID_persistent_player);
-    add_level(levelID_blockout_test);
+    // add_level(levelID_blockout_test);
     // TODO
     add_level(levelID_static_flight);
+
+    add_level(levelID_persistent_player);
 }
 
 }
@@ -106,9 +107,9 @@ static void add_next_level()
 void level_menu_splash(entt::registry& registry)
 {
     if (!detail::is_splash_resources_fetched) {
-        detail::big_splash_font.emplace(fetch_font({ "assets/planet.bin" }, 160.f));
-        detail::small_menu_font.emplace(fetch_font({ "assets/sfprolight.bin" }, 22.f));
-        detail::background_splash_texture.emplace(fetch_texture("assets/splash.bin"));
+        detail::big_splash_font.emplace(fetch_font({ "assets/font/font_LYj3.bin" }, 160.f));
+        detail::small_menu_font.emplace(fetch_font({ "assets/font/font_xVRp.bin" }, 22.f));
+        detail::background_splash_texture.emplace(fetch_texture("assets/image/image_0cSX.bin"));
     }
 
     const entt::entity _splash_entity = registry.create();

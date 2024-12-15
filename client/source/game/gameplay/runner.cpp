@@ -14,16 +14,16 @@ runner_actor::runner_actor(entt::registry& registry)
                       .capsule(0.5f, 1.75f);
 
     _model = &registry.emplace<model_component<model_shader::unlit>>(_entity)
-                  .color(fetch_texture("assets/sophie_color.bin", "assets/sophie_color_etc.bin", "assets/sophie_color_s3tc.bin"))
-                  .mesh(fetch_mesh("assets/sophie.bin"));
+                  .color(fetch_texture("assets/image/sophie_color.bin", "assets/image/sophie_color_etc.bin", "assets/image/sophie_color_s3tc.bin"))
+                  .mesh(fetch_mesh("assets/character/sophie.bin"));
 
     _speaker = &registry.emplace<speaker_component>(_entity)
-                    .sounds({ { 666, fetch_sound("assets/anorlondo.bin") } });
+                    .sounds({ { 666, fetch_sound("assets/audio/audio_Fcs8.bin") } });
 
     _animator = &registry.emplace<animator_component>(_entity)
-                     .skeleton(fetch_skeleton("assets/sophie_skeleton.bin"))
-                     .animation(444, fetch_animation("assets/sophie_animation_AnimOk.bin"))
-                     .motion_track(444, fetch_motion_track("assets/sophie_animation_AnimOk_motion_track.bin"));
+                     .skeleton(fetch_skeleton("assets/character/sophie_skeleton.bin"))
+                     .animation(444, fetch_animation("assets/character/sophie_animation_AnimOk.bin"))
+                     .motion_track(444, fetch_motion_track("assets/character/sophie_animation_AnimOk_motion_track.bin"));
 
     _controller = &registry.emplace<controller_component<runner_actor>>(_entity)
                        .state(this);

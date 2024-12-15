@@ -4,20 +4,36 @@
 #include <ecs/component/collider.hpp>
 #include <ecs/component/model.hpp>
 #include <ecs/component/transform.hpp>
+#include <ecs/system/rendering.hpp>
 
-#define GAME_OBJECT(uuid)                                                \
-    const entt::entity go_##uuid = registry.create();                    \
-    registry.emplace<model_component<model_shader::unlit>>(go_##uuid)    \
-        .color(fetch_texture("assets/level/flight/image_" #uuid ".bin")) \
-        .mesh(fetch_mesh("assets/level/flight/geometry_" #uuid ".bin"));
+#define GAME_OBJECT_B2(uuid)                                          \
+    const entt::entity go_##uuid = registry.create();                 \
+    registry.emplace<model_component<model_shader::unlit>>(go_##uuid) \
+        .color(fetch_texture("assets/image/image_" #uuid ".bin"))     \
+        .mesh(fetch_mesh("assets/geometry/geometry_" #uuid ".bin"));  \
+    registry.emplace<collider_component>(go_##uuid)                   \
+        .shape(fetch_shape("assets/shape/geometry_" #uuid ".bin", shape_type::triangle_mesh))
+
+// #define GAME_OBJECT(uuid)                                                                         \
+//     const entt::entity go_##uuid = registry.create();                                             \
+//     registry.emplace<model_component<model_shader::unlit>>(go_##uuid)                             \
+//         .color(fetch_texture("assets/level/flight/image_" #uuid ".bin"))                          \
+//         .mesh(fetch_mesh("assets/level/flight/geometry_" #uuid ".bin"));                          \
+//     registry.emplace<collider_component>(go_##uuid)                                               \
+//         .shape(fetch_shape("assets/level/flight/shape_" #uuid ".bin", shape_type::triangle_mesh)) \
+//         .wall();
 
 void level_static_flight(entt::registry& registry)
 {
-    GAME_OBJECT(fXbl)
-    GAME_OBJECT(8Ijp)
-    GAME_OBJECT(UQZZ)
+    rendering_system::use_skybox_cubemap(fetch_cubemap({ 
+        "assets/cubemap/cubemap_px_eLVJ.bin",
+        "assets/cubemap/cubemap_py_eLVJ.bin",
+        "assets/cubemap/cubemap_pz_eLVJ.bin",
+        "assets/cubemap/cubemap_nx_eLVJ.bin",
+        "assets/cubemap/cubemap_ny_eLVJ.bin",
+        "assets/cubemap/cubemap_nz_eLVJ.bin" }));
 
-    registry.emplace<collider_component>(go_fXbl)
-        .shape(fetch_shape("assets/level/flight/shape_fXbl.bin", shape_type::triangle_mesh))
-        .wall();
+    GAME_OBJECT_B2(fXbl).wall();
+    GAME_OBJECT_B2(8Ijp).wall();
+    GAME_OBJECT_B2(UQZZ).ground();
 }

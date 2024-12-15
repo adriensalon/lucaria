@@ -20,7 +20,7 @@ btCollisionShape* make_convex_hull_shape(const geometry_data& data)
 btCollisionShape* make_triangle_mesh_shape(const geometry_data& data)
 {
     btVector3 _vertex_1, _vertex_2, _vertex_3;
-    btTriangleMesh* _triangle_mesh = new btTriangleMesh();
+    btTriangleMesh* _triangle_mesh = new btTriangleMesh(); // STORE TO DELETE ON UNLOAD()
     for (const glm::uvec3& _index : data.indices) {
         _vertex_1 = btVector3(data.positions[_index.x].x, data.positions[_index.x].y, data.positions[_index.x].z);
         _vertex_2 = btVector3(data.positions[_index.y].x, data.positions[_index.y].y, data.positions[_index.y].z);

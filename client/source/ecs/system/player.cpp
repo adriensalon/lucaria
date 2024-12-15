@@ -70,16 +70,6 @@ void player_system::player_direction(const glm::vec3& direction)
     detail::player_forward = direction;
 }
 
-void player_system::player_height(const float height)
-{
-
-}
-
-void player_system::player_radius(const float radius)
-{
-
-}
-
 
 void player_system::update()
 {
