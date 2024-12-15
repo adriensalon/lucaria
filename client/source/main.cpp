@@ -46,7 +46,7 @@ int main()
         rendering_system::draw_skybox();
         rendering_system::draw_blockout_meshes();
         rendering_system::draw_unlit_meshes();
-        rendering_system::draw_debug_guizmos();
+        rendering_system::draw_debug2();
         
         mixer_system::apply_speaker_transforms();
         mixer_system::apply_listener_transform();

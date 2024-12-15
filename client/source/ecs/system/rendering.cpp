@@ -4,6 +4,7 @@
 #include <btBulletDynamicsCommon.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <imgui.h>
 
 #include <core/fetch.hpp>
 #include <core/hash.hpp>
@@ -240,6 +241,35 @@ const std::vector<glm::uvec3> skybox_indices = {
     glm::uvec3(0, 4, 5)
 };
 
+static bool show_physics_guizmos = false;
+static bool last_show_physics_guizmos_key = false;
+
+static bool show_performance_metrics = false;
+static bool last_performance_metrics_key = false;
+
+// #if LUCARIA_DEBUG
+void draw_debug_gui()
+{
+    static bool show_debug_gui = false;
+    static bool last_show_gui_key = false;
+    if (!last_show_gui_key && get_keys()["p"]) {
+        show_debug_gui = !show_debug_gui;
+    }
+    last_show_gui_key = get_keys()["p"];
+    if (show_debug_gui) {
+
+        if (!last_show_physics_guizmos_key && get_keys()["o"]) {
+            show_physics_guizmos = !show_physics_guizmos;
+        }
+        last_show_physics_guizmos_key = get_keys()["o"];
+        ImGui::Begin("debug features [P]", nullptr);
+        ImGui::Checkbox("show guizmos [O]", &show_physics_guizmos);
+        ImGui::Checkbox("show performance [I]", &show_performance_metrics);
+        ImGui::End();
+    }
+}
+// #endif
+
 #if LUCARIA_GUIZMO
 extern btDiscreteDynamicsWorld* dynamics_world;
 static guizmo_debug_draw guizmo_draw = {};
@@ -451,32 +481,38 @@ void rendering_system::clear_debug_guizmos()
 #endif
 }
 
-void rendering_system::draw_debug_guizmos()
+void rendering_system::draw_debug2()
 {
+    // #if LUCARIA_DEBUG
+    detail::draw_debug_gui();
+
+    // #endif
+    if (detail::show_physics_guizmos) {
 #if LUCARIA_GUIZMO
-    for (const std::pair<const glm::vec3, std::vector<glm::vec3>>& _pair : detail::guizmo_draw.positions) {
-        const glm::vec3& _color = _pair.first;
-        const std::vector<glm::vec3>& _positions = _pair.second;
-        const std::vector<glm::uvec2>& _indices = detail::guizmo_draw.indices.at(_color);
-        if (detail::guizmo_meshes.find(_color) == detail::guizmo_meshes.end()) {
-            detail::guizmo_meshes.emplace(_color, guizmo_mesh_ref(_positions, _indices));
-        } else {
-            detail::guizmo_meshes.at(_color).update(_positions, _indices);
+        for (const std::pair<const glm::vec3, std::vector<glm::vec3>>& _pair : detail::guizmo_draw.positions) {
+            const glm::vec3& _color = _pair.first;
+            const std::vector<glm::vec3>& _positions = _pair.second;
+            const std::vector<glm::uvec2>& _indices = detail::guizmo_draw.indices.at(_color);
+            if (detail::guizmo_meshes.find(_color) == detail::guizmo_meshes.end()) {
+                detail::guizmo_meshes.emplace(_color, guizmo_mesh_ref(_positions, _indices));
+            } else {
+                detail::guizmo_meshes.at(_color).update(_positions, _indices);
+            }
         }
-    }
-    static bool _is_program_setup = false;
-    static std::optional<program_ref> _persistent_guizmo_program = std::nullopt;
-    if (!_is_program_setup) {
-        _persistent_guizmo_program = program_ref(shader_data { detail::guizmo_vertex }, shader_data { detail::guizmo_fragment });
-        _is_program_setup = true;
-    }
-    program_ref& _guizmo_program = _persistent_guizmo_program.value();
-    _guizmo_program.use();
-    for (const std::pair<const glm::vec3, guizmo_mesh_ref>& _pair : detail::guizmo_meshes) {
-        _guizmo_program.bind_guizmo("vert_position", _pair.second);
-        _guizmo_program.bind("uniform_color", _pair.first);
-        _guizmo_program.bind("uniform_mvp", detail::camera_view_projection);
-        _guizmo_program.draw_guizmo();
-    }
+        static bool _is_program_setup = false;
+        static std::optional<program_ref> _persistent_guizmo_program = std::nullopt;
+        if (!_is_program_setup) {
+            _persistent_guizmo_program = program_ref(shader_data { detail::guizmo_vertex }, shader_data { detail::guizmo_fragment });
+            _is_program_setup = true;
+        }
+        program_ref& _guizmo_program = _persistent_guizmo_program.value();
+        _guizmo_program.use();
+        for (const std::pair<const glm::vec3, guizmo_mesh_ref>& _pair : detail::guizmo_meshes) {
+            _guizmo_program.bind_guizmo("vert_position", _pair.second);
+            _guizmo_program.bind("uniform_color", _pair.first);
+            _guizmo_program.bind("uniform_mvp", detail::camera_view_projection);
+            _guizmo_program.draw_guizmo();
+        }
 #endif
+    }
 }
