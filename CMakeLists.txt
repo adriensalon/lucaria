@@ -3,24 +3,18 @@ project(lucaria)
 
 function(find_program_recursive OUTPUT_VARIABLE DIRECTORY EXECUTABLE_NAME)
     file(GLOB_RECURSE EXECUTABLE_PATHS "${DIRECTORY}/*${EXECUTABLE_NAME}*")
-
     foreach(EXECUTABLE_PATH ${EXECUTABLE_PATHS})
-        # Get the filename without extension and the extension
         get_filename_component(NAME_WITHOUT_EXT ${EXECUTABLE_PATH} NAME_WLE)
         get_filename_component(FILE_EXT ${EXECUTABLE_PATH} EXT)
-
         if(NAME_WITHOUT_EXT STREQUAL "${EXECUTABLE_NAME}")
             if(WIN32)
-                # For Windows executables, check extensions
                 if(FILE_EXT STREQUAL ".exe" OR FILE_EXT STREQUAL ".bat")
                     set(${OUTPUT_VARIABLE} ${EXECUTABLE_PATH} PARENT_SCOPE)
                     break()
                 endif()
             elseif(UNIX)
-                # For Unix-like systems, check if the file is executable
                 if(NOT FILE_EXT)
-                    execute_process(COMMAND ${CMAKE_COMMAND} -E test -x ${EXECUTABLE_PATH}
-                                    RESULT_VARIABLE IS_EXECUTABLE)
+                    execute_process(COMMAND ${CMAKE_COMMAND} -E test -x ${EXECUTABLE_PATH} RESULT_VARIABLE IS_EXECUTABLE)
                     if(IS_EXECUTABLE EQUAL 0)
                         set(${OUTPUT_VARIABLE} ${EXECUTABLE_PATH} PARENT_SCOPE)
                         break()
@@ -38,24 +32,20 @@ if(DEFINED ENV{EMSDK})
 elseif(DEFINED ENV{EMSCRIPTEN})
     set(EMSDK $ENV{EMSCRIPTEN})
 endif()
-
 if(EMSDK AND EXISTS "${EMSDK}")
     message(STATUS "Found Emsdk at ${EMSDK}")
     set(EMSDK_FOUND TRUE)
 else()
     find_program(EMCC_EXECUTABLE NAMES emcc PATHS ENV PATH)
-
     if(EMCC_EXECUTABLE)
         get_filename_component(EMSDK_DIR "${EMCC_EXECUTABLE}" DIRECTORY)
         get_filename_component(EMSDK "${EMSDK_DIR}/../../" ABSOLUTE)
-
         if(EXISTS "${EMSDK}")
             message(STATUS "Found Emscripten SDK using emcc at ${EMSDK}")
             set(EMSDK_FOUND TRUE)
         endif()
     endif()
 endif()
-
 if(EMSDK_FOUND)
     set(EMSDK_TOOLCHAIN "${EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake")
     message(STATUS "Found Emscripten toolchain file at ${EMSDK_TOOLCHAIN}\n")
@@ -91,11 +81,11 @@ get_filename_component(OGGENC_NAME ${OGGENC_EXECUTABLE} NAME)
 get_filename_component(WOFF2COMPRESS_NAME ${WOFF2COMPRESS_EXECUTABLE} NAME)
 execute_process(
     COMMAND ${CMAKE_COMMAND} -E make_directory ${INSTALL_DIR}/compiler
-    COMMAND ${CMAKE_COMMAND} -E rename ${COMPILER_EXECUTABLE} ${INSTALL_DIR}/compiler/${COMPILER_NAME}
-    COMMAND ${CMAKE_COMMAND} -E rename ${ETCPAK_EXECUTABLE} ${INSTALL_DIR}/compiler/${ETCPAK_NAME}
-    COMMAND ${CMAKE_COMMAND} -E rename ${GLTF2OZZ_EXECUTABLE} ${INSTALL_DIR}/compiler/${GLTF2OZZ_NAME}
-    COMMAND ${CMAKE_COMMAND} -E rename ${OGGENC_EXECUTABLE} ${INSTALL_DIR}/compiler/${OGGENC_NAME}
-    COMMAND ${CMAKE_COMMAND} -E rename ${WOFF2COMPRESS_EXECUTABLE} ${INSTALL_DIR}/compiler/${WOFF2COMPRESS_NAME})
+    COMMAND ${CMAKE_COMMAND} -E copy ${COMPILER_EXECUTABLE} ${INSTALL_DIR}/compiler/${COMPILER_NAME}
+    COMMAND ${CMAKE_COMMAND} -E copy ${ETCPAK_EXECUTABLE} ${INSTALL_DIR}/compiler/${ETCPAK_NAME}
+    COMMAND ${CMAKE_COMMAND} -E copy ${GLTF2OZZ_EXECUTABLE} ${INSTALL_DIR}/compiler/${GLTF2OZZ_NAME}
+    COMMAND ${CMAKE_COMMAND} -E copy ${OGGENC_EXECUTABLE} ${INSTALL_DIR}/compiler/${OGGENC_NAME}
+    COMMAND ${CMAKE_COMMAND} -E copy ${WOFF2COMPRESS_EXECUTABLE} ${INSTALL_DIR}/compiler/${WOFF2COMPRESS_NAME})
 set(COMPILER_EXECUTABLE ${INSTALL_DIR}/compiler/${COMPILER_NAME})
 set(ETCPAK_EXECUTABLE ${INSTALL_DIR}/compiler/${ETCPAK_NAME})
 set(GLTF2OZZ_EXECUTABLE ${INSTALL_DIR}/compiler/${GLTF2OZZ_NAME})
@@ -142,7 +132,7 @@ add_custom_target(Lucaria
 add_custom_command(
     TARGET Lucaria
     POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.html ${INSTALL_DIR}/client/index.html
-    # COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.data ${INSTALL_DIR}/client/lucaria.data
-    COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.js ${INSTALL_DIR}/client/lucaria.js
-    COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.wasm ${INSTALL_DIR}/client/lucaria.wasm)
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/client/lucaria.html ${INSTALL_DIR}/client/index.html
+    # COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/client/lucaria.data ${INSTALL_DIR}/client/lucaria.data
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/client/lucaria.js ${INSTALL_DIR}/client/lucaria.js
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/client/lucaria.wasm ${INSTALL_DIR}/client/lucaria.wasm)

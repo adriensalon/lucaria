@@ -67,6 +67,7 @@ else()
 		add_subdirectory(../external/etcpak ${CMAKE_BINARY_DIR}/external/etcpak)
 
 		set(ozz_build_tests OFF)
+		set(ozz_build_samples OFF)
 		set(ozz_build_tools ON)
 		set(ozz_build_fbx OFF)
 		set(ozz_build_gltf ON)

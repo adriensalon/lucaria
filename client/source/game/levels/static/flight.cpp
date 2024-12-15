@@ -14,15 +14,6 @@
     registry.emplace<collider_component>(go_##uuid)                   \
         .shape(fetch_shape("assets/shape/geometry_" #uuid ".bin", shape_type::triangle_mesh))
 
-// #define GAME_OBJECT(uuid)                                                                         \
-//     const entt::entity go_##uuid = registry.create();                                             \
-//     registry.emplace<model_component<model_shader::unlit>>(go_##uuid)                             \
-//         .color(fetch_texture("assets/level/flight/image_" #uuid ".bin"))                          \
-//         .mesh(fetch_mesh("assets/level/flight/geometry_" #uuid ".bin"));                          \
-//     registry.emplace<collider_component>(go_##uuid)                                               \
-//         .shape(fetch_shape("assets/level/flight/shape_" #uuid ".bin", shape_type::triangle_mesh)) \
-//         .wall();
-
 void level_static_flight(entt::registry& registry)
 {
     rendering_system::use_skybox_cubemap(fetch_cubemap({ 
