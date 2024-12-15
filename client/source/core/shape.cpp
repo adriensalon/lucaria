@@ -6,6 +6,32 @@ namespace detail {
 
 static std::unordered_map<std::string, std::promise<std::shared_ptr<shape_ref>>> promises;
 
+
+btCollisionShape* make_convex_hull_shape(const geometry_data& data)
+{
+    btConvexHullShape* _shape = new btConvexHullShape();
+    for (const glm::vec3& _position : data.positions) {
+        _shape->addPoint(btVector3(_position.x, _position.y, _position.z));
+    }
+    _shape->recalcLocalAabb();
+    return _shape;
+}
+
+btCollisionShape* make_triangle_mesh_shape(const geometry_data& data)
+{
+    btVector3 _vertex_1, _vertex_2, _vertex_3;
+    btTriangleMesh* _triangle_mesh = new btTriangleMesh();
+    for (const glm::uvec3& _index : data.indices) {
+        _vertex_1 = btVector3(data.positions[_index.x].x, data.positions[_index.x].y, data.positions[_index.x].z);
+        _vertex_2 = btVector3(data.positions[_index.y].x, data.positions[_index.y].y, data.positions[_index.y].z);
+        _vertex_3 = btVector3(data.positions[_index.z].x, data.positions[_index.z].y, data.positions[_index.z].z);
+        _triangle_mesh->addTriangle(_vertex_1, _vertex_2, _vertex_3);
+    }
+    btBvhTriangleMeshShape* _shape = new btBvhTriangleMeshShape(_triangle_mesh, true);
+    // delete _triangle_mesh;
+    return _shape;
+}
+
 }
 
 shape_ref::shape_ref(shape_ref&& other)
@@ -33,13 +59,11 @@ shape_ref::shape_ref(const geometry_data& data, const shape_type shape)
     if (shape == shape_type::box) {
         std::cout << "BOXXXXXXXXXXXXXX \n";
         std::terminate();
+
     } else if (shape == shape_type::convex_hull) {
-        btConvexHullShape* _hull_shape = new btConvexHullShape();
-        for (const glm::vec3& _position : data.positions) {
-            _hull_shape->addPoint(btVector3(_position.x, _position.y, _position.z));
-        }
-        _hull_shape->recalcLocalAabb();
-        _shape = _hull_shape;
+        _shape = detail::make_convex_hull_shape(data);
+    } else if (shape == shape_type::triangle_mesh) {
+        _shape = detail::make_triangle_mesh_shape(data);
     } // etc
     _is_instanced = true;
 }

@@ -12,6 +12,7 @@ enum struct shape_type {
     cylinder,
     cone,
     convex_hull,
+    triangle_mesh,
     impact_triangle_mesh
 };
 

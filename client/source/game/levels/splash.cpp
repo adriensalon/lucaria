@@ -98,6 +98,7 @@ static void add_next_level()
     add_level(levelID_persistent_player);
     add_level(levelID_blockout_test);
     // TODO
+    add_level(levelID_static_flight);
 }
 
 }

@@ -75,5 +75,4 @@ void level_blockout_test(entt::registry& registry)
     registry.emplace<collider_component>(_ground_entity3)
         .shape(fetch_shape("assets/blockout_test_ground3.bin", shape_type::convex_hull))
         .ground();
-        
 }

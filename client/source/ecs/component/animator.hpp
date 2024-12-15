@@ -67,7 +67,7 @@ private:
     fetch_container<skeleton_ref> _skeleton = {};
     ozz::vector<ozz::math::SoaTransform> _blended_local_transforms = {};
     ozz::vector<ozz::math::Float4x4> _model_transforms = {};
-    std::vector<std::vector<std::reference_wrapper<transform_component>>> _children_transforms = {};
+    std::unordered_map<unsigned int, std::vector<std::reference_wrapper<transform_component>>> _children_transforms = {};
     std::unique_ptr<ozz::animation::SamplingJob::Context> _sampling_context = nullptr;
     std::unordered_map<unsigned int, animation_controller> _controllers = {};
     std::unordered_map<unsigned int, fetch_container<animation_ref>> _animations = {};

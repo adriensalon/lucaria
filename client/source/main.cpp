@@ -18,6 +18,7 @@ int main()
     register_level(levelID_menu_splash, level_menu_splash);
     register_level(levelID_persistent_player, level_persistent_player);
     register_level(levelID_blockout_test, level_blockout_test);
+    register_level(levelID_static_flight, level_static_flight);
 
     add_level(levelID_menu_splash);
 

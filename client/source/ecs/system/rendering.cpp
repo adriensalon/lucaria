@@ -73,7 +73,7 @@ static glm::vec4 clear_color = { 1.f, 1.f, 1.f, 1.f };
 static bool clear_depth = true;
 static float camera_fov = 60.f;
 static float camera_near = 0.1f;
-static float camera_far = 100.f;
+static float camera_far = 1000.f;
 static glm::mat4x4 camera_projection;
 static glm::mat4x4 camera_view;
 static glm::mat4x4 camera_view_projection;
@@ -104,61 +104,11 @@ static const std::string unlit_skinned_vertex = R"(#version 300 es
         for (int i = 0; i < 4; ++i) {
             if (vert_weights[i] > 0.0) {
                 int _index = vert_bones[i];
-                // skinned_position += vert_weights[i] * uniform_bones_transforms[_index] * vec4(vert_position, 1.0);
                 skinned_position += vert_weights[i] * uniform_bones_transforms[_index] * uniform_bones_invposes[_index] * vec4(vert_position, 1.0);
             }
         }
         gl_Position = uniform_view * skinned_position;
     })";
-// static const std::string unlit_skinned_vertex = R"(#version 300 es
-//     in vec3 vert_position;
-//     in vec2 vert_texcoord;
-//     in ivec4 vert_bones;
-//     in vec4 vert_weights;
-//     uniform mat4 uniform_view;
-//     uniform mat4 uniform_bones_transforms[10];
-//     uniform mat4 uniform_bones_invposes[10];
-//     out vec2 frag_texcoord;
-
-//     // vec4 addto(const float weight, const int bone)
-//     // {
-//     //     if (weight > 0.0) {
-//     //         if (bone == 0) {
-//     //             return weight * uniform_bones_transforms[0] * uniform_bones_invposes[0] * vec4(vert_position, 1.0);
-//     //         } else if (bone == 1) {
-//     //             return weight * uniform_bones_transforms[1] * uniform_bones_invposes[1] * vec4(vert_position, 1.0);
-//     //         } else if (bone == 2) {
-//     //             return weight * uniform_bones_transforms[2] * uniform_bones_invposes[2] * vec4(vert_position, 1.0);
-//     //         } else if (bone == 3) {
-//     //             return weight * uniform_bones_transforms[3] * uniform_bones_invposes[3] * vec4(vert_position, 1.0);
-//     //         } else if (bone == 4) {
-//     //             return weight * uniform_bones_transforms[4] * uniform_bones_invposes[4] * vec4(vert_position, 1.0);
-//     //         } else if (bone == 5) {
-//     //             return weight * uniform_bones_transforms[5] * uniform_bones_invposes[5] * vec4(vert_position, 1.0);
-//     //         } else if (bone == 6) {
-//     //             return weight * uniform_bones_transforms[6] * uniform_bones_invposes[6] * vec4(vert_position, 1.0);
-//     //         } else if (bone == 7) {
-//     //             return weight * uniform_bones_transforms[7] * uniform_bones_invposes[7] * vec4(vert_position, 1.0);
-//     //         } else if (bone == 8) {
-//     //             return weight * uniform_bones_transforms[8] * uniform_bones_invposes[8] * vec4(vert_position, 1.0);
-//     //         } else if (bone == 9) {
-//     //             return weight * uniform_bones_transforms[9] * uniform_bones_invposes[9] * vec4(vert_position, 1.0);
-//     //         }
-//     //     }
-//     // } 
-
-//     void main() {
-//         frag_texcoord = vert_texcoord;
-//         // vec4 skinned_position = vec4(0.0);
-//         vec4 skinned_position = vec4(vert_position, 0.0);
-
-//         skinned_position += addto(vert_weights.x, vert_bones.x);
-//         skinned_position += addto(vert_weights.y, vert_bones.y);
-//         skinned_position += addto(vert_weights.z, vert_bones.z);
-//         skinned_position += addto(vert_weights.w, vert_bones.w);
-
-//         gl_Position = uniform_view * skinned_position;
-//     })";
 
 static const std::string unlit_fragment = R"(#version 300 es
     precision mediump float;
@@ -221,6 +171,9 @@ static const std::string blockout_fragment = R"(#version 300 es
     })";
 
 static const std::string pbr_vertex = R"(#version 300 es
+    )";
+
+static const std::string pbr_skinned_vertex = R"(#version 300 es
     )";
 
 static const std::string pbr_fragment = R"(#version 300 es
@@ -478,6 +431,11 @@ void rendering_system::draw_unlit_meshes()
         });
     });
 }
+
+// void rendering_system::draw_pbr_meshes()
+// {
+//     // TODO
+// }
 
 void rendering_system::clear_debug_guizmos()
 {

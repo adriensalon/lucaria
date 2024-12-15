@@ -48,6 +48,10 @@ struct rigidbody_component<rigidbody_kind::kinematic> {
     rigidbody_component& collide_grounds(const bool enabled = true);
     rigidbody_component& collide_walls(const bool enabled = true);
     rigidbody_component& collide_layer(const kinematic_layer layer, const bool enabled = true);
+    
+    rigidbody_component& grounds_callback(const std::function<void(const kinematic_collision&)>& callback);
+    rigidbody_component& walls_callback(const std::function<void(const kinematic_collision&)>& callback);
+    rigidbody_component& layer_callback(const kinematic_layer layer, const std::function<void(const kinematic_collision&)>& callback);
 
     const std::optional<kinematic_collision>& get_ground_collision() const;
     const std::vector<kinematic_collision>& get_wall_collisions() const;

@@ -16,6 +16,10 @@ struct collider_component {
     collider_component& ground();
     collider_component& wall();
     collider_component& layer(const kinematic_layer layer);
+    
+    collider_component& ground_callback(const std::function<void(void*)>& callback, void* data);
+    collider_component& wall_callback(const std::function<void(void*)>& callback, void* data);
+    collider_component& layer_callback(const kinematic_layer layer, const std::function<void(void*)>& callback, void* data);
 
 private:
     bool _is_instanced = false;
