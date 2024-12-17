@@ -11,7 +11,7 @@
 namespace detail {
 
 constexpr float mouse_sensitivity = 6.f;
-constexpr float player_speed = 2.f;
+constexpr float player_speed = 8.f;
 constexpr std::string_view player_forward_key = "z";
 constexpr std::string_view player_left_key = "q";
 constexpr std::string_view player_backward_key = "s";

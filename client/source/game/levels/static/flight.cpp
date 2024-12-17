@@ -24,7 +24,12 @@ void level_static_flight(entt::registry& registry)
         "assets/cubemap/cubemap_ny_eLVJ.bin",
         "assets/cubemap/cubemap_nz_eLVJ.bin" }));
 
+    GAME_OBJECT_B2(6kqP).wall();
+    GAME_OBJECT_B2(8Rr6).wall();
+    GAME_OBJECT_B2(udJv).wall();
+
     GAME_OBJECT_B2(9ETQ).wall();
+    GAME_OBJECT_B2(D6q9).wall();
     GAME_OBJECT_B2(8jHH).wall();
     GAME_OBJECT_B2(fXbl).wall();
     GAME_OBJECT_B2(8Ijp).wall();

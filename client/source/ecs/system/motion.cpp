@@ -80,7 +80,7 @@ void motion_system::advance_controllers()
                 animation_controller& _controller = animator._controllers[_pair.first];
                 if (_controller._is_playing) {
                     _controller._last_time_ratio = _controller._time_ratio;
-                    _controller._time_ratio += get_time_delta() * 0.1f; // c'est bien le temps qu'il faut multiplier par le weight des fadeins
+                    _controller._time_ratio += get_time_delta();// * 0.1f; // c'est bien le temps qu'il faut multiplier par le weight des fadeins
                 }
                 _controller._has_looped = _controller._time_ratio > 1.f;
                 _controller._time_ratio = glm::mod(_controller._time_ratio, 1.f);
