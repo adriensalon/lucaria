@@ -48,6 +48,7 @@ static glm::vec2 mouse_position = { 0.f, 0.f };
 static glm::vec2 mouse_position_delta = { 0.f, 0.f };
 static glm::vec2 accumulated_mouse_position_delta = { 0.f, 0.f };
 static glm::float64 time_delta = 0.f; // seconds
+static std::function<void()> start_callback = nullptr;
 static std::function<void()> update_callback = nullptr;
 static std::vector<std::function<void()>> on_audio_locked_callbacks = {};
 
@@ -296,6 +297,7 @@ static void destroy_openal()
 
 void update()
 {
+
     emscripten_set_main_loop_timing(EM_TIMING_RAF, 1);
     static double _last_render_time = 0;
     double _render_time = emscripten_get_now();
@@ -342,7 +344,7 @@ void update()
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     wait_fetched_containers();
-    remove_levels();
+    // remove_levels();
 
     graphics_assert();
     if (is_audio_locked) {
@@ -365,9 +367,8 @@ void rebuild2()
 //     ImGui_ImplOpenGL3_CreateFontsTexture();
 }
 
-void run(std::function<void()> update)
+void run(const std::function<void()>& update)
 {
-
     detail::update_callback = update;
     emscripten_set_main_loop(detail::update, 0, EM_TRUE);
 }

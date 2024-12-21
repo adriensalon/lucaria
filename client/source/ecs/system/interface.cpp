@@ -6,14 +6,18 @@
 
 void interface_system::collect_gui_widgets()
 {
-    each_level([](entt::registry& registry) {
-        registry.view<widget_component>(entt::exclude<transform_component>).each([](widget_component& widget) {
+    std::cout << "GUI widget scene \n";
+    each_scene([](scene_data& scene) {
+        std::cout << "widget scene \n";
+        // scene.components.view<widget_component>(entt::exclude<transform_component>).each([](widget_component& widget) {
+        scene.components.view<widget_component>().each([](widget_component& widget) {
+            std::cout << "widget \n";
             if (widget._callback) {
                 widget._callback();
             }
         });
-        registry.view<widget_component, transform_component>().each([](widget_component& widget, transform_component& transform) {
-            // todo
-        });
+        // scene.components.view<widget_component, transform_component>().each([](widget_component& widget, transform_component& transform) {
+        //     // todo
+        // });
     });
 }

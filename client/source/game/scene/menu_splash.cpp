@@ -18,9 +18,11 @@
 #include <ecs/system/interface.hpp>
 #include <ecs/system/mixer.hpp>
 #include <ecs/system/rendering.hpp>
-#include <ecs/system/scripting.hpp>
 
-#include <game/levels/levels.hpp>
+#include <game/scene/menu_splash.hpp>
+#include <game/scene/user_player.hpp>
+#include <game/scene/zone_flight.hpp>
+
 
 namespace detail {
 
@@ -43,7 +45,6 @@ static void draw_background(const ImVec2& display_size)
     const glm::float32 _weight = splash_background_fadein.compute_weight(splash_resources_fetched_cursor);
     const ImVec4 _tint = { 1.f, 1.f, 1.f, _weight };
     ImGui::Image((ImTextureID)background_splash_texture.value().get_id(), display_size, { 0.001f, 0.001f }, { 0.999f, 0.999f }, _tint, { 1.f, 1.f, 1.f, 1.f });
-
 }
 
 static void draw_title(const ImVec2& display_size)
@@ -95,33 +96,33 @@ static void draw_splash_menu(const bool is_ready)
 
 static void add_next_level()
 {
-    // add_level(levelID_blockout_test);
-    // TODO
-    add_level(levelID_static_flight);
-
-    add_level(levelID_persistent_player);
+    make_scene<user_player_scene>();
+    make_scene<zone_flight_scene>();
 }
 
 }
 
-void level_menu_splash(entt::registry& registry)
+menu_splash_scene::menu_splash_scene(scene_data& scene)
 {
+    std::cout << "HIIIIIIIIIIIIII \n";
     if (!detail::is_splash_resources_fetched) {
         detail::big_splash_font.emplace(fetch_font({ "assets/font/font_LYj3.bin" }, 160.f));
         detail::small_menu_font.emplace(fetch_font({ "assets/font/font_xVRp.bin" }, 22.f));
         detail::background_splash_texture.emplace(fetch_texture("assets/image/image_0cSX.bin"));
     }
 
-    const entt::entity _splash_entity = registry.create();
+    const entt::entity _splash_entity = scene.components.create();
 
-    registry.emplace<widget_component>(_splash_entity)
+    scene.components.emplace<widget_component>(_splash_entity)
         .gui([]() {
+            std::cout << "from gui \n";
             if (detail::is_splash_resources_fetched) {
                 const bool _is_ready = get_fetches_completed() == get_fetches_total();
                 bool _last_frame = false;
                 if (_is_ready && get_is_audio_locked()) {
                     if (get_fetches_completed() > 3) {
-                        mark_remove_level(levelID_menu_splash);
+                        // mark_remove_level(levelID_menu_splash);
+                        std::cout << "MARK REMOVE LEVEL ! \n";
                         detail::splash_resources_fetched_cursor = 0.f;
                         _last_frame = true;
                     } else if (!detail::is_next_level_fetched) {
