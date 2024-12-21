@@ -1,4 +1,3 @@
-#include <GLES3/gl3.h>
 #include <cereal/archives/json.hpp>
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/cereal.hpp>
@@ -7,6 +6,7 @@
 #include <ozz/base/containers/vector.h>
 #include <ozz/base/maths/simd_math.h>
 
+#include <core/graphics.hpp>
 #include <core/program.hpp>
 #include <core/fetch.hpp>
 #include <core/hash.hpp>
@@ -365,10 +365,10 @@ std::future<std::shared_ptr<program_ref>> fetch_program(const std::filesystem::p
 {
     const std::size_t _hash = path_vector_hash()({ vertex_shader_path, fragment_shader_path });
     std::pair<std::vector<shader_data>, std::promise<std::shared_ptr<program_ref>>>& _promise_pair = detail::promises[_hash];
-    fetch_files({ vertex_shader_path.string(), fragment_shader_path.string() }, [&_promise_pair, _hash](const std::size_t, const std::size_t, const std::vector<char>& shader_bytes) {
-        _promise_pair.first.emplace_back(std::move(load_shader_data(shader_bytes)));
+    fetch_files({ vertex_shader_path.string(), fragment_shader_path.string() }, [&_promise_pair](const std::size_t, const std::size_t, const std::vector<char>& shader_bytes) {
+        _promise_pair.first.emplace_back(load_shader_data(shader_bytes));
         if (_promise_pair.first.size() == 2) {
-            _promise_pair.second.set_value(std::move(std::make_shared<program_ref>(_promise_pair.first[0], _promise_pair.first[1])));
+            _promise_pair.second.set_value(std::make_shared<program_ref>(_promise_pair.first[0], _promise_pair.first[1]));
         }
     });
     return _promise_pair.second.get_future();

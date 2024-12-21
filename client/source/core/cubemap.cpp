@@ -4,11 +4,11 @@
 
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/archives/json.hpp>
-#include <GLES3/gl3.h>
 
 #include <core/cubemap.hpp>
 #include <core/texture.hpp>
 #include <core/fetch.hpp>
+#include <core/graphics.hpp>
 #include <core/hash.hpp>
 #include <core/window.hpp>
 
@@ -79,18 +79,18 @@ cubemap_ref::cubemap_ref(const cubemap_data& data)
         const GLenum _side_enum = detail::cubemap_enums[_index];
         switch (_data.channels) {
         case 3:
-            if (_data.is_compressed_etc) {
+            if (_data.is_compressed_etc && get_is_etc_supported()) {
                 glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGB8_ETC2, _data.width, _data.height, 0, _data.pixels.size(), _pixels_ptr);
-            } else if (_data.is_compressed_s3tc) {
+            } else if (_data.is_compressed_s3tc && get_is_s3tc_supported()) {
                 glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, _data.width, _data.height, 0, _data.pixels.size(), _pixels_ptr);
             } else {
                 glTexImage2D(_side_enum, 0, GL_RGB, _data.width, _data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
             }
             break;
         case 4:
-            if (_data.is_compressed_etc) {
+            if (_data.is_compressed_etc && get_is_etc_supported()) {
                 glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGBA8_ETC2_EAC, _data.width, _data.height, 0, _data.pixels.size(), _pixels_ptr);
-            } else if (_data.is_compressed_s3tc) {
+            } else if (_data.is_compressed_s3tc && get_is_s3tc_supported()) {
                 glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, _data.width, _data.height, 0, _data.pixels.size(), _pixels_ptr);
             } else {
                 glTexImage2D(_side_enum, 0, GL_RGBA, _data.width, _data.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);

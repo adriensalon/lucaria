@@ -104,7 +104,6 @@ static void add_next_level()
 
 menu_splash_scene::menu_splash_scene(scene_data& scene)
 {
-    std::cout << "HIIIIIIIIIIIIII \n";
     if (!detail::is_splash_resources_fetched) {
         detail::big_splash_font.emplace(fetch_font({ "assets/font/font_LYj3.bin" }, 160.f));
         detail::small_menu_font.emplace(fetch_font({ "assets/font/font_xVRp.bin" }, 22.f));
@@ -115,14 +114,14 @@ menu_splash_scene::menu_splash_scene(scene_data& scene)
 
     scene.components.emplace<widget_component>(_splash_entity)
         .gui([]() {
-            std::cout << "from gui \n";
             if (detail::is_splash_resources_fetched) {
                 const bool _is_ready = get_fetches_completed() == get_fetches_total();
                 bool _last_frame = false;
-                if (_is_ready && get_is_audio_locked()) {
+                if (_is_ready && get_is_audio_locked() && get_is_mouse_locked()) {
+                    
                     if (get_fetches_completed() > 3) {
                         // mark_remove_level(levelID_menu_splash);
-                        std::cout << "MARK REMOVE LEVEL ! \n";
+                        // std::cout << "MARK REMOVE LEVEL ! \n";
                         detail::splash_resources_fetched_cursor = 0.f;
                         _last_frame = true;
                     } else if (!detail::is_next_level_fetched) {

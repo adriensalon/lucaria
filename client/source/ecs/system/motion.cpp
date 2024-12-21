@@ -19,22 +19,22 @@
 
 namespace detail {
 
-void print_matrix(const ozz::math::Float4x4& matrix)
-{
-    // const ozz::math::SimdFloat4 cols[] = matrix.cols;
+// void print_matrix(const ozz::math::Float4x4& matrix)
+// {
+//     // const ozz::math::SimdFloat4 cols[] = matrix.cols;
 
-    // Print the matrix in a 4x4 grid
-    std::cout << std::endl;
-    std::cout << "[ " << matrix.cols[0].x << " " << matrix.cols[1].x << " " << matrix.cols[2].x << " " << matrix.cols[3].x << " ]" << std::endl;
-    std::cout << "[ " << matrix.cols[0].y << " " << matrix.cols[1].y << " " << matrix.cols[2].y << " " << matrix.cols[3].y << " ]" << std::endl;
-    std::cout << "[ " << matrix.cols[0].z << " " << matrix.cols[1].z << " " << matrix.cols[2].z << " " << matrix.cols[3].z << " ]" << std::endl;
-    std::cout << "[ " << matrix.cols[0].w << " " << matrix.cols[1].w << " " << matrix.cols[2].w << " " << matrix.cols[3].w << " ]" << std::endl;
-}
+//     // Print the matrix in a 4x4 grid
+//     std::cout << std::endl;
+//     std::cout << "[ " << matrix.cols[0].x << " " << matrix.cols[1].x << " " << matrix.cols[2].x << " " << matrix.cols[3].x << " ]" << std::endl;
+//     std::cout << "[ " << matrix.cols[0].y << " " << matrix.cols[1].y << " " << matrix.cols[2].y << " " << matrix.cols[3].y << " ]" << std::endl;
+//     std::cout << "[ " << matrix.cols[0].z << " " << matrix.cols[1].z << " " << matrix.cols[2].z << " " << matrix.cols[3].z << " ]" << std::endl;
+//     std::cout << "[ " << matrix.cols[0].w << " " << matrix.cols[1].w << " " << matrix.cols[2].w << " " << matrix.cols[3].w << " ]" << std::endl;
+// }
 
-void print_matrix(const glm::mat4& matrix)
-{
-    print_matrix(reinterpret_ozz(matrix));
-}
+// void print_matrix(const glm::mat4& matrix)
+// {
+//     print_matrix(reinterpret_ozz(matrix));
+// }
 
 #if LUCARIA_GUIZMO
 extern void draw_guizmo_line(const btVector3& from, const btVector3& to, const btVector3& color);
@@ -193,8 +193,8 @@ void motion_system::collect_debug_guizmos()
                         }
                         const ozz::math::Float4x4& current_transform = model_transforms[i];
                         const ozz::math::Float4x4& parent_transform = model_transforms[parent_index];
-                        btVector3 from(parent_transform.cols[3].x, parent_transform.cols[3].y, parent_transform.cols[3].z);
-                        btVector3 to(current_transform.cols[3].x, current_transform.cols[3].y, current_transform.cols[3].z);
+                        btVector3 from(parent_transform.cols[3][0], parent_transform.cols[3][1], parent_transform.cols[3][2]);
+                        btVector3 to(current_transform.cols[3][0], current_transform.cols[3][1], current_transform.cols[3][2]);
                         btVector3 color(1.0f, 0.0f, 0.0f); // Red color for bones
                         detail::draw_guizmo_line(from, to, color);
                     }
@@ -221,8 +221,8 @@ void motion_system::collect_debug_guizmos()
                         const ozz::math::Float4x4& _modifier_transform = reinterpret_ozz(transform._transform);
                         const ozz::math::Float4x4 current_transform = _modifier_transform * model_transforms[i];
                         const ozz::math::Float4x4 parent_transform = _modifier_transform * model_transforms[parent_index];
-                        btVector3 from(parent_transform.cols[3].x, parent_transform.cols[3].y, parent_transform.cols[3].z);
-                        btVector3 to(current_transform.cols[3].x, current_transform.cols[3].y, current_transform.cols[3].z);
+                        btVector3 from(parent_transform.cols[3][0], parent_transform.cols[3][1], parent_transform.cols[3][2]);
+                        btVector3 to(current_transform.cols[3][0], current_transform.cols[3][1], current_transform.cols[3][2]);
                         btVector3 color(1.0f, 0.0f, 0.0f); // Red color for bones
                         detail::draw_guizmo_line(from, to, color);
                     }

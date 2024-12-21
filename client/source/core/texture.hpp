@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <future>
+#include <optional>
 
 #include <glm/glm.hpp>
 

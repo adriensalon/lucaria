@@ -1,12 +1,12 @@
 #include <iostream>
 
-#include <GLES3/gl3.h>
 #include <btBulletDynamicsCommon.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
 
 #include <core/fetch.hpp>
+#include <core/graphics.hpp>
 #include <core/hash.hpp>
 #include <core/program.hpp>
 #include <core/window.hpp>
@@ -252,16 +252,16 @@ void draw_debug_gui()
 {
     static bool show_debug_gui = false;
     static bool last_show_gui_key = false;
-    if (!last_show_gui_key && get_keys()["p"]) {
+    if (!last_show_gui_key && get_keys()[keyboard_key::p]) {
         show_debug_gui = !show_debug_gui;
     }
-    last_show_gui_key = get_keys()["p"];
+    last_show_gui_key = get_keys()[keyboard_key::p];
     if (show_debug_gui) {
 
-        if (!last_show_physics_guizmos_key && get_keys()["o"]) {
+        if (!last_show_physics_guizmos_key && get_keys()[keyboard_key::o]) {
             show_physics_guizmos = !show_physics_guizmos;
         }
-        last_show_physics_guizmos_key = get_keys()["o"];
+        last_show_physics_guizmos_key = get_keys()[keyboard_key::o];
         ImGui::Begin("debug features [P]", nullptr);
         ImGui::Checkbox("show guizmos [O]", &show_physics_guizmos);
         ImGui::Checkbox("show performance [I]", &show_performance_metrics);

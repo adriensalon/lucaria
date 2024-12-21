@@ -1,7 +1,5 @@
 
-#include <AL/al.h>
-#include <AL/alc.h>
-
+#include <core/audio.hpp>
 #include <ecs/component/speaker.hpp>
 
 speaker_component& speaker_component::sounds(const std::unordered_map<glm::uint, std::shared_future<std::shared_ptr<sound_ref>>>& fetched_sounds)

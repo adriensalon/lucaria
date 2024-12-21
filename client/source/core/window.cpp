@@ -3,12 +3,18 @@
 
 #include <AL/al.h>
 #include <AL/alc.h>
-#include <GLES3/gl3.h>
 #include <backends/imgui_impl_opengl3.h>
+
+#if defined(__EMSCRIPTEN__)
 #include <emscripten.h>
 #include <emscripten/html5.h>
+#else
+#include <chrono>
+#include <backends/imgui_impl_glfw.h>
+#endif
 #include <imgui.h>
 
+#include <core/graphics.hpp>
 #include <core/fetch.hpp>
 #include <core/window.hpp>
 #include <core/world.hpp>
@@ -34,13 +40,26 @@ struct ImGui_ImplOpenGL3_Data {
     ImGui_ImplOpenGL3_Data() { memset((void*)this, 0, sizeof(*this)); }
 };
 
-static bool setup_emscripten();
+static bool setup_platform();
 static bool setup_opengl();
 static bool setup_openal();
-static bool static_setup = setup_emscripten() && setup_opengl();
+#if defined(__EMSCRIPTEN__)
+#else
+static GLFWwindow* glfw_window = nullptr;
+static std::unordered_map<int, keyboard_key> glfw_keyboard_mappings = {
+    { GLFW_KEY_Z, keyboard_key::z },
+    { GLFW_KEY_A, keyboard_key::q },
+    { GLFW_KEY_S, keyboard_key::s },
+    { GLFW_KEY_D, keyboard_key::d },
+    { GLFW_KEY_P, keyboard_key::p },
+    { GLFW_KEY_O, keyboard_key::o },
+    { GLFW_KEY_K, keyboard_key::k },
+    { GLFW_KEY_I, keyboard_key::i },
+};
+#endif
 
-static std::unordered_map<std::string, bool> keys = {};
-static std::vector<std::string> keys_changed = {};
+static std::unordered_map<keyboard_key, bool> keys = {};
+static std::vector<keyboard_key> keys_changed = {};
 static std::unordered_map<glm::uint, bool> buttons = {};
 static std::vector<glm::uint> buttons_changed = {};
 static glm::vec2 screen_size = { 0.f, 0.f };
@@ -57,6 +76,7 @@ static bool is_s3tc_supported = false;
 static bool is_audio_locked = false;
 static bool is_mouse_locked = false;
 
+#if defined(__EMSCRIPTEN__)
 EM_JS(int, browser_get_samplerate, (), {
     var AudioContext = window.AudioContext || window.webkitAudioContext;
     var ctx = new AudioContext();
@@ -119,13 +139,6 @@ void emscripten_assert(EMSCRIPTEN_RESULT result)
         }
     }
 #endif
-}
-
-void update_mouse_lock()
-{
-    EmscriptenPointerlockChangeEvent _pointer_lock;
-    emscripten_assert(emscripten_get_pointerlock_status(&_pointer_lock));
-    is_mouse_locked = _pointer_lock.isActive;
 }
 
 void process_lock()
@@ -200,8 +213,62 @@ EM_BOOL touch_callback(int event_type, const EmscriptenTouchEvent* event, void* 
     return EM_TRUE; // we use preventDefault() for touch callbacks (see Safari on iPad)
 }
 
-static bool setup_emscripten()
+#else
+
+static void glfw_error_callback(int error, const char* description)
 {
+    std::cout << "GLFW Error: " << description << std::endl;
+}
+
+static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+    
+    if (!is_mouse_locked) {
+        glfwSetInputMode(glfw_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        is_mouse_locked = true;
+    }
+
+    if (action == GLFW_PRESS) {
+        keys[glfw_keyboard_mappings[key]] = true;
+    } else if (action == GLFW_RELEASE) {
+        keys[glfw_keyboard_mappings[key]] = false;
+    }
+}
+
+static void glfw_mouse_position_callback(GLFWwindow* window, double xpos, double ypos)
+{
+    static double _last_x, _last_y;
+    double _delta_x = xpos - _last_x;
+    double _delta_y = ypos - _last_y;
+    _last_x = xpos;
+    _last_y = ypos;
+    detail::accumulated_mouse_position_delta += glm::vec2((float)_delta_x, (float)_delta_y);
+    
+}
+
+static void glfw_mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+
+}
+
+#endif
+
+void update_mouse_lock()
+{
+#if defined(__EMSCRIPTEN__)
+    EmscriptenPointerlockChangeEvent _pointer_lock;
+    emscripten_assert(emscripten_get_pointerlock_status(&_pointer_lock));
+    is_mouse_locked = _pointer_lock.isActive;
+#else
+    
+#endif
+}
+
+static bool setup_platform()
+{
+#if defined(__EMSCRIPTEN__)
     emscripten_assert(emscripten_set_keypress_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, key_callback));
     emscripten_assert(emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, key_callback));
     emscripten_assert(emscripten_set_keyup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, key_callback));
@@ -220,11 +287,39 @@ static bool setup_emscripten()
     // emscripten_assert(emscripten_set_touchend_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, touch_callback));
     emscripten_assert(emscripten_set_touchmove_callback("#canvas", nullptr, 1, touch_callback)); // EMSCRIPTEN_EVENT_TARGET_WINDOW doesnt work on safari
     // emscripten_assert(emscripten_set_touchcancel_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, touch_callback));
+#else
+    
+    glfwSetErrorCallback(glfw_error_callback);
+
+    if (!glfwInit())
+        exit(EXIT_FAILURE);
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    glfw_window = glfwCreateWindow(1600, 900, "Lucaria", glfwGetPrimaryMonitor(), NULL);
+    if (!glfw_window)
+    {
+        glfwTerminate();
+        exit(EXIT_FAILURE);
+    }
+
+    glfwSetKeyCallback(glfw_window, glfw_key_callback);
+    glfwSetCursorPosCallback(glfw_window, glfw_mouse_position_callback);
+    glfwSetMouseButtonCallback(glfw_window, glfw_mouse_button_callback);
+
+    glfwMakeContextCurrent(glfw_window);
+    gladLoadGL(glfwGetProcAddress);
+    glfwSwapInterval(1);
+
+#endif
     return true;
 }
 
 static bool setup_opengl()
 {
+#if defined(__EMSCRIPTEN__)
     EmscriptenWebGLContextAttributes _webgl_attributes;
     emscripten_webgl_init_context_attributes(&_webgl_attributes);
     _webgl_attributes.explicitSwapControl = 0;
@@ -251,20 +346,31 @@ static bool setup_opengl()
         std::cout << "Extension WEBGL_compressed_texture_s3tc is supported." << std::endl;
 #endif
     }
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGui_ImplOpenGL3_Init("#version 300 es");
+#else
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGui::GetIO().IniFilename = NULL;
-    ImGui::StyleColorsLight();
+    ImGui_ImplGlfw_InitForOpenGL(glfw_window, true);
     ImGui_ImplOpenGL3_Init("#version 300 es");
 
+#endif
+
+    ImGui::GetIO().IniFilename = NULL;
+    ImGui::StyleColorsLight();
     return true;
 }
 
 static bool setup_openal()
 {
     // https://emscripten.org/docs/porting/Audio.html
+    const ALCchar * devices = alcGetString( NULL, ALC_DEVICE_SPECIFIER );
+    std::cout << "Devices = " << std::string(devices) << std::endl;
+
     ALCdevice* _webaudio_device = alcOpenDevice(NULL);
+
     if (!_webaudio_device) {
         std::cout << "Impossible to create an OpenAL device" << std::endl;
         return false;
@@ -297,19 +403,33 @@ static void destroy_openal()
 
 void update()
 {
-
+    
+#if defined(__EMSCRIPTEN__)
     emscripten_set_main_loop_timing(EM_TIMING_RAF, 1);
     static double _last_render_time = 0;
     double _render_time = emscripten_get_now();
     detail::time_delta = (_render_time - _last_render_time) / 1000.f;
-    _last_render_time = _render_time;
-
+#else
+    glfwPollEvents();
+    static std::chrono::high_resolution_clock::time_point _last_render_time = std::chrono::high_resolution_clock::now();
+    std::chrono::steady_clock::time_point _render_time = std::chrono::high_resolution_clock::now();
+    detail::time_delta = std::chrono::duration<double>(_render_time - _last_render_time).count();
+#endif
     static glm::vec2 _last_accum_pos_delta(0.f, 0.f);
     detail::mouse_position_delta = detail::accumulated_mouse_position_delta - _last_accum_pos_delta;
     _last_accum_pos_delta = detail::accumulated_mouse_position_delta;
+    _last_render_time = _render_time;
 
-    int _screen_width = canvas_get_width();
-    int _screen_height = canvas_get_height();
+
+    int _screen_width, _screen_height;
+#if defined(__EMSCRIPTEN__)
+    _screen_width = canvas_get_width();
+    _screen_height = canvas_get_height();
+#else
+    glfwGetFramebufferSize(glfw_window, &_screen_width, &_screen_height);
+        glViewport(0, 0, _screen_width, _screen_height);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+#endif
     detail::screen_size = { _screen_width, _screen_height };
 
     ImGuiIO& io = ImGui::GetIO();
@@ -318,24 +438,24 @@ void update()
 
     
 
+#if !defined(__EMSCRIPTEN__)
+    ImGui_ImplGlfw_NewFrame();
+#endif
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui::NewFrame();
-    // io.
-    io.MouseDown[0] = detail::keys[0];
+    // io.MouseDown[0] = detail::keys[0];
     // for (auto& _button : detail::buttons_changed)
     //     io.AddMouseButtonEvent(_button, detail::buttons[_button]);
     // io.AddFocusEvent(true);
 
     ImGui_ImplOpenGL3_Data* _backend_data = static_cast<ImGui_ImplOpenGL3_Data*>(io.BackendRendererUserData);
     const auto _projection_matrix_index = _backend_data->AttribLocationProjMtx;
-    // std::cout << _projection_matrix_index << std::endl; location of proj mat
 
     update_mouse_lock();
 
     update_callback();
 
-    // detail::mouse_position_delta = { 0, 0 };
     detail::keys_changed.clear();
     detail::buttons_changed.clear();
 
@@ -345,32 +465,35 @@ void update()
 
     wait_fetched_containers();
     // remove_levels();
+    manage();
 
     graphics_assert();
     if (is_audio_locked) {
         // audio_assert();
     }
+
+    glfwSwapBuffers(detail::glfw_window);
 }
 
-}
-
-void rebuild2()
+void run_impl(const std::function<void()>& start, const std::function<void()>& update)
 {
-//     ImGui::GetIO().Fonts->AddFontDefault();
-//     if (!ImGui::GetIO().Fonts->Build()) {
-// #if LUCARIA_DEBUG
-//         std::cout << "Impossible build ImGui font." << std::endl;
-//         std::terminate();
-// #endif
-//     }    
-//     ImGui_ImplOpenGL3_DestroyFontsTexture(); // un peu sale mdr
-//     ImGui_ImplOpenGL3_CreateFontsTexture();
-}
-
-void run(const std::function<void()>& update)
-{
+    detail::setup_platform();
+    detail::setup_opengl();
     detail::update_callback = update;
+#if defined(__EMSCRIPTEN__)
+    start();
     emscripten_set_main_loop(detail::update, 0, EM_TRUE);
+#else
+    detail::is_audio_locked = detail::setup_openal();
+    start();
+    while (!glfwWindowShouldClose(detail::glfw_window)) {
+        detail::update();
+    }
+    glfwDestroyWindow(detail::glfw_window);
+    glfwTerminate();
+#endif
+}
+
 }
 
 void graphics_assert()
@@ -442,7 +565,7 @@ void on_audio_locked(const std::function<void()>& callback)
     }
 }
 
-std::unordered_map<std::string, bool>& get_keys()
+std::unordered_map<keyboard_key, bool>& get_keys()
 {
     return detail::keys;
 }
@@ -470,6 +593,7 @@ glm::vec2& get_mouse_position_delta()
 glm::float64 get_time_delta()
 {
     return detail::time_delta;
+    // return 1.0 / 60.0;
 }
 
 bool get_is_etc_supported()

@@ -1,10 +1,10 @@
 #include <fstream>
 
-#include <GLES3/gl3.h>
 #include <cereal/archives/json.hpp>
 #include <cereal/archives/portable_binary.hpp>
 
 #include <core/fetch.hpp>
+#include <core/graphics.hpp>
 #include <core/load.hpp>
 #include <core/texture.hpp>
 #include <core/window.hpp>
@@ -63,18 +63,18 @@ texture_ref::texture_ref(const image_data& data)
     const GLubyte* _pixels_ptr = &(data.pixels[0]);
     switch (data.channels) {
     case 3:
-        if (data.is_compressed_etc) {
+        if (data.is_compressed_etc && get_is_etc_supported()) {
             glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB8_ETC2, data.width, data.height, 0, data.pixels.size(), _pixels_ptr);
-        } else if (data.is_compressed_s3tc) {
+        } else if (data.is_compressed_s3tc && get_is_s3tc_supported()) {
             glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, data.width, data.height, 0, data.pixels.size(), _pixels_ptr);
         } else {
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, data.width, data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
         }
         break;
     case 4:
-        if (data.is_compressed_etc) {
+        if (data.is_compressed_etc && get_is_etc_supported()) {
             glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA8_ETC2_EAC, data.width, data.height, 0, data.pixels.size(), _pixels_ptr);
-        } else if (data.is_compressed_s3tc) {
+        } else if (data.is_compressed_s3tc && get_is_s3tc_supported()) {
             glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, data.width, data.height, 0, data.pixels.size(), _pixels_ptr);
         } else {
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data.width, data.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);
@@ -209,11 +209,11 @@ std::shared_future<std::shared_ptr<texture_ref>> fetch_texture(const std::filesy
     std::promise<std::shared_ptr<texture_ref>>& _promise = detail::promises[_image_path.string()];
     if (_is_compressed) {
         fetch_file(_image_path, [&_promise](const std::vector<char>& image_bytes) {
-            _promise.set_value(std::move(std::make_shared<texture_ref>(load_compressed_image_data(image_bytes))));
+            _promise.set_value(std::make_shared<texture_ref>(load_compressed_image_data(image_bytes)));
         });
     } else {
         fetch_file(_image_path, [&_promise](const std::vector<char>& image_bytes) {
-            _promise.set_value(std::move(std::make_shared<texture_ref>(load_image_data(image_bytes))));
+            _promise.set_value(std::make_shared<texture_ref>(load_image_data(image_bytes)));
         });
     }
 

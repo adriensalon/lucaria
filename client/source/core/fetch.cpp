@@ -1,4 +1,10 @@
+#if defined(__EMSCRIPTEN__)
 #include <emscripten/fetch.h>
+#else
+#include <fstream>
+#include <mutex>
+#include <thread>
+#endif
 
 #include <core/fetch.hpp>
 #include <core/load.hpp>
@@ -13,6 +19,11 @@ static std::unordered_map<std::string, fetch_raw_callback> fetch_raw_requests;
 static std::unordered_map<std::string, multiple_fetch_callback> multiple_fetch_requests;
 static std::unordered_map<std::string, multiple_fetch_raw_callback> multiple_fetch_raw_requests;
 
+#if !defined(__EMSCRIPTEN__)
+static std::mutex fetch_mutex;
+#endif
+
+#if defined(__EMSCRIPTEN__)
 static void on_fetch_success(emscripten_fetch_t* fetch)
 {
     fetch_completed++;
@@ -84,12 +95,43 @@ static void on_multiple_fetch_error(emscripten_fetch_t* fetch)
     delete _user_data;
     emscripten_fetch_close(fetch);
 }
+#else
+static void read_file(const std::filesystem::path& file, const fetch_callback& callback) {
+    std::ifstream input(file, std::ios::binary);
+    if (input) {
+        fetch_completed++;
+        std::ostringstream buffer;
+        buffer << input.rdbuf();
+        std::istringstream stream(buffer.str());
+        callback(stream);
+        std::cout << "Successfully fetched " << buffer.str().size() << " bytes from " << file << std::endl;
+    } else {
+        fetch_failed++;
+        std::cerr << "Failed to fetch file: " << file << std::endl;
+    }
+}
+
+static void read_file_raw(const std::filesystem::path& file, const fetch_raw_callback& callback) {
+    std::ifstream input(file, std::ios::binary);
+    if (input) {
+        fetch_completed++;
+        std::vector<char> data((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
+        callback(data);
+        std::cout << "Successfully fetched " << data.size() << " bytes from " << file << std::endl;
+    } else {
+        fetch_failed++;
+        std::cerr << "Failed to fetch file: " << file << std::endl;
+    }
+}
+
+#endif
 
 }
 
 void fetch_file(const std::filesystem::path& file, const fetch_callback& callback, const bool persist)
 {
     detail::fetch_total++;
+#if defined(__EMSCRIPTEN__)
     detail::fetch_requests[file.string()] = callback;
     emscripten_fetch_attr_t attr;
     emscripten_fetch_attr_init(&attr);
@@ -101,11 +143,19 @@ void fetch_file(const std::filesystem::path& file, const fetch_callback& callbac
     attr.onsuccess = detail::on_fetch_success;
     attr.onerror = detail::on_fetch_error;
     emscripten_fetch(&attr, file.c_str());
+#else
+    // std::thread([file, callback]() {
+    //     std::lock_guard<std::mutex> lock(detail::fetch_mutex);
+    //     detail::read_file(file, callback);
+    // }).detach();
+    detail::read_file(file, callback);
+#endif
 }
 
 void fetch_file(const std::filesystem::path& file, const fetch_raw_callback& callback, const bool persist)
 {
     detail::fetch_total++;
+#if defined(__EMSCRIPTEN__)
     detail::fetch_raw_requests[file.string()] = callback;
     emscripten_fetch_attr_t attr;
     emscripten_fetch_attr_init(&attr);
@@ -117,6 +167,13 @@ void fetch_file(const std::filesystem::path& file, const fetch_raw_callback& cal
     attr.onsuccess = detail::on_fetch_raw_success;
     attr.onerror = detail::on_fetch_error;
     emscripten_fetch(&attr, file.c_str());
+#else
+    // std::thread([file, callback]() {
+    //     std::lock_guard<std::mutex> lock(detail::fetch_mutex);
+    //     detail::read_file_raw(file, callback);
+    // }).detach();
+    detail::read_file_raw(file, callback);
+#endif
 }
 
 void fetch_files(const std::vector<std::filesystem::path>& files, const multiple_fetch_callback& callback, const bool persist)
@@ -125,6 +182,7 @@ void fetch_files(const std::vector<std::filesystem::path>& files, const multiple
     detail::fetch_total += _size;
     for (std::size_t _index = 0; _index < _size; ++_index) {
         const std::filesystem::path& _file = files[_index];
+#if defined(__EMSCRIPTEN__)
         std::pair<std::size_t, std::size_t>* _user_data = new std::pair<std::size_t, std::size_t>(_index, _size);
         detail::multiple_fetch_requests[_file.string()] = callback;
         emscripten_fetch_attr_t attr;
@@ -138,6 +196,31 @@ void fetch_files(const std::vector<std::filesystem::path>& files, const multiple
         attr.onerror = detail::on_multiple_fetch_error;
         attr.userData = _user_data;
         emscripten_fetch(&attr, _file.c_str());
+#else   
+        // std::thread([_file, _index, _size, callback]() {
+        //     std::lock_guard<std::mutex> lock(detail::fetch_mutex);
+        //     std::ifstream input(_file, std::ios::binary);
+        //     if (input) {
+        //         detail::fetch_completed++;
+        //         std::ostringstream buffer;
+        //         buffer << input.rdbuf();
+        //         std::istringstream stream(buffer.str());
+        //         callback(_index, _size, stream);
+        //     } else {
+        //         detail::fetch_failed++;
+        //         std::cerr << "Failed to fetch file: " << _file << std::endl;
+        //     }
+        // }).detach();
+        std::ifstream input(_file, std::ios::binary);
+        if (input) {
+            detail::fetch_completed++;
+            std::ostringstream buffer;
+            buffer << input.rdbuf();
+            std::istringstream stream(buffer.str());
+            callback(_index, _size, stream);
+            std::cout << "Successfully fetched " << buffer.str().size() << " bytes from " << _file << std::endl;
+        }
+#endif
     }
 }
 
@@ -147,6 +230,7 @@ void fetch_files(const std::vector<std::filesystem::path>& files, const multiple
     detail::fetch_total += _size;
     for (std::size_t _index = 0; _index < _size; ++_index) {
         const std::filesystem::path& _file = files[_index];
+#if defined(__EMSCRIPTEN__)
         std::pair<std::size_t, std::size_t>* _user_data = new std::pair<std::size_t, std::size_t>(_index, _size);
         detail::multiple_fetch_raw_requests[_file.string()] = callback;
         emscripten_fetch_attr_t attr;
@@ -160,6 +244,27 @@ void fetch_files(const std::vector<std::filesystem::path>& files, const multiple
         attr.onerror = detail::on_multiple_fetch_error;
         attr.userData = _user_data;
         emscripten_fetch(&attr, _file.c_str());
+#else   
+        // std::thread([_file, _index, _size, callback]() {
+        //     std::lock_guard<std::mutex> lock(detail::fetch_mutex);
+        //     std::ifstream input(_file, std::ios::binary);
+        //     if (input) {
+        //         detail::fetch_completed++;
+        //         std::vector<char> data((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
+        //         callback(_index, _size, data);
+        //     } else {
+        //         detail::fetch_failed++;
+        //         std::cerr << "Failed to fetch file: " << _file << std::endl;
+        //     }
+        // }).detach();
+        std::ifstream input(_file, std::ios::binary);
+        if (input) {
+            detail::fetch_completed++;
+            std::vector<char> data((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
+            callback(_index, _size, data);
+            std::cout << "Successfully fetched " << data.size() << " bytes from " << _file << std::endl;
+        }
+#endif
     }
 }
 

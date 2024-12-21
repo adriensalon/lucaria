@@ -63,22 +63,25 @@ namespace detail {
 inline std::vector<scene_data> world_scenes = {};
 inline std::vector<std::any> world_data = {};
 inline std::set<std::string> world_types = {};
+inline std::vector<std::function<void()>> manage_callbacks = {};
 
 }
 
 template <typename scene_t>
 void make_scene()
 {
-    std::string _world_type(typeid(scene_t).name());
-    if (detail::world_types.count(_world_type) > 0) {
-        std::cout << "only one scene of each type" << std::endl;
-        std::terminate();
-    }
-    scene_data& _data = detail::world_scenes.emplace_back();
-    std::cout << "scene data created \n";
-    detail::world_data.emplace_back((std::make_any<scene_t>(_data)));
-    detail::world_types.emplace(_world_type);
-    std::cout << "scene created \n";
+    detail::manage_callbacks.emplace_back([] () {
+        std::string _world_type(typeid(scene_t).name());
+        if (detail::world_types.count(_world_type) > 0) {
+            std::cout << "only one scene of each type" << std::endl;
+            std::terminate();
+        }
+        scene_data& _data = detail::world_scenes.emplace_back();
+        std::cout << "scene data created \n";
+        detail::world_data.emplace_back((std::make_any<scene_t>(_data)));
+        detail::world_types.emplace(_world_type);
+        std::cout << "scene created \n";
+    });    
 }
 
 template <typename scene_t>
@@ -93,3 +96,11 @@ void destroy_scene()
 }
 
 void each_scene(const std::function<void(scene_data&)>& callback);
+
+inline void manage()
+{
+    for (std::function<void()>& _manage_callback : detail::manage_callbacks) {
+        _manage_callback();
+    }
+    detail::manage_callbacks.clear();
+}

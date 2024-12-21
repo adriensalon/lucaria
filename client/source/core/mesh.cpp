@@ -4,8 +4,8 @@
 
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/archives/json.hpp>
-#include <GLES3/gl3.h>
 
+#include <core/graphics.hpp>
 #include <core/mesh.hpp>
 #include <core/fetch.hpp>
 #include <core/load.hpp>
@@ -250,7 +250,7 @@ std::shared_future<std::shared_ptr<mesh_ref>> fetch_mesh(const std::filesystem::
 {
     std::promise<std::shared_ptr<mesh_ref>>& _promise = detail::promises[mesh_path.string()];
     fetch_file(mesh_path, [&_promise](const std::vector<char>& geometry_bytes) {
-        _promise.set_value(std::move(std::make_shared<mesh_ref>(load_geometry_data(geometry_bytes))));
+        _promise.set_value(std::make_shared<mesh_ref>(load_geometry_data(geometry_bytes)));
     });
     return _promise.get_future();
 }

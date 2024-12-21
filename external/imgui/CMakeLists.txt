@@ -10,6 +10,7 @@ set(imgui_source
 
 	"misc/cpp/imgui_stdlib.cpp"
 
+	"backends/imgui_impl_glfw.cpp"
 	"backends/imgui_impl_opengl3.cpp"
 )
 
@@ -23,7 +24,7 @@ target_include_directories(imgui PUBLIC "backends/")
 target_include_directories(imgui PUBLIC "${CMAKE_CURRENT_LIST_DIR}")
 
 # link
-# target_link_libraries(imgui glad)
+target_link_libraries(imgui glfw)
 
 # properties
 set_property(TARGET imgui PROPERTY CXX_STANDARD 17)

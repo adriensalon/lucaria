@@ -27,11 +27,11 @@ static glm::mat4x4 player_view;
 static glm::vec3 compute_position()
 {
     glm::vec3 _position = player_position;
-    float _forward_dir, _right_dir;
+    float _forward_dir = 0.f, _right_dir = 0.f;
     if (get_is_mouse_locked()) {
-        std::unordered_map<std::string, bool>& _keys = get_keys();
-        _forward_dir = static_cast<float>(_keys[player_forward_key.data()]) - static_cast<float>(_keys[player_backward_key.data()]);
-        _right_dir = static_cast<float>(_keys[player_right_key.data()]) - static_cast<float>(_keys[player_left_key.data()]);
+        std::unordered_map<keyboard_key, bool>& _keys = get_keys();
+        _forward_dir = static_cast<float>(_keys[keyboard_key::z]) - static_cast<float>(_keys[keyboard_key::s]);
+        _right_dir = static_cast<float>(_keys[keyboard_key::d]) - static_cast<float>(_keys[keyboard_key::q]);
     }
     const glm::vec3 _player_right = glm::normalize(glm::cross(player_forward, player_up));
     const float _time_delta = get_time_delta();

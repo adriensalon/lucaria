@@ -14,9 +14,7 @@
 
 int main()
 {
-    make_scene<menu_splash_scene>();
-
-    run([]() {
+    run<menu_splash_scene>([]() {
 
         player_system::update();
 

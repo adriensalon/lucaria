@@ -3,10 +3,9 @@
 #include <sstream>
 #include <vector>
 
-#include <AL/al.h>
-#include <AL/alc.h>
 #include <vorbis/vorbisfile.h>
 
+#include <core/audio.hpp>
 #include <core/fetch.hpp>
 #include <core/sound.hpp>
 #include <core/window.hpp>
@@ -172,7 +171,7 @@ std::shared_future<std::shared_ptr<sound_ref>> fetch_sound(const std::filesystem
     std::promise<std::shared_ptr<sound_ref>>& _promise = detail::promises[audio_path.string()];
     on_audio_locked([&_promise, audio_path] () {
         fetch_file(audio_path, [&_promise](const std::vector<char>& audio_bytes) {
-            _promise.set_value(std::move(std::make_shared<sound_ref>(load_compressed_audio_data(audio_bytes))));
+            _promise.set_value(std::make_shared<sound_ref>(load_compressed_audio_data(audio_bytes)));
         });
     });
     return _promise.get_future();

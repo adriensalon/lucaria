@@ -1,6 +1,4 @@
-#include <AL/al.h>
-#include <AL/alc.h>
-
+#include <core/audio.hpp>
 #include <core/window.hpp>
 
 #include <ecs/system/mixer.hpp>

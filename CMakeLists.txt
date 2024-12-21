@@ -26,32 +26,32 @@ function(find_program_recursive OUTPUT_VARIABLE DIRECTORY EXECUTABLE_NAME)
 endfunction()
 
 
-# find emsdk
-if(DEFINED ENV{EMSDK})
-    set(EMSDK $ENV{EMSDK})
-elseif(DEFINED ENV{EMSCRIPTEN})
-    set(EMSDK $ENV{EMSCRIPTEN})
-endif()
-if(EMSDK AND EXISTS "${EMSDK}")
-    message(STATUS "Found Emsdk at ${EMSDK}")
-    set(EMSDK_FOUND TRUE)
-else()
-    find_program(EMCC_EXECUTABLE NAMES emcc PATHS ENV PATH)
-    if(EMCC_EXECUTABLE)
-        get_filename_component(EMSDK_DIR "${EMCC_EXECUTABLE}" DIRECTORY)
-        get_filename_component(EMSDK "${EMSDK_DIR}/../../" ABSOLUTE)
-        if(EXISTS "${EMSDK}")
-            message(STATUS "Found Emscripten SDK using emcc at ${EMSDK}")
-            set(EMSDK_FOUND TRUE)
-        endif()
-    endif()
-endif()
-if(EMSDK_FOUND)
-    set(EMSDK_TOOLCHAIN "${EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake")
-    message(STATUS "Found Emscripten toolchain file at ${EMSDK_TOOLCHAIN}\n")
-else()
-    message(FATAL_ERROR "Emscripten SDK could not be located")
-endif()
+# # find emsdk
+# if(DEFINED ENV{EMSDK})
+#     set(EMSDK $ENV{EMSDK})
+# elseif(DEFINED ENV{EMSCRIPTEN})
+#     set(EMSDK $ENV{EMSCRIPTEN})
+# endif()
+# if(EMSDK AND EXISTS "${EMSDK}")
+#     message(STATUS "Found Emsdk at ${EMSDK}")
+#     set(EMSDK_FOUND TRUE)
+# else()
+#     find_program(EMCC_EXECUTABLE NAMES emcc PATHS ENV PATH)
+#     if(EMCC_EXECUTABLE)
+#         get_filename_component(EMSDK_DIR "${EMCC_EXECUTABLE}" DIRECTORY)
+#         get_filename_component(EMSDK "${EMSDK_DIR}/../../" ABSOLUTE)
+#         if(EXISTS "${EMSDK}")
+#             message(STATUS "Found Emscripten SDK using emcc at ${EMSDK}")
+#             set(EMSDK_FOUND TRUE)
+#         endif()
+#     endif()
+# endif()
+# if(EMSDK_FOUND)
+#     set(EMSDK_TOOLCHAIN "${EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake")
+#     message(STATUS "Found Emscripten toolchain file at ${EMSDK_TOOLCHAIN}\n")
+# else()
+#     message(FATAL_ERROR "Emscripten SDK could not be located")
+# endif()
 
 # compiler
 set(COMPILER_BUILD_DIR ${CMAKE_BINARY_DIR}/compiler)
@@ -110,30 +110,34 @@ execute_process(
     ERROR_VARIABLE configure_error)
 message("${configure_output}")
 
-# client
-set(CLIENT_BUILD_DIR ${CMAKE_BINARY_DIR}/client)
-# execute_process(
+# # client
+# set(CLIENT_BUILD_DIR ${CMAKE_BINARY_DIR}/client)
+# # execute_process(
+# #     COMMAND ${CMAKE_COMMAND}
+# #     -S ${CMAKE_CURRENT_LIST_DIR}/client
+# #     -B ${CLIENT_BUILD_DIR}
+# #     -DCMAKE_TOOLCHAIN_FILE=${EMSDK_TOOLCHAIN}
+# #     -G Ninja)
+# add_custom_command(
+#     OUTPUT ${CLIENT_BUILD_DIR}/lucaria.html
 #     COMMAND ${CMAKE_COMMAND}
-#     -S ${CMAKE_CURRENT_LIST_DIR}/client
-#     -B ${CLIENT_BUILD_DIR}
-#     -DCMAKE_TOOLCHAIN_FILE=${EMSDK_TOOLCHAIN}
-#     -G Ninja)
-add_custom_command(
-    OUTPUT ${CLIENT_BUILD_DIR}/lucaria.html
-    COMMAND ${CMAKE_COMMAND}
-        -S ${CMAKE_CURRENT_LIST_DIR}/client
-        -B ${CLIENT_BUILD_DIR}
-        -DCMAKE_TOOLCHAIN_FILE=${EMSDK_TOOLCHAIN}
-        -G Ninja
-    COMMAND ${CMAKE_COMMAND} --build ${CLIENT_BUILD_DIR})
-add_custom_target(Lucaria
-    ALL
-    DEPENDS ${CLIENT_BUILD_DIR}/lucaria.html)
-add_custom_command(
-    TARGET Lucaria
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.html ${INSTALL_DIR}/client/index.html
-    # COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.data ${INSTALL_DIR}/client/lucaria.data
-    COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.js ${INSTALL_DIR}/client/lucaria.js
-    COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.wasm ${INSTALL_DIR}/client/lucaria.wasm)
+#         -S ${CMAKE_CURRENT_LIST_DIR}/client
+#         -B ${CLIENT_BUILD_DIR}
+#         -DCMAKE_TOOLCHAIN_FILE=${EMSDK_TOOLCHAIN}
+#         -G Ninja
+#     COMMAND ${CMAKE_COMMAND} --build ${CLIENT_BUILD_DIR})
+# add_custom_target(Lucaria
+#     ALL
+#     DEPENDS ${CLIENT_BUILD_DIR}/lucaria.html)
+# add_custom_command(
+#     TARGET Lucaria
+#     POST_BUILD
+#     COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.html ${INSTALL_DIR}/client/index.html
+#     # COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.data ${INSTALL_DIR}/client/lucaria.data
+#     COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.js ${INSTALL_DIR}/client/lucaria.js
+#     COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.wasm ${INSTALL_DIR}/client/lucaria.wasm)
+
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+add_subdirectory(client)
 

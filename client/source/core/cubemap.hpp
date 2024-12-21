@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <future>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <unordered_map>
 
