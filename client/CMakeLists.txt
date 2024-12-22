@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
+
 project(lucaria)
 
 # cmake_policy(SET CMP0077 NEW)
@@ -20,10 +21,13 @@ add_subdirectory(../external/glm ${CMAKE_BINARY_DIR}/client/external/glm)
 
 option(INSTALL_CMAKE_PACKAGE_MODULE OFF)
 add_subdirectory(../external/vorbis ${CMAKE_BINARY_DIR}/client/external/vorbis)
+target_compile_options(vorbis PRIVATE "-Wno-deprecated-declarations")
+target_compile_options(vorbisfile PRIVATE "-Wno-deprecated-declarations")
 set(VORBIS_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/../external/vorbis/include)
 
 add_subdirectory(../external/imgui ${CMAKE_BINARY_DIR}/client/external/imgui)
 target_compile_options(imgui PRIVATE -Wno-format-security)
+target_compile_options(imgui PRIVATE -Wno-unknown-warning-option)
 
 option(BUILD_BULLET2_DEMOS OFF)
 option(BUILD_BULLET3 OFF)
@@ -34,6 +38,12 @@ option(BUILD_OPENGL3_DEMOS OFF)
 option(BULLET_LINK_STATIC ON)
 option(BULLET_USE_OPENCL OFF)
 add_subdirectory(../external/bullet ${CMAKE_BINARY_DIR}/client/external/bullet)
+target_compile_options(LinearMath PRIVATE -Wno-reorder-ctor)
+target_compile_options(BulletCollision PRIVATE -Wno-unused-variable)
+target_compile_options(BulletDynamics PRIVATE -Wno-unused-variable)
+target_compile_options(BulletDynamics PRIVATE -Wno-unused-function)
+target_compile_options(BulletDynamics PRIVATE -Wno-reorder-ctor)
+target_compile_options(BulletDynamics PRIVATE -Wno-inconsistent-missing-override)
 target_compile_options(BulletSoftBody PRIVATE -Wno-single-bit-bitfield-constant-conversion)
 target_compile_options(BulletSoftBody PRIVATE -Wno-implicit-const-int-float-conversion)
 set(BULLET_INCLUDE_DIRS 
@@ -70,6 +80,8 @@ target_compile_options(ozz_base PUBLIC "-Wno-covered-switch-default")
 
 set(BUILD_SHARED_LIBS OFF)
 add_subdirectory(../external/woff ${CMAKE_BINARY_DIR}/client/external/woff)
+target_compile_options(woff2dec PRIVATE "-Wno-unused-const-variable")
+target_compile_options(woff2dec PRIVATE "-Wno-format")
 set(MESSAGE_QUIET OFF)
 
 file(GLOB_RECURSE lucaria_sources "${CMAKE_CURRENT_LIST_DIR}/source/*.cpp")
@@ -128,6 +140,7 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "Emscripten")
 # -O3 \
 # --preload-file ${CMAKE_CURRENT_LIST_DIR}/../install/assets@/ \
 else()
+	set(MESSAGE_QUIET ON)
 	set(USE_MSVC_RUNTIME_LIBRARY_DLL OFF)
 	set(GLFW_LIBRARY_TYPE STATIC)
 	add_subdirectory(../external/glfw ${CMAKE_BINARY_DIR}/client/external/glfw)
@@ -137,7 +150,9 @@ else()
 	set(FORCE_STATIC_VCRT ON)
 	set(LIBTYPE STATIC)
 	add_subdirectory(../external/openalsoft ${CMAKE_BINARY_DIR}/client/external/openalsoft)
+	target_compile_options(OpenAL PUBLIC "-Wno-invalid-offsetof")
 	target_link_libraries(lucaria PRIVATE OpenAL)
+	set(MESSAGE_QUIET OFF)
 	# message(FATAL_ERROR "CMake is being configured by host platform but we require Emscripten, aborting...")
 	# return()
 

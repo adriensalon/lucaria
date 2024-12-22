@@ -13,7 +13,7 @@ user_player_scene::user_player_scene(scene_data& scene)
         "assets/cubemap/cubemap_ny_eLVJ.bin",
         "assets/cubemap/cubemap_nz_eLVJ.bin" }));
         
-    character_runner_actor& _character = scene.make_actor<character_runner_actor>(scene);
+    scene.make_actor<character_runner_actor>(scene);
 
     // mixer_system::use_listener_transform(faith->get_transform());
 }

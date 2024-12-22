@@ -464,14 +464,14 @@ static bool setup_openal()
     return true;
 }
 
-static void destroy_openal()
-{
-    ALCcontext* _webaudio_context = alcGetCurrentContext();
-    ALCdevice* _webaudio_device = alcGetContextsDevice(_webaudio_context);
-    alcMakeContextCurrent(nullptr);
-    alcDestroyContext(_webaudio_context);
-    alcCloseDevice(_webaudio_device);
-}
+// static void destroy_openal()
+// {
+//     ALCcontext* _webaudio_context = alcGetCurrentContext();
+//     ALCdevice* _webaudio_device = alcGetContextsDevice(_webaudio_context);
+//     alcMakeContextCurrent(nullptr);
+//     alcDestroyContext(_webaudio_context);
+//     alcCloseDevice(_webaudio_device);
+// }
 
 void update()
 {

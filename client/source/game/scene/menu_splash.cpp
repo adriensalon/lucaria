@@ -43,7 +43,7 @@ static void draw_background(const ImVec2& display_size)
 {
     const glm::float32 _weight = splash_background_fadein.compute_weight(splash_resources_fetched_cursor);
     const ImVec4 _tint = { 1.f, 1.f, 1.f, _weight };
-    ImGui::Image((ImTextureID)background_splash_texture.value().get_id(), display_size, { 0.001f, 0.001f }, { 0.999f, 0.999f }, _tint, { 1.f, 1.f, 1.f, 1.f });
+    ImGui::Image(reinterpret_cast<ImTextureID>(background_splash_texture.value().get_id()), display_size, { 0.001f, 0.001f }, { 0.999f, 0.999f }, _tint, { 1.f, 1.f, 1.f, 1.f });
 }
 
 static void draw_title(const ImVec2& display_size)

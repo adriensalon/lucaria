@@ -1,6 +1,16 @@
 cmake_minimum_required(VERSION 3.13)
 project(lucaria)
 
+# windows
+set(CMAKE_C_FLAGS_DEBUG "/MTd /Zi /Ob0 /Od /RTC1" CACHE STRING "" FORCE)
+set(CMAKE_C_FLAGS_RELEASE "/MT /O2 /Ob2 /DNDEBUG" CACHE STRING "" FORCE)
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "/MT /Zi /O2 /Ob1 /DNDEBUG" CACHE STRING "" FORCE)
+set(CMAKE_C_FLAGS_MINSIZEREL "/MT /O1 /Ob1 /DNDEBUG" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS_DEBUG "/MTd /Zi /Ob0 /Od /RTC1" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS_RELEASE "/MT /O2 /Ob2 /DNDEBUG" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MT /Zi /O2 /Ob1 /DNDEBUG" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS_MINSIZEREL "/MT /O1 /Ob1 /DNDEBUG" CACHE STRING "" FORCE)
+
 function(find_program_recursive OUTPUT_VARIABLE DIRECTORY EXECUTABLE_NAME)
     file(GLOB_RECURSE EXECUTABLE_PATHS "${DIRECTORY}/*${EXECUTABLE_NAME}*")
     foreach(EXECUTABLE_PATH ${EXECUTABLE_PATHS})
@@ -136,8 +146,6 @@ message("${configure_output}")
 #     # COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.data ${INSTALL_DIR}/client/lucaria.data
 #     COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.js ${INSTALL_DIR}/client/lucaria.js
 #     COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/client/lucaria.wasm ${INSTALL_DIR}/client/lucaria.wasm)
-
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 add_subdirectory(client ${CMAKE_BINARY_DIR}/client)
 

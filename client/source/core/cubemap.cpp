@@ -12,20 +12,20 @@
 #include <core/hash.hpp>
 #include <core/window.hpp>
 
-constexpr static GLenum COMPRESSED_R11_EAC = 0x9270;
-constexpr static GLenum COMPRESSED_SIGNED_R11_EAC = 0x9271;
-constexpr static GLenum COMPRESSED_RG11_EAC = 0x9272;
-constexpr static GLenum COMPRESSED_SIGNED_RG11_EAC = 0x9273;
+// constexpr static GLenum COMPRESSED_R11_EAC = 0x9270;
+// constexpr static GLenum COMPRESSED_SIGNED_R11_EAC = 0x9271;
+// constexpr static GLenum COMPRESSED_RG11_EAC = 0x9272;
+// constexpr static GLenum COMPRESSED_SIGNED_RG11_EAC = 0x9273;
 constexpr static GLenum COMPRESSED_RGB8_ETC2 = 0x9274;
-constexpr static GLenum COMPRESSED_SRGB8_ETC2 = 0x9275;
-constexpr static GLenum COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2 = 0x9276;
-constexpr static GLenum COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2 = 0x9277;
+// constexpr static GLenum COMPRESSED_SRGB8_ETC2 = 0x9275;
+// constexpr static GLenum COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2 = 0x9276;
+// constexpr static GLenum COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2 = 0x9277;
 constexpr static GLenum COMPRESSED_RGBA8_ETC2_EAC = 0x9278;
-constexpr static GLenum COMPRESSED_SRGB8_ALPHA8_ETC2_EAC = 0x9279;
+// constexpr static GLenum COMPRESSED_SRGB8_ALPHA8_ETC2_EAC = 0x9279;
 
 constexpr static GLenum COMPRESSED_RGB_S3TC_DXT1_EXT = 0x83F0;
-constexpr static GLenum COMPRESSED_RGBA_S3TC_DXT1_EXT = 0x83F1;
-constexpr static GLenum COMPRESSED_RGBA_S3TC_DXT3_EXT = 0x83F2;
+// constexpr static GLenum COMPRESSED_RGBA_S3TC_DXT1_EXT = 0x83F1;
+// constexpr static GLenum COMPRESSED_RGBA_S3TC_DXT3_EXT = 0x83F2;
 constexpr static GLenum COMPRESSED_RGBA_S3TC_DXT5_EXT = 0x83F3;
 
 namespace detail {
@@ -130,9 +130,9 @@ std::shared_future<std::shared_ptr<cubemap_ref>> fetch_cubemap(const std::array<
     std::pair<std::vector<std::pair<cubemap_side, image_data>>, std::promise<std::shared_ptr<cubemap_ref>>>& _promise_pair = detail::promises[_hash];
     fetch_files(_paths, [&_promise_pair, _is_compressed](const std::size_t _side_index, const std::size_t, const std::vector<char>& image_bytes) {
         if (_is_compressed) {
-            _promise_pair.first.emplace_back(static_cast<cubemap_side>(_side_index), std::move(load_compressed_image_data(image_bytes)));
+            _promise_pair.first.emplace_back(static_cast<cubemap_side>(_side_index), load_compressed_image_data(image_bytes));
         } else {
-            _promise_pair.first.emplace_back(static_cast<cubemap_side>(_side_index), std::move(load_image_data(image_bytes)));
+            _promise_pair.first.emplace_back(static_cast<cubemap_side>(_side_index), load_image_data(image_bytes));
         }        
         if (_promise_pair.first.size() == 6) {
             std::array<image_data, 6> _images;
@@ -140,7 +140,7 @@ std::shared_future<std::shared_ptr<cubemap_ref>> fetch_cubemap(const std::array<
                 const std::pair<const cubemap_side, image_data>& _pair = _promise_pair.first[_index];
                 _images[static_cast<glm::uint>(_pair.first)] = std::move(_pair.second);
             }
-            _promise_pair.second.set_value(std::move(std::make_shared<cubemap_ref>(_images)));
+            _promise_pair.second.set_value(std::make_shared<cubemap_ref>(_images));
         }
     });
     return _promise_pair.second.get_future();
