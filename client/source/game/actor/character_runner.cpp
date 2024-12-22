@@ -15,8 +15,8 @@ character_runner_actor::character_runner_actor(scene_data& scene)
                   .color(fetch_texture("assets/image/sophie_color.bin", "assets/image/sophie_color_etc.bin", "assets/image/sophie_color_s3tc.bin"))
                   .mesh(fetch_mesh("assets/character/testanim.bin"));
 
-    // scene.components.emplace<speaker_component>(_entity)
-    //                 .sounds({ { 666, fetch_sound("assets/audio/audio_cFoJ.bin") } });
+    scene.components.emplace<speaker_component>(_entity)
+                    .sounds({ { 666, fetch_sound("assets/audio/audio_cFoJ.bin") } });
 
     _animator = scene.components.emplace<animator_component>(_entity)
                      .skeleton(fetch_skeleton("assets/character/testanim_skeleton.bin"))

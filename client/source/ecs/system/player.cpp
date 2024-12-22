@@ -12,10 +12,6 @@ namespace detail {
 
 constexpr float mouse_sensitivity = 6.f;
 constexpr float player_speed = 8.f;
-constexpr std::string_view player_forward_key = "z";
-constexpr std::string_view player_left_key = "q";
-constexpr std::string_view player_backward_key = "s";
-constexpr std::string_view player_right_key = "d";
 
 static glm::vec3 player_position = { 0.0f, 1.8f, 3.0f };
 static glm::vec3 player_forward = { 0.0f, 0.0f, -1.0f };
@@ -30,8 +26,8 @@ static glm::vec3 compute_position()
     float _forward_dir = 0.f, _right_dir = 0.f;
     if (get_is_mouse_locked()) {
         std::unordered_map<keyboard_key, bool>& _keys = get_keys();
-        _forward_dir = static_cast<float>(_keys[keyboard_key::z]) - static_cast<float>(_keys[keyboard_key::s]);
-        _right_dir = static_cast<float>(_keys[keyboard_key::d]) - static_cast<float>(_keys[keyboard_key::q]);
+        _forward_dir = static_cast<float>(_keys[keyboard_key::w]) - static_cast<float>(_keys[keyboard_key::s]);
+        _right_dir = static_cast<float>(_keys[keyboard_key::d]) - static_cast<float>(_keys[keyboard_key::a]);
     }
     const glm::vec3 _player_right = glm::normalize(glm::cross(player_forward, player_up));
     const float _time_delta = get_time_delta();

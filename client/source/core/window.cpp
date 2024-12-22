@@ -9,15 +9,17 @@
 #include <emscripten.h>
 #include <emscripten/html5.h>
 #else
-#include <chrono>
 #include <backends/imgui_impl_glfw.h>
+#include <chrono>
+
 #endif
 #include <imgui.h>
 
-#include <core/graphics.hpp>
 #include <core/fetch.hpp>
+#include <core/graphics.hpp>
 #include <core/window.hpp>
 #include <core/world.hpp>
+
 
 namespace detail {
 
@@ -47,14 +49,32 @@ static bool setup_openal();
 #else
 static GLFWwindow* glfw_window = nullptr;
 static std::unordered_map<int, keyboard_key> glfw_keyboard_mappings = {
+    { GLFW_KEY_A, keyboard_key::a },
     { GLFW_KEY_Z, keyboard_key::z },
-    { GLFW_KEY_A, keyboard_key::q },
+    { GLFW_KEY_E, keyboard_key::e },
+    { GLFW_KEY_R, keyboard_key::r },
+    { GLFW_KEY_T, keyboard_key::t },
+    { GLFW_KEY_Y, keyboard_key::y },
+    { GLFW_KEY_U, keyboard_key::u },
+    { GLFW_KEY_I, keyboard_key::i },
+    { GLFW_KEY_O, keyboard_key::o },
+    { GLFW_KEY_P, keyboard_key::p },
+    { GLFW_KEY_Q, keyboard_key::q },
     { GLFW_KEY_S, keyboard_key::s },
     { GLFW_KEY_D, keyboard_key::d },
-    { GLFW_KEY_P, keyboard_key::p },
-    { GLFW_KEY_O, keyboard_key::o },
+    { GLFW_KEY_F, keyboard_key::f },
+    { GLFW_KEY_G, keyboard_key::g },
+    { GLFW_KEY_H, keyboard_key::h },
+    { GLFW_KEY_J, keyboard_key::j },
     { GLFW_KEY_K, keyboard_key::k },
-    { GLFW_KEY_I, keyboard_key::i },
+    { GLFW_KEY_L, keyboard_key::l },
+    { GLFW_KEY_M, keyboard_key::m },
+    { GLFW_KEY_W, keyboard_key::w },
+    { GLFW_KEY_X, keyboard_key::x },
+    { GLFW_KEY_C, keyboard_key::c },
+    { GLFW_KEY_V, keyboard_key::v },
+    { GLFW_KEY_B, keyboard_key::b },
+    { GLFW_KEY_N, keyboard_key::n },
 };
 #endif
 
@@ -215,6 +235,19 @@ EM_BOOL touch_callback(int event_type, const EmscriptenTouchEvent* event, void* 
 
 #else
 
+static void glfw_window_focus_callback(GLFWwindow* window, int focused)
+{
+    if (focused) {
+        is_mouse_locked = true;
+        std::cout << "Window gained focus\n";
+        glfwSetInputMode(glfw_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // Example
+    } else {
+        is_mouse_locked = false;
+        std::cout << "Window lost focus\n";
+        glfwSetInputMode(glfw_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); // Example
+    }
+}
+
 static void glfw_error_callback(int error, const char* description)
 {
     std::cout << "GLFW Error: " << description << std::endl;
@@ -222,18 +255,18 @@ static void glfw_error_callback(int error, const char* description)
 
 static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-    
     if (!is_mouse_locked) {
         glfwSetInputMode(glfw_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         is_mouse_locked = true;
     }
-
     if (action == GLFW_PRESS) {
-        keys[glfw_keyboard_mappings[key]] = true;
+        if (glfw_keyboard_mappings.find(key) != glfw_keyboard_mappings.end()) {
+            keys[glfw_keyboard_mappings[key]] = true;
+        }
     } else if (action == GLFW_RELEASE) {
-        keys[glfw_keyboard_mappings[key]] = false;
+        if (glfw_keyboard_mappings.find(key) != glfw_keyboard_mappings.end()) {
+            keys[glfw_keyboard_mappings[key]] = false;
+        }
     }
 }
 
@@ -245,12 +278,10 @@ static void glfw_mouse_position_callback(GLFWwindow* window, double xpos, double
     _last_x = xpos;
     _last_y = ypos;
     detail::accumulated_mouse_position_delta += glm::vec2((float)_delta_x, (float)_delta_y);
-    
 }
 
 static void glfw_mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
-
 }
 
 #endif
@@ -262,7 +293,7 @@ void update_mouse_lock()
     emscripten_assert(emscripten_get_pointerlock_status(&_pointer_lock));
     is_mouse_locked = _pointer_lock.isActive;
 #else
-    
+
 #endif
 }
 
@@ -288,7 +319,7 @@ static bool setup_platform()
     emscripten_assert(emscripten_set_touchmove_callback("#canvas", nullptr, 1, touch_callback)); // EMSCRIPTEN_EVENT_TARGET_WINDOW doesnt work on safari
     // emscripten_assert(emscripten_set_touchcancel_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, touch_callback));
 #else
-    
+
     glfwSetErrorCallback(glfw_error_callback);
 
     if (!glfwInit())
@@ -298,11 +329,14 @@ static bool setup_platform()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    glfw_window = glfwCreateWindow(1600, 900, "Lucaria", glfwGetPrimaryMonitor(), NULL);
-    if (!glfw_window)
-    {
+    glfw_window = glfwCreateWindow(1920, 1080, "Lucaria", glfwGetPrimaryMonitor(), NULL);
+    if (!glfw_window) {
         glfwTerminate();
         exit(EXIT_FAILURE);
+    }
+
+    for (const std::pair<int, keyboard_key> _pair : detail::glfw_keyboard_mappings) {
+        detail::keys[_pair.second] = false;
     }
 
     glfwSetKeyCallback(glfw_window, glfw_key_callback);
@@ -310,6 +344,8 @@ static bool setup_platform()
     glfwSetMouseButtonCallback(glfw_window, glfw_mouse_button_callback);
 
     glfwMakeContextCurrent(glfw_window);
+    glfwSetWindowFocusCallback(glfw_window, glfw_window_focus_callback);
+
     gladLoadGL(glfwGetProcAddress);
     glfwSwapInterval(1);
 
@@ -366,8 +402,8 @@ static bool setup_opengl()
 static bool setup_openal()
 {
     // https://emscripten.org/docs/porting/Audio.html
-    const ALCchar * devices = alcGetString( NULL, ALC_DEVICE_SPECIFIER );
-    std::cout << "Devices = " << std::string(devices) << std::endl;
+    // const ALCchar * devices = alcGetString( NULL, ALC_DEVICE_SPECIFIER );
+    // std::cout << "Devices = " << std::string(devices) << std::endl;
 
     ALCdevice* _webaudio_device = alcOpenDevice(NULL);
 
@@ -403,7 +439,7 @@ static void destroy_openal()
 
 void update()
 {
-    
+
 #if defined(__EMSCRIPTEN__)
     emscripten_set_main_loop_timing(EM_TIMING_RAF, 1);
     static double _last_render_time = 0;
@@ -415,11 +451,6 @@ void update()
     std::chrono::steady_clock::time_point _render_time = std::chrono::high_resolution_clock::now();
     detail::time_delta = std::chrono::duration<double>(_render_time - _last_render_time).count();
 #endif
-    static glm::vec2 _last_accum_pos_delta(0.f, 0.f);
-    detail::mouse_position_delta = detail::accumulated_mouse_position_delta - _last_accum_pos_delta;
-    _last_accum_pos_delta = detail::accumulated_mouse_position_delta;
-    _last_render_time = _render_time;
-
 
     int _screen_width, _screen_height;
 #if defined(__EMSCRIPTEN__)
@@ -427,16 +458,22 @@ void update()
     _screen_height = canvas_get_height();
 #else
     glfwGetFramebufferSize(glfw_window, &_screen_width, &_screen_height);
-        glViewport(0, 0, _screen_width, _screen_height);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glViewport(0, 0, _screen_width, _screen_height);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 #endif
     detail::screen_size = { _screen_width, _screen_height };
 
+    if (detail::screen_size == glm::vec2(0.f, 0.f)) {
+        return;
+    }
+
+    static glm::vec2 _last_accum_pos_delta(0.f, 0.f);
+    detail::mouse_position_delta = detail::accumulated_mouse_position_delta - _last_accum_pos_delta;
+    _last_accum_pos_delta = detail::accumulated_mouse_position_delta;
+    _last_render_time = _render_time;
+
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = ImVec2(detail::screen_size.x, detail::screen_size.y);
-
-
-    
 
 #if !defined(__EMSCRIPTEN__)
     ImGui_ImplGlfw_NewFrame();

@@ -77,10 +77,10 @@ void make_scene()
             std::terminate();
         }
         scene_data& _data = detail::world_scenes.emplace_back();
-        std::cout << "scene data created \n";
+        // std::cout << "scene data created \n";
         detail::world_data.emplace_back((std::make_any<scene_t>(_data)));
         detail::world_types.emplace(_world_type);
-        std::cout << "scene created \n";
+        // std::cout << "scene created \n";
     });    
 }
 

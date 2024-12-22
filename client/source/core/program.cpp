@@ -308,11 +308,11 @@ void program_ref::bind<ozz::vector<ozz::math::Float4x4>>(const std::string& name
     
 }
 
-static bool _depth_test_enabled = true;
+// static bool _depth_test_enabled = true;
 
 void program_ref::draw(const bool use_depth) const
 {
-    if (_depth_test_enabled != use_depth) {
+    // if (_depth_test_enabled != use_depth) {
         if (use_depth) {
             glEnable(GL_DEPTH_TEST);
             glDepthMask(GL_TRUE);
@@ -320,8 +320,8 @@ void program_ref::draw(const bool use_depth) const
             glDisable(GL_DEPTH_TEST);
             glDepthMask(GL_FALSE);
         }
-        _depth_test_enabled = use_depth;
-    }
+        // _depth_test_enabled = use_depth;
+    // }
     glBindVertexArray(_array_id);
     glDrawElements(GL_TRIANGLES, _indices_count, GL_UNSIGNED_INT, 0);
 }
@@ -330,11 +330,11 @@ void program_ref::draw(const bool use_depth) const
 
 void program_ref::draw_guizmo() const
 {
-    if (_depth_test_enabled) {
-        glDisable(GL_DEPTH_TEST);
-        glDepthMask(GL_FALSE);
-        _depth_test_enabled = false;
-    }
+    // if (_depth_test_enabled) {
+            glDisable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
+        // _depth_test_enabled = true;
+    // }
     glBindVertexArray(_array_id);
     glDrawElements(GL_LINES, _indices_count, GL_UNSIGNED_INT, 0);
 }
