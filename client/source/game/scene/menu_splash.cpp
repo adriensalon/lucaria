@@ -23,7 +23,6 @@
 #include <game/scene/user_player.hpp>
 #include <game/scene/zone_flight.hpp>
 
-
 namespace detail {
 
 fetch_container<font_ref> big_splash_font = {};
@@ -96,8 +95,8 @@ static void draw_splash_menu()
 
 static void add_next_level()
 {
-    make_scene<user_player_scene>();
     make_scene<zone_flight_scene>();
+    make_scene<user_player_scene>();
 }
 
 }
@@ -116,16 +115,16 @@ menu_splash_scene::menu_splash_scene(scene_data& scene)
         .gui([]() {
             if (detail::is_splash_resources_fetched) {
                 static bool _has_added_first_level = false;
+                if (!_has_added_first_level || (_has_added_first_level && get_fetches_waiting() > 0)) {
+                    detail::draw_splash_menu();
+                    detail::splash_resources_fetched_cursor += 1.f / 60.f; //get_time_delta();
+                }
                 if (get_is_audio_locked() && get_is_mouse_locked()) {
                     if (!_has_added_first_level) {
                         detail::add_next_level();
                         _has_added_first_level = true;
                     }
-                }                
-                if (!_has_added_first_level || (_has_added_first_level && get_fetches_waiting() > 0)) {
-                    detail::draw_splash_menu();
-                    detail::splash_resources_fetched_cursor += 1.f / 60.f;//get_time_delta();
-                }                
+                }
             } else {
                 if (detail::big_splash_font.has_value() && detail::small_menu_font.has_value() && detail::background_splash_texture.has_value()) {
                     detail::is_splash_resources_fetched = true;

@@ -103,6 +103,7 @@ static bool is_etc_supported = false;
 static bool is_s3tc_supported = false;
 static bool is_audio_locked = false;
 static bool is_mouse_locked = false;
+static bool is_fullscreen = false;
 
 #if defined(__EMSCRIPTEN__)
 EM_JS(int, browser_get_samplerate, (), {
@@ -248,11 +249,11 @@ static void glfw_window_focus_callback(GLFWwindow* window, int focused)
     if (focused) {
         is_mouse_locked = true;
         std::cout << "Window gained focus\n";
-        glfwSetInputMode(glfw_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // Example
+        glfwSetInputMode(glfw_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     } else {
         is_mouse_locked = false;
         std::cout << "Window lost focus\n";
-        glfwSetInputMode(glfw_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); // Example
+        glfwSetInputMode(glfw_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 }
 
@@ -264,6 +265,32 @@ static void glfw_error_callback(int error, const char* description)
 static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if (action == GLFW_PRESS) {
+        if (key == GLFW_KEY_ESCAPE) {
+            glfwSetWindowShouldClose(glfw_window, GLFW_TRUE);
+        }
+        if (key == GLFW_KEY_F11) {
+            if (is_fullscreen) {
+                glfwSetWindowMonitor(
+                    glfw_window,
+                    nullptr,
+                    50,
+                    50,
+                    1600,
+                    900,
+                    glfwGetVideoMode(glfwGetPrimaryMonitor())->refreshRate);
+            } else {
+                glfwSetWindowMonitor(
+                    glfw_window,
+                    glfwGetPrimaryMonitor(),
+                    0,
+                    0,
+                    glfwGetVideoMode(glfwGetPrimaryMonitor())->width,
+                    glfwGetVideoMode(glfwGetPrimaryMonitor())->height,
+                    glfwGetVideoMode(glfwGetPrimaryMonitor())->refreshRate);
+            }
+            is_fullscreen = !is_fullscreen;
+        }
+
         if (glfw_keyboard_mappings.find(key) != glfw_keyboard_mappings.end()) {
             if (!is_mouse_locked) {
                 glfwSetInputMode(glfw_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
