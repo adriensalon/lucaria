@@ -42,11 +42,9 @@ extern void draw_guizmo_line(const btVector3& from, const btVector3& to, const b
 
 glm::mat4 sample_motion_track(const motion_track_ref& motion_track, float ratio) // on pourrait le mettre dans le motion_track_ref jsp...
 {
-    glm::mat4 _transform;
     ozz::animation::Float3TrackSamplingJob position_sampler;
     ozz::animation::QuaternionTrackSamplingJob rotation_sampler;
     ozz::math::Transform _ozz_affine_transform;
-    ozz::math::Float4x4& _ozz_transform = reinterpret_ozz(_transform);
     position_sampler.track = &(motion_track.first);
     position_sampler.result = &(_ozz_affine_transform.translation);
     position_sampler.ratio = ratio;
@@ -66,8 +64,8 @@ glm::mat4 sample_motion_track(const motion_track_ref& motion_track, float ratio)
 #endif
     }
     _ozz_affine_transform.scale = ozz::math::Float3::one();
-    _ozz_transform = ozz::math::Float4x4::FromAffine(_ozz_affine_transform);
-    return _transform;
+    ozz::math::Float4x4 _ozz_transform = ozz::math::Float4x4::FromAffine(_ozz_affine_transform);
+    return reinterpret(_ozz_transform);
 }
 
 }
