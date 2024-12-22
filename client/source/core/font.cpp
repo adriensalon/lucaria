@@ -59,3 +59,8 @@ std::shared_future<std::shared_ptr<font_ref>> fetch_font(const std::vector<std::
     });
     return _promise_pair.second.get_future();
 }
+
+void clear_font_fetches()
+{
+    detail::promises.clear();
+}

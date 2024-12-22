@@ -11,6 +11,17 @@
 
 struct scene_data {
 
+    scene_data() = default;
+    scene_data(const scene_data& other) = delete;
+    scene_data& operator=(const scene_data& other) = delete;
+    scene_data(scene_data&& other) = default;
+    scene_data& operator=(scene_data&& other) = default;
+    inline ~scene_data()
+    {
+        actors_registry.clear();
+        components.clear();
+    }
+
     entt::registry components = {};
 
     template <typename actor_t, typename... args_t>
@@ -97,10 +108,15 @@ void destroy_scene()
 
 inline void destroy_scenes()
 {
-    detail::world_scenes.clear();
-    detail::world_data.clear();
-    detail::world_types.clear();
     detail::manage_callbacks.clear();
+    std::cout << "Destroyed world pending manage callbacks" << std::endl;
+    detail::world_types.clear();
+    std::cout << "Destroyed world types list" << std::endl;
+    detail::world_scenes.clear();
+    std::cout << "Destroyed world scenes" << std::endl;
+    detail::world_data.clear();
+    std::cout << "Destroyed world actors" << std::endl;
+    std::cout << "Destroyed world components" << std::endl;
 }
 
 void each_scene(const std::function<void(scene_data&)>& callback);

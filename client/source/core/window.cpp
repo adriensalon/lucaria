@@ -15,11 +15,19 @@
 #endif
 #include <imgui.h>
 
+#include <core/animation.hpp>
+#include <core/cubemap.hpp>
 #include <core/fetch.hpp>
+#include <core/font.hpp>
 #include <core/graphics.hpp>
+#include <core/mesh.hpp>
+#include <core/program.hpp>
+#include <core/shape.hpp>
+#include <core/skeleton.hpp>
+#include <core/sound.hpp>
+#include <core/texture.hpp>
 #include <core/window.hpp>
 #include <core/world.hpp>
-
 
 namespace detail {
 
@@ -487,8 +495,8 @@ void update()
     //     io.AddMouseButtonEvent(_button, detail::buttons[_button]);
     // io.AddFocusEvent(true);
 
-    ImGui_ImplOpenGL3_Data* _backend_data = static_cast<ImGui_ImplOpenGL3_Data*>(io.BackendRendererUserData);
-    const auto _projection_matrix_index = _backend_data->AttribLocationProjMtx;
+    // ImGui_ImplOpenGL3_Data* _backend_data = static_cast<ImGui_ImplOpenGL3_Data*>(io.BackendRendererUserData);
+    // const auto _projection_matrix_index = _backend_data->AttribLocationProjMtx;
 
     update_mouse_lock();
 
@@ -527,7 +535,7 @@ void run_impl(const std::function<void()>& start, const std::function<void()>& u
 #else
     detail::is_audio_locked = detail::setup_openal();
     start();
-    
+
     GLint numExtensions = 0;
     glGetIntegerv(GL_NUM_EXTENSIONS, &numExtensions);
 
@@ -541,11 +549,20 @@ void run_impl(const std::function<void()>& start, const std::function<void()>& u
         }
     }
 
-
-
     while (!glfwWindowShouldClose(detail::glfw_window)) {
         detail::update();
     }
+
+    clear_animation_fetches();
+    clear_cubemap_fetches();
+    clear_font_fetches();
+    clear_mesh_fetches();
+    clear_program_fetches();
+    clear_shape_fetches();
+    clear_skeleton_fetches();
+    clear_sound_fetches();
+    clear_texture_fetches();
+
     destroy_scenes();
     glfwDestroyWindow(detail::glfw_window);
     glfwTerminate();

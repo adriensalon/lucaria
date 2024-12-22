@@ -68,3 +68,19 @@ std::shared_future<std::shared_ptr<motion_track_ref>> fetch_motion_track(const s
     });
     return _promise.get_future();
 }
+
+void mark_animation_fetched(const std::filesystem::path& animation_path)
+{
+    detail::animation_promises.erase(animation_path.string());
+}
+
+void mark_motion_track_fetched(const std::filesystem::path& motion_track_path)
+{
+    detail::motion_track_promises.erase(motion_track_path.string());
+}
+
+void clear_animation_fetches()
+{
+    detail::animation_promises.clear();
+    detail::motion_track_promises.clear();
+}

@@ -255,6 +255,11 @@ std::shared_future<std::shared_ptr<mesh_ref>> fetch_mesh(const std::filesystem::
     return _promise.get_future();
 }
 
+void clear_mesh_fetches()
+{
+    detail::promises.clear();
+}
+
 #if LUCARIA_GUIZMO
     
 guizmo_mesh_ref::guizmo_mesh_ref(guizmo_mesh_ref&& other)

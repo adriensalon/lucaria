@@ -219,3 +219,8 @@ std::shared_future<std::shared_ptr<texture_ref>> fetch_texture(const std::filesy
 
     return _promise.get_future();
 }
+
+void clear_texture_fetches()
+{
+    detail::promises.clear();
+}

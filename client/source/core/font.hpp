@@ -26,3 +26,4 @@ private:
 };
 
 std::shared_future<std::shared_ptr<font_ref>> fetch_font(const std::vector<std::filesystem::path>& font_paths, const glm::float32 font_size = 13.f);
+void clear_font_fetches();

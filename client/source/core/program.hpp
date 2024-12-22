@@ -44,3 +44,4 @@ private:
 
 shader_data load_shader_data(const std::vector<char>& shader_bytes);
 std::future<std::shared_ptr<program_ref>> fetch_program(const std::filesystem::path& vertex_shader_path, const std::filesystem::path& fragment_shader_path);
+void clear_program_fetches();

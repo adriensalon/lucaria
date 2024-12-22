@@ -58,6 +58,7 @@ private:
 
 geometry_data load_geometry_data(const std::vector<char>& geometry_bytes);
 std::shared_future<std::shared_ptr<mesh_ref>> fetch_mesh(const std::filesystem::path& geometry_path);
+void clear_mesh_fetches();
 
 #if LUCARIA_GUIZMO
 

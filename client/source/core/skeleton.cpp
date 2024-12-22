@@ -36,3 +36,8 @@ std::shared_future<std::shared_ptr<skeleton_ref>> fetch_skeleton(const std::file
     });
     return _promise.get_future();
 }
+
+void clear_skeleton_fetches()
+{
+    detail::promises.clear();
+}

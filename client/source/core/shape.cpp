@@ -81,3 +81,8 @@ std::shared_future<std::shared_ptr<shape_ref>> fetch_shape(const std::filesystem
     });
     return _promise.get_future();
 }
+
+void clear_shape_fetches()
+{
+    detail::promises.clear();
+}

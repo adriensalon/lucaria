@@ -373,3 +373,8 @@ std::future<std::shared_ptr<program_ref>> fetch_program(const std::filesystem::p
     });
     return _promise_pair.second.get_future();
 }
+
+void clear_program_fetches()
+{
+    detail::promises.clear();
+}

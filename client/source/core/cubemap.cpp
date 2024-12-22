@@ -145,3 +145,8 @@ std::shared_future<std::shared_ptr<cubemap_ref>> fetch_cubemap(const std::array<
     });
     return _promise_pair.second.get_future();
 }
+
+void clear_cubemap_fetches()
+{
+    detail::promises.clear();
+}

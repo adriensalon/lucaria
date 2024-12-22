@@ -176,3 +176,8 @@ std::shared_future<std::shared_ptr<sound_ref>> fetch_sound(const std::filesystem
     });
     return _promise.get_future();
 }
+
+void clear_sound_fetches()
+{
+    detail::promises.clear();
+}
