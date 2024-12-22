@@ -1,4 +1,5 @@
 #include <core/window.hpp>
+#include <ecs/system/player.hpp>
 #include <game/actor/character_runner.hpp>
 
 character_runner_actor::character_runner_actor(scene_data& scene)
@@ -25,14 +26,14 @@ character_runner_actor::character_runner_actor(scene_data& scene)
 
     _transform = scene.components.emplace<transform_component>(_entity)
         .rotation_relative(glm::vec3(0.f, glm::radians(90.f), 0.f));
+
+    player_system::follow_transform(_transform.value().get());
+    player_system::follow_bone(_animator.value().get(), "mixamorig9:Head");
 }
 
 void character_runner_actor::update()
 {
-    if (get_keys()[keyboard_key::i]) {
-        _transform.value().get().position_relative({ 0.03f, 0.f, -0.005f });
-    }
-    if (get_keys()[keyboard_key::k]) {
+    if (get_keys()[keyboard_key::w]) {
         _animator.value().get().get_controller(444).play();
     } else {
         _animator.value().get().get_controller(444).pause();

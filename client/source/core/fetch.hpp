@@ -43,6 +43,7 @@ private:
     std::function<void()> _callback = nullptr;
 };
 
+void wait_one_fetched_container();
 void wait_fetched_containers();
 
 #include <core/fetch.inl>

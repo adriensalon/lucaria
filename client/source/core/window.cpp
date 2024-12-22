@@ -255,12 +255,12 @@ static void glfw_error_callback(int error, const char* description)
 
 static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    if (!is_mouse_locked) {
-        glfwSetInputMode(glfw_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        is_mouse_locked = true;
-    }
     if (action == GLFW_PRESS) {
         if (glfw_keyboard_mappings.find(key) != glfw_keyboard_mappings.end()) {
+            if (!is_mouse_locked) {
+                glfwSetInputMode(glfw_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                is_mouse_locked = true;
+            }
             keys[glfw_keyboard_mappings[key]] = true;
         }
     } else if (action == GLFW_RELEASE) {
@@ -329,7 +329,8 @@ static bool setup_platform()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    glfw_window = glfwCreateWindow(1920, 1080, "Lucaria", glfwGetPrimaryMonitor(), NULL);
+    // glfw_window = glfwCreateWindow(1600, 900, "Lucaria", glfwGetPrimaryMonitor(), NULL);
+    glfw_window = glfwCreateWindow(1600, 900, "Lucaria", NULL, NULL);
     if (!glfw_window) {
         glfwTerminate();
         exit(EXIT_FAILURE);
@@ -500,7 +501,9 @@ void update()
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-    wait_fetched_containers();
+    // wait_fetched_containers();
+    wait_one_fetched_container();
+
     // remove_levels();
     manage();
 
@@ -523,9 +526,26 @@ void run_impl(const std::function<void()>& start, const std::function<void()>& u
 #else
     detail::is_audio_locked = detail::setup_openal();
     start();
+    
+    GLint numExtensions = 0;
+    glGetIntegerv(GL_NUM_EXTENSIONS, &numExtensions);
+
+    std::cout << "Supported Extensions (Modern):" << std::endl;
+    for (GLint i = 0; i < numExtensions; ++i) {
+        const char* extension = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i));
+        std::cout << extension << std::endl;
+
+        if (std::string(extension) == "GL_EXT_texture_compression_s3tc") {
+            detail::is_s3tc_supported = true;
+        }
+    }
+
+
+
     while (!glfwWindowShouldClose(detail::glfw_window)) {
         detail::update();
     }
+    destroy_scenes();
     glfwDestroyWindow(detail::glfw_window);
     glfwTerminate();
 #endif

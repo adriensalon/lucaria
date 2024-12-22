@@ -95,6 +95,14 @@ void destroy_scene()
     // detail::scenes_registry.erase(_view.begin(), _view.end());
 }
 
+inline void destroy_scenes()
+{
+    detail::world_scenes.clear();
+    detail::world_data.clear();
+    detail::world_types.clear();
+    detail::manage_callbacks.clear();
+}
+
 void each_scene(const std::function<void(scene_data&)>& callback);
 
 inline void manage()

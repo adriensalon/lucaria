@@ -129,13 +129,13 @@ image_data load_compressed_image_data(const std::vector<char>& image_bytes)
         //     break;
         case 7:
             // m_type = Dxt1;
-            std::cout << "DXT1" << std::endl;
+            // std::cout << "DXT1" << std::endl;
             _image_data.channels = 3;
             _image_data.is_compressed_s3tc = true;
             break;
         case 11:
             // m_type = Dxt5;
-            std::cout << "DXT5" << std::endl;
+            // std::cout << "DXT5" << std::endl;
             _image_data.channels = 4;
             _image_data.is_compressed_s3tc = true;
             break;

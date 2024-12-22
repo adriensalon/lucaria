@@ -117,7 +117,7 @@ menu_splash_scene::menu_splash_scene(scene_data& scene)
             if (detail::is_splash_resources_fetched) {
                 const bool _is_ready = get_fetches_completed() == get_fetches_total();
                 bool _last_frame = false;
-                if (_is_ready && get_is_audio_locked() && get_is_mouse_locked()) {
+                if (get_is_audio_locked() && get_is_mouse_locked()) {
                     
                     if (get_fetches_completed() > 3) {
                         // mark_remove_level(levelID_menu_splash);

@@ -16,6 +16,7 @@
 #include <core/animation.hpp>
 #include <core/fetch.hpp>
 #include <core/skeleton.hpp>
+#include <core/math.hpp>
 
 #include <ecs/component/transform.hpp>
 
@@ -62,6 +63,18 @@ struct animator_component {
     animator_component& skeleton(const std::shared_future<std::shared_ptr<skeleton_ref>>& fetched_skeleton);
 
     animation_controller& get_controller(const unsigned int name);
+    inline glm::mat4 get_bone_transform(const std::string& name)
+    {
+        if (_skeleton.has_value()) {
+            const int num_joints = _skeleton.value().num_joints();
+            for (int i = 0; i < num_joints; ++i) {
+                if (std::string(_skeleton.value().joint_names()[i]) == name) {
+                    return reinterpret(_model_transforms[i]);
+                }
+            }
+        }        
+        return glm::mat4(1.f);
+    }
 
 private:
     fetch_container<skeleton_ref> _skeleton = {};

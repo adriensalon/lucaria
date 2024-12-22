@@ -24,6 +24,7 @@ struct transform_component {
     transform_component& transform_warp(const glm::mat4& transform);
 
     glm::vec3 get_position() const;
+    glm::vec3 get_forward() const;
     glm::quat get_rotation() const;
     glm::vec3 get_euler() const;
 

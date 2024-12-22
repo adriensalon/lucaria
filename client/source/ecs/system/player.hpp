@@ -2,6 +2,7 @@
 
 #include <future>
 
+#include <ecs/component/animator.hpp>
 #include <ecs/component/transform.hpp>
 
 struct player_system {
@@ -11,10 +12,8 @@ struct player_system {
     player_system(player_system&& other) = delete;
     player_system& operator=(player_system&& other) = delete;
 
-    static void player_position(const glm::vec3& position);
-    static void player_direction(const glm::vec3& direction);
-    // enlever au dessus et mettre 
     static void follow_transform(transform_component& value);
+    static void follow_bone(animator_component& value, const std::string& name);
     static glm::mat4x4 get_view();
     
     static void update();

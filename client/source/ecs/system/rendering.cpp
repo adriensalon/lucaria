@@ -247,6 +247,9 @@ static bool last_show_physics_guizmos_key = false;
 static bool show_performance_metrics = false;
 static bool last_performance_metrics_key = false;
 
+extern bool show_free_camera;
+static bool last_free_camera_key = false;
+
 // #if LUCARIA_DEBUG
 void draw_debug_gui()
 {
@@ -261,10 +264,19 @@ void draw_debug_gui()
         if (!last_show_physics_guizmos_key && get_keys()[keyboard_key::o]) {
             show_physics_guizmos = !show_physics_guizmos;
         }
+        if (!last_performance_metrics_key && get_keys()[keyboard_key::i]) {
+            show_performance_metrics = !show_performance_metrics;
+        }
+        if (!last_free_camera_key && get_keys()[keyboard_key::u]) {
+            show_free_camera = !show_free_camera;
+        }
         last_show_physics_guizmos_key = get_keys()[keyboard_key::o];
-        ImGui::Begin("debug features [P]", nullptr);
-        ImGui::Checkbox("show guizmos [O]", &show_physics_guizmos);
-        ImGui::Checkbox("show performance [I]", &show_performance_metrics);
+        last_performance_metrics_key = get_keys()[keyboard_key::i];
+        last_free_camera_key = get_keys()[keyboard_key::u];
+        ImGui::Begin("Debug features [P]", nullptr, ImGuiWindowFlags_NoCollapse);
+        ImGui::Checkbox("Show guizmos [O]", &show_physics_guizmos);
+        ImGui::Checkbox("Show performance [I]", &show_performance_metrics);
+        ImGui::Checkbox("Free camera [U]", &show_free_camera);
         ImGui::End();
     }
 }

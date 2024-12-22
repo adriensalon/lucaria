@@ -41,7 +41,9 @@ transform_component& transform_component::rotation_relative(const glm::vec3& val
 
 transform_component& transform_component::rotation_warp(const glm::vec3& value)
 {
+    glm::vec4 _position = _transform[3];
     _transform = glm::mat4(1.0f); // Reset to identity
+    _transform[3] = _position;
     _transform = glm::rotate(_transform, value.x, glm::vec3(1.0f, 0.0f, 0.0f));
     _transform = glm::rotate(_transform, value.y, glm::vec3(0.0f, 1.0f, 0.0f));
     _transform = glm::rotate(_transform, value.z, glm::vec3(0.0f, 0.0f, 1.0f));
@@ -61,4 +63,14 @@ transform_component& transform_component::transform_warp(const glm::mat4& value)
     _transform = value;
     // apply transform to children
     return *this;
+}
+
+glm::vec3 transform_component::get_position() const
+{
+    return _transform[3];
+}
+
+glm::vec3 transform_component::get_forward() const
+{
+    return glm::normalize(glm::vec3(_transform[2]));
 }

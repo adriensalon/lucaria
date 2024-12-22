@@ -296,6 +296,21 @@ void reset_fetch_counters()
     detail::fetch_failed = 0;
 }
 
+void wait_one_fetched_container()
+{
+    if (detail::fetch_container_updaters.empty()) {
+        return;
+    }
+    auto it = detail::fetch_container_updaters.begin();
+    // for (auto it = detail::fetch_container_updaters.begin(); it != detail::fetch_container_updaters.end(); ++it) {
+        if (it->second()) { // Check if the condition for this container is satisfied
+            detail::fetch_container_updaters.erase(it); // Erase this container from the map
+            return; // Exit after processing one container
+        }
+    // }
+
+}
+
 void wait_fetched_containers()
 {
     std::vector<std::uintptr_t> _to_erase = {};

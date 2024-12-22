@@ -16,7 +16,6 @@ int main()
 {
     run<menu_splash_scene>([]() {
 
-        player_system::update();
 
         rendering_system::clear_debug_guizmos();
         rendering_system::clear_screen();
@@ -28,10 +27,13 @@ int main()
         motion_system::apply_animations();
         motion_system::apply_motion_tracks();
         motion_system::collect_debug_guizmos();
+        
 
         dynamics_system::step_simulation();
         dynamics_system::compute_kinematic_collisions();
         dynamics_system::collect_debug_guizmos();
+        
+        player_system::update();
 
         rendering_system::compute_view_projection();
         rendering_system::draw_skybox();
