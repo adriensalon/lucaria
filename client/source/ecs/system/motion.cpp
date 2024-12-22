@@ -78,7 +78,7 @@ void motion_system::advance_controllers()
                 animation_controller& _controller = animator._controllers[_pair.first];
                 if (_controller._is_playing) {
                     _controller._last_time_ratio = _controller._time_ratio;
-                    _controller._time_ratio += get_time_delta();// * 0.1f; // c'est bien le temps qu'il faut multiplier par le weight des fadeins
+                    _controller._time_ratio += get_time_delta(); // * 0.1f; // c'est bien le temps qu'il faut multiplier par le weight des fadeins
                 }
                 _controller._has_looped = _controller._time_ratio > 1.f;
                 _controller._time_ratio = glm::mod(_controller._time_ratio, 1.f);
@@ -94,7 +94,7 @@ void motion_system::apply_animations()
     each_scene([](scene_data& scene) {
         scene.components.view<animator_component>().each([](animator_component& animator) {
             if (animator._skeleton.has_value()) {
-                ozz::vector<ozz::animation::BlendingJob::Layer> _blend_layers; 
+                ozz::vector<ozz::animation::BlendingJob::Layer> _blend_layers;
                 for (std::pair<const unsigned int, fetch_container<animation_ref>>& _pair : animator._animations) {
                     if (_pair.second.has_value()) {
                         const animation_controller& _controller = animator._controllers[_pair.first];
@@ -191,8 +191,13 @@ void motion_system::collect_debug_guizmos()
                         }
                         const ozz::math::Float4x4& current_transform = model_transforms[i];
                         const ozz::math::Float4x4& parent_transform = model_transforms[parent_index];
+#if defined(__EMSCRIPTEN__)
+                        btVector3 from(parent_transform.cols[3].x, parent_transform.cols[3].y, parent_transform.cols[3].z);
+                        btVector3 to(current_transform.cols[3].x, current_transform.cols[3].y, current_transform.cols[3].z);
+#else
                         btVector3 from(parent_transform.cols[3][0], parent_transform.cols[3][1], parent_transform.cols[3][2]);
                         btVector3 to(current_transform.cols[3][0], current_transform.cols[3][1], current_transform.cols[3][2]);
+#endif
                         btVector3 color(1.0f, 0.0f, 0.0f); // Red color for bones
                         detail::draw_guizmo_line(from, to, color);
                     }
@@ -219,8 +224,13 @@ void motion_system::collect_debug_guizmos()
                         const ozz::math::Float4x4& _modifier_transform = reinterpret_ozz(transform._transform);
                         const ozz::math::Float4x4 current_transform = _modifier_transform * model_transforms[i];
                         const ozz::math::Float4x4 parent_transform = _modifier_transform * model_transforms[parent_index];
+#if defined(__EMSCRIPTEN__)
+                        btVector3 from(parent_transform.cols[3].x, parent_transform.cols[3].y, parent_transform.cols[3].z);
+                        btVector3 to(current_transform.cols[3].x, current_transform.cols[3].y, current_transform.cols[3].z);
+#else
                         btVector3 from(parent_transform.cols[3][0], parent_transform.cols[3][1], parent_transform.cols[3][2]);
                         btVector3 to(current_transform.cols[3][0], current_transform.cols[3][1], current_transform.cols[3][2]);
+#endif
                         btVector3 color(1.0f, 0.0f, 0.0f); // Red color for bones
                         detail::draw_guizmo_line(from, to, color);
                     }

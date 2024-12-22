@@ -1,1 +1,0 @@
-install/compiler/lucaria_compiler.exe -i assets -o install/client/assets -gltf2ozz install/compiler/gltf2ozz.exe -oggenc install/compiler/oggenc.exe

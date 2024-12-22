@@ -54,6 +54,34 @@ static bool setup_platform();
 static bool setup_opengl();
 static bool setup_openal();
 #if defined(__EMSCRIPTEN__)
+static std::unordered_map<int, keyboard_key> emscripten_keyboard_mappings = {
+    { GLFW_KEY_A, keyboard_key::a },
+    { GLFW_KEY_Z, keyboard_key::z },
+    { GLFW_KEY_E, keyboard_key::e },
+    { GLFW_KEY_R, keyboard_key::r },
+    { GLFW_KEY_T, keyboard_key::t },
+    { GLFW_KEY_Y, keyboard_key::y },
+    { GLFW_KEY_U, keyboard_key::u },
+    { GLFW_KEY_I, keyboard_key::i },
+    { GLFW_KEY_O, keyboard_key::o },
+    { GLFW_KEY_P, keyboard_key::p },
+    { GLFW_KEY_Q, keyboard_key::q },
+    { GLFW_KEY_S, keyboard_key::s },
+    { GLFW_KEY_D, keyboard_key::d },
+    { GLFW_KEY_F, keyboard_key::f },
+    { GLFW_KEY_G, keyboard_key::g },
+    { GLFW_KEY_H, keyboard_key::h },
+    { GLFW_KEY_J, keyboard_key::j },
+    { GLFW_KEY_K, keyboard_key::k },
+    { GLFW_KEY_L, keyboard_key::l },
+    { GLFW_KEY_M, keyboard_key::m },
+    { GLFW_KEY_W, keyboard_key::w },
+    { GLFW_KEY_X, keyboard_key::x },
+    { GLFW_KEY_C, keyboard_key::c },
+    { GLFW_KEY_V, keyboard_key::v },
+    { GLFW_KEY_B, keyboard_key::b },
+    { GLFW_KEY_N, keyboard_key::n },
+};
 #else
 static GLFWwindow* glfw_window = nullptr;
 static std::unordered_map<int, keyboard_key> glfw_keyboard_mappings = {
@@ -192,7 +220,7 @@ EM_BOOL key_callback(int event_type, const EmscriptenKeyboardEvent* event, void*
 {
     if (event_type == EMSCRIPTEN_EVENT_KEYDOWN) {
         std::string _key_down(event->key);
-        detail::keys[_key_down] = true;
+        detail::keys[emscripten_keyboard_mappings[event->key]] = true;
         detail::keys_changed.emplace_back(_key_down);
         process_lock();
     } else if (event_type == EMSCRIPTEN_EVENT_KEYUP) {

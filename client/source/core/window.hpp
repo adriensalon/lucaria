@@ -8,6 +8,10 @@
 
 #include <core/world.hpp>
 
+namespace detail {
+    void run_impl(const std::function<void()>& start, const std::function<void()>& update);
+}
+
 enum struct keyboard_key {
     a, z, e, r, t, y, u, i, o, p,
     q, s, d, f, g, h, j, k, l, m, 
@@ -36,7 +40,3 @@ bool get_is_etc_supported();
 bool get_is_s3tc_supported();
 bool get_is_mouse_locked();
 bool get_is_audio_locked();
-
-namespace detail {
-    void run_impl(const std::function<void()>& start, const std::function<void()>& update);
-}
