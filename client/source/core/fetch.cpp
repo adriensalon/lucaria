@@ -268,36 +268,42 @@ void fetch_files(const std::vector<std::filesystem::path>& files, const multiple
     }
 }
 
-std::size_t get_fetches_total()
+// std::size_t get_fetches_total()
+// {
+//     return detail::fetch_total;
+// }
+
+// std::size_t get_fetches_completed()
+// {
+//     return detail::fetch_completed;
+// }
+
+// std::size_t get_fetches_failed()
+// {
+//     return detail::fetch_failed;
+// }
+
+std::size_t get_fetches_waiting()
 {
-    return detail::fetch_total;
+    return detail::fetch_container_updaters.size();
 }
 
-std::size_t get_fetches_completed()
-{
-    return detail::fetch_completed;
-}
-
-std::size_t get_fetches_failed()
-{
-    return detail::fetch_failed;
-}
-
-void reset_fetch_counters()
-{
-#if LUCARIA_DEBUG
-    if ((detail::fetch_total != detail::fetch_completed) && (detail::fetch_failed != 0)) {
-        std::cout << "Impossible to reset fetch counters." << std::endl;
-        std::terminate();
-    }
-#endif
-    detail::fetch_total = 0;
-    detail::fetch_completed = 0;
-    detail::fetch_failed = 0;
-}
+// void reset_fetch_counters()
+// {
+// #if LUCARIA_DEBUG
+//     if ((detail::fetch_total != detail::fetch_completed) && (detail::fetch_failed != 0)) {
+//         std::cout << "Impossible to reset fetch counters." << std::endl;
+//         std::terminate();
+//     }
+// #endif
+//     detail::fetch_total = 0;
+//     detail::fetch_completed = 0;
+//     detail::fetch_failed = 0;
+// }
 
 void wait_one_fetched_container()
 {
+    // std::cout << "fetxh size = " << detail::fetch_container_updaters.size() << std::endl;
     if (detail::fetch_container_updaters.empty()) {
         return;
     }

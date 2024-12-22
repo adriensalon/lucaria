@@ -3,9 +3,6 @@
 #include <game/actor/character_runner.hpp>
 #include <game/scene/user_player.hpp>
 
-constexpr glm::uint animationID_player_lol1 = 44;
-constexpr glm::uint animationID_player_lol2 = 45;
-
 user_player_scene::user_player_scene(scene_data& scene)
 {
     rendering_system::use_skybox_cubemap(fetch_cubemap({ 

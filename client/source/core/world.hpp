@@ -112,3 +112,8 @@ inline void manage()
     }
     detail::manage_callbacks.clear();
 }
+
+inline std::size_t get_scenes_count()
+{
+    return detail::world_scenes.size();
+}

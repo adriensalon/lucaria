@@ -35,7 +35,7 @@ const ImVec4 white_text_color = { 1.f, 1.f, 1.f, 0.98f };
 constexpr ImGuiWindowFlags fullscreen_window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
 static bool is_splash_resources_fetched = false;
-static bool is_next_level_fetched = false;
+// static bool is_next_level_fetched = false;
 static glm::float32 splash_resources_fetched_cursor = 0.f;
 static fadein_weight splash_background_fadein = { 3.f };
 static oscillate_weight small_text_oscillate = { 2.f };
@@ -58,10 +58,10 @@ static void draw_title(const ImVec2& display_size)
     ImGui::PopFont();
 }
 
-static void draw_text(const ImVec2& display_size, const bool is_ready)
+static void draw_text(const ImVec2& display_size)
 {
     const glm::float32 _weight = small_text_oscillate.compute_weight(splash_resources_fetched_cursor);
-    const std::string _text = is_ready ? "Press any key to enter" : "Loading assets (" + std::to_string(get_fetches_completed()) + "/" + std::to_string(get_fetches_total()) + ")";
+    const std::string _text = (get_fetches_waiting() == 0) ? "Press any key to enter" : "Loading assets (" + std::to_string(get_fetches_waiting()) + " files remaining)";
     ImGui::PushFont(small_menu_font.value().get_font());
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 1.f, 1.f, _weight));
     const ImVec2 _text_size = ImGui::CalcTextSize(_text.c_str());
@@ -72,7 +72,7 @@ static void draw_text(const ImVec2& display_size, const bool is_ready)
     ImGui::PopFont();
 }
 
-static void draw_splash_menu(const bool is_ready)
+static void draw_splash_menu()
 {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
@@ -87,7 +87,7 @@ static void draw_splash_menu(const bool is_ready)
     if (ImGui::Begin("Lucaria splash", nullptr, fullscreen_window_flags)) {
         draw_background(_display_size);
         draw_title(_display_size);
-        draw_text(_display_size, is_ready);
+        draw_text(_display_size);
         ImGui::End();
     }
     ImGui::PopStyleColor(3);
@@ -115,24 +115,17 @@ menu_splash_scene::menu_splash_scene(scene_data& scene)
     scene.components.emplace<widget_component>(_splash_entity)
         .gui([]() {
             if (detail::is_splash_resources_fetched) {
-                const bool _is_ready = get_fetches_completed() == get_fetches_total();
-                bool _last_frame = false;
+                static bool _has_added_first_level = false;
                 if (get_is_audio_locked() && get_is_mouse_locked()) {
-                    
-                    if (get_fetches_completed() > 3) {
-                        // mark_remove_level(levelID_menu_splash);
-                        // std::cout << "MARK REMOVE LEVEL ! \n";
-                        detail::splash_resources_fetched_cursor = 0.f;
-                        _last_frame = true;
-                    } else if (!detail::is_next_level_fetched) {
+                    if (!_has_added_first_level) {
                         detail::add_next_level();
-                        detail::is_next_level_fetched = true;
+                        _has_added_first_level = true;
                     }
-                }
-                if (!_last_frame) {
-                    detail::draw_splash_menu(_is_ready);
-                    detail::splash_resources_fetched_cursor += get_time_delta();
-                }
+                }                
+                if (!_has_added_first_level || (_has_added_first_level && get_fetches_waiting() > 0)) {
+                    detail::draw_splash_menu();
+                    detail::splash_resources_fetched_cursor += 1.f / 60.f;//get_time_delta();
+                }                
             } else {
                 if (detail::big_splash_font.has_value() && detail::small_menu_font.has_value() && detail::background_splash_texture.has_value()) {
                     detail::is_splash_resources_fetched = true;

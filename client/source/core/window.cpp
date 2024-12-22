@@ -503,6 +503,7 @@ void update()
 
     // wait_fetched_containers();
     wait_one_fetched_container();
+    // std::cout << "drrrr \n";
 
     // remove_levels();
     manage();
