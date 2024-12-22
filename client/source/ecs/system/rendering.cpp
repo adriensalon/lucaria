@@ -493,7 +493,7 @@ void rendering_system::clear_debug_guizmos()
 #endif
 }
 
-void rendering_system::draw_debug2()
+void rendering_system::draw_debug_guizmos()
 {
     // #if LUCARIA_DEBUG
     detail::draw_debug_gui();

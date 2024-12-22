@@ -9,6 +9,7 @@ if (MSVC)
 endif()
 
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+set(CANONICAL_PREFIXES ON)
 add_subdirectory(upstream)
 target_include_directories(woff2dec PUBLIC upstream/include)
 if (MSVC)

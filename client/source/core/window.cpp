@@ -459,8 +459,8 @@ void update()
     _screen_height = canvas_get_height();
 #else
     glfwGetFramebufferSize(glfw_window, &_screen_width, &_screen_height);
-    glViewport(0, 0, _screen_width, _screen_height);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // glViewport(0, 0, _screen_width, _screen_height);
+    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 #endif
     detail::screen_size = { _screen_width, _screen_height };
 

@@ -10,7 +10,7 @@ transform_component& transform_component::parent(transform_component& transform)
     return *this;
 }
 
-transform_component& transform_component::parent(animator_component& animator, const glm::uint bone_index)
+transform_component& transform_component::parent(transform_component& transform, animator_component& animator, const glm::uint bone_index)
 {
     animator._children_transforms[bone_index].emplace_back(std::ref(*this));
     return *this;

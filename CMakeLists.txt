@@ -139,5 +139,5 @@ message("${configure_output}")
 
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
-add_subdirectory(client)
+add_subdirectory(client ${CMAKE_BINARY_DIR}/client)
 

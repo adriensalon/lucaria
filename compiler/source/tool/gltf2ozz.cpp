@@ -91,7 +91,7 @@ void execute_gltf2ozz(const std::filesystem::path& gltf2ozz_path, const std::fil
         _config_stream.close();
     }
     const std::string _command = gltf2ozz_path.string() + " --file=" + input_path.string() + " --config_file=\"" + _config_path.string() + "\"";
-    std::cout << _command << std::endl;
+    // std::cout << _command << std::endl;
     const int _result = std::system(_command.c_str());
     if (_result != 0) {
         std::cout << "Error: gltf2ozz command failed with exit code " << _result << std::endl;

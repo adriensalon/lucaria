@@ -17,7 +17,7 @@ image_data import_stb(const std::filesystem::path& stb_path)
     _data.width = static_cast<unsigned int>(_width);
     _data.height = static_cast<unsigned int>(_height);
     _data.pixels = std::vector<unsigned char>(_pixels, _pixels + (_data.width * _data.height * _data.channels));
-    std::cout << "tex W " << _width << " H " << _height << " C " << _channels << std::endl;
+    // std::cout << "tex W " << _width << " H " << _height << " C " << _channels << std::endl;
     stbi_image_free(_pixels);
     return _data;
 }

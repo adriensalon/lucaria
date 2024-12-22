@@ -14,8 +14,8 @@ struct transform_component {
     transform_component(transform_component&& other) = default;
     transform_component& operator=(transform_component&& other) = default;
 
-    transform_component& parent(transform_component& parent_component);
-    transform_component& parent(animator_component& animator, const glm::uint bone_index);
+    transform_component& parent(transform_component& parent_transform);
+    transform_component& parent(transform_component& parent_transform, animator_component& parent_animator, const glm::uint bone_index);
     transform_component& position_relative(const glm::vec3& position);
     transform_component& position_warp(const glm::vec3& position);
     transform_component& rotation_relative(const glm::vec3& rotation);
