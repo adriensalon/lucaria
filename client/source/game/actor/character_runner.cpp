@@ -33,10 +33,13 @@ character_runner_actor::character_runner_actor(scene_data& scene)
 
 void character_runner_actor::update()
 {
-    if (get_keys()[keyboard_key::w]) {
+    static bool _is_playing = false;
+    if (get_keys()[keyboard_key::w] && !_is_playing) {
         _animator.value().get().get_controller(444).play();
-    } else {
+        _is_playing = true;
+    } else if (!get_keys()[keyboard_key::w] && _is_playing) {
         _animator.value().get().get_controller(444).pause();
+        _is_playing = false;
     }
 }
 

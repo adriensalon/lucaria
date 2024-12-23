@@ -510,7 +510,6 @@ void update()
     double _render_time = emscripten_get_now();
     detail::time_delta = (_render_time - _last_render_time) / 1000.f;
 #else
-    glfwPollEvents();
     static std::chrono::high_resolution_clock::time_point _last_render_time = std::chrono::high_resolution_clock::now();
     std::chrono::steady_clock::time_point _render_time = std::chrono::high_resolution_clock::now();
     detail::time_delta = std::chrono::duration<double>(_render_time - _last_render_time).count();
@@ -577,6 +576,7 @@ void update()
     }
 
     glfwSwapBuffers(detail::glfw_window);
+    glfwPollEvents();
 }
 
 void run_impl(const std::function<void()>& start, const std::function<void()>& update)
