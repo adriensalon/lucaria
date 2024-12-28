@@ -1,9 +1,10 @@
 #include <ecs/system/rendering.hpp>
 #include <ecs/system/mixer.hpp>
 #include <game/actor/character_runner.hpp>
-#include <game/scene/user_player.hpp>
+#include <game/actor/menu_splash.hpp>
+#include <game/scene/user_game.hpp>
 
-user_player_scene::user_player_scene(scene_data& scene)
+user_game_scene::user_game_scene(scene_data& scene)
 {
     rendering_system::use_skybox_cubemap(fetch_cubemap({ 
         "assets/cubemap/cubemap_px_eLVJ.bin",
@@ -16,4 +17,8 @@ user_player_scene::user_player_scene(scene_data& scene)
     scene.make_actor<character_runner_actor>(scene);
 
     // mixer_system::use_listener_transform(faith->get_transform());
+
+
+    
+
 }

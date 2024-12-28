@@ -3,33 +3,28 @@
 #include <core/world.hpp>
 
 #include <ecs/system/dynamics.hpp>
-#include <ecs/system/interface.hpp>
 #include <ecs/system/mixer.hpp>
 #include <ecs/system/motion.hpp>
 #include <ecs/system/player.hpp>
 #include <ecs/system/rendering.hpp>
 
 #include <game/actor/character_runner.hpp>
-#include <game/scene/menu_splash.hpp>
+#include <game/actor/menu_splash.hpp>
+#include <game/scene/user_ui.hpp>
 
 int main()
 {
-    run<menu_splash_scene>([]() {
-        
-
+    run<user_ui_scene>([]() {
 
         rendering_system::clear_debug_guizmos();
         rendering_system::clear_screen();
         rendering_system::compute_projection();
-
-        interface_system::collect_gui_widgets();
 
         motion_system::advance_controllers();
         motion_system::apply_animations();
         motion_system::apply_motion_tracks();
         motion_system::collect_debug_guizmos();
         
-
         dynamics_system::step_simulation();
         dynamics_system::compute_kinematic_collisions();
         dynamics_system::collect_debug_guizmos();
@@ -47,6 +42,7 @@ int main()
 
         each_scene([](scene_data& scene) {
             scene.update_actors<character_runner_actor>();
+            scene.update_actors<menu_splash_actor>();
         });
 
     });

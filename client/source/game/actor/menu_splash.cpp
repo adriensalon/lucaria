@@ -5,6 +5,7 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
+#include <core/font.hpp>
 #include <core/weight.hpp>
 #include <core/window.hpp>
 
@@ -13,14 +14,13 @@
 #include <ecs/component/rigidbody.hpp>
 #include <ecs/component/speaker.hpp>
 #include <ecs/component/transform.hpp>
-#include <ecs/component/widget.hpp>
-#include <ecs/system/interface.hpp>
 #include <ecs/system/mixer.hpp>
 #include <ecs/system/rendering.hpp>
 
-#include <game/scene/menu_splash.hpp>
-#include <game/scene/user_player.hpp>
+#include <game/actor/menu_splash.hpp>
+#include <game/scene/user_game.hpp>
 #include <game/scene/zone_flight.hpp>
+
 
 namespace detail {
 
@@ -29,18 +29,16 @@ fetch_container<font_ref> small_menu_font = {};
 fetch_container<texture_ref> background_splash_texture = {};
 
 const ImVec4 white_text_color = { 1.f, 1.f, 1.f, 0.98f };
-
 constexpr ImGuiWindowFlags fullscreen_window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
 static bool is_splash_resources_fetched = false;
-// static bool is_next_level_fetched = false;
-static glm::float32 splash_resources_fetched_cursor = 0.f;
+static float splash_resources_fetched_cursor = 0.f;
 static fadein_weight splash_background_fadein = { 3.f };
 static oscillate_weight small_text_oscillate = { 2.f };
 
 static void draw_background(const ImVec2& display_size)
 {
-    const glm::float32 _weight = splash_background_fadein.compute_weight(splash_resources_fetched_cursor);
+    const float _weight = splash_background_fadein.compute_weight(splash_resources_fetched_cursor);
     const ImVec4 _tint = { 1.f, 1.f, 1.f, _weight };
     ImGui::Image(reinterpret_cast<ImTextureID>(background_splash_texture.value().get_id()), display_size, { 0.001f, 0.001f }, { 0.999f, 0.999f }, _tint, { 1.f, 1.f, 1.f, 1.f });
 }
@@ -58,7 +56,7 @@ static void draw_title(const ImVec2& display_size)
 
 static void draw_text(const ImVec2& display_size)
 {
-    const glm::float32 _weight = small_text_oscillate.compute_weight(splash_resources_fetched_cursor);
+    const float _weight = small_text_oscillate.compute_weight(splash_resources_fetched_cursor);
     const std::string _text = (get_fetches_waiting() == 0) ? "Press any key to enter" : "Loading assets (" + std::to_string(get_fetches_waiting()) + " files remaining)";
     ImGui::PushFont(small_menu_font.value().get_font());
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 1.f, 1.f, _weight));
@@ -92,42 +90,31 @@ static void draw_splash_menu()
     ImGui::PopStyleVar(4);
 }
 
-static void add_next_level()
-{
-    make_scene<zone_flight_scene>();
-    make_scene<user_player_scene>();
 }
 
+menu_splash_actor::menu_splash_actor(scene_data& scene)
+{
+    detail::big_splash_font.emplace(fetch_font({ "assets/font/font_LYj3.bin" }, 160.f));
+    detail::small_menu_font.emplace(fetch_font({ "assets/font/font_xVRp.bin" }, 22.f));
+    detail::background_splash_texture.emplace(fetch_texture("assets/image/image_0cSX.bin"));
 }
 
-menu_splash_scene::menu_splash_scene(scene_data& scene)
+void menu_splash_actor::update()
 {
-    if (!detail::is_splash_resources_fetched) {
-        detail::big_splash_font.emplace(fetch_font({ "assets/font/font_LYj3.bin" }, 160.f));
-        detail::small_menu_font.emplace(fetch_font({ "assets/font/font_xVRp.bin" }, 22.f));
-        detail::background_splash_texture.emplace(fetch_texture("assets/image/image_0cSX.bin"));
-    }
-
-    const entt::entity _splash_entity = scene.components.create();
-
-    scene.components.emplace<widget_component>(_splash_entity)
-        .gui([]() {
-            if (detail::is_splash_resources_fetched) {
-                static bool _has_added_first_level = false;
-                if (!_has_added_first_level || (_has_added_first_level && get_fetches_waiting() > 0)) {
-                    detail::draw_splash_menu();
-                    detail::splash_resources_fetched_cursor += 1.f / 60.f; //get_time_delta();
-                }
-                if (get_is_audio_locked() && get_is_mouse_locked()) {
-                    if (!_has_added_first_level) {
-                        detail::add_next_level();
-                        _has_added_first_level = true;
-                    }
-                }
-            } else {
-                if (detail::big_splash_font.has_value() && detail::small_menu_font.has_value() && detail::background_splash_texture.has_value()) {
-                    detail::is_splash_resources_fetched = true;
-                }
+    if (detail::is_splash_resources_fetched) {
+        static bool _has_added_first_level = false;
+        if (!_has_added_first_level || (_has_added_first_level && get_fetches_waiting() > 0)) {
+            detail::draw_splash_menu();
+            detail::splash_resources_fetched_cursor += 1.f / 60.f; //get_time_delta();
+        }
+        if (get_is_audio_locked() && get_is_mouse_locked()) {
+            if (!_has_added_first_level) {
+                make_scene<user_game_scene>();
+                make_scene<zone_flight_scene>();
+                _has_added_first_level = true;
             }
-        });
+        }
+    } else if (detail::big_splash_font.has_value() && detail::small_menu_font.has_value() && detail::background_splash_texture.has_value()) {
+        detail::is_splash_resources_fetched = true;
+    }
 }
