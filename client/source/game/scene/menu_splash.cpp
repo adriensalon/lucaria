@@ -9,7 +9,6 @@
 #include <core/window.hpp>
 
 #include <ecs/component/animator.hpp>
-#include <ecs/component/controller.hpp>
 #include <ecs/component/model.hpp>
 #include <ecs/component/rigidbody.hpp>
 #include <ecs/component/speaker.hpp>
