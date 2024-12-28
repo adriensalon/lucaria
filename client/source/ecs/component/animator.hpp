@@ -59,8 +59,12 @@ struct animator_component {
     animator_component& operator=(animator_component&& other) = default;
 
     animator_component& animation(const unsigned int name, const std::shared_future<std::shared_ptr<animation_ref>>& fetched_animation);
+    animator_component& animation(const unsigned int name, const std::shared_future<std::shared_ptr<animation_ref>>& fetched_animation, const std::shared_future<std::shared_ptr<motion_track_ref>>& fetched_motion_track);
     animator_component& motion_track(const unsigned int name, const std::shared_future<std::shared_ptr<motion_track_ref>>& fetched_motion_track);
     animator_component& skeleton(const std::shared_future<std::shared_ptr<skeleton_ref>>& fetched_skeleton);
+    animator_component& inverse_kinematics_chain(const unsigned int name, const std::string& start, const std::string& end);
+    animator_component& inverse_kinematics_snap(const unsigned int name, const glm::vec3& end_position);
+    
 
     animation_controller& get_controller(const unsigned int name);
     inline glm::mat4 get_bone_transform(const std::string& name)
