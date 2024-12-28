@@ -1,6 +1,7 @@
 #pragma once 
 
 #include <core/font.hpp>
+#include <core/world.hpp>
 
 struct widget_component {
     widget_component() = default;

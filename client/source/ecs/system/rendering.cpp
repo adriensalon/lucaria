@@ -75,8 +75,8 @@ static bool clear_depth = true;
 static float camera_fov = 60.f;
 static float camera_near = 0.1f;
 static float camera_far = 1000.f;
-static glm::mat4x4 camera_projection;
-static glm::mat4x4 camera_view;
+glm::mat4x4 camera_projection;
+glm::mat4x4 camera_view;
 static glm::mat4x4 camera_view_projection;
 static fetch_container<cubemap_ref> skybox_cubemap = {};
 
@@ -527,4 +527,14 @@ void rendering_system::draw_debug_guizmos()
         }
 #endif
     }
+}
+
+glm::mat4 rendering_system::get_projection()
+{
+    return detail::camera_projection;
+}
+
+glm::mat4 rendering_system::get_view()
+{
+    return detail::camera_view;
 }

@@ -17,6 +17,7 @@
 #include <core/fetch.hpp>
 #include <core/skeleton.hpp>
 #include <core/math.hpp>
+#include <core/world.hpp>
 
 #include <ecs/component/transform.hpp>
 

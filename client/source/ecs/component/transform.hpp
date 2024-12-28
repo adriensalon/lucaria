@@ -5,6 +5,8 @@
 
 #include <glm/glm.hpp>
 
+#include <core/world.hpp>
+
 struct animator_component;
 
 struct transform_component {

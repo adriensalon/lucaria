@@ -1,8 +1,11 @@
 
 #include <iostream>
+#include <optional>
 
 #include <AL/al.h>
 #include <AL/alc.h>
+#include <imgui.h>
+#include <imgui_internal.h>
 #include <backends/imgui_impl_opengl3.h>
 
 #if defined(__EMSCRIPTEN__)
@@ -11,9 +14,7 @@
 #else
 #include <backends/imgui_impl_glfw.h>
 #include <chrono>
-
 #endif
-#include <imgui.h>
 
 #include <core/animation.hpp>
 #include <core/cubemap.hpp>
@@ -29,27 +30,32 @@
 #include <core/window.hpp>
 #include <core/world.hpp>
 
-namespace detail {
-
-struct ImGui_ImplOpenGL3_Data {
-    glm::uint GlVersion; // Extracted at runtime using GL_MAJOR_VERSION, GL_MINOR_VERSION queries (e.g. 320 for GL 3.2)
-    char GlslVersionString[32]; // Specified by user or detected based on compile time GL settings.
-    glm::uint FontTexture;
-    glm::uint ShaderHandle;
-    GLint AttribLocationTex; // Uniforms location
-    GLint AttribLocationProjMtx;
-    glm::uint AttribLocationVtxPos; // Vertex attributes location
-    glm::uint AttribLocationVtxUV;
-    glm::uint AttribLocationVtxColor;
-    glm::uint VboHandle, ElementsHandle;
-    GLsizeiptr VertexBufferSize;
-    GLsizeiptr IndexBufferSize;
-    bool HasClipOrigin;
-    bool UseBufferSubData;
+struct ImGui_ImplOpenGL3_Data
+{
+    GLuint          GlVersion;               // Extracted at runtime using GL_MAJOR_VERSION, GL_MINOR_VERSION queries (e.g. 320 for GL 3.2)
+    char            GlslVersionString[32];   // Specified by user or detected based on compile time GL settings.
+    bool            GlProfileIsES2;
+    bool            GlProfileIsES3;
+    bool            GlProfileIsCompat;
+    GLint           GlProfileMask;
+    GLuint          FontTexture;
+    GLuint          ShaderHandle;
+    GLint           AttribLocationTex;       // Uniforms location
+    GLint           AttribLocationProjMtx;
+    GLuint          AttribLocationVtxPos;    // Vertex attributes location
+    GLuint          AttribLocationVtxUV;
+    GLuint          AttribLocationVtxColor;
+    unsigned int    VboHandle, ElementsHandle;
+    GLsizeiptr      VertexBufferSize;
+    GLsizeiptr      IndexBufferSize;
+    bool            HasClipOrigin;
+    bool            UseBufferSubData;
 
     ImGui_ImplOpenGL3_Data() { memset((void*)this, 0, sizeof(*this)); }
 };
 
+namespace detail {
+    
 static bool setup_platform();
 static bool setup_opengl();
 static bool setup_openal();
@@ -132,6 +138,8 @@ static bool is_s3tc_supported = false;
 static bool is_audio_locked = false;
 static bool is_mouse_locked = false;
 static bool is_fullscreen = false;
+
+static glm::uint gui_mvp_uniform;
 
 #if defined(__EMSCRIPTEN__)
 EM_JS(int, browser_get_samplerate, (), {
@@ -501,6 +509,7 @@ static bool setup_openal()
 //     alcCloseDevice(_webaudio_device);
 // }
 
+
 void update()
 {
 
@@ -549,8 +558,9 @@ void update()
     //     io.AddMouseButtonEvent(_button, detail::buttons[_button]);
     // io.AddFocusEvent(true);
 
-    // ImGui_ImplOpenGL3_Data* _backend_data = static_cast<ImGui_ImplOpenGL3_Data*>(io.BackendRendererUserData);
-    // const auto _projection_matrix_index = _backend_data->AttribLocationProjMtx;
+
+    ImGui_ImplOpenGL3_Data* _backend_data = static_cast<ImGui_ImplOpenGL3_Data*>(io.BackendRendererUserData);
+    gui_mvp_uniform = _backend_data->AttribLocationProjMtx;
 
     update_mouse_lock();
 
@@ -624,6 +634,43 @@ void run_impl(const std::function<void()>& start, const std::function<void()>& u
 #endif
 }
 
+void imgui_special_callback(const ImDrawList* parent_list, const ImDrawCmd* cmd)
+{
+    if (cmd->UserCallbackData) {
+        glm::mat4& _mvp = *static_cast<glm::mat4*>(cmd->UserCallbackData);
+        glUniformMatrix4fv(detail::gui_mvp_uniform, 1, GL_FALSE, &_mvp[0][0]);
+        delete &_mvp;
+    } else {
+        ImDrawData* _draw_data = ImGui::GetDrawData();
+        float L = _draw_data->DisplayPos.x;
+        float R = _draw_data->DisplayPos.x + _draw_data->DisplaySize.x;
+        float T = _draw_data->DisplayPos.y;
+        float B = _draw_data->DisplayPos.y + _draw_data->DisplaySize.y;
+// #if defined(GL_CLIP_ORIGIN)
+//         if (!clip_origin_lower_left) { float tmp = T; T = B; B = tmp; } // Swap top and bottom if origin is upper left
+// #endif
+        const float ortho_projection[4][4] =
+        {
+            { 2.0f/(R-L),   0.0f,         0.0f,   0.0f },
+            { 0.0f,         2.0f/(T-B),   0.0f,   0.0f },
+            { 0.0f,         0.0f,        -1.0f,   0.0f },
+            { (R+L)/(L-R),  (T+B)/(B-T),  0.0f,   1.0f },
+        };
+        glUniformMatrix4fv(detail::gui_mvp_uniform, 1, GL_FALSE, &ortho_projection[0][0]);
+    }
+}
+
+}
+
+void gui_mvp(const std::optional<glm::mat4>& mvp)
+{
+    void* _void_mvp = nullptr;
+    if (mvp.has_value()) {
+        _void_mvp = new glm::mat4(mvp.value());
+    }
+    ImGuiContext& g = *ImGui::GetCurrentContext();
+    ImGuiWindow* window = g.CurrentWindow;    
+    ImGui::GetBackgroundDrawList()->AddCallback(detail::imgui_special_callback, _void_mvp);
 }
 
 void graphics_assert()

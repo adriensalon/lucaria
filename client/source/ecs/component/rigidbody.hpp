@@ -12,6 +12,7 @@
 #include <core/layer.hpp>
 #include <core/fetch.hpp>
 #include <core/shape.hpp>
+#include <core/world.hpp>
 
 enum struct rigidbody_kind {
     kinematic,

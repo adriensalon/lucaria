@@ -3,6 +3,7 @@
 #include <core/fetch.hpp>
 #include <core/layer.hpp>
 #include <core/shape.hpp>
+#include <core/world.hpp>
 
 struct collider_component {
     collider_component() = default;

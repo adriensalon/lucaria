@@ -6,6 +6,7 @@
 #include <core/fetch.hpp>
 #include <core/mesh.hpp>
 #include <core/texture.hpp>
+#include <core/world.hpp>
 
 enum struct model_shader {
     blockout,

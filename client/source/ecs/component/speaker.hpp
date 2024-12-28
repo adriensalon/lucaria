@@ -2,6 +2,7 @@
 
 #include <core/fetch.hpp>
 #include <core/sound.hpp>
+#include <core/world.hpp>
 
 struct sound_controller {
 

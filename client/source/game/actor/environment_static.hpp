@@ -1,9 +1,11 @@
-#include <core/world.hpp>
+#pragma once
+
 #include <ecs/component/collider.hpp>
 #include <ecs/component/model.hpp>
 
 struct environment_static_actor {
     environment_static_actor(scene_data& scene, const std::string& uuid);
+
     collider_component& get_collider();
 
 private:

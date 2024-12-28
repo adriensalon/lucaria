@@ -1,5 +1,9 @@
-#include <core/window.hpp>
+#include <ecs/component/model.hpp>
+#include <ecs/component/rigidbody.hpp>
+#include <ecs/component/speaker.hpp>
+#include <ecs/system/immediate.hpp>
 #include <ecs/system/player.hpp>
+#include <ecs/system/rendering.hpp>
 #include <game/actor/character_runner.hpp>
 
 character_runner_actor::character_runner_actor(scene_data& scene)
@@ -34,13 +38,18 @@ character_runner_actor::character_runner_actor(scene_data& scene)
 void character_runner_actor::update()
 {
     static bool _is_playing = false;
-    if (get_keys()[keyboard_key::w] && !_is_playing) {
+    if (immediate_system::get_keys()[keyboard_key::w] && !_is_playing) {
         _animator.value().get().get_controller(444).play();
         _is_playing = true;
-    } else if (!get_keys()[keyboard_key::w] && _is_playing) {
+    } else if (!immediate_system::get_keys()[keyboard_key::w] && _is_playing) {
         _animator.value().get().get_controller(444).pause();
         _is_playing = false;
     }
+
+    const glm::mat4 _model(1.f);
+    immediate_system::use_gui_mvp(rendering_system::get_projection() * rendering_system::get_view() * _model);
+    immediate_system::get_gui_drawlist()->AddText({ 0, 0 }, ImGui::ColorConvertFloat4ToU32({ 0.f, 0.f, 0.f, 1.f }), "MON TEXTE 3D");
+    immediate_system::use_gui_mvp(std::nullopt);
 }
 
 animator_component& character_runner_actor::get_animator()
