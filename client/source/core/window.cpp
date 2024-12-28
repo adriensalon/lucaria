@@ -645,9 +645,6 @@ void imgui_special_callback(const ImDrawList* parent_list, const ImDrawCmd* cmd)
         float R = _draw_data->DisplayPos.x + _draw_data->DisplaySize.x;
         float T = _draw_data->DisplayPos.y;
         float B = _draw_data->DisplayPos.y + _draw_data->DisplaySize.y;
-// #if defined(GL_CLIP_ORIGIN)
-//         if (!clip_origin_lower_left) { float tmp = T; T = B; B = tmp; } // Swap top and bottom if origin is upper left
-// #endif
         const float ortho_projection[4][4] =
         {
             { 2.0f/(R-L),   0.0f,         0.0f,   0.0f },
@@ -671,9 +668,7 @@ void gui_mvp(const std::optional<glm::mat4>& mvp)
     void* _void_mvp = nullptr;
     if (mvp.has_value()) {
         _void_mvp = new glm::mat4(mvp.value());
-    }
-    ImGuiContext& g = *ImGui::GetCurrentContext();
-    ImGuiWindow* window = g.CurrentWindow;    
+    }  
     ImGui::GetBackgroundDrawList()->AddCallback(detail::imgui_special_callback, _void_mvp);
 }
 

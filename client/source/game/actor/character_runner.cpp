@@ -2,7 +2,6 @@
 #include <ecs/component/model.hpp>
 #include <ecs/component/rigidbody.hpp>
 #include <ecs/component/speaker.hpp>
-#include <ecs/system/player.hpp>
 #include <ecs/system/rendering.hpp>
 #include <game/actor/character_runner.hpp>
 
@@ -31,8 +30,8 @@ character_runner_actor::character_runner_actor(scene_data& scene)
     _transform = scene.components.emplace<transform_component>(_entity)
         .rotation_relative(glm::vec3(0.f, glm::radians(90.f), 0.f));
 
-    player_system::follow_transform(_transform.value().get());
-    player_system::follow_bone(_animator.value().get(), "mixamorig9:Head");
+    rendering_system::use_camera_transform(_transform.value().get());
+    rendering_system::use_camera_bone(_animator.value().get(), "mixamorig9:Head");
 }
 
 void character_runner_actor::update()
@@ -55,4 +54,9 @@ void character_runner_actor::update()
 animator_component& character_runner_actor::get_animator()
 {
     return _animator.value().get();
+}
+
+transform_component& character_runner_actor::get_transform()
+{
+    return _transform.value().get();
 }

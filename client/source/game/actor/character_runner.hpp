@@ -8,7 +8,7 @@ struct character_runner_actor {
     void update();
 
     animator_component& get_animator();
-    animator_component& get_transform();
+    transform_component& get_transform();
 
 private:
     std::optional<std::reference_wrapper<animator_component>> _animator = std::nullopt;

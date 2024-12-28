@@ -5,7 +5,6 @@
 #include <ecs/system/dynamics.hpp>
 #include <ecs/system/mixer.hpp>
 #include <ecs/system/motion.hpp>
-#include <ecs/system/player.hpp>
 #include <ecs/system/rendering.hpp>
 
 #include <game/actor/character_runner.hpp>
@@ -15,10 +14,9 @@
 int main()
 {
     run<user_ui_scene>([]() {
-
-        rendering_system::clear_debug_guizmos();
-        rendering_system::clear_screen();
+        
         rendering_system::compute_projection();
+        rendering_system::clear_debug_guizmos();
 
         motion_system::advance_controllers();
         motion_system::apply_animations();
@@ -28,9 +26,8 @@ int main()
         dynamics_system::step_simulation();
         dynamics_system::compute_kinematic_collisions();
         dynamics_system::collect_debug_guizmos();
-        
-        player_system::update();
-
+                
+        rendering_system::clear_screen();
         rendering_system::compute_view_projection();
         rendering_system::draw_skybox();
         rendering_system::draw_blockout_meshes();

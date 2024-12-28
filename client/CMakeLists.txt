@@ -107,7 +107,7 @@ target_link_libraries(lucaria PRIVATE woff2dec)
 target_link_libraries(lucaria PRIVATE BulletDynamics BulletCollision LinearMath)
 
 # target_compile_definitions(lucaria PRIVATE LUCARIA_DEBUG)
-# target_compile_definitions(lucaria PRIVATE LUCARIA_GUIZMO)
+target_compile_definitions(lucaria PRIVATE LUCARIA_GUIZMO)
 # target_compile_definitions(lucaria PRIVATE LUCARIA_JSON)
 
 set_target_properties(lucaria PROPERTIES CXX_STANDARD 17)
