@@ -4,7 +4,6 @@
 
 #include <AL/al.h>
 #include <AL/alc.h>
-#include <imgui.h>
 #include <imgui_internal.h>
 #include <backends/imgui_impl_opengl3.h>
 
@@ -660,6 +659,11 @@ void imgui_special_callback(const ImDrawList* parent_list, const ImDrawCmd* cmd)
     }
 }
 
+}
+
+ImDrawList* get_gui_drawlist()
+{
+    return ImGui::GetBackgroundDrawList();
 }
 
 void gui_mvp(const std::optional<glm::mat4>& mvp)

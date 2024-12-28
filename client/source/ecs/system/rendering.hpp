@@ -12,6 +12,7 @@ struct rendering_system {
 
     static void use_camera_projection(const float fov = 60.f, const float near = 0.1f, const float far = 100.f);
     static void use_camera_transform(transform_component& camera);
+    static void use_camera_bone(animator_component& value, const std::string& name);
     static void use_clear_color(const glm::vec4& clear_color = { 1.f, 1.f, 1.f, 1.f });
     static void use_clear_depth(const bool is_clearing = true);
     static void use_skybox_cubemap(const std::shared_future<std::shared_ptr<cubemap_ref>>& fetched_cubemap);

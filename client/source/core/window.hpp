@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <imgui.h>
 
 #include <functional>
 #include <optional>
@@ -36,6 +37,7 @@ bool get_is_s3tc_supported();
 bool get_is_mouse_locked();
 bool get_is_audio_locked();
 
+ImDrawList* get_gui_drawlist();
 void gui_mvp(const std::optional<glm::mat4>& mvp);
 std::unordered_map<keyboard_key, bool>& get_keys();
 std::unordered_map<glm::uint, bool>& get_buttons();
