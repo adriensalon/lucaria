@@ -24,52 +24,56 @@ endif()
 ##
 ##
 
-set(ozz_json_sources
-    "upstream/ozz/extern/jsoncpp/dist/jsoncpp.cpp")
+if(LUCARIA_BUILD_COMPILERS)
 
-set(ozz_options_sources
-    "upstream/ozz/src/options/options.cc")
+    set(ozz_json_sources
+        "upstream/ozz/extern/jsoncpp/dist/jsoncpp.cpp")
 
-set(ozz_offline_sources 
-    "upstream/ozz/src/animation/offline/additive_animation_builder.cc"
-    "upstream/ozz/src/animation/offline/animation_builder.cc"
-    "upstream/ozz/src/animation/offline/animation_optimizer.cc"
-    "upstream/ozz/src/animation/offline/motion_extractor.cc"
-    "upstream/ozz/src/animation/offline/raw_animation_archive.cc"
-    "upstream/ozz/src/animation/offline/raw_animation_utils.cc"
-    "upstream/ozz/src/animation/offline/raw_animation.cc"
-    "upstream/ozz/src/animation/offline/raw_skeleton_archive.cc"
-    "upstream/ozz/src/animation/offline/raw_skeleton.cc"
-    "upstream/ozz/src/animation/offline/raw_track_utils.cc"
-    "upstream/ozz/src/animation/offline/raw_track.cc"
-    "upstream/ozz/src/animation/offline/skeleton_builder.cc"
-    "upstream/ozz/src/animation/offline/track_builder.cc"
-    "upstream/ozz/src/animation/offline/track_optimizer.cc")
+    set(ozz_options_sources
+        "upstream/ozz/src/options/options.cc")
 
-set(ozz_tools_sources
-    "upstream/ozz/src/animation/offline/tools/import2ozz_anim.cc"
-    "upstream/ozz/src/animation/offline/tools/import2ozz_config.cc"
-    "upstream/ozz/src/animation/offline/tools/import2ozz_skel.cc"
-    "upstream/ozz/src/animation/offline/tools/import2ozz_track.cc"
-    "upstream/ozz/src/animation/offline/tools/import2ozz.cc")
+    set(ozz_offline_sources 
+        "upstream/ozz/src/animation/offline/additive_animation_builder.cc"
+        "upstream/ozz/src/animation/offline/animation_builder.cc"
+        "upstream/ozz/src/animation/offline/animation_optimizer.cc"
+        "upstream/ozz/src/animation/offline/motion_extractor.cc"
+        "upstream/ozz/src/animation/offline/raw_animation_archive.cc"
+        "upstream/ozz/src/animation/offline/raw_animation_utils.cc"
+        "upstream/ozz/src/animation/offline/raw_animation.cc"
+        "upstream/ozz/src/animation/offline/raw_skeleton_archive.cc"
+        "upstream/ozz/src/animation/offline/raw_skeleton.cc"
+        "upstream/ozz/src/animation/offline/raw_track_utils.cc"
+        "upstream/ozz/src/animation/offline/raw_track.cc"
+        "upstream/ozz/src/animation/offline/skeleton_builder.cc"
+        "upstream/ozz/src/animation/offline/track_builder.cc"
+        "upstream/ozz/src/animation/offline/track_optimizer.cc")
 
-set(ozz_gltf_sources
-    "upstream/ozz/src/animation/offline/gltf/gltf2ozz.cc")
+    set(ozz_tools_sources
+        "upstream/ozz/src/animation/offline/tools/import2ozz_anim.cc"
+        "upstream/ozz/src/animation/offline/tools/import2ozz_config.cc"
+        "upstream/ozz/src/animation/offline/tools/import2ozz_skel.cc"
+        "upstream/ozz/src/animation/offline/tools/import2ozz_track.cc"
+        "upstream/ozz/src/animation/offline/tools/import2ozz.cc")
 
-set(gltf2ozz_sources
-    ${ozz_json_sources}
-    ${ozz_options_sources}
-    ${ozz_offline_sources}
-    ${ozz_tools_sources}
-    ${ozz_gltf_sources})
+    set(ozz_gltf_sources
+        "upstream/ozz/src/animation/offline/gltf/gltf2ozz.cc")
 
-add_executable(lucaria_external_gltf2ozz ${gltf2ozz_sources})
-target_include_directories(lucaria_external_gltf2ozz PRIVATE "upstream/ozz/extern/jsoncpp/dist")
-target_include_directories(lucaria_external_gltf2ozz PRIVATE "upstream/ozz/include")
-target_include_directories(lucaria_external_gltf2ozz PRIVATE "upstream/ozz/src")
-set_target_properties(lucaria_external_gltf2ozz PROPERTIES CXX_STANDARD 17)
-target_link_libraries(lucaria_external_gltf2ozz PRIVATE lucaria_external_ozz)
+    set(gltf2ozz_sources
+        ${ozz_json_sources}
+        ${ozz_options_sources}
+        ${ozz_offline_sources}
+        ${ozz_tools_sources}
+        ${ozz_gltf_sources})
 
-if(MSVC)
-    target_compile_options(lucaria_external_gltf2ozz PRIVATE /wd4996)
+    add_executable(lucaria_external_gltf2ozz ${gltf2ozz_sources})
+    target_include_directories(lucaria_external_gltf2ozz PRIVATE "upstream/ozz/extern/jsoncpp/dist")
+    target_include_directories(lucaria_external_gltf2ozz PRIVATE "upstream/ozz/include")
+    target_include_directories(lucaria_external_gltf2ozz PRIVATE "upstream/ozz/src")
+    set_target_properties(lucaria_external_gltf2ozz PROPERTIES CXX_STANDARD 17)
+    target_link_libraries(lucaria_external_gltf2ozz PRIVATE lucaria_external_ozz)
+
+    if(MSVC)
+        target_compile_options(lucaria_external_gltf2ozz PRIVATE /wd4996)
+    endif()
+
 endif()

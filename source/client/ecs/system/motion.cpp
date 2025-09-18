@@ -8,6 +8,7 @@
 #include <ozz/animation/runtime/local_to_model_job.h>
 #include <ozz/animation/runtime/track_sampling_job.h>
 #include <ozz/base/maths/transform.h>
+#include <ozz/base/maths/simd_math.h>
 
 #include <lucaria/core/math.hpp>
 #include <lucaria/core/window.hpp>
@@ -171,7 +172,7 @@ void motion_system::apply_motion_tracks()
 
 void motion_system::collect_debug_guizmos()
 {
-#if LUCARIA_GUIZMO
+// #if LUCARIA_GUIZMO
     each_scene([](scene_data& scene) {
         scene.components.view<animator_component>(entt::exclude<transform_component>).each([](animator_component& animator) {
             if (animator._skeleton.has_value()) {
@@ -196,11 +197,11 @@ void motion_system::collect_debug_guizmos()
                         btVector3 from(parent_transform.cols[3].x, parent_transform.cols[3].y, parent_transform.cols[3].z);
                         btVector3 to(current_transform.cols[3].x, current_transform.cols[3].y, current_transform.cols[3].z);
 #else
-                        btVector3 from(parent_transform.cols[3][0], parent_transform.cols[3][1], parent_transform.cols[3][2]);
-                        btVector3 to(current_transform.cols[3][0], current_transform.cols[3][1], current_transform.cols[3][2]);
+                        // btVector3 from(parent_transform.cols[3][0], parent_transform.cols[3][1], parent_transform.cols[3][2]);
+                        // btVector3 to(current_transform.cols[3][0], current_transform.cols[3][1], current_transform.cols[3][2]);
 #endif
                         btVector3 color(1.0f, 0.0f, 0.0f); // Red color for bones
-                        detail::draw_guizmo_line(from, to, color);
+                        // detail::draw_guizmo_line(from, to, color);
                     }
                 }
             }
@@ -229,17 +230,17 @@ void motion_system::collect_debug_guizmos()
                         btVector3 from(parent_transform.cols[3].x, parent_transform.cols[3].y, parent_transform.cols[3].z);
                         btVector3 to(current_transform.cols[3].x, current_transform.cols[3].y, current_transform.cols[3].z);
 #else
-                        btVector3 from(parent_transform.cols[3][0], parent_transform.cols[3][1], parent_transform.cols[3][2]);
-                        btVector3 to(current_transform.cols[3][0], current_transform.cols[3][1], current_transform.cols[3][2]);
+                        // btVector3 from(parent_transform.cols[3][0], parent_transform.cols[3][1], parent_transform.cols[3][2]);
+                        // btVector3 to(current_transform.cols[3][0], current_transform.cols[3][1], current_transform.cols[3][2]);
 #endif
                         btVector3 color(1.0f, 0.0f, 0.0f); // Red color for bones
-                        detail::draw_guizmo_line(from, to, color);
+                        // detail::draw_guizmo_line(from, to, color);
                     }
                 }
             }
         });
     });
-#endif
+// #endif
 }
 
 }

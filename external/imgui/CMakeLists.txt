@@ -4,11 +4,20 @@ set(imgui_sources
 	"upstream/imgui/imgui_tables.cpp"
 	"upstream/imgui/imgui_draw.cpp"
 	"upstream/imgui/imgui_demo.cpp"
-	"upstream/imgui/misc/cpp/imgui_stdlib.cpp"
-	# "upstream/imgui/backends/imgui_impl_glfw.cpp"
+	"upstream/imgui/misc/cpp/imgui_stdlib.cpp"	
 	"upstream/imgui/backends/imgui_impl_opengl3.cpp")
+
+if(NOT EMSCRIPTEN)
+	set(imgui_sources
+		${imgui_sources}
+		"upstream/imgui/backends/imgui_impl_glfw.cpp")
+endif()
 
 add_library(lucaria_external_imgui STATIC EXCLUDE_FROM_ALL ${imgui_sources})
 set_target_properties(lucaria_external_imgui PROPERTIES CXX_STANDARD 17)
 target_include_directories(lucaria_external_imgui PUBLIC "upstream/imgui")
 target_include_directories(lucaria_external_imgui PUBLIC "upstream/imgui/backends")
+
+if(NOT EMSCRIPTEN)
+	target_link_libraries(lucaria_external_imgui PRIVATE lucaria_external_glfw)
+endif()

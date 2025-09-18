@@ -22,7 +22,7 @@ function(add_lucaria_game_win32 TARGET)
             add_custom_command(
                 TARGET ${TARGET}_win32
                 POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/${TARGET}/web/${TARGET}.exe ${LBG_INSTALL_DIR}/${TARGET}.exe)
+                COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/${TARGET}/win32/Debug/${TARGET}.exe ${LBG_INSTALL_DIR}/${TARGET}.exe)
         endif()
     endif()
 

@@ -4,7 +4,6 @@ function(add_lucaria_assets TARGET ASSETS_INPUT_DIR ASSETS_OUTPUT_DIR)
 
     set(LUCARIA_BUILD_COMPILERS ON)
     add_subdirectory("${LUCARIA_SOURCE_DIR}/compiler" "${LUCARIA_BINARY_DIR}/compiler")
-    unset(LUCARIA_BUILD_COMPILERS)
 
     file(GLOB_RECURSE assets_inputs CONFIGURE_DEPENDS "${ASSETS_INPUT_DIR}/*")
 
