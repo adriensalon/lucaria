@@ -23,19 +23,19 @@ void compile_binary_or_json(const resource_data_t& data, const std::filesystem::
 
 }
 
-void export_binary(const geometry_data& data, const std::filesystem::path& output_path)
+void export_binary(const lucaria::geometry_data& data, const std::filesystem::path& output_path)
 {
     detail::compile_binary_or_json(data, output_path);
     std::cout << "   Exporting binary geometry " << output_path.filename() << std::endl;
 }
 
-void export_binary(const shader_data& data, const std::filesystem::path& output_path)
+void export_binary(const lucaria::shader_data& data, const std::filesystem::path& output_path)
 {
     detail::compile_binary_or_json(data, output_path);
     std::cout << "   Exporting binary shader " << output_path.filename() << std::endl;
 }
 
-void export_binary(const image_data& data, const std::filesystem::path& output_path)
+void export_binary(const lucaria::image_data& data, const std::filesystem::path& output_path)
 {
     detail::compile_binary_or_json(data, output_path);
     std::cout << "   Exporting binary image " << output_path.filename() << std::endl;
