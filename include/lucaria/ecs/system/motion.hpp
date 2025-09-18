@@ -1,5 +1,7 @@
 #pragma once
 
+namespace lucaria {
+
 struct motion_system {
     motion_system() = delete;
     motion_system(const motion_system& other) = delete;
@@ -12,3 +14,5 @@ struct motion_system {
     static void apply_motion_tracks(); // can be executed in parallel
     static void collect_debug_guizmos();
 };
+
+}

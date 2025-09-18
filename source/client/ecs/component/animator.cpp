@@ -1,16 +1,18 @@
-#include <lucaria/ecs/component/animator.hpp>
 #include <lucaria/core/fetch.hpp>
+#include <lucaria/ecs/component/animator.hpp>
 
+
+namespace lucaria {
 namespace detail {
 
-    
-void PrintBoneNames(const ozz::animation::Skeleton& skeleton) {
-    const int num_joints = skeleton.num_joints();
-    for (int i = 0; i < num_joints; ++i) {
-        const char* joint_name = skeleton.joint_names()[i];
-        printf("Bone %d: %s\n", i, joint_name);
+    void PrintBoneNames(const ozz::animation::Skeleton& skeleton)
+    {
+        const int num_joints = skeleton.num_joints();
+        for (int i = 0; i < num_joints; ++i) {
+            const char* joint_name = skeleton.joint_names()[i];
+            printf("Bone %d: %s\n", i, joint_name);
+        }
     }
-}
 
 }
 
@@ -58,7 +60,7 @@ animation_controller& animation_controller::speed(const float ratio)
 
 animator_component& animator_component::animation(const unsigned int name, const std::shared_future<std::shared_ptr<animation_ref>>& fetched_animation)
 {
-    _animations[name].emplace(fetched_animation, [this, name] () {
+    _animations[name].emplace(fetched_animation, [this, name]() {
         if (_skeleton.has_value()) {
 #if LUCARIA_DEBUG
             const int _animation_tracks = _animations[name].value().num_tracks();
@@ -89,7 +91,7 @@ animator_component& animator_component::motion_track(const unsigned int name, co
 
 animator_component& animator_component::skeleton(const std::shared_future<std::shared_ptr<skeleton_ref>>& fetched_skeleton)
 {
-    _skeleton.emplace(fetched_skeleton, [this] () {
+    _skeleton.emplace(fetched_skeleton, [this]() {
         for (const std::pair<const unsigned int, fetch_container<animation_ref>>& _pair : _animations) {
             if (_pair.second.has_value()) {
 #if LUCARIA_DEBUG
@@ -115,4 +117,6 @@ animator_component& animator_component::skeleton(const std::shared_future<std::s
 animation_controller& animator_component::get_controller(const unsigned int name)
 {
     return _controllers.at(name);
+}
+
 }

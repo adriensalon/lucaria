@@ -20,6 +20,8 @@
 #include <lucaria/core/world.hpp>
 #include <lucaria/ecs/component/transform.hpp>
 
+namespace lucaria {
+
 struct animation_controller {
     animation_controller() = default;
     animation_controller(const animation_controller& other) = delete;
@@ -95,3 +97,5 @@ private:
     friend struct motion_system;
     friend struct rendering_system;
 };
+
+}

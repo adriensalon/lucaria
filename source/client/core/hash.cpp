@@ -4,6 +4,8 @@
 #include <numeric>
 #include <unordered_set>
 
+namespace lucaria {
+
 std::size_t uvec2_hash::operator()(const glm::uvec2& vec) const
 {
     std::size_t _h1 = std::hash<glm::uint> {}(vec.x);
@@ -27,4 +29,6 @@ std::size_t path_vector_hash::operator()(const std::vector<std::filesystem::path
         _seed ^= _path_hash + 0x9e3779b9 + (_seed << 6) + (_seed >> 2);
     }
     return _seed;
+}
+
 }

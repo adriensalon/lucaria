@@ -1,6 +1,8 @@
 #include <lucaria/core/audio.hpp>
 #include <lucaria/ecs/component/speaker.hpp>
 
+namespace lucaria {
+
 speaker_component& speaker_component::sounds(const std::unordered_map<glm::uint, std::shared_future<std::shared_ptr<sound_ref>>>& fetched_sounds)
 {
     for (const std::pair<const glm::uint, std::shared_future<std::shared_ptr<sound_ref>>>& _pair : fetched_sounds) {
@@ -24,4 +26,6 @@ speaker_component& speaker_component::sounds(const std::unordered_map<glm::uint,
 sound_controller& speaker_component::get_controller(const glm::uint name)
 {
     return _controllers.at(name);
+}
+
 }

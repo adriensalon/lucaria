@@ -10,6 +10,8 @@
 
 #include <lucaria/common/geometry.hpp>
 
+namespace lucaria {
+
 enum struct mesh_attribute {
     position,
     color,
@@ -86,3 +88,5 @@ private:
 };
 
 #endif
+
+}

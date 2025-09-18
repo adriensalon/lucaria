@@ -2,6 +2,7 @@
 #include <lucaria/core/window.hpp>
 #include <lucaria/ecs/system/mixer.hpp>
 
+namespace lucaria {
 namespace detail {
 
 // void setListenerVelocity(float x, float y, float z)
@@ -41,4 +42,6 @@ void mixer_system::apply_listener_transform()
         alListener3f(AL_POSITION, _position.x, _position.y, _position.z);        
         alListenerfv(AL_ORIENTATION, _orientation);
     }
+}
+
 }

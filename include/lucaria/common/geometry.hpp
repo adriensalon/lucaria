@@ -6,6 +6,8 @@
 
 #include <lucaria/common/math.hpp>
 
+namespace lucaria {
+
 struct geometry_data {
     glm::uint count = 0; // vertices count
     std::vector<glm::vec3> positions = {};
@@ -35,3 +37,5 @@ struct geometry_data {
         archive(cereal::make_nvp("invposes", invposes));
     }
 };
+
+}

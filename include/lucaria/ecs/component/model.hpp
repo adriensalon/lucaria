@@ -8,6 +8,8 @@
 #include <lucaria/core/texture.hpp>
 #include <lucaria/core/world.hpp>
 
+namespace lucaria {
+
 enum struct model_shader {
     blockout,
     unlit,
@@ -102,3 +104,5 @@ private:
 using blockout_model_component = model_component<model_shader::blockout>;
 using unlit_model_component = model_component<model_shader::unlit>;
 using pbr_model_component = model_component<model_shader::pbr>;
+
+}

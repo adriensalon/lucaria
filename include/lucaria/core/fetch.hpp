@@ -9,6 +9,8 @@
 #include <sstream>
 #include <vector>
 
+namespace lucaria {
+
 using fetch_callback = std::function<void(std::istringstream&)>;
 using fetch_raw_callback = std::function<void(const std::vector<char>&)>;
 using multiple_fetch_callback = std::function<void(std::size_t, std::size_t, std::istringstream&)>;
@@ -43,5 +45,7 @@ std::size_t get_fetches_waiting();
 
 void wait_one_fetched_container();
 void wait_fetched_containers();
+
+}
 
 #include <lucaria/core/fetch.inl>

@@ -2,6 +2,7 @@
 
 #include <lucaria/core/math.hpp>
 
+namespace lucaria {
 namespace detail {
 
 template <typename from_t, typename to_t>
@@ -54,3 +55,4 @@ const btVector3& reinterpret_bullet(const glm::vec3& vector)
     return detail::reinterpret<glm::vec3, btVector3>(vector);
 }
 
+}

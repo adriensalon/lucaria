@@ -7,6 +7,7 @@
 #include <lucaria/core/load.hpp>
 #include <lucaria/core/skeleton.hpp>
 
+namespace lucaria {
 namespace detail {
 
 static std::unordered_map<std::string, std::promise<std::shared_ptr<skeleton_ref>>> promises;
@@ -40,4 +41,6 @@ std::shared_future<std::shared_ptr<skeleton_ref>> fetch_skeleton(const std::file
 void clear_skeleton_fetches()
 {
     detail::promises.clear();
+}
+
 }

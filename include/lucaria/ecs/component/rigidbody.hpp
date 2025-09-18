@@ -14,6 +14,8 @@
 #include <lucaria/core/shape.hpp>
 #include <lucaria/core/world.hpp>
 
+namespace lucaria {
+
 enum struct rigidbody_kind {
     kinematic,
     dynamic
@@ -110,3 +112,5 @@ private:
 
 using kinematic_rigidbody_component = rigidbody_component<rigidbody_kind::kinematic>;
 using dynamic_rigidbody_component = rigidbody_component<rigidbody_kind::dynamic>;
+
+}

@@ -18,6 +18,8 @@
 #include <lucaria/ecs/component/transform.hpp>
 #include <lucaria/ecs/system/rendering.hpp>
 
+namespace lucaria {
+
 #if LUCARIA_GUIZMO
 class guizmo_debug_draw : public btIDebugDraw {
 public:
@@ -635,4 +637,6 @@ glm::mat4 rendering_system::get_projection()
 glm::mat4 rendering_system::get_view()
 {
     return detail::camera_view;
+}
+
 }

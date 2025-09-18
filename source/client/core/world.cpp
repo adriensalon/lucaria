@@ -1,5 +1,7 @@
 #include <lucaria/core/world.hpp>
 
+namespace lucaria {
+
 void each_scene(const std::function<void(scene_data&)>& callback)
 {
     // detail::scenes_registry.view<scene_data>().each([callback] (scene_data& scene) {
@@ -75,3 +77,5 @@ void each_scene(const std::function<void(scene_data&)>& callback)
 //         callback(_pair.second.first);
 //     }
 // }
+
+}

@@ -1,5 +1,7 @@
 #pragma once
 
+namespace lucaria {
+
 constexpr short bulletgroupID_kinematic_rigidbody = 1 << 0; // interacts with ?collider_ground, ?collider_wall, ?collider_layerX
 constexpr short bulletgroupID_dynamic_rigidbody = 1 << 1; // interacts with ?dynamic_rigidbody, collider_ground, collider_wall
 constexpr short bulletgroupID_collider_ground = 1 << 2; // interacts with kinematic_rigidbody, dynamic_rigidbody
@@ -32,4 +34,6 @@ inline bool contains_layer(const short containing, const short contained)
 inline short remove_layer(const short containing, const short to_remove) 
 {
     return containing & ~to_remove;
+}
+
 }

@@ -7,6 +7,7 @@
 #include <lucaria/core/fetch.hpp>
 #include <lucaria/core/load.hpp>
 
+namespace lucaria {
 namespace detail {
 
 static std::unordered_map<std::string, std::promise<std::shared_ptr<animation_ref>>> animation_promises;
@@ -83,4 +84,6 @@ void clear_animation_fetches()
 {
     detail::animation_promises.clear();
     detail::motion_track_promises.clear();
+}
+
 }

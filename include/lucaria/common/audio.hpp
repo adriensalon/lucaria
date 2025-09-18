@@ -5,6 +5,8 @@
 #include <cereal/types/vector.hpp>
 #include <glm/glm.hpp>
 
+namespace lucaria {
+
 struct audio_data {
     glm::uint sample_rate;
     std::vector<glm::float32> samples;
@@ -16,3 +18,5 @@ struct audio_data {
         archive(cereal::make_nvp("samples", samples));
     }
 };
+
+}

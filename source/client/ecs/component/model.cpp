@@ -1,5 +1,7 @@
 #include <lucaria/ecs/component/model.hpp>
 
+namespace lucaria {
+
 model_component<model_shader::blockout>& model_component<model_shader::blockout>::mesh(const std::shared_future<std::shared_ptr<mesh_ref>>& fetched_mesh)
 {
     _mesh.emplace(fetched_mesh);
@@ -19,3 +21,5 @@ model_component<model_shader::unlit>& model_component<model_shader::unlit>::mesh
 }
 
 // todo pbr
+
+}

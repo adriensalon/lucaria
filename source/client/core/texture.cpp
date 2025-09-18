@@ -9,6 +9,8 @@
 #include <lucaria/core/texture.hpp>
 #include <lucaria/core/window.hpp>
 
+namespace lucaria {
+
 // constexpr static GLenum COMPRESSED_R11_EAC = 0x9270;
 // constexpr static GLenum COMPRESSED_SIGNED_R11_EAC = 0x9271;
 // constexpr static GLenum COMPRESSED_RG11_EAC = 0x9272;
@@ -223,4 +225,6 @@ std::shared_future<std::shared_ptr<texture_ref>> fetch_texture(const std::filesy
 void clear_texture_fetches()
 {
     detail::promises.clear();
+}
+
 }

@@ -29,6 +29,7 @@
 #include <lucaria/core/window.hpp>
 #include <lucaria/core/world.hpp>
 
+namespace lucaria {
 struct ImGui_ImplOpenGL3_Data {
     GLuint GlVersion; // Extracted at runtime using GL_MAJOR_VERSION, GL_MINOR_VERSION queries (e.g. 320 for GL 3.2)
     char GlslVersionString[32]; // Specified by user or detected based on compile time GL settings.
@@ -575,6 +576,7 @@ void update()
     // remove_levels();
     manage();
 
+
     graphics_assert();
     if (is_audio_locked) {
         // audio_assert();
@@ -787,4 +789,6 @@ bool get_is_audio_locked()
 bool get_is_mouse_locked()
 {
     return detail::is_mouse_locked;
+}
+
 }

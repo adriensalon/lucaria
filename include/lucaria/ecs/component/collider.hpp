@@ -5,6 +5,8 @@
 #include <lucaria/core/shape.hpp>
 #include <lucaria/core/world.hpp>
 
+namespace lucaria {
+
 struct collider_component {
     collider_component() = default;
     collider_component(const collider_component& other) = delete;
@@ -31,3 +33,5 @@ private:
     short _mask = bulletgroupID_kinematic_rigidbody;
     friend struct dynamics_system;
 };
+
+}

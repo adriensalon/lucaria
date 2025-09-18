@@ -3,6 +3,8 @@
 #include <lucaria/core/cubemap.hpp>
 #include <lucaria/ecs/component/transform.hpp>
 
+namespace lucaria {
+
 struct rendering_system {
     rendering_system() = delete;
     rendering_system(const rendering_system& other) = delete;
@@ -29,3 +31,5 @@ struct rendering_system {
     static glm::mat4 get_projection();
     static glm::mat4 get_view();
 };
+
+}

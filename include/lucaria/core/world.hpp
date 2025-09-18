@@ -1,13 +1,15 @@
 #pragma once
 
+#include <any>
 #include <functional>
 #include <iostream>
-#include <vector>
 #include <set>
-#include <any>
 #include <typeinfo>
+#include <vector>
 
 #include <entt/entt.hpp>
+
+namespace lucaria {
 
 struct scene_data {
 
@@ -47,7 +49,7 @@ struct scene_data {
             actors_registry.erase<actor_t>(_found_entity.value());
         }
     }
-    
+
     template <typename actor_t>
     void each_actor(const std::function<void(actor_t&)>& callback)
     {
@@ -68,20 +70,19 @@ private:
     entt::registry actors_registry = {};
 };
 
-
 namespace detail {
 
-inline std::vector<scene_data> world_scenes = {};
-inline std::vector<std::any> world_data = {};
-inline std::set<std::string> world_types = {};
-inline std::vector<std::function<void()>> manage_callbacks = {};
+    inline std::vector<scene_data> world_scenes = {};
+    inline std::vector<std::any> world_data = {};
+    inline std::set<std::string> world_types = {};
+    inline std::vector<std::function<void()>> manage_callbacks = {};
 
 }
 
 template <typename scene_t>
 void make_scene()
 {
-    detail::manage_callbacks.emplace_back([] () {
+    detail::manage_callbacks.emplace_back([]() {
         std::string _world_type(typeid(scene_t).name());
         if (detail::world_types.count(_world_type) > 0) {
             std::cout << "only one scene of each type" << std::endl;
@@ -92,7 +93,7 @@ void make_scene()
         detail::world_data.emplace_back((std::make_any<scene_t>(_data)));
         detail::world_types.emplace(_world_type);
         // std::cout << "scene created \n";
-    });    
+    });
 }
 
 template <typename scene_t>
@@ -125,6 +126,7 @@ inline void manage()
 {
     for (std::function<void()>& _manage_callback : detail::manage_callbacks) {
         _manage_callback();
+        std::cout << "Manage cb^^" << std::endl;
     }
     detail::manage_callbacks.clear();
 }
@@ -132,4 +134,6 @@ inline void manage()
 inline std::size_t get_scenes_count()
 {
     return detail::world_scenes.size();
+}
+
 }

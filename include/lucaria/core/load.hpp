@@ -28,6 +28,8 @@ namespace io {
 }
 }
 
+namespace lucaria {
+
 class raw_input_stream_buf : public std::streambuf {
 public:
     raw_input_stream_buf(const std::vector<char>& data)
@@ -109,3 +111,5 @@ private:
     const std::vector<char>& data_;
     size_t position_;
 };
+
+}

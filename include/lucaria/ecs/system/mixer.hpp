@@ -2,6 +2,8 @@
 
 #include <lucaria/ecs/component/transform.hpp>
 
+namespace lucaria {
+
 struct mixer_system {
     mixer_system() = delete;
     mixer_system(const mixer_system& other) = delete;
@@ -14,3 +16,5 @@ struct mixer_system {
     static void apply_speaker_transforms();
     static void apply_listener_transform();
 };
+
+}

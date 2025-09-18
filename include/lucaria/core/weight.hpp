@@ -3,6 +3,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 
+namespace lucaria {
+
 struct fadein_weight {
     fadein_weight() = default;
     fadein_weight(const fadein_weight& other) = default;
@@ -38,3 +40,5 @@ struct oscillate_weight {
 
     glm::float32 compute_weight(const glm::float32 cursor);
 };
+
+}

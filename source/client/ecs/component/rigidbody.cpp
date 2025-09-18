@@ -3,6 +3,7 @@
 #include <lucaria/ecs/component/rigidbody.hpp>
 #include <lucaria/ecs/system/dynamics.hpp>
 
+namespace lucaria {
 namespace detail {
 
 extern btDiscreteDynamicsWorld* dynamics_world;
@@ -171,4 +172,6 @@ rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind
         detail::dynamics_world->addRigidBody(_rigidbody, _group, _mask);
     }
     return *this;
+}
+
 }

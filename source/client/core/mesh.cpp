@@ -10,6 +10,7 @@
 #include <lucaria/core/fetch.hpp>
 #include <lucaria/core/load.hpp>
 
+namespace lucaria {
 namespace detail {
 
 glm::uint create_vertex_array()
@@ -333,3 +334,5 @@ glm::uint guizmo_mesh_ref::get_indices_count() const
 
 
 #endif
+
+}

@@ -10,6 +10,7 @@
 
 #include <lucaria/core/world.hpp>
 
+namespace lucaria {
 namespace detail {
     void run_impl(const std::function<void()>& start, const std::function<void()>& update);
 }
@@ -45,3 +46,5 @@ glm::vec2 get_screen_size();
 glm::vec2 get_mouse_position();
 glm::vec2& get_mouse_position_delta();
 glm::float64 get_time_delta();
+
+}

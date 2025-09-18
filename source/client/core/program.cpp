@@ -13,6 +13,7 @@
 #include <lucaria/core/window.hpp>
 #include <lucaria/core/load.hpp>
 
+namespace lucaria {
 namespace detail {
 
 glm::uint create_shader(const GLenum type, const std::string& text)
@@ -377,4 +378,6 @@ std::future<std::shared_ptr<program_ref>> fetch_program(const std::filesystem::p
 void clear_program_fetches()
 {
     detail::promises.clear();
+}
+
 }

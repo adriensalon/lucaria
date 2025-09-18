@@ -10,6 +10,7 @@
 #include <lucaria/core/sound.hpp>
 #include <lucaria/core/window.hpp>
 
+namespace lucaria {
 namespace detail {
     
 class VorbisStream {
@@ -180,4 +181,6 @@ std::shared_future<std::shared_ptr<sound_ref>> fetch_sound(const std::filesystem
 void clear_sound_fetches()
 {
     detail::promises.clear();
+}
+
 }

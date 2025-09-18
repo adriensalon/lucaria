@@ -4,6 +4,8 @@
 
 #include <cereal/types/string.hpp>
 
+namespace lucaria {
+
 struct shader_data {
     std::string text;
     
@@ -13,3 +15,5 @@ struct shader_data {
         archive(cereal::make_nvp("text", text));
     }
 };
+
+}

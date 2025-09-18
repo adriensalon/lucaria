@@ -12,6 +12,7 @@
 #include <lucaria/ecs/component/transform.hpp>
 #include <lucaria/ecs/system/dynamics.hpp>
 
+namespace lucaria {
 namespace detail {
 
 static glm::float32 snap_ground_distance = 10.f;
@@ -230,4 +231,6 @@ void dynamics_system::collect_debug_guizmos()
 #if LUCARIA_GUIZMO
     detail::dynamics_world->debugDrawWorld();
 #endif
+}
+
 }

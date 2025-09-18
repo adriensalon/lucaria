@@ -9,6 +9,7 @@
 #include <lucaria/core/fetch.hpp>
 #include <lucaria/core/load.hpp>
 
+namespace lucaria {
 namespace detail {
 
 static std::size_t fetch_total = 0;
@@ -331,4 +332,6 @@ void wait_fetched_containers()
     for (const std::uintptr_t _element : _to_erase) {
         detail::fetch_container_updaters.erase(_element);
     }
+}
+
 }

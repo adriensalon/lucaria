@@ -1,9 +1,10 @@
 #include <lucaria/ecs/component/collider.hpp>
 #include <lucaria/ecs/system/dynamics.hpp>
 
+namespace lucaria {
 namespace detail {
 
-extern btDiscreteDynamicsWorld* dynamics_world;
+    extern btDiscreteDynamicsWorld* dynamics_world;
 
 }
 
@@ -87,4 +88,6 @@ collider_component& collider_component::layer(const kinematic_layer layer)
         }
     }
     return *this;
+}
+
 }

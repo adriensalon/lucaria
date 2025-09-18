@@ -5,6 +5,8 @@
 
 #include <lucaria/common/geometry.hpp>
 
+namespace lucaria {
+
 enum struct shape_type {
     box,
     sphere,
@@ -34,3 +36,5 @@ private:
 
 std::shared_future<std::shared_ptr<shape_ref>> fetch_shape(const std::filesystem::path& geometry_path, const shape_type shape = shape_type::convex_hull);
 void clear_shape_fetches();
+
+}

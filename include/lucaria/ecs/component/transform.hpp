@@ -7,6 +7,8 @@
 
 #include <lucaria/core/world.hpp>
 
+namespace lucaria {
+
 struct animator_component;
 
 struct transform_component {
@@ -39,3 +41,5 @@ private:
     friend struct mixer_system;
     friend struct rendering_system;
 };
+
+}

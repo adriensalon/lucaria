@@ -2,6 +2,7 @@
 #include <lucaria/core/mesh.hpp>
 #include <lucaria/core/shape.hpp>
 
+namespace lucaria {
 namespace detail {
 
 static std::unordered_map<std::string, std::promise<std::shared_ptr<shape_ref>>> promises;
@@ -85,4 +86,6 @@ std::shared_future<std::shared_ptr<shape_ref>> fetch_shape(const std::filesystem
 void clear_shape_fetches()
 {
     detail::promises.clear();
+}
+
 }

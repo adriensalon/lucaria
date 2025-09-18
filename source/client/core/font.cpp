@@ -7,6 +7,7 @@
 #include <lucaria/core/font.hpp>
 #include <lucaria/core/hash.hpp>
 
+namespace lucaria {
 namespace detail {
 
 static std::unordered_map<std::size_t, std::pair<std::vector<std::string>, std::promise<std::shared_ptr<font_ref>>>> promises;
@@ -63,4 +64,6 @@ std::shared_future<std::shared_ptr<font_ref>> fetch_font(const std::vector<std::
 void clear_font_fetches()
 {
     detail::promises.clear();
+}
+
 }

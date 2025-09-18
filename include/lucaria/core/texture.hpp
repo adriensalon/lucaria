@@ -8,6 +8,8 @@
 
 #include <lucaria/common/image.hpp>
 
+namespace lucaria {
+
 struct texture_ref {
     texture_ref() = delete;
     texture_ref(const texture_ref& other) = delete;
@@ -28,3 +30,5 @@ image_data load_image_data(const std::vector<char>& image_bytes);
 image_data load_compressed_image_data(const std::vector<char>& image_bytes);
 std::shared_future<std::shared_ptr<texture_ref>> fetch_texture(const std::filesystem::path& image_path, const std::optional<std::filesystem::path>& etc_image_path = std::nullopt, const std::optional<std::filesystem::path>& s3tc_image_path = std::nullopt);
 void clear_texture_fetches();
+
+}

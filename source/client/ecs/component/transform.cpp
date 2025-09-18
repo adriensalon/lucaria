@@ -4,6 +4,8 @@
 #include <lucaria/ecs/component/animator.hpp>
 #include <lucaria/ecs/component/transform.hpp>
 
+namespace lucaria {
+
 transform_component& transform_component::parent(transform_component& transform)
 {
     transform._children.emplace_back(std::ref(*this));
@@ -73,4 +75,6 @@ glm::vec3 transform_component::get_position() const
 glm::vec3 transform_component::get_forward() const
 {
     return glm::normalize(glm::vec3(_transform[2]));
+}
+
 }

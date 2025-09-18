@@ -3,6 +3,8 @@
 #include <btBulletDynamicsCommon.h>
 #include <glm/glm.hpp>
 
+namespace lucaria {
+
 struct dynamics_system {
     dynamics_system() = delete;
     dynamics_system(const dynamics_system& other) = delete;
@@ -17,3 +19,5 @@ struct dynamics_system {
     static void compute_kinematic_collisions();
     static void collect_debug_guizmos();
 };
+
+}

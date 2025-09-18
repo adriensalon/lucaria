@@ -17,6 +17,7 @@
 #include <lucaria/ecs/component/transform.hpp>
 #include <lucaria/ecs/system/motion.hpp>
 
+namespace lucaria {
 namespace detail {
 
 // void print_matrix(const ozz::math::Float4x4& matrix)
@@ -239,4 +240,6 @@ void motion_system::collect_debug_guizmos()
         });
     });
 #endif
+}
+
 }

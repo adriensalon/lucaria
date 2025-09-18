@@ -5,6 +5,8 @@
 #include <cereal/types/vector.hpp>
 #include <glm/glm.hpp>
 
+namespace lucaria {
+
 struct image_data {
     glm::uint channels;
     glm::uint width;
@@ -22,3 +24,5 @@ struct image_data {
         archive(cereal::make_nvp("pixels", pixels));
     }
 };
+
+}

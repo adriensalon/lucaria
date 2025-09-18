@@ -4,6 +4,8 @@
 #include <lucaria/core/sound.hpp>
 #include <lucaria/core/world.hpp>
 
+namespace lucaria {
+
 struct sound_controller {
 
     // do the same as animation_controller
@@ -31,3 +33,5 @@ private:
     std::unordered_map<glm::uint, glm::uint> _source_ids = {};
     friend struct mixer_system;
 };
+
+}
