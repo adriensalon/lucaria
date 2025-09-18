@@ -1,0 +1,2 @@
+[2024 07 25] Removed shared brotli libs
+[2024 07 25] Update CMakeLists max version to 3.15 for brotli and woff2

@@ -1,0 +1,38 @@
+cmake_minimum_required(VERSION 3.13)
+project(${LUCARIA_TARGET})
+
+add_subdirectory("${LUCARIA_SOURCE_DIR}/client" "${LUCARIA_BINARY_DIR}/client/${LUCARIA_TARGET_PLATFORM}")
+
+add_executable(${LUCARIA_TARGET} ${LUCARIA_TARGET_SOURCES})
+set_target_properties(${LUCARIA_TARGET} PROPERTIES CXX_STANDARD 17)
+target_link_libraries(${LUCARIA_TARGET} PRIVATE lucaria_client)
+
+target_include_directories(${LUCARIA_TARGET} PRIVATE ${LUCARIA_TARGET_INCLUDES})
+target_compile_definitions(${LUCARIA_TARGET} PRIVATE ${LUCARIA_TARGET_DEFINES})
+target_compile_options(${LUCARIA_TARGET} PRIVATE ${LUCARIA_TARGET_BUILD_ARGS})
+
+if(EMSCRIPTEN)
+    set(CXX_STANDARD ".html")
+    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+    # set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "--use-preload-cache")
+    set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} "\
+        -g \
+        --shell-file ${CMAKE_CURRENT_LIST_DIR}/shell.html \
+        -s LLD_REPORT_UNDEFINED \
+        -s ALLOW_MEMORY_GROWTH=1 \
+        -s MAX_WEBGL_VERSION=2 \
+        -s USE_WEBGL2=1 \
+        -s GL_DEBUG=1 \
+        -s FETCH \
+        -s NO_DISABLE_EXCEPTION_CATCHING \
+        -lopenal")
+    # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
+	# 	-O3 \
+	# 	--shell-file ${CMAKE_CURRENT_LIST_DIR}/source/shell.html \
+	# 	-s LLD_REPORT_UNDEFINED \
+	# 	-s ALLOW_MEMORY_GROWTH=1 \
+	# 	-s MAX_WEBGL_VERSION=2 \
+	# 	-s USE_WEBGL2=1 \
+	# 	-s FETCH \
+	# 	-lopenal")
+endif()
