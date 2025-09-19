@@ -157,15 +157,15 @@ void dynamics_system::use_snap_ground_distance(const glm::float32 meters)
 
 void dynamics_system::step_simulation()
 {
-    each_scene([&](scene_data& scene) {
-        scene.components.view<transform_component, kinematic_rigidbody_component>().each([](transform_component& transform, kinematic_rigidbody_component& rigidbody) {
+    each_scene([&](entt::registry& scene) {
+        scene.view<transform_component, kinematic_rigidbody_component>().each([](transform_component& transform, kinematic_rigidbody_component& rigidbody) {
             const btTransform _transform = detail::glm_to_bullet(glm::translate(glm::mat4(1.f), glm::vec3(0.f, rigidbody._half_height, 0.f)) * transform._transform);
             rigidbody._ghost->setWorldTransform(_transform);
         });
     });
     detail::dynamics_world->stepSimulation(static_cast<float>(get_time_delta()), 10);
-    each_scene([&](scene_data& scene) {
-        scene.components.view<transform_component, dynamic_rigidbody_component>().each([](transform_component& transform, dynamic_rigidbody_component& rigidbody) {
+    each_scene([&](entt::registry& scene) {
+        scene.view<transform_component, dynamic_rigidbody_component>().each([](transform_component& transform, dynamic_rigidbody_component& rigidbody) {
             const glm::mat4 _transform = detail::bullet_to_glm(rigidbody._rigidbody->getWorldTransform());
             transform._transform = _transform;
         });
@@ -176,8 +176,8 @@ void dynamics_system::compute_kinematic_collisions()
 {
     kinematic_collision _collision;
     btManifoldArray _manifold_array;
-    each_scene([&](scene_data& scene) {
-        scene.components.view<transform_component, kinematic_rigidbody_component>().each([&](transform_component& transform, kinematic_rigidbody_component& rigidbody) {
+    each_scene([&](entt::registry& scene) {
+        scene.view<transform_component, kinematic_rigidbody_component>().each([&](transform_component& transform, kinematic_rigidbody_component& rigidbody) {
             rigidbody._ground_collision.reset();
             rigidbody._wall_collisions.clear();
             rigidbody._layer_collisions.clear();

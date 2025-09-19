@@ -74,8 +74,8 @@ glm::mat4 sample_motion_track(const motion_track_ref& motion_track, float ratio)
 
 void motion_system::advance_controllers()
 {
-    each_scene([](scene_data& scene) {
-        scene.components.view<animator_component>().each([](animator_component& animator) {
+    each_scene([](entt::registry& scene) {
+        scene.view<animator_component>().each([](animator_component& animator) {
             for (std::pair<const unsigned int, animation_controller>& _pair : animator._controllers) {
                 animation_controller& _controller = animator._controllers[_pair.first];
                 if (_controller._is_playing) {
@@ -93,8 +93,8 @@ void motion_system::advance_controllers()
 
 void motion_system::apply_animations()
 {
-    each_scene([](scene_data& scene) {
-        scene.components.view<animator_component>().each([](animator_component& animator) {
+    each_scene([](entt::registry& scene) {
+        scene.view<animator_component>().each([](animator_component& animator) {
             if (animator._skeleton.has_value()) {
                 ozz::vector<ozz::animation::BlendingJob::Layer> _blend_layers;
                 for (std::pair<const unsigned int, fetch_container<animation_ref>>& _pair : animator._animations) {
@@ -148,8 +148,8 @@ void motion_system::apply_animations()
 
 void motion_system::apply_motion_tracks()
 {
-    each_scene([](scene_data& scene) {
-        scene.components.view<const animator_component, transform_component>().each([](const animator_component& animator, transform_component& transform) {
+    each_scene([](entt::registry& scene) {
+        scene.view<const animator_component, transform_component>().each([](const animator_component& animator, transform_component& transform) {
             for (const std::pair<const unsigned int, fetch_container<motion_track_ref>>& _pair : animator._motion_tracks) {
                 if (_pair.second.has_value()) {
                     const motion_track_ref& _motion_track = _pair.second.value();
@@ -173,8 +173,8 @@ void motion_system::apply_motion_tracks()
 void motion_system::collect_debug_guizmos()
 {
 // #if LUCARIA_GUIZMO
-    each_scene([](scene_data& scene) {
-        scene.components.view<animator_component>(entt::exclude<transform_component>).each([](animator_component& animator) {
+    each_scene([](entt::registry& scene) {
+        scene.view<animator_component>(entt::exclude<transform_component>).each([](animator_component& animator) {
             if (animator._skeleton.has_value()) {
                 const ozz::vector<ozz::math::Float4x4>& model_transforms = animator._model_transforms;
                 if (!model_transforms.empty()) {
@@ -206,7 +206,7 @@ void motion_system::collect_debug_guizmos()
                 }
             }
         });
-        scene.components.view<animator_component, transform_component>().each([](animator_component& animator, transform_component& transform) {
+        scene.view<animator_component, transform_component>().each([](animator_component& animator, transform_component& transform) {
             if (animator._skeleton.has_value()) {
                 const ozz::vector<ozz::math::Float4x4>& model_transforms = animator._model_transforms;
                 if (!model_transforms.empty()) {

@@ -47,4 +47,7 @@ glm::vec2 get_mouse_position();
 glm::vec2& get_mouse_position_delta();
 glm::float64 get_time_delta();
 
+
+void use_imgui_rendering(const bool use);
+
 }

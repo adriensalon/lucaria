@@ -53,6 +53,13 @@ struct ImGui_ImplOpenGL3_Data {
     ImGui_ImplOpenGL3_Data() { memset((void*)this, 0, sizeof(*this)); }
 };
 
+static bool _use_imgui = false;
+static bool _use_imgui_command = false;
+void use_imgui_rendering(const bool use)
+{
+    _use_imgui_command = use;
+}
+
 namespace detail {
 
 static bool setup_platform();
@@ -548,8 +555,10 @@ void update()
     ImGui_ImplGlfw_NewFrame();
 #endif
 
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui::NewFrame();
+    if (_use_imgui) {
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui::NewFrame();
+    }
     // io.MouseDown[0] = detail::keys[0];
     // for (auto& _button : detail::buttons_changed)
     //     io.AddMouseButtonEvent(_button, detail::buttons[_button]);
@@ -566,15 +575,18 @@ void update()
     detail::buttons_changed.clear();
 
     // ImGui::ShowDemoWindow();
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    if (_use_imgui) {
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    }
+    _use_imgui = _use_imgui_command;
 
     // wait_fetched_containers();
     wait_one_fetched_container();
     // std::cout << "drrrr \n";
 
     // remove_levels();
-    manage();
+    // manage();
 
 
     graphics_assert();

@@ -2,18 +2,18 @@
 
 namespace lucaria {
 
-void each_scene(const std::function<void(scene_data&)>& callback)
-{
-    // detail::scenes_registry.view<scene_data>().each([callback] (scene_data& scene) {
-    //     callback(scene);
-    //     // std::cout << "aaaaaaa \n";
-    // });
-    // std::cout << "\n";
+// void each_scene(const std::function<void(scene_data&)>& callback)
+// {
+//     // detail::scenes_registry.view<scene_data>().each([callback] (scene_data& scene) {
+//     //     callback(scene);
+//     //     // std::cout << "aaaaaaa \n";
+//     // });
+//     // std::cout << "\n";
 
-    for (scene_data& _scene : detail::world_scenes) {
-        callback(_scene);
-    }
-}
+//     for (scene_data& _scene : detail::world_scenes) {
+//         callback(_scene);
+//     }
+// }
 
 
 // #include <iostream>

@@ -475,8 +475,8 @@ void rendering_system::draw_blockout_meshes()
         _is_program_setup = true;
     }
     program_ref& _blockout_program = _persistent_blockout_program.value();
-    each_scene([&](scene_data& scene) {
-        scene.components.view<model_component<model_shader::blockout>, transform_component>().each([&](model_component<model_shader::blockout>& _model, transform_component& _transform) {
+    each_scene([&](entt::registry& scene) {
+        scene.view<model_component<model_shader::blockout>, transform_component>().each([&](model_component<model_shader::blockout>& _model, transform_component& _transform) {
             if (_model._mesh.has_value()) {
                 const glm::mat4 _model_view_projection = detail::camera_view_projection * _transform._transform;
                 const mesh_ref& _mesh = _model._mesh.value();
@@ -487,7 +487,7 @@ void rendering_system::draw_blockout_meshes()
                 _blockout_program.draw();
             }
         });
-        scene.components.view<model_component<model_shader::blockout>>(entt::exclude<transform_component>).each([&](model_component<model_shader::blockout>& _model) {
+        scene.view<model_component<model_shader::blockout>>(entt::exclude<transform_component>).each([&](model_component<model_shader::blockout>& _model) {
             if (_model._mesh.has_value()) {
                 const mesh_ref& _mesh = _model._mesh.value();
                 _blockout_program.use();
@@ -512,8 +512,8 @@ void rendering_system::draw_unlit_meshes()
     }
     program_ref& _unlit_program = _persistent_unlit_program.value();
     program_ref& _unlit_skinned_program = _persistent_unlit_skinned_program.value();
-    each_scene([&](scene_data& scene) {
-        scene.components.view<model_component<model_shader::unlit>, transform_component, animator_component>().each([&](model_component<model_shader::unlit>& _model, transform_component& _transform, animator_component& animator) {
+    each_scene([&](entt::registry& scene) {
+        scene.view<model_component<model_shader::unlit>, transform_component, animator_component>().each([&](model_component<model_shader::unlit>& _model, transform_component& _transform, animator_component& animator) {
             if (_model._mesh.has_value() && _model._color.has_value() && animator._skeleton.has_value()) {
                 const glm::mat4 _model_view_projection = detail::camera_view_projection * _transform._transform;
                 const mesh_ref& _mesh = _model._mesh.value();
@@ -530,7 +530,7 @@ void rendering_system::draw_unlit_meshes()
                 _unlit_skinned_program.draw();
             }
         });
-        scene.components.view<model_component<model_shader::unlit>, transform_component>(entt::exclude<animator_component>).each([&](model_component<model_shader::unlit>& _model, transform_component& _transform) {
+        scene.view<model_component<model_shader::unlit>, transform_component>(entt::exclude<animator_component>).each([&](model_component<model_shader::unlit>& _model, transform_component& _transform) {
             if (_model._mesh.has_value() && _model._color.has_value()) {
                 const glm::mat4 _model_view_projection = detail::camera_view_projection * _transform._transform;
                 const mesh_ref& _mesh = _model._mesh.value();
@@ -543,7 +543,7 @@ void rendering_system::draw_unlit_meshes()
                 _unlit_program.draw();
             }
         });
-        scene.components.view<model_component<model_shader::unlit>, animator_component>(entt::exclude<transform_component>).each([&](model_component<model_shader::unlit>& _model, animator_component& animator) {
+        scene.view<model_component<model_shader::unlit>, animator_component>(entt::exclude<transform_component>).each([&](model_component<model_shader::unlit>& _model, animator_component& animator) {
             if (_model._mesh.has_value() && _model._color.has_value() && animator._skeleton.has_value()) {
                 const mesh_ref& _mesh = _model._mesh.value();
                 const texture_ref& _color = _model._color.value();
@@ -559,7 +559,7 @@ void rendering_system::draw_unlit_meshes()
                 _unlit_skinned_program.draw();
             }
         });
-        scene.components.view<model_component<model_shader::unlit>>(entt::exclude<transform_component, animator_component>).each([&](model_component<model_shader::unlit>& _model) {
+        scene.view<model_component<model_shader::unlit>>(entt::exclude<transform_component, animator_component>).each([&](model_component<model_shader::unlit>& _model) {
             if (_model._mesh.has_value() && _model._color.has_value()) {
                 const mesh_ref& _mesh = _model._mesh.value();
                 const texture_ref& _color = _model._color.value();
