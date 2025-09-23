@@ -219,7 +219,9 @@ lucaria::geometry_data import_assimp(const std::filesystem::path& assimp_path, c
             _data.tangents.push_back(glm::vec3(_tangent.x, _tangent.y, _tangent.z));
             _data.bitangents.push_back(glm::vec3(_bitangent.x, _bitangent.y, _bitangent.z));
         }
-        if (_mesh->mTextureCoords[0]) {
+        if (_mesh->mTextureCoords[1]) {
+            _data.texcoords.push_back(glm::vec2(_mesh->mTextureCoords[1][_i].x, 1.f - _mesh->mTextureCoords[1][_i].y));
+        } else if (_mesh->mTextureCoords[0]) {
             _data.texcoords.push_back(glm::vec2(_mesh->mTextureCoords[0][_i].x, 1.f - _mesh->mTextureCoords[0][_i].y));
         }
     }

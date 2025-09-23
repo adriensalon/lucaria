@@ -21,13 +21,13 @@ enum struct keyboard_key {
     w, x, c, v, b, n
 };
 
-template <typename scene_t>
-void run(const std::function<void()>& update)
-{
-    detail::run_impl([] () {
-        make_scene<scene_t>();
-    }, update);
-}
+// template <typename scene_t>
+// void run(const std::function<void()>& update)
+// {
+//     detail::run_impl([] () {
+//         make_scene<scene_t>();
+//     }, update);
+// }
 
 void graphics_assert();
 void audio_assert();
