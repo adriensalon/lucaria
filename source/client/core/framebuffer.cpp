@@ -57,7 +57,7 @@ framebuffer_ref::framebuffer_ref(const glm::uint width, const glm::uint height)
 
     glGenFramebuffers(1, &_framebuffer_id);
     glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer_id);
-    glDrawBuffer(GL_NONE);
+    // glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -109,7 +109,7 @@ void framebuffer_ref::depth(const texture_ref& depth_tex)
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texId, 0);
 
     if (!_texture_color_id && !_renderbuffer_color_id) {
-        glDrawBuffer(GL_NONE);
+        // glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
     }
 
@@ -128,7 +128,7 @@ void framebuffer_ref::depth(const renderbuffer_ref& depth_rb)
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbId);
 
     if (!_texture_color_id && !_renderbuffer_color_id) {
-        glDrawBuffer(GL_NONE);
+        // glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
     }
 

@@ -7,6 +7,8 @@
 #include <imgui.h>
 
 #include <lucaria/core/fetch.hpp>
+#include <lucaria/core/font.hpp>
+#include <lucaria/core/framebuffer.hpp>
 #include <lucaria/core/mesh.hpp>
 #include <lucaria/core/texture.hpp>
 #include <lucaria/core/world.hpp>
@@ -53,25 +55,6 @@ struct model_component<model_shader::unlit> {
 private:
     fetch_container<texture_ref> _color = {};
     fetch_container<mesh_ref> _mesh = {};
-    friend struct motion_system;
-    friend struct rendering_system;
-};
-
-template <>
-struct model_component<model_shader::imgui> {
-    model_component() = default;
-    model_component(const model_component& other) = delete;
-    model_component& operator=(const model_component& other) = delete;
-    model_component(model_component&& other) = default;
-    model_component& operator=(model_component&& other) = default;
-
-    model_component& mesh(const std::shared_future<std::shared_ptr<mesh_ref>>& fetched_mesh);
-    model_component& callback(const std::function<void()>& imgui_callback);
-
-private:
-    fetch_container<mesh_ref> _mesh = {};
-    std::function<void()> _imgui_callback = {};
-    // imcontext etc
     friend struct motion_system;
     friend struct rendering_system;
 };
