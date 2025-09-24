@@ -13,7 +13,7 @@ function(lucaria_build_game
 
     set(game_source_dir "${LUCARIA_SOURCE_DIR}/game")
     set(game_output_dir "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}/${PLATFORM}")
-    file(GLOB_RECURSE game_inputs CONFIGURE_DEPENDS "${SOURCES}" "${LUCARIA_SOURCE_DIR}/client/*" "${LUCARIA_INCLUDE_DIR}/*")
+    # file(GLOB_RECURSE game_inputs CONFIGURE_DEPENDS "${SOURCES}" "${LUCARIA_SOURCE_DIR}/client/*" "${LUCARIA_INCLUDE_DIR}/*")
     file(MAKE_DIRECTORY "${game_output_dir}")
     set(game_stamp "${game_output_dir}/.built.stamp")
 
@@ -45,7 +45,7 @@ function(lucaria_build_game
             ${game_forward}
         COMMAND "${CMAKE_COMMAND}" --build "${game_output_dir}" --config $<CONFIG>
         COMMAND "${CMAKE_COMMAND}" -E touch "${game_stamp}"
-        DEPENDS "${game_inputs}"
+        # DEPENDS "${game_inputs}"
         COMMENT "Building ${TARGET} for ${PLATFORM}..."
         USES_TERMINAL)
 
