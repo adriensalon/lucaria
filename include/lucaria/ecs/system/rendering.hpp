@@ -26,6 +26,7 @@ struct rendering_system {
     static void draw_skybox();
     static void draw_blockout_meshes();
     static void draw_unlit_meshes();
+    static void draw_imgui_meshes();
     static void draw_debug_guizmos();
 
     static glm::mat4 get_projection();

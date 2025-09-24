@@ -29,7 +29,7 @@ constexpr static GLenum COMPRESSED_RGBA_S3TC_DXT5_EXT = 0x83F3;
 
 namespace detail {
 
-static std::unordered_map<std::string, std::promise<std::shared_ptr<texture_ref>>> promises;
+    static std::unordered_map<std::string, std::promise<std::shared_ptr<texture_ref>>> promises;
 
 }
 
@@ -40,8 +40,10 @@ texture_ref::texture_ref(texture_ref&& other)
 
 texture_ref& texture_ref::operator=(texture_ref&& other)
 {
-    _texture_id = other._texture_id;
     _is_instanced = true;
+    _width = other._width;
+    _height = other._height;
+    _texture_id = other._texture_id;
     other._is_instanced = false;
     return *this;
 }
@@ -56,6 +58,8 @@ texture_ref::~texture_ref()
 
 texture_ref::texture_ref(const image_data& data)
 {
+    _width = data.width;
+    _height = data.height;
     glGenTextures(1, &_texture_id);
     glBindTexture(GL_TEXTURE_2D, _texture_id);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -95,7 +99,17 @@ texture_ref::texture_ref(const image_data& data)
     _is_instanced = true;
 }
 
-GLuint texture_ref::get_id() const
+glm::uint texture_ref::get_width() const
+{
+    return _width;
+}
+
+glm::uint texture_ref::get_height() const
+{
+    return _height;
+}
+
+glm::uint texture_ref::get_id() const
 {
     return _texture_id;
 }

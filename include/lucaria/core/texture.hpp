@@ -19,10 +19,14 @@ struct texture_ref {
     ~texture_ref();
 
     texture_ref(const image_data& data);
+    glm::uint get_width() const;
+    glm::uint get_height() const;
     glm::uint get_id() const;
 
 private:
     bool _is_instanced;
+    glm::uint _width;
+    glm::uint _height;
     glm::uint _texture_id;
 };
 

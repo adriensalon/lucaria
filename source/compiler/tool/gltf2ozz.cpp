@@ -54,7 +54,7 @@ static const std::string gltf2ozz_config = R"({
           }
         ],
         "motion": {
-          "enable": false,
+          "enable": true,
           "joint_name": "ROOT",
           "position": {
             "components": "xz",
