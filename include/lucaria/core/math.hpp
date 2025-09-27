@@ -5,6 +5,7 @@
 #include <LinearMath/btVector3.h>
 
 namespace lucaria {
+namespace detail {
 
 [[nodiscard]] glm::mat4& reinterpret(ozz::math::Float4x4& matrix);
 [[nodiscard]] const glm::mat4& reinterpret(const ozz::math::Float4x4& matrix);
@@ -15,4 +16,5 @@ namespace lucaria {
 [[nodiscard]] btVector3& reinterpret_bullet(glm::vec3& vector);
 [[nodiscard]] const btVector3& reinterpret_bullet(const glm::vec3& vector);
 
+}
 }

@@ -1,4 +1,4 @@
-#include <lucaria/core/graphics.hpp>
+#include <lucaria/core/opengl.hpp>
 #include <lucaria/core/renderbuffer.hpp>
 
 namespace lucaria {

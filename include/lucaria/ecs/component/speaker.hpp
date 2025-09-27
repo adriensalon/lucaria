@@ -2,36 +2,37 @@
 
 #include <lucaria/core/fetch.hpp>
 #include <lucaria/core/sound.hpp>
-#include <lucaria/core/world.hpp>
 
 namespace lucaria {
+namespace detail {
+    struct mixer_system;
+}
 
-struct sound_controller {
+namespace ecs {
 
-    // do the same as animation_controller
+    struct speaker_component {
+        speaker_component();
+        speaker_component(const speaker_component& other) = delete;
+        speaker_component& operator=(const speaker_component& other) = delete;
+        speaker_component(speaker_component&& other);
+        speaker_component& operator=(speaker_component&& other);
+        ~speaker_component();
 
-    bool is_playing = true;
-    bool is_looping = false;
-};
+        speaker_component& use_sound(sound& from);
+        speaker_component& use_sound(fetched<sound>& from);
+        
+        speaker_component& set_volume(const glm::float32 volume);
+        speaker_component& set_play(const bool play);
+        speaker_component& set_loop(const bool loop);
 
-struct speaker_component {
-    speaker_component() = default;
-    speaker_component(const speaker_component& other) = delete;
-    speaker_component& operator=(const speaker_component& other) = delete;
-    speaker_component(speaker_component&& other) = default; // todo
-    speaker_component& operator=(speaker_component&& other) = default; // todo
- // todo delete
- 
-    speaker_component& sounds(const std::unordered_map<glm::uint, std::shared_future<std::shared_ptr<sound_ref>>>& fetched_sounds);
+    private:
+        bool _is_owning = false;
+        glm::uint _handle;
+        detail::fetched_container<sound> _sound = {};
+        bool _is_playing = false;
+        bool _is_looping = false;
+        friend struct detail::mixer_system;
+    };
 
-    sound_controller& get_controller(const glm::uint name);
-
-private:
-    bool _is_instanced = false;
-    std::unordered_map<glm::uint, sound_controller> _controllers = {};
-    std::unordered_map<glm::uint, fetch_container<sound_ref>> _sounds = {};
-    std::unordered_map<glm::uint, glm::uint> _source_ids = {};
-    friend struct mixer_system;
-};
-
+}
 }

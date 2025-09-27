@@ -1,51 +1,247 @@
 #pragma once
 
+#include <ozz/base/io/stream.h>
+
 #include <filesystem>
 #include <functional>
 #include <future>
 #include <iostream>
-#include <memory>
 #include <optional>
-#include <sstream>
+#include <type_traits>
 #include <vector>
 
 namespace lucaria {
 
-using fetch_callback = std::function<void(std::istringstream&)>;
-using fetch_raw_callback = std::function<void(const std::vector<char>&)>;
-using multiple_fetch_callback = std::function<void(std::size_t, std::size_t, std::istringstream&)>;
-using multiple_fetch_raw_callback = std::function<void(std::size_t, std::size_t, const std::vector<char>&)>;
-
+/// @brief Represents a fetched value
+/// @tparam value_t type being fetched
 template <typename value_t>
-struct fetch_container {
-    fetch_container() = default;
-    fetch_container(const fetch_container& other) = delete;
-    fetch_container& operator=(const fetch_container& other) = delete;
-    fetch_container(fetch_container&& other) = default;
-    fetch_container& operator=(fetch_container&& other) = default;
+struct fetched {
 
-    void emplace(const std::shared_ptr<value_t>& value);
-    void emplace(const std::shared_future<std::shared_ptr<value_t>>& fetched, const std::function<void()>& callback = nullptr);
-    bool has_value() const;
-    value_t& value();
-    const value_t& value() const;
+    fetched(std::future<value_t>&& future)
+    {
+        std::shared_ptr<std::future<value_t>> _shared_future = std::make_shared<std::future<value_t>>(std::move(future));
+
+        _poll = [_shared_future]() -> bool {
+            if (!_shared_future->valid()) {
+                return false;
+            }
+            return _shared_future->wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
+        };
+
+        _get = [_shared_future]() -> value_t {
+            return _shared_future->get();
+        };
+    }
+
+    template <typename U, typename Then, typename = std::enable_if_t<std::is_invocable_r_v<value_t, const Then&, const U&>>>
+    fetched(std::future<U>&& future, const Then& then_fn)
+    {
+        std::shared_ptr<std::future<U>> _shared_intermediate_future = std::make_shared<std::future<U>>(std::move(future));
+        std::shared_ptr<std::decay_t<Then>> _shared_decayed_then = std::make_shared<std::decay_t<Then>>(then_fn);
+
+        _poll = [_shared_intermediate_future]() -> bool {
+            if (!_shared_intermediate_future->valid()) {
+                return false;
+            }
+            return _shared_intermediate_future->wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
+        };
+
+        _get = [_shared_intermediate_future, _shared_decayed_then]() -> value_t {
+            const U _intermediate_value = _shared_intermediate_future->get();
+            return std::invoke(*_shared_decayed_then, _intermediate_value);
+        };
+    }
+
+    /// @brief
+    /// @return
+    [[nodiscard]] bool has_value() const
+    {
+        if (_cache) {
+            return true;
+        }
+
+        if (_poll && _poll()) {
+            _cache = std::move(_get());
+            _poll = nullptr;
+            _get = nullptr;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// @brief
+    /// @return
+    [[nodiscard]] value_t& value()
+    {
+        if (!has_value()) {
+            // throw (wrong usage)
+        }
+        return _cache.value();
+    }
+
+    /// @brief
+    /// @return
+    [[nodiscard]] const value_t& value() const
+    {
+        if (!has_value()) {
+            // throw (wrong usage)
+        }
+        return _cache.value();
+    }
+
+    /// @brief
+    [[nodiscard]] explicit operator bool() const { return has_value(); }
 
 private:
-    std::optional<std::shared_future<std::shared_ptr<value_t>>> _fetched = std::nullopt;
-    std::shared_ptr<value_t> _value = nullptr;
-    std::function<void()> _callback = nullptr;
+    mutable std::function<bool()> _poll;
+    mutable std::function<value_t()> _get;
+    mutable std::optional<value_t> _cache;
 };
 
-void fetch_file(const std::filesystem::path& file, const fetch_callback& callback, const bool persist = true);
-void fetch_file(const std::filesystem::path& file, const fetch_raw_callback& callback, const bool persist = true);
-void fetch_files(const std::vector<std::filesystem::path>& files, const multiple_fetch_callback& callback, const bool persist = true);
-void fetch_files(const std::vector<std::filesystem::path>& files, const multiple_fetch_raw_callback& callback, const bool persist = true);
+[[nodiscard]] int get_fetches_waiting();
 
-std::size_t get_fetches_waiting();
+namespace detail {
 
-void wait_one_fetched_container();
-void wait_fetched_containers();
+    struct bytes_streambuf : public std::streambuf {
+        bytes_streambuf(const std::vector<char>& data);
+    };
+
+    struct bytes_stream : public std::istream {
+        bytes_stream(const std::vector<char>& data);
+
+    private:
+        bytes_streambuf _buffer;
+    };
+
+    struct ozz_bytes_stream : public ozz::io::Stream {
+        ozz_bytes_stream(const std::vector<char>& data);
+        ~ozz_bytes_stream() override = default;
+
+        bool opened() const override;
+        std::size_t Read(void* buffer, std::size_t size) override;
+        std::size_t Write(const void* buffer, std::size_t size) override;
+        int Seek(int offset, Origin origin) override;
+        int Tell() const override;
+        std::size_t Size() const override;
+
+    private:
+        const std::vector<char>& _bytes;
+        std::size_t _position;
+    };
+
+    template <typename value_t>
+    struct fetched_container {
+
+        void emplace(value_t& obj)
+        {
+            _ptr = &obj;
+        }
+
+        void emplace(fetched<value_t>& fut, const std::function<void()>& callback = nullptr)
+        {
+            _fut = &fut;
+            _callback = callback;
+        }
+
+        bool has_value() const
+        {
+            if (_ptr) {
+                return true;
+            }
+            if (_fut && _fut->has_value()) {
+                if (_callback && !_is_callback_invoked) {
+                    _is_callback_invoked = true;
+                    auto cb = std::exchange(_callback, {}); // take & clear first
+                    cb(); // then run
+                }
+                return true;
+            }
+            return false;
+        }
+
+        value_t& value()
+        {
+            return _ptr ? *_ptr : _fut->value();
+        }
+
+        const value_t& value() const
+        {
+            return _ptr ? *_ptr : _fut->value();
+        }
+
+        explicit operator bool() const { return has_value(); }
+
+    private:
+        value_t* _ptr = nullptr;
+        fetched<value_t>* _fut = nullptr;
+        mutable std::function<void()> _callback = nullptr;
+        mutable bool _is_callback_invoked = false;
+    };
+
+    void load_bytes(
+        const std::filesystem::path& file_path,
+        const std::function<void(const std::vector<char>&)>& callback);
+
+    void fetch_bytes(
+        const std::filesystem::path& file_path,
+        const std::function<void(const std::vector<char>&)>& callback,
+        const bool persist = true);
+
+    void fetch_bytes(
+        const std::vector<std::filesystem::path>& file_paths,
+        const std::function<void(const std::vector<std::vector<char>>&)>& callback,
+        const bool persist = true);
 
 }
 
-#include <lucaria/core/fetch.inl>
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+// using fetch_callback = std::function<void(std::istringstream&)>;
+// using fetch_raw_callback = std::function<void(const std::vector<char>&)>;
+// using multiple_fetch_callback = std::function<void(std::size_t, std::size_t, std::istringstream&)>;
+// using multiple_fetch_raw_callback = std::function<void(std::size_t, std::size_t, const std::vector<char>&)>;
+
+// template <typename value_t>
+// struct fetch_container {
+//     fetch_container() = default;
+//     fetch_container(const fetch_container& other) = delete;
+//     fetch_container& operator=(const fetch_container& other) = delete;
+//     fetch_container(fetch_container&& other) = default;
+//     fetch_container& operator=(fetch_container&& other) = default;
+
+//     void emplace(const std::shared_ptr<value_t>& value);
+//     void emplace(const std::shared_future<std::shared_ptr<value_t>>& fetched, const std::function<void()>& callback = nullptr);
+//     bool has_value() const;
+//     value_t& value();
+//     const value_t& value() const;
+
+// private:
+//     std::optional<std::shared_future<std::shared_ptr<value_t>>> _fetched = std::nullopt;
+//     std::shared_ptr<value_t> _value = nullptr;
+//     std::function<void()> _callback = nullptr;
+// };
+
+// // void fetch_file(const std::filesystem::path& file, const fetch_callback& callback, const bool persist = true);
+// void fetch_file(const std::filesystem::path& file, const fetch_raw_callback& callback, const bool persist = true);
+// // void fetch_files(const std::vector<std::filesystem::path>& files, const multiple_fetch_callback& callback, const bool persist = true);
+// void fetch_files(const std::vector<std::filesystem::path>& files, const multiple_fetch_raw_callback& callback, const bool persist = true);
+
+// std::size_t get_fetches_waiting();
+
+// void wait_one_fetched_container();
+// void wait_fetched_containers();
+
+}
+
+// #include <lucaria/core/fetch.inl>

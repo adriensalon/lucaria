@@ -1,10 +1,8 @@
 #pragma once
 
-#include <vector>
-
 #include <cereal/types/vector.hpp>
 
-#include <lucaria/common/math.hpp>
+#include <lucaria/common/math_data.hpp>
 
 namespace lucaria {
 
@@ -18,7 +16,9 @@ struct geometry_data {
     std::vector<glm::vec2> texcoords = {};
     std::vector<glm::ivec4> bones = {};
     std::vector<glm::vec4> weights = {};
+    // std::vector<glm::uvec2> line_indices = {};
     std::vector<glm::uvec3> indices = {};
+    // std::vector<glm::uvec4> quad_indices = {};
     std::vector<glm::mat4> invposes = {};
     
     template <typename archive_t>

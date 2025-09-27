@@ -1,33 +1,41 @@
 #pragma once
 
-#include <filesystem>
-#include <future>
-#include <memory>
-#include <vector>
-
 #include <glm/glm.hpp>
 #include <imgui.h>
 
+#include <lucaria/core/fetch.hpp>
+#include <lucaria/core/semantics.hpp>
+
 namespace lucaria {
 
-using font_data = std::vector<std::string>;
+/// @brief Represents a runtime font on the device
+struct font {
+    LUCARIA_DELETE_DEFAULT_SEMANTICS(font)
+    font(const font& other) = delete;
+    font& operator=(const font& other) = delete;
+    font(font&& other) = default;
+    font& operator=(font&& other) = default;
 
-struct font_ref {
-    font_ref() = delete;
-    font_ref(const font_ref& other) = delete;
-    font_ref& operator=(const font_ref& other) = delete;
-    font_ref(font_ref&& other) = default;
-    font_ref& operator=(font_ref&& other) = default;
+    /// @brief Creates a font from bytes synchronously
+    /// @param data_bytes bytes to load from
+    /// @param font_size imgui size of the font
+    font(const std::vector<char>& data_bytes, const glm::float32 font_size);
 
-    font_ref(const font_data& data, const glm::float32 font_size);
-    ImFont* get_font(const glm::uint index = 0) const;
-    glm::uint get_count() const;
+    /// @brief Loads a font from a file synchronously
+    /// @param data_path path to load from
+    /// @param font_size imgui size of the font
+    font(const std::filesystem::path& data_path, const glm::float32 font_size);
+
+    [[nodiscard]] ImFont* get_handle();
+    [[nodiscard]] const ImFont* get_handle() const;
 
 private:
-    std::vector<ImFont*> _ptrs = {};
+    ImFont* _handle;
 };
 
-std::shared_future<std::shared_ptr<font_ref>> fetch_font(const std::vector<std::filesystem::path>& font_paths, const glm::float32 font_size = 13.f);
-void clear_font_fetches();
+/// @brief Loads a font from a file asynchronously
+/// @param data_path path to load from
+/// @param font_size imgui size of the font
+[[nodiscard]] fetched<font> fetch_font(const std::filesystem::path& data_path, const glm::float32 font_size);
 
 }

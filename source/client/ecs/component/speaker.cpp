@@ -1,31 +1,84 @@
-#include <lucaria/core/audio.hpp>
+#include <lucaria/core/error.hpp>
+#include <lucaria/core/openal.hpp>
 #include <lucaria/ecs/component/speaker.hpp>
 
 namespace lucaria {
+namespace ecs {
 
-speaker_component& speaker_component::sounds(const std::unordered_map<glm::uint, std::shared_future<std::shared_ptr<sound_ref>>>& fetched_sounds)
-{
-    for (const std::pair<const glm::uint, std::shared_future<std::shared_ptr<sound_ref>>>& _pair : fetched_sounds) {
-        const glm::uint _name = _pair.first;
-        _sounds[_name].emplace(_pair.second, [this, _name] () {
-            alGenSources(1, &(_source_ids[_name]));
-#if LUCARIA_DEBUG
-            if (!_source_ids.at(_name)) {
-                std::cout << "Failed to generate OpenAL source." << std::endl;
-                std::terminate();
-            }
-#endif
-            alSourcei(_source_ids[_name], AL_BUFFER, _sounds.at(_name).value().get_id());
-            alSourcePlay(_source_ids[_name]); //CONTROVERSIAL
-        });
-        _controllers[_name] = sound_controller();
+    speaker_component::speaker_component()
+    {
+        alGenSources(1, &_handle);
+        if (!_handle) {
+            LUCARIA_RUNTIME_ERROR("Failed to generate OpenAL source")
+        }
+        _is_owning = true;
     }
-    return *this;
-}
 
-sound_controller& speaker_component::get_controller(const glm::uint name)
-{
-    return _controllers.at(name);
-}
+    speaker_component::speaker_component(speaker_component&& other)
+    {
+        *this = std::move(other);
+    }
 
+    speaker_component& speaker_component::operator=(speaker_component&& other)
+    {
+        _is_owning = true;
+        _handle = other._handle;
+        other._is_owning = false;
+        return *this;
+    }
+
+    speaker_component::~speaker_component()
+    {
+        if (_is_owning) {
+            alDeleteSources(1, &_handle);
+        }
+    }
+
+    speaker_component& speaker_component::use_sound(sound& from)
+    {
+        _sound.emplace(from);
+        alSourcei(_handle, AL_BUFFER, _sound.value().get_handle());
+        if (_is_playing) {
+            alSourcePlay(_sound.value().get_handle());
+        }
+        return *this;
+    }
+
+    speaker_component& speaker_component::use_sound(fetched<sound>& from)
+    {
+        _sound.emplace(from, [this]() {
+            alSourcei(_handle, AL_BUFFER, _sound.value().get_handle());
+            if (_is_playing) {
+                alSourcePlay(_sound.value().get_handle());
+            }
+        });
+        return *this;
+    }
+
+    speaker_component& speaker_component::set_volume(const glm::float32 volume)
+    {
+        // todo
+        return *this;
+    }
+
+    speaker_component& speaker_component::set_play(const bool play)
+    {
+        if (_sound.has_value() && (_is_playing != play)) {
+            if (play) {
+                alSourcePlay(_sound.value().get_handle());
+            } else {
+                alSourcePause(_sound.value().get_handle());
+            }
+            _is_playing = play;
+        }
+        return *this;
+    }
+
+    speaker_component& speaker_component::set_loop(const bool loop)
+    {
+        // todo
+        return *this;
+    }
+
+}
 }

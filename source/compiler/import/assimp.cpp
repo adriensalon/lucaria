@@ -13,15 +13,15 @@
 
 namespace {
 
-class ozz_raw_input_stream : public ozz::io::Stream {
+class ozz_bytes_stream : public ozz::io::Stream {
 public:
-    ozz_raw_input_stream(const std::vector<char>& data)
+    ozz_bytes_stream(const std::vector<char>& data)
         : data_(data)
         , position_(0)
     {
     }
 
-    ~ozz_raw_input_stream() override = default;
+    ~ozz_bytes_stream() override = default;
 
     bool opened() const override
     {
@@ -175,7 +175,7 @@ lucaria::geometry_data import_assimp(const std::filesystem::path& assimp_path, c
         std::vector<char> _skeleton_bytes;
         load_binary_file(skeleton_path.value(), _skeleton_bytes);
         ozz::animation::Skeleton _skeleton;
-        ozz_raw_input_stream _ozz_stream(_skeleton_bytes);
+        ozz_bytes_stream _ozz_stream(_skeleton_bytes);
         {
             ozz::io::IArchive _ozz_archive(&_ozz_stream);
             _ozz_archive >> _skeleton;

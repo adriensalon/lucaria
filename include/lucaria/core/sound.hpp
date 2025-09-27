@@ -1,32 +1,28 @@
 #pragma once
 
-#include <filesystem>
-#include <future>
-
-#include <glm/glm.hpp>
-
-#include <lucaria/common/audio.hpp>
+#include <lucaria/core/audio.hpp>
 
 namespace lucaria {
 
-struct sound_ref {
-    sound_ref() = delete;
-    sound_ref(const sound_ref& other) = delete;
-    sound_ref& operator=(const sound_ref& other) = delete;
-    sound_ref(sound_ref&& other);
-    sound_ref& operator=(sound_ref&& other);
-    ~sound_ref();
+struct sound {
+    LUCARIA_DELETE_DEFAULT_SEMANTICS(sound)
+    sound(const sound& other) = delete;
+    sound& operator=(const sound& other) = delete;
+    sound(sound&& other);
+    sound& operator=(sound&& other);
+    ~sound();
 
-    sound_ref(const audio_data& data);
-    glm::uint get_id() const;
+    sound(const audio& from);    
+    
+    [[nodiscard]] glm::uint get_handle() const;
 
 private:
-    bool _is_instanced;
-    glm::uint _buffer_id;
+    bool _is_owning;
+    glm::uint _handle;
 };
 
-audio_data load_compressed_audio_data(const std::vector<char>& audio_stream);
-std::shared_future<std::shared_ptr<sound_ref>> fetch_sound(const std::filesystem::path& audio_path);
-void clear_sound_fetches();
+/// @brief Loads a sound from a file asynchronously
+/// @param data_path path to load from
+[[nodiscard]] fetched<sound> fetch_sound(const std::filesystem::path& data_path);
 
 }

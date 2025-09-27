@@ -17,9 +17,10 @@
 
 #include <lucaria/core/animation.hpp>
 #include <lucaria/core/cubemap.hpp>
+#include <lucaria/core/error.hpp>
 #include <lucaria/core/fetch.hpp>
 #include <lucaria/core/font.hpp>
-#include <lucaria/core/graphics.hpp>
+#include <lucaria/core/opengl.hpp>
 #include <lucaria/core/mesh.hpp>
 #include <lucaria/core/program.hpp>
 #include <lucaria/core/shape.hpp>
@@ -205,8 +206,7 @@ void emscripten_assert(EMSCRIPTEN_RESULT result)
             break;
         }
         if (_is_fatal) {
-            std::cout << "Invalid emscripten result '" << _brief << "'" << std::endl;
-            std::terminate();
+            LUCARIA_RUNTIME_ERROR("Failed emscripten operation with result '" + _brief + "'")
         }
     }
 #endif
@@ -443,8 +443,7 @@ static bool setup_opengl()
     _webgl_attributes.minorVersion = 0;
     EMSCRIPTEN_WEBGL_CONTEXT_HANDLE _webgl_context = emscripten_webgl_create_context("#canvas", &_webgl_attributes);
     if (_webgl_context < 0) {
-        std::cout << "WebGL2 context cannot be created on this device" << std::endl;
-        std::terminate();
+        LUCARIA_RUNTIME_ERROR("Failed to create WebGL2 context on this device")
     }
     emscripten_assert(emscripten_webgl_make_context_current(_webgl_context));
     if (emscripten_webgl_enable_extension(_webgl_context, "WEBGL_compressed_texture_etc")) {
@@ -582,7 +581,7 @@ void update()
     _use_imgui = _use_imgui_command;
 
     // wait_fetched_containers();
-    wait_one_fetched_container();
+    // wait_one_fetched_container();
     // std::cout << "drrrr \n";
 
     // remove_levels();
@@ -628,16 +627,6 @@ void run_impl(const std::function<void()>& start, const std::function<void()>& u
     while (!glfwWindowShouldClose(detail::glfw_window)) {
         detail::update();
     }
-
-    clear_animation_fetches();
-    clear_cubemap_fetches();
-    clear_font_fetches();
-    clear_mesh_fetches();
-    clear_program_fetches();
-    clear_shape_fetches();
-    clear_skeleton_fetches();
-    clear_sound_fetches();
-    clear_texture_fetches();
 
     destroy_scenes();
     glfwDestroyWindow(detail::glfw_window);
@@ -715,8 +704,7 @@ void graphics_assert()
             _description = "This error hasn't been coded into glite yet, please sumbit an issue report on github.com/127Soft/glite :)";
             break;
         }
-        std::cout << "Invalid OpenGL result '" << _brief << "' (" << _description << ")" << std::endl;
-        std::terminate();
+        LUCARIA_RUNTIME_ERROR("Failed OpenGL operation with result '" + _brief + "' (" + _description + ")")
     }
 #endif
 }
@@ -737,8 +725,7 @@ void audio_assert()
             _reason = " invalid operation";
         else if (_al_error == AL_OUT_OF_MEMORY)
             _reason = "out of memory";
-        std::cout << "Invalid OpenAL result '" << _reason << "'" << std::endl;
-        std::terminate();
+        LUCARIA_RUNTIME_ERROR("Failed OpenAL operation with result '" + _reason + "'")
     }
 #endif
 }

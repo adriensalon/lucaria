@@ -1,89 +1,121 @@
-#include <iostream>
-
 #include <ozz/base/io/archive.h>
 #include <ozz/base/memory/allocator.h>
 
 #include <lucaria/core/animation.hpp>
-#include <lucaria/core/fetch.hpp>
-#include <lucaria/core/load.hpp>
+#include <lucaria/core/error.hpp>
 
 namespace lucaria {
-namespace detail {
+namespace {
 
-static std::unordered_map<std::string, std::promise<std::shared_ptr<animation_ref>>> animation_promises;
-static std::unordered_map<std::string, std::promise<std::shared_ptr<motion_track_ref>>> motion_track_promises;
-
-}
-
-std::shared_future<std::shared_ptr<animation_ref>> fetch_animation(const std::filesystem::path& animation_path)
-{
-    std::promise<std::shared_ptr<animation_ref>>& _promise = detail::animation_promises[animation_path.string()];
-    fetch_file(animation_path, [&_promise](const std::vector<char>& animation_bytes) {
-        std::shared_ptr<animation_ref> _animation = std::make_shared<animation_ref>();
-        ozz_raw_input_stream _ozz_stream(animation_bytes);
-        {            
-            ozz::io::IArchive _ozz_archive(&_ozz_stream);
-#if LUCARIA_DEBUG
-            if (!_ozz_archive.TestTag<ozz::animation::Animation>()) {
-                std::cout << "Impossible to load animation, archive doesn't contain the expected object type." << std::endl;
-                std::terminate();
-            }
-#endif
-            _ozz_archive >> *(_animation.get());
-#if LUCARIA_DEBUG
-            std::cout << "Loaded animation with " << _animation->num_tracks() << " tracks." << std::endl;
-#endif
+    static void load_animation_handle_from_bytes(ozz::animation::Animation& handle, const std::vector<char>& data_bytes)
+    {
+        detail::ozz_bytes_stream _ozz_stream(data_bytes);
+        ozz::io::IArchive _ozz_archive(&_ozz_stream);
+        if (!_ozz_archive.TestTag<ozz::animation::Animation>()) {
+            LUCARIA_RUNTIME_ERROR("Failed to load animation, archive doesn't contain the expected object type")
         }
-        _promise.set_value(_animation);
-    });
-    return _promise.get_future();
-}
+        _ozz_archive >> handle;
+#if LUCARIA_DEBUG
+        std::cout << "Loaded animation with " << handle.num_tracks() << " tracks" << std::endl;
+#endif
+    }
 
-std::shared_future<std::shared_ptr<motion_track_ref>> fetch_motion_track(const std::filesystem::path& motion_track_path)
-{
-    std::promise<std::shared_ptr<motion_track_ref>>& _promise = detail::motion_track_promises[motion_track_path.string()];
-    fetch_file(motion_track_path, [&_promise](const std::vector<char>& motion_track_bytes) {
-        std::shared_ptr<motion_track_ref> _motion_track = std::make_shared<motion_track_ref>();
-        ozz_raw_input_stream _ozz_stream(motion_track_bytes);
-        {
-            ozz::io::IArchive _ozz_archive(&_ozz_stream);
-#if LUCARIA_DEBUG
-            if (!_ozz_archive.TestTag<ozz::animation::Float3Track>()) {
-                std::cout << "Impossible to load Float3Track, archive doesn't contain the expected object type." << std::endl;
-                std::terminate();
-            }
-#endif
-            _ozz_archive >> _motion_track->first;
-#if LUCARIA_DEBUG
-            if (!_ozz_archive.TestTag<ozz::animation::QuaternionTrack>()) {
-                std::cout << "Impossible to load QuaternionTrack, archive doesn't contain the expected object type." << std::endl;
-                std::terminate();
-            }
-#endif
-            _ozz_archive >> _motion_track->second;
-#if LUCARIA_DEBUG
-            std::cout << "Loaded motion track with position, rotation." << std::endl;
-#endif
+    static void load_motion_track_handles_from_bytes(ozz::animation::Float3Track& translation_handle, ozz::animation::QuaternionTrack& rotation_handle, const std::vector<char>& data_bytes)
+    {
+        detail::ozz_bytes_stream _ozz_stream(data_bytes);
+        ozz::io::IArchive _ozz_archive(&_ozz_stream);
+        if (!_ozz_archive.TestTag<ozz::animation::Float3Track>()) {
+            LUCARIA_RUNTIME_ERROR("Failed to load float3 track, archive doesn't contain the expected object type")
         }
-        _promise.set_value(_motion_track);
+        _ozz_archive >> translation_handle;
+        if (!_ozz_archive.TestTag<ozz::animation::QuaternionTrack>()) {
+            LUCARIA_RUNTIME_ERROR("Impossible to load quaternion track, archive doesn't contain the expected object type")
+        }
+        _ozz_archive >> rotation_handle;
+#if LUCARIA_DEBUG
+        std::cout << "Loaded motion track with position and rotation" << std::endl;
+#endif
+    }
+}
+
+animation::animation(const std::vector<char>& data_bytes)
+{
+    load_animation_handle_from_bytes(_handle, data_bytes);
+}
+
+animation::animation(const std::filesystem::path& data_path)
+{
+    detail::load_bytes(data_path, [this](const std::vector<char>& _data_bytes) {
+        load_animation_handle_from_bytes(_handle, _data_bytes);
     });
-    return _promise.get_future();
 }
 
-void mark_animation_fetched(const std::filesystem::path& animation_path)
+ozz::animation::Animation& animation::get_handle()
 {
-    detail::animation_promises.erase(animation_path.string());
+    return _handle;
 }
 
-void mark_motion_track_fetched(const std::filesystem::path& motion_track_path)
+const ozz::animation::Animation& animation::get_handle() const
 {
-    detail::motion_track_promises.erase(motion_track_path.string());
+    return _handle;
 }
 
-void clear_animation_fetches()
+fetched<animation> fetch_animation(const std::filesystem::path& data_path)
 {
-    detail::animation_promises.clear();
-    detail::motion_track_promises.clear();
+    std::shared_ptr<std::promise<animation>> _promise = std::make_shared<std::promise<animation>>();
+
+    detail::fetch_bytes(data_path, [_promise](const std::vector<char>& _data_bytes) {
+        animation _animation(_data_bytes);
+        _promise->set_value(std::move(_animation));
+    });
+
+    // create animation on worker thread is ok
+    return fetched<animation>(_promise->get_future());
+}
+
+motion_track::motion_track(const std::vector<char>& data_bytes)
+{
+    load_motion_track_handles_from_bytes(_translation_handle, _rotation_handle, data_bytes);
+}
+
+motion_track::motion_track(const std::filesystem::path& data_path)
+{
+    detail::load_bytes(data_path, [this](const std::vector<char>& _data_bytes) {
+        load_motion_track_handles_from_bytes(_translation_handle, _rotation_handle, _data_bytes);
+    });
+}
+
+ozz::animation::Float3Track& motion_track::get_translation_handle()
+{
+    return _translation_handle;
+}
+
+const ozz::animation::Float3Track& motion_track::get_translation_handle() const
+{
+    return _translation_handle;
+}
+
+ozz::animation::QuaternionTrack& motion_track::get_rotation_handle()
+{
+    return _rotation_handle;
+}
+
+const ozz::animation::QuaternionTrack& motion_track::get_rotation_handle() const
+{
+    return _rotation_handle;
+}
+
+fetched<motion_track> fetch_motion_track(const std::filesystem::path& data_path)
+{
+    std::shared_ptr<std::promise<motion_track>> _promise = std::make_shared<std::promise<motion_track>>();
+
+    detail::fetch_bytes(data_path, [_promise](const std::vector<char>& _data_bytes) {
+        motion_track _motion_track(_data_bytes);
+        _promise->set_value(std::move(_motion_track));
+    });
+
+    // create motion track on worker thread is ok
+    return fetched<motion_track>(_promise->get_future());
 }
 
 }

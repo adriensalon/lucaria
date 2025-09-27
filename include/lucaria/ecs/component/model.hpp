@@ -1,115 +1,122 @@
 #pragma once
 
-#include <functional>
-#include <future>
-#include <memory>
-
-#include <imgui.h>
-
-#include <lucaria/core/fetch.hpp>
-#include <lucaria/core/font.hpp>
-#include <lucaria/core/framebuffer.hpp>
 #include <lucaria/core/mesh.hpp>
 #include <lucaria/core/texture.hpp>
-#include <lucaria/core/world.hpp>
 
 namespace lucaria {
+namespace detail {
+    struct motion_system;
+    struct rendering_system;
+}
 
-enum struct model_shader {
-    blockout,
-    unlit,
-    imgui,
-    // pbr
-};
+namespace ecs {
 
-template <model_shader shader_t>
-struct model_component;
+    enum struct model_shader {
+        blockout,
+        unlit,
+        pbr,
+        custom
+    };
 
-template <>
-struct model_component<model_shader::blockout> {
-    model_component() = default;
-    model_component(const model_component& other) = delete;
-    model_component& operator=(const model_component& other) = delete;
-    model_component(model_component&& other) = default;
-    model_component& operator=(model_component&& other) = default;
+    template <model_shader shader_t>
+    struct model_component;
 
-    model_component& mesh(const std::shared_future<std::shared_ptr<mesh_ref>>& fetched_mesh);
+    template <>
+    struct model_component<model_shader::blockout> {
+        model_component() = default;
+        model_component(const model_component& other) = delete;
+        model_component& operator=(const model_component& other) = delete;
+        model_component(model_component&& other) = default;
+        model_component& operator=(model_component&& other) = default;
 
-private:
-    fetch_container<mesh_ref> _mesh = {};
-    friend struct motion_system;
-    friend struct rendering_system;
-};
+        model_component& use_mesh(mesh& from);
+        model_component& use_mesh(fetched<mesh>& from);
 
-template <>
-struct model_component<model_shader::unlit> {
-    model_component() = default;
-    model_component(const model_component& other) = delete;
-    model_component& operator=(const model_component& other) = delete;
-    model_component(model_component&& other) = default;
-    model_component& operator=(model_component&& other) = default;
+    private:
+        detail::fetched_container<mesh> _mesh = {};
+        friend struct detail::motion_system;
+        friend struct detail::rendering_system;
+    };
 
-    model_component& color(const std::shared_future<std::shared_ptr<texture_ref>>& fetched_texture);
-    model_component& mesh(const std::shared_future<std::shared_ptr<mesh_ref>>& fetched_mesh);
+    template <>
+    struct model_component<model_shader::unlit> {
+        model_component() = default;
+        model_component(const model_component& other) = delete;
+        model_component& operator=(const model_component& other) = delete;
+        model_component(model_component&& other) = default;
+        model_component& operator=(model_component&& other) = default;
 
-private:
-    fetch_container<texture_ref> _color = {};
-    fetch_container<mesh_ref> _mesh = {};
-    friend struct motion_system;
-    friend struct rendering_system;
-};
+        model_component& use_mesh(mesh& from);
+        model_component& use_mesh(fetched<mesh>& from);
+        model_component& use_color(texture& from);
+        model_component& use_color(fetched<texture>& from);
 
-// enum struct pbr_texture {
-//     color,
-//     normal,
-//     occlusion,
-//     roughness,
-//     metallic
-// };
+    private:
+        detail::fetched_container<mesh> _mesh = {};
+        detail::fetched_container<texture> _color = {};
+        friend struct detail::motion_system;
+        friend struct detail::rendering_system;
+    };
 
-// inline const std::unordered_map<pbr_texture, std::size_t> pbr_texture_channels = {
-//     { pbr_texture::color, 4 },
-//     { pbr_texture::normal, 3 },
-//     { pbr_texture::occlusion, 1 },
-//     { pbr_texture::roughness, 1 },
-//     { pbr_texture::metallic, 1 },
-// };
+    // constexpr std::size_t pbr_color_channels = 4;
+    // constexpr std::size_t pbr_normal_channels = 3;
+    // constexpr std::size_t pbr_occlusion_channels = 1;
+    // constexpr std::size_t pbr_roughness_channels = 1;
+    // constexpr std::size_t pbr_metallic_channels = 1;
 
-// template <>
-// struct model_component<model_shader::pbr> {
-//     model_component() = default;
-//     model_component(const model_component& other) = delete;
-//     model_component& operator=(const model_component& other) = delete;
-//     model_component(model_component&& other) = default;
-//     model_component& operator=(model_component&& other) = default;
+    // template <>
+    // struct model_component<model_shader::pbr> {
+    //     model_component() = default;
+    //     model_component(const model_component& other) = delete;
+    //     model_component& operator=(const model_component& other) = delete;
+    //     model_component(model_component&& other) = default;
+    //     model_component& operator=(model_component&& other) = default;
 
-//     // model_component& textures(const std::unordered_map<pbr_texture, std::shared_future<std::shared_ptr<texture_ref>>>& fetched_material);
+    //     model_component& use_color(texture& color);
+    //     model_component& use_metallic(texture& metallic);
+    //     model_component& use_roughness(texture& roughness);
+    //     model_component& use_normal(texture& normal);
+    //     model_component& use_occlusion(texture& occlusion);
+    //     model_component& use_emissive(texture& emissive);
+    //     model_component& use_height(texture& height);
+    //     model_component& use_mesh(mesh& value, geometry& data);
 
-//     model_component& color(const std::shared_future<std::shared_ptr<texture_ref>>& fetched_texture);
-//     model_component& metallic(const std::shared_future<std::shared_ptr<texture_ref>>& fetched_texture);
-//     model_component& roughness(const std::shared_future<std::shared_ptr<texture_ref>>& fetched_texture);
-//     model_component& normal(const std::shared_future<std::shared_ptr<texture_ref>>& fetched_texture);
-//     model_component& occlusion(const std::shared_future<std::shared_ptr<texture_ref>>& fetched_texture);
-//     model_component& emissive(const std::shared_future<std::shared_ptr<texture_ref>>& fetched_texture);
-//     model_component& height(const std::shared_future<std::shared_ptr<texture_ref>>& fetched_texture);
-//     model_component& mesh(const std::shared_future<std::shared_ptr<mesh_ref>>& fetched_mesh);
+    // private:
+    //     std::optional<std::reference_wrapper<texture>> _color = std::nullopt;
+    //     std::optional<std::reference_wrapper<texture>> _metallic = std::nullopt;
+    //     std::optional<std::reference_wrapper<texture>> _roughness = std::nullopt;
+    //     std::optional<std::reference_wrapper<texture>> _normal = std::nullopt;
+    //     std::optional<std::reference_wrapper<texture>> _occlusion = std::nullopt;
+    //     std::optional<std::reference_wrapper<texture>> _emissive = std::nullopt;
+    //     std::optional<std::reference_wrapper<texture>> _height = std::nullopt;
+    //     std::optional<std::reference_wrapper<mesh>> _mesh = std::nullopt;
+    //     friend struct motion_system;
+    //     friend struct rendering_system;
+    // };
 
-// private:
-//     fetch_container<texture_ref> _color = {};
-//     fetch_container<texture_ref> _metallic = {};
-//     fetch_container<texture_ref> _roughness = {};
-//     fetch_container<texture_ref> _normal = {};
-//     fetch_container<texture_ref> _occlusion = {};
-//     fetch_container<texture_ref> _emissive = {};
-//     fetch_container<texture_ref> _height = {};
-//     fetch_container<mesh_ref> _mesh = {};
-//     friend struct motion_system;
-//     friend struct rendering_system;
-// };
+    // template <>
+    // struct model_component<model_shader::custom> {
+    //     model_component() = default;
+    //     model_component(const model_component& other) = delete;
+    //     model_component& operator=(const model_component& other) = delete;
+    //     model_component(model_component&& other) = default;
+    //     model_component& operator=(model_component&& other) = default;
 
-using blockout_model_component = model_component<model_shader::blockout>;
-using unlit_model_component = model_component<model_shader::unlit>;
-using imgui_model_component = model_component<model_shader::imgui>;
-// using pbr_model_component = model_component<model_shader::pbr>;
+    //     model_component& use_program(const program& from);
+    //     model_component& use_cubemap(const std::string& name, cubemap& from, const glm::uint slot);
+    //     model_component& use_texture(const std::string& name, texture& from, const glm::uint slot);
+    //     model_component& use_mesh(const std::string& name, mesh& from, const mesh_attribute attribute);
 
+    // private:
+    //     std::optional<std::reference_wrapper<texture>> _color = std::nullopt;
+    //     std::optional<std::reference_wrapper<mesh>> _mesh = std::nullopt;
+    //     friend struct motion_system;
+    //     friend struct rendering_system;
+    // };
+
+    using blockout_model_component = model_component<model_shader::blockout>;
+    using unlit_model_component = model_component<model_shader::unlit>;
+    using pbr_model_component = model_component<model_shader::pbr>;
+
+}
 }

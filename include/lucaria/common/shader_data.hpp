@@ -1,7 +1,5 @@
 #pragma once
 
-#include <string>
-
 #include <cereal/types/string.hpp>
 
 namespace lucaria {

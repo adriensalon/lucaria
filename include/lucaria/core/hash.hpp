@@ -6,17 +6,19 @@
 #include <glm/glm.hpp>
 
 namespace lucaria {
+namespace detail {
 
-struct uvec2_hash {
-    std::size_t operator()(const glm::uvec2& vec) const;
-};
+    struct uvec2_hash {
+        std::size_t operator()(const glm::uvec2& vec) const;
+    };
 
-struct vec3_hash {
-    std::size_t operator()(const glm::vec3& vec) const;
-};
+    struct vec3_hash {
+        std::size_t operator()(const glm::vec3& vec) const;
+    };
 
-struct path_vector_hash {
-    std::size_t operator()(const std::vector<std::filesystem::path>& paths) const;
-};
+    struct path_vector_hash {
+        std::size_t operator()(const std::vector<std::filesystem::path>& paths) const;
+    };
 
+}
 }

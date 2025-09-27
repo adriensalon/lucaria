@@ -1,244 +1,121 @@
-#include <fstream>
-
 #include <cereal/archives/json.hpp>
 #include <cereal/archives/portable_binary.hpp>
 
-#include <lucaria/core/fetch.hpp>
-#include <lucaria/core/graphics.hpp>
-#include <lucaria/core/load.hpp>
+#include <lucaria/core/error.hpp>
+#include <lucaria/core/opengl.hpp>
 #include <lucaria/core/texture.hpp>
 #include <lucaria/core/window.hpp>
 
 namespace lucaria {
+namespace {
 
-// constexpr static GLenum COMPRESSED_R11_EAC = 0x9270;
-// constexpr static GLenum COMPRESSED_SIGNED_R11_EAC = 0x9271;
-// constexpr static GLenum COMPRESSED_RG11_EAC = 0x9272;
-// constexpr static GLenum COMPRESSED_SIGNED_RG11_EAC = 0x9273;
-constexpr static GLenum COMPRESSED_RGB8_ETC2 = 0x9274;
-// constexpr static GLenum COMPRESSED_SRGB8_ETC2 = 0x9275;
-// constexpr static GLenum COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2 = 0x9276;
-// constexpr static GLenum COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2 = 0x9277;
-constexpr static GLenum COMPRESSED_RGBA8_ETC2_EAC = 0x9278;
-// constexpr static GLenum COMPRESSED_SRGB8_ALPHA8_ETC2_EAC = 0x9279;
-
-constexpr static GLenum COMPRESSED_RGB_S3TC_DXT1_EXT = 0x83F0;
-// constexpr static GLenum COMPRESSED_RGBA_S3TC_DXT1_EXT = 0x83F1;
-// constexpr static GLenum COMPRESSED_RGBA_S3TC_DXT3_EXT = 0x83F2;
-constexpr static GLenum COMPRESSED_RGBA_S3TC_DXT5_EXT = 0x83F3;
-
-namespace detail {
-
-    static std::unordered_map<std::string, std::promise<std::shared_ptr<texture_ref>>> promises;
+    // constexpr static GLenum COMPRESSED_R11_EAC = 0x9270;
+    // constexpr static GLenum COMPRESSED_SIGNED_R11_EAC = 0x9271;
+    // constexpr static GLenum COMPRESSED_RG11_EAC = 0x9272;
+    // constexpr static GLenum COMPRESSED_SIGNED_RG11_EAC = 0x9273;
+    constexpr static GLenum COMPRESSED_RGB8_ETC2 = 0x9274;
+    // constexpr static GLenum COMPRESSED_SRGB8_ETC2 = 0x9275;
+    // constexpr static GLenum COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2 = 0x9276;
+    // constexpr static GLenum COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2 = 0x9277;
+    constexpr static GLenum COMPRESSED_RGBA8_ETC2_EAC = 0x9278;
+    // constexpr static GLenum COMPRESSED_SRGB8_ALPHA8_ETC2_EAC = 0x9279;
+    constexpr static GLenum COMPRESSED_RGB_S3TC_DXT1_EXT = 0x83F0;
+    // constexpr static GLenum COMPRESSED_RGBA_S3TC_DXT1_EXT = 0x83F1;
+    // constexpr static GLenum COMPRESSED_RGBA_S3TC_DXT3_EXT = 0x83F2;
+    constexpr static GLenum COMPRESSED_RGBA_S3TC_DXT5_EXT = 0x83F3;
 
 }
 
-texture_ref::texture_ref(texture_ref&& other)
+texture::texture(texture&& other)
 {
     *this = std::move(other);
 }
 
-texture_ref& texture_ref::operator=(texture_ref&& other)
+texture& texture::operator=(texture&& other)
 {
-    _is_instanced = true;
-    _width = other._width;
-    _height = other._height;
-    _texture_id = other._texture_id;
-    other._is_instanced = false;
+    _is_owning = true;
+    _size = other._size;
+    _handle = other._handle;
+    other._is_owning = false;
     return *this;
 }
 
-texture_ref::~texture_ref()
+texture::~texture()
 {
-    if (_is_instanced) {
+    if (_is_owning) {
         glBindTexture(GL_TEXTURE_2D, 0);
-        glDeleteTextures(1, &_texture_id);
+        glDeleteTextures(1, &_handle);
     }
 }
 
-texture_ref::texture_ref(const image_data& data)
+texture::texture(const image& from)
 {
-    _width = data.width;
-    _height = data.height;
-    glGenTextures(1, &_texture_id);
-    glBindTexture(GL_TEXTURE_2D, _texture_id);
+    _size = { from.data.width, from.data.height };
+    glGenTextures(1, &_handle);
+    glBindTexture(GL_TEXTURE_2D, _handle);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    const GLubyte* _pixels_ptr = &(data.pixels[0]);
-    switch (data.channels) {
+    const GLsizei _pixels_count = static_cast<GLsizei>(from.data.pixels.size());
+    const GLubyte* _pixels_ptr = from.data.pixels.data();
+    switch (from.data.channels) {
     case 3:
-        if (data.is_compressed_etc && get_is_etc_supported()) {
-            glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB8_ETC2, data.width, data.height, 0, data.pixels.size(), _pixels_ptr);
-        } else if (data.is_compressed_s3tc && get_is_s3tc_supported()) {
-            glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, data.width, data.height, 0, data.pixels.size(), _pixels_ptr);
+        if (from.data.is_compressed_etc2 && get_is_etc_supported()) {
+            glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB8_ETC2, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
+        } else if (from.data.is_compressed_s3tc && get_is_s3tc_supported()) {
+            glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
         } else {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, data.width, data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, from.data.width, from.data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
         }
         break;
     case 4:
-        if (data.is_compressed_etc && get_is_etc_supported()) {
-            glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA8_ETC2_EAC, data.width, data.height, 0, data.pixels.size(), _pixels_ptr);
-        } else if (data.is_compressed_s3tc && get_is_s3tc_supported()) {
-            glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, data.width, data.height, 0, data.pixels.size(), _pixels_ptr);
+        if (from.data.is_compressed_etc2 && get_is_etc_supported()) {
+            glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA8_ETC2_EAC, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
+        } else if (from.data.is_compressed_s3tc && get_is_s3tc_supported()) {
+            glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
         } else {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data.width, data.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, from.data.width, from.data.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);
         }
         break;
     default:
-#if LUCARIA_DEBUG
-        std::cout << "Invalid channels count, must be 3 or 4" << std::endl;
-        std::terminate();
-#endif
+        LUCARIA_RUNTIME_ERROR("Invalid texture channels count, must be 3 or 4")
         break;
     }
 #if LUCARIA_DEBUG
-    std::cout << "Created TEXTURE_2D buffer of size " << data.width << "x" << data.height << " with id " << _texture_id << std::endl;
+    std::cout << "Created TEXTURE_2D buffer of size " << from.data.width << "x" << from.data.height << " with id " << _handle << std::endl;
 #endif
-    _is_instanced = true;
+    _is_owning = true;
+    graphics_assert();
 }
 
-glm::uint texture_ref::get_width() const
+glm::uvec2 texture::get_size() const
 {
-    return _width;
+    return _size;
 }
 
-glm::uint texture_ref::get_height() const
+glm::uint texture::get_handle() const
 {
-    return _height;
+    return _handle;
 }
 
-glm::uint texture_ref::get_id() const
+fetched<texture> fetch_texture(
+    const std::filesystem::path& image_data_path,
+    const std::optional<std::filesystem::path>& image_etc2_path,
+    const std::optional<std::filesystem::path>& image_s3tc_path)
 {
-    return _texture_id;
-}
+    const std::filesystem::path& _image_path = detail::resolve_image_path(image_data_path, image_etc2_path, image_s3tc_path);
+    std::shared_ptr<std::promise<image>> _image_promise = std::make_shared<std::promise<image>>();
 
-image_data load_image_data(const std::vector<char>& image_bytes)
-{
-    image_data _data;
-    {
-        raw_input_stream _stream(image_bytes);
-#if LUCARIA_JSON
-        cereal::JSONInputArchive _archive(_stream);
-#else
-        cereal::PortableBinaryInputArchive _archive(_stream);
-#endif
-        _archive(_data);
-    }
+    detail::fetch_bytes(_image_path, [_image_promise](const std::vector<char>& _data_bytes) {
+        image _image(_data_bytes);
+        _image_promise->set_value(std::move(_image));
+    });
 
-    return _data;
-}
-
-image_data load_compressed_image_data(const std::vector<char>& image_bytes)
-{
-    image_data _image_data;
-    const std::vector<uint8_t>& _content = *(reinterpret_cast<const std::vector<uint8_t>*>(&image_bytes));
-    // try_parse_compressed_texture(_content.data(), _content.size(), _data);
-    uint32_t* data32 = (uint32_t*)_content.data();
-    if (*data32 == 0x03525650) {
-        // PVR
-        switch (*(data32 + 2)) {
-        // case 6:
-        //     // m_type = Etc1;
-        //     std::cout << "ETC1" << std::endl;
-        //     break;
-        case 7:
-            // m_type = Dxt1;
-            // std::cout << "DXT1" << std::endl;
-            _image_data.channels = 3;
-            _image_data.is_compressed_s3tc = true;
-            break;
-        case 11:
-            // m_type = Dxt5;
-            // std::cout << "DXT5" << std::endl;
-            _image_data.channels = 4;
-            _image_data.is_compressed_s3tc = true;
-            break;
-        case 22:
-            // m_type = Etc2_RGB;
-            std::cout << "ETC2_RGB" << std::endl;
-            _image_data.channels = 3;
-            _image_data.is_compressed_etc = true;
-            break;
-        case 23:
-            // m_type = Etc2_RGBA;
-            std::cout << "ETC2_RGBA" << std::endl;
-            _image_data.channels = 4;
-            _image_data.is_compressed_etc = true;
-            break;
-        default:
-            assert(false);
-            break;
-        }
-        const std::size_t _offset = 52 + *(data32 + 12);
-        const glm::uint8* _data_ptr = _content.data() + _offset;
-        const std::size_t _data_size = _content.size() - _offset;
-        _image_data.pixels = std::vector<glm::uint8>(_data_ptr, _data_ptr + _data_size);
-        _image_data.height = *(data32 + 6);
-        _image_data.width = *(data32 + 7);
-    } else if (*data32 == 0x58544BAB) {
-        // KTX
-        switch (*(data32 + 7)) {
-        case 0x9274:
-            // m_type = Etc2_RGB;
-            std::cout << "ETC2_RGB" << std::endl;
-            _image_data.channels = 3;
-            _image_data.is_compressed_etc = true;
-            break;
-        case 0x9278:
-            // m_type = Etc2_RGBA;
-            std::cout << "ETC2_RGBA" << std::endl;
-            _image_data.channels = 4;
-            _image_data.is_compressed_etc = true;
-            break;
-        default:
-            assert(false);
-            break;
-        }
-        const std::size_t _offset = sizeof(uint32_t) * 17 + *(data32 + 15);
-        const glm::uint8* _data_ptr = _content.data() + _offset;
-        const std::size_t _data_size = _content.size() - _offset;
-        _image_data.pixels = std::vector<glm::uint8>(_data_ptr, _data_ptr + _data_size);
-        _image_data.width = *(data32 + 9);
-        _image_data.height = *(data32 + 10);
-    } else {
-        assert(false);
-    }
-    return _image_data;
-}
-
-std::shared_future<std::shared_ptr<texture_ref>> fetch_texture(const std::filesystem::path& image_path, const std::optional<std::filesystem::path>& etc_image_path, const std::optional<std::filesystem::path>& s3tc_image_path)
-{
-    bool _is_compressed;
-    std::filesystem::path _image_path;
-    if (get_is_etc_supported() && etc_image_path.has_value()) {
-        _is_compressed = true;
-        _image_path = etc_image_path.value();
-    } else if (get_is_s3tc_supported() && s3tc_image_path.has_value()) {
-        _is_compressed = true;
-        _image_path = s3tc_image_path.value();
-    } else {
-        _is_compressed = false;
-        _image_path = image_path;
-    }
-    std::promise<std::shared_ptr<texture_ref>>& _promise = detail::promises[_image_path.string()];
-    if (_is_compressed) {
-        fetch_file(_image_path, [&_promise](const std::vector<char>& image_bytes) {
-            _promise.set_value(std::make_shared<texture_ref>(load_compressed_image_data(image_bytes)));
-        });
-    } else {
-        fetch_file(_image_path, [&_promise](const std::vector<char>& image_bytes) {
-            _promise.set_value(std::make_shared<texture_ref>(load_image_data(image_bytes)));
-        });
-    }
-
-    return _promise.get_future();
-}
-
-void clear_texture_fetches()
-{
-    detail::promises.clear();
+    // create texture on main thread
+    return fetched<texture>(_image_promise->get_future(), [](const image& _from) {
+        return texture(_from);
+    });
 }
 
 }

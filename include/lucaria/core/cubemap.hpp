@@ -1,47 +1,43 @@
 #pragma once
 
-#include <array>
-#include <filesystem>
-#include <future>
-#include <memory>
-#include <optional>
-#include <sstream>
-#include <unordered_map>
-
-#include <glm/glm.hpp>
-
-#include <lucaria/common/image.hpp>
+#include <lucaria/core/image.hpp>
 
 namespace lucaria {
 
-enum struct cubemap_side : glm::uint {
-    positive_x = 0,
-    positive_y = 1,
-    positive_z = 2,
-    negative_x = 3,
-    negative_y = 4,
-    negative_z = 5
-};
+/// @brief Represents a runtime cubemap texture on the device
+struct cubemap {
+    LUCARIA_DELETE_DEFAULT_SEMANTICS(cubemap)
+    cubemap(const cubemap& other) = delete;
+    cubemap& operator=(const cubemap& other) = delete;
+    cubemap(cubemap&& other);
+    cubemap& operator=(cubemap&& other);
+    ~cubemap();
 
-using cubemap_data = std::array<image_data, 6>;
+    /// @brief Creates a cubemap from images synchronously
+    /// @param images the images to create from
+    cubemap(const std::array<image, 6>& images);
 
-struct cubemap_ref {
-    cubemap_ref() = delete;
-    cubemap_ref(const cubemap_ref& other) = delete;
-    cubemap_ref& operator=(const cubemap_ref& other) = delete;
-    cubemap_ref(cubemap_ref&& other);
-    cubemap_ref& operator=(cubemap_ref&& other);
-    ~cubemap_ref();
+    // set parameters
 
-    cubemap_ref(const cubemap_data& data);
-    glm::uint get_id() const;
+    // generate mipmaps
+
+    // update pixels
+
+    [[nodiscard]] glm::uint get_handle() const;
 
 private:
-    bool _is_instanced;
-    glm::uint _cubemap_id;
+    bool _is_owning;
+    glm::uint _handle;
 };
 
-std::shared_future<std::shared_ptr<cubemap_ref>> fetch_cubemap(const std::array<std::filesystem::path, 6>& image_paths, const std::optional<std::array<std::filesystem::path, 6>>& etc_image_paths = std::nullopt, const std::optional<std::array<std::filesystem::path, 6>>& s3tc_image_paths = std::nullopt);
-void clear_cubemap_fetches();
+/// @brief Loads a cubemap from files asynchronously and uploads directly to the device,
+/// lets the runtime choose the best format it can use without downloading the others
+/// @param image_data_paths paths to load uncompressed image versions from
+/// @param image_etc2_paths paths to load ETC2 compressed image versions from
+/// @param image_s3tc_paths paths to load S3TC compressed image versions from
+[[nodiscard]] fetched<cubemap> fetch_cubemap(
+    const std::array<std::filesystem::path, 6>& image_data_paths,
+    const std::optional<std::array<std::filesystem::path, 6>>& image_etc2_paths = std::nullopt,
+    const std::optional<std::array<std::filesystem::path, 6>>& image_s3tc_paths = std::nullopt);
 
 }
