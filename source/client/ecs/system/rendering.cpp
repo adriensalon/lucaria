@@ -38,7 +38,7 @@ namespace {
             const glm::vec3 _color(color.x(), color.y(), color.z());
             std::vector<glm::vec3>& _positions = positions[_color];
             std::vector<glm::uvec2>& _indices = indices[_color];
-            const glm::uint _from_index = _positions.size();
+            const glm::uint _from_index = static_cast<glm::uint>(_positions.size());
             const glm::uint _to_index = _from_index + 1;
             _positions.emplace_back(from.x(), from.y(), from.z());
             _positions.emplace_back(to.x(), to.y(), to.z());
@@ -428,7 +428,7 @@ namespace detail {
     {
         GLbitfield _bits = clear_depth ? GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT : GL_COLOR_BUFFER_BIT;
         glm::vec2 _screen_size = get_screen_size();
-        glViewport(0, 0, _screen_size.x, _screen_size.y);
+        glViewport(0, 0, static_cast<GLsizei>(_screen_size.x), static_cast<GLsizei>(_screen_size.y));
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
         glClear(_bits);
     }
