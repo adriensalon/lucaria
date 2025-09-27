@@ -35,22 +35,31 @@ function(lucaria_build_game
         list(APPEND game_toolchain "-DCMAKE_TOOLCHAIN_FILE:FILEPATH=${TOOLCHAIN}")
     endif()
 
-    add_custom_command(
-        OUTPUT "${game_stamp}"
-        COMMAND "${CMAKE_COMMAND}"
-            -S "${game_source_dir}"
-            -B "${game_output_dir}"
-            -G "${GENERATOR}"
-            ${game_toolchain}
-            ${game_forward}
-        COMMAND "${CMAKE_COMMAND}" --build "${game_output_dir}" --config $<CONFIG>
-        COMMAND "${CMAKE_COMMAND}" -E touch "${game_stamp}"
-        # DEPENDS "${game_inputs}"
-        COMMENT "Building ${TARGET} for ${PLATFORM}..."
-        USES_TERMINAL)
+    # add_custom_command(
+    #     OUTPUT "${game_stamp}"
+    #     COMMAND "${CMAKE_COMMAND}"
+    #         -S "${game_source_dir}"
+    #         -B "${game_output_dir}"
+    #         -G "${GENERATOR}"
+    #         ${game_toolchain}
+    #         ${game_forward}
+    #     COMMAND "${CMAKE_COMMAND}" --build "${game_output_dir}" --config $<CONFIG>
+    #     COMMAND "${CMAKE_COMMAND}" -E touch "${game_stamp}"
+    #     # DEPENDS "${game_inputs}"
+    #     COMMENT "Building ${TARGET} for ${PLATFORM}..."
+    #     USES_TERMINAL)
+
+    # add_custom_target(${TARGET}_${PLATFORM}
+    #     ALL
+    #     DEPENDS "${game_stamp}")
 
     add_custom_target(${TARGET}_${PLATFORM}
         ALL
-        DEPENDS "${game_stamp}")
+        COMMAND "${CMAKE_COMMAND}" -S "${game_source_dir}" -B "${game_output_dir}" -G "${GENERATOR}" ${game_toolchain} ${game_forward}
+        COMMAND "${CMAKE_COMMAND}" --build "${game_output_dir}" --config $<CONFIG>
+        WORKING_DIRECTORY "${game_output_dir}"
+        COMMENT "Building ${TARGET} for ${PLATFORM}..."
+        VERBATIM
+        USES_TERMINAL)
 
 endfunction()

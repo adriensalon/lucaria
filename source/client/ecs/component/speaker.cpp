@@ -38,9 +38,6 @@ namespace ecs {
     {
         _sound.emplace(from);
         alSourcei(_handle, AL_BUFFER, _sound.value().get_handle());
-        if (_is_playing) {
-            alSourcePlay(_sound.value().get_handle());
-        }
         return *this;
     }
 
@@ -48,9 +45,6 @@ namespace ecs {
     {
         _sound.emplace(from, [this]() {
             alSourcei(_handle, AL_BUFFER, _sound.value().get_handle());
-            if (_is_playing) {
-                alSourcePlay(_sound.value().get_handle());
-            }
         });
         return *this;
     }
@@ -63,20 +57,13 @@ namespace ecs {
 
     speaker_component& speaker_component::set_play(const bool play)
     {
-        if (_sound.has_value() && (_is_playing != play)) {
-            if (play) {
-                alSourcePlay(_sound.value().get_handle());
-            } else {
-                alSourcePause(_sound.value().get_handle());
-            }
-            _is_playing = play;
-        }
+        _want_playing = play;
         return *this;
     }
 
     speaker_component& speaker_component::set_loop(const bool loop)
     {
-        // todo
+        _want_looping = loop;
         return *this;
     }
 

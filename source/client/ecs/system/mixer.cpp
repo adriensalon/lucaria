@@ -1,5 +1,6 @@
 #include <lucaria/core/openal.hpp>
 #include <lucaria/core/window.hpp>
+#include <lucaria/ecs/component/speaker.hpp>
 #include <lucaria/ecs/system/mixer.hpp>
 
 namespace lucaria {
@@ -34,6 +35,18 @@ namespace detail {
 
     void mixer_system::apply_speaker_transforms()
     {
+        each_scene([&](entt::registry& scene) {
+            scene.view<ecs::speaker_component>().each([](ecs::speaker_component& _speaker) {
+                if (_speaker._sound.has_value() && _speaker._want_playing != _speaker._is_playing) {
+                    if (_speaker._want_playing) {
+                        alSourcePlay(_speaker._sound.value().get_handle());
+                    } else {
+                        alSourcePause(_speaker._sound.value().get_handle());
+                    }
+                    _speaker._is_playing = _speaker._want_playing;
+                }
+            });
+        });
     }
 
     void mixer_system::apply_listener_transform()

@@ -30,7 +30,9 @@ namespace ecs {
         glm::uint _handle;
         detail::fetched_container<sound> _sound = {};
         bool _is_playing = false;
+        bool _want_playing = false;
         bool _is_looping = false;
+        bool _want_looping = false;
         friend struct detail::mixer_system;
     };
 

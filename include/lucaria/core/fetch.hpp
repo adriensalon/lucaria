@@ -152,8 +152,10 @@ namespace detail {
             if (_fut && _fut->has_value()) {
                 if (_callback && !_is_callback_invoked) {
                     _is_callback_invoked = true;
-                    auto cb = std::exchange(_callback, {}); // take & clear first
-                    cb(); // then run
+                    // auto cb = std::exchange(_callback, {}); // take & clear first
+                    // cb(); // then run
+                    _callback();
+                    _callback = nullptr;
                 }
                 return true;
             }
