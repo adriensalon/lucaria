@@ -13,9 +13,8 @@ function(lucaria_build_game
 
     set(game_source_dir "${LUCARIA_SOURCE_DIR}/game")
     set(game_output_dir "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}/${PLATFORM}")
-    # file(GLOB_RECURSE game_inputs CONFIGURE_DEPENDS "${SOURCES}" "${LUCARIA_SOURCE_DIR}/client/*" "${LUCARIA_INCLUDE_DIR}/*")
+    
     file(MAKE_DIRECTORY "${game_output_dir}")
-    set(game_stamp "${game_output_dir}/.built.stamp")
 
     set(game_forward
             "-DLUCARIA_EXTERNAL_DIR:PATH=${LUCARIA_EXTERNAL_DIR}"
@@ -34,24 +33,6 @@ function(lucaria_build_game
     if(TOOLCHAIN)
         list(APPEND game_toolchain "-DCMAKE_TOOLCHAIN_FILE:FILEPATH=${TOOLCHAIN}")
     endif()
-
-    # add_custom_command(
-    #     OUTPUT "${game_stamp}"
-    #     COMMAND "${CMAKE_COMMAND}"
-    #         -S "${game_source_dir}"
-    #         -B "${game_output_dir}"
-    #         -G "${GENERATOR}"
-    #         ${game_toolchain}
-    #         ${game_forward}
-    #     COMMAND "${CMAKE_COMMAND}" --build "${game_output_dir}" --config $<CONFIG>
-    #     COMMAND "${CMAKE_COMMAND}" -E touch "${game_stamp}"
-    #     # DEPENDS "${game_inputs}"
-    #     COMMENT "Building ${TARGET} for ${PLATFORM}..."
-    #     USES_TERMINAL)
-
-    # add_custom_target(${TARGET}_${PLATFORM}
-    #     ALL
-    #     DEPENDS "${game_stamp}")
 
     add_custom_target(${TARGET}_${PLATFORM}
         ALL

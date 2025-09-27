@@ -6,7 +6,6 @@
 
 #include <fstream>
 
-#include <lucaria/core/error.hpp>
 #include <lucaria/core/fetch.hpp>
 
 namespace lucaria {
