@@ -16,6 +16,10 @@ struct viewport {
 
     /// @brief
     /// @param from
+    viewport(const geometry& from, const glm::uvec2& size_pixels);
+
+    /// @brief
+    /// @param from
     viewport(const geometry& from, const glm::float32 pixels_per_meter);
 
     [[nodiscard]] glm::uvec2 get_computed_screen_size() const;
@@ -34,6 +38,10 @@ private:
     glm::uint _positions_handle;
     glm::uint _texcoords_handle;
 };
+
+/// @brief Loads a viewport from a file asynchronously
+/// @param data_path path to load from
+[[nodiscard]] fetched<viewport> fetch_viewport(const std::filesystem::path& data_path, const glm::uvec2& size_pixels);
 
 /// @brief Loads a viewport from a file asynchronously
 /// @param data_path path to load from

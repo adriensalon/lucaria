@@ -1,9 +1,18 @@
 #include <lucaria/core/opengl.hpp>
 #include <lucaria/core/viewport.hpp>
 
-
 namespace lucaria {
 namespace {
+
+    [[nodiscard]] static inline std::vector<glm::vec2> invert_texcoords(const std::vector<glm::vec2>& texcoords)
+    {
+        std::vector<glm::vec2> _inverted;
+        _inverted.reserve(texcoords.size());
+        for (const glm::vec2& _texcoord : texcoords) {
+            _inverted.push_back({ _texcoord.x, 1.0f - _texcoord.y });
+        }
+        return _inverted;
+    }
 
     // Branchless Frisvad ONB with the singular pole at N.y == -1
     // N must be (approximately) normalized.
@@ -163,6 +172,19 @@ viewport::~viewport()
     }
 }
 
+viewport::viewport(const geometry& from, const glm::uvec2& size_pixels)
+{
+    _computed_framebuffer_size = size_pixels;
+
+    _size = 3 * static_cast<glm::uint>(from.data.indices.size());
+    _array_handle = create_vertex_array();
+    _elements_handle = create_elements_buffer(from.data.indices);
+    _positions_handle = create_attribute_buffer(from.data.positions);
+    _texcoords_handle = create_attribute_buffer(invert_texcoords(from.data.texcoords));
+
+    _is_owning = true;
+}
+
 viewport::viewport(const geometry& from, const glm::float32 pixels_per_meter)
 {
     _computed_framebuffer_size = compute_size_planar_fast(
@@ -174,7 +196,7 @@ viewport::viewport(const geometry& from, const glm::float32 pixels_per_meter)
     _array_handle = create_vertex_array();
     _elements_handle = create_elements_buffer(from.data.indices);
     _positions_handle = create_attribute_buffer(from.data.positions);
-    _texcoords_handle = create_attribute_buffer(from.data.texcoords);
+    _texcoords_handle = create_attribute_buffer(invert_texcoords(from.data.texcoords));
 
     _is_owning = true;
 }
@@ -207,6 +229,21 @@ glm::uint viewport::get_positions_handle() const
 glm::uint viewport::get_texcoords_handle() const
 {
     return _texcoords_handle;
+}
+
+fetched<viewport> fetch_viewport(const std::filesystem::path& data_path, const glm::uvec2& size_pixels)
+{
+    std::shared_ptr<std::promise<geometry>> _geometry_promise = std::make_shared<std::promise<geometry>>();
+
+    detail::fetch_bytes(data_path, [_geometry_promise](const std::vector<char>& _data_bytes) {
+        geometry _geometry(_data_bytes);
+        _geometry_promise->set_value(std::move(_geometry));
+    });
+
+    // create viewport on main thread
+    return fetched<viewport>(_geometry_promise->get_future(), [size_pixels](const geometry& _from) {
+        return viewport(_from, size_pixels);
+    });
 }
 
 fetched<viewport> fetch_viewport(const std::filesystem::path& data_path, const glm::float32 pixels_per_meter)
