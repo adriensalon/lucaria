@@ -1,9 +1,14 @@
 #include <iostream>
 
+#include <backends/imgui_impl_opengl3.h>
 #include <btBulletDynamicsCommon.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
+
+#if !defined(__EMSCRIPTEN__)
+#include <backends/imgui_impl_glfw.h>
+#endif
 
 #include <lucaria/core/fetch.hpp>
 #include <lucaria/core/hash.hpp>
@@ -13,6 +18,7 @@
 #include <lucaria/core/world.hpp>
 #include <lucaria/ecs/component/animator.hpp>
 #include <lucaria/ecs/component/collider.hpp>
+#include <lucaria/ecs/component/interface.hpp>
 #include <lucaria/ecs/component/model.hpp>
 #include <lucaria/ecs/component/rigidbody.hpp>
 #include <lucaria/ecs/component/transform.hpp>
@@ -451,7 +457,7 @@ namespace detail {
                 const glm::vec2 _mouse_delta = get_mouse_position_delta();
                 player_yaw -= _mouse_delta.x * mouse_sensitivity;
                 player_pitch -= _mouse_delta.y * mouse_sensitivity;
-                
+
                 _follow->set_rotation_warp({ 0.f, glm::radians(player_yaw), 0.f });
                 player_pitch = glm::clamp(player_pitch, -89.0f, 89.0f);
                 player_position = _follow->get_position() + glm::vec3(_follow_animator->get_bone_transform(_follow_bone_name)[3]) + _follow->get_forward() * 0.23f;
@@ -695,7 +701,51 @@ namespace detail {
 
     void rendering_system::draw_imgui_screen_interfaces()
     {
-        
+        ImGui::SetCurrentContext(imgui_screen_context);
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui::NewFrame();
+
+        each_scene([](entt::registry& scene) {
+            scene.view<ecs::screen_interface_component>().each([](ecs::screen_interface_component& interface) {
+                if (interface._imgui_callback) {
+                    interface._imgui_callback();
+                }
+            });
+        });
+
+        ImGui::SetCurrentContext(imgui_screen_context);
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    }
+
+    void rendering_system::draw_imgui_spatial_interfaces()
+    {
+        each_scene([](entt::registry& scene) {
+            scene.view<ecs::spatial_interface_component>().each([](ecs::spatial_interface_component& interface) {
+                
+                // we will check if viewport has value to 
+                // draw only when available framebuffer size
+                
+                if (interface._imgui_callback
+                    && (!interface._refresh_mode
+                        || (interface._refresh_mode != ecs::spatial_refresh_mode::never))) {
+
+                    ImGui::SetCurrentContext(interface._imgui_context);
+
+                    ImGui::GetIO().DisplaySize = ImVec2(1600, 900); // lol
+                    ImGui_ImplOpenGL3_NewFrame();
+                    ImGui::NewFrame();
+                    interface._imgui_callback();
+                    ImGui::SetCurrentContext(interface._imgui_context);
+                    ImGui::Render();
+                    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+                    if (interface._refresh_mode != ecs::spatial_refresh_mode::always) {
+                        interface._refresh_mode = ecs::spatial_refresh_mode::never;
+                    }
+                }
+            });
+        });
     }
 
 }

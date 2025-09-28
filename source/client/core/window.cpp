@@ -473,14 +473,20 @@ namespace detail {
         ImGuiContext* _context = ImGui::CreateContext(imgui_shared_font_atlas.get());
         ImGui::SetCurrentContext(_context);
 #if !defined(__EMSCRIPTEN__)
-        ImGui_ImplGlfw_InitForOpenGL(glfw_window, true);
+        static bool _must_install_callbacks = true;
+        if (_must_install_callbacks) {
+            ImGui_ImplGlfw_InitForOpenGL(glfw_window, true);
+            _must_install_callbacks = false;
+        }
 #endif
         ImGui_ImplOpenGL3_Init("#version 300 es");
 
-        // Tell the GL3 backend we already have a font texture
-        if (auto* bd = ImGui_ImplOpenGL3_GetBackendData()) {
+        ImGui_ImplOpenGL3_DestroyFontsTexture();
+        ImGui::GetIO().Fonts->SetTexID((ImTextureID)(intptr_t)imgui_shared_font_texture);
+
+        // (Optional) if you want the backend struct to know the id too:
+        if (auto* bd = (ImGui_ImplOpenGL3_Data*)ImGui::GetIO().BackendRendererUserData)
             bd->FontTexture = imgui_shared_font_texture;
-        }
 
         return _context;
     }
@@ -582,11 +588,8 @@ namespace detail {
         _screen_height = canvas_get_height();
 #else
         glfwGetFramebufferSize(glfw_window, &_screen_width, &_screen_height);
-        // glViewport(0, 0, _screen_width, _screen_height);
-        // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 #endif
         detail::screen_size = { _screen_width, _screen_height };
-
         if (detail::screen_size == glm::vec2(0.f, 0.f)) {
             return;
         }
@@ -596,24 +599,12 @@ namespace detail {
         _last_accum_pos_delta = detail::accumulated_mouse_position_delta;
         _last_render_time = _render_time;
 
-        ImGuiIO& io = ImGui::GetIO();
-        io.DisplaySize = ImVec2(detail::screen_size.x, detail::screen_size.y);
-
+        ImGui::SetCurrentContext(imgui_screen_context);
 #if !defined(__EMSCRIPTEN__)
         ImGui_ImplGlfw_NewFrame();
 #endif
-
-        if (_use_imgui) {
-            ImGui_ImplOpenGL3_NewFrame();
-            ImGui::NewFrame();
-        }
-        // io.MouseDown[0] = detail::keys[0];
-        // for (auto& _button : detail::buttons_changed)
-        //     io.AddMouseButtonEvent(_button, detail::buttons[_button]);
-        // io.AddFocusEvent(true);
-
-        ImGui_ImplOpenGL3_Data* _backend_data = static_cast<ImGui_ImplOpenGL3_Data*>(io.BackendRendererUserData);
-        gui_mvp_uniform = _backend_data->AttribLocationProjMtx;
+        ImGuiIO& io = ImGui::GetIO();
+        io.DisplaySize = ImVec2(detail::screen_size.x, detail::screen_size.y);
 
         update_mouse_lock();
 
@@ -622,20 +613,6 @@ namespace detail {
         detail::keys_changed.clear();
         detail::buttons_changed.clear();
 
-        // ImGui::ShowDemoWindow();
-        if (_use_imgui) {
-            ImGui::Render();
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        }
-        _use_imgui = _use_imgui_command;
-
-        // wait_fetched_containers();
-        // wait_one_fetched_container();
-        // std::cout << "drrrr \n";
-
-        // remove_levels();
-        // manage();
-
         graphics_assert();
         if (is_audio_locked) {
             // audio_assert();
@@ -643,6 +620,8 @@ namespace detail {
 
 #if !defined(__EMSCRIPTEN__)
         glfwSwapBuffers(detail::glfw_window);
+
+        ImGui::SetCurrentContext(imgui_screen_context);
         glfwPollEvents();
 #endif
     }
