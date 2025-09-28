@@ -485,7 +485,7 @@ namespace detail {
         return _context;
     }
 
-    void ReuploadSharedFontTextureRGBA32()
+    void reupload_shared_font_texture_RGBA32()
     {
         unsigned char* pixels = nullptr;
         int w = 0, h = 0;
@@ -516,7 +516,7 @@ namespace detail {
         imgui_shared_font_atlas = std::make_unique<ImFontAtlas>();
         imgui_shared_font_atlas->AddFontDefault();
 
-        ReuploadSharedFontTextureRGBA32();
+        reupload_shared_font_texture_RGBA32();
 
         imgui_screen_context = create_shared_context();
 

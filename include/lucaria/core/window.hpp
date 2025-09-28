@@ -49,8 +49,8 @@ namespace detail {
     
     void run_impl(const std::function<void()>& start, const std::function<void()>& update);
 
-    void ReuploadSharedFontTextureRGBA32();
-    [[nodiscard]] ImGuiContext* create_shared_context();
+    ImGuiContext* create_shared_context();
+    void reupload_shared_font_texture_RGBA32();
 
 }
 }

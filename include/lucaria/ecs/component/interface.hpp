@@ -24,16 +24,14 @@ namespace ecs {
         interface_component& operator=(const interface_component& other) = delete;
         interface_component(interface_component&& other);
         interface_component& operator=(interface_component&& other);
-        ~interface_component(); // delete imgui context
+        ~interface_component();
         
         interface_component& set_callback(const std::function<void()>& callback);
 
     private:
-        std::function<void(const std::vector<ImFont*>&)> _imgui_callback = nullptr;
+        bool _is_owning = false;
+        std::function<void()> _imgui_callback = nullptr;
         ImGuiContext* _imgui_context = nullptr;
-        std::unique_ptr<framebuffer> _imgui_framebuffer = nullptr;
-        std::unique_ptr<texture> _imgui_color_texture = nullptr;
-        bool _is_imgui_input_enabled = true;
         friend struct rendering_system;
     };
 
@@ -58,6 +56,7 @@ namespace ecs {
         interface_component& use_enable_input(const bool enable);
 
     private:
+        bool _is_owning = false;
         detail::fetched_container<viewport> _viewport = {};
         std::function<void(const std::vector<ImFont*>&)> _imgui_callback = nullptr;
         ImGuiContext* _imgui_context = nullptr;

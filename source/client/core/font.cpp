@@ -27,7 +27,7 @@ namespace {
         // ImGui_ImplOpenGL3_DestroyFontsTexture();
         // ImGui_ImplOpenGL3_CreateFontsTexture();
 
-        detail::ReuploadSharedFontTextureRGBA32();
+        detail::reupload_shared_font_texture_RGBA32();
         return _font;
     }
 
