@@ -710,7 +710,7 @@ namespace detail {
                     && (!interface._refresh_mode
                         || (interface._refresh_mode != ecs::spatial_refresh_mode::never))) {
 
-                    // interface._imgui_framebuffer-> BIND
+                    interface._imgui_framebuffer->use();
 
                     ImGui::SetCurrentContext(interface._imgui_context);
                     const glm::uvec2 _framebuffer_size = interface._imgui_framebuffer->get_size();
@@ -726,8 +726,12 @@ namespace detail {
                     ImGui::Render();
                     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-                    //rebind default framebuffer
+                    framebuffer::use_default();
 
+                    //
+                    //
+                    //
+                    
                     program& _unlit_program = _persistent_unlit_program.value();
 
                     _unlit_program.use();

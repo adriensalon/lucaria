@@ -61,6 +61,16 @@ framebuffer::framebuffer(const glm::uvec2 size)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+void framebuffer::use()
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, _handle);
+}
+
+void framebuffer::use_default()
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 void framebuffer::bind_color(texture& color_tex)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, _handle);

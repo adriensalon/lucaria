@@ -13,6 +13,7 @@ struct framebuffer {
     ~framebuffer();
 
     framebuffer(const glm::uvec2 size);
+    void use();
     void bind_color(texture& color);
     void bind_color(renderbuffer_ref& color);
     void bind_depth(texture& depth);
@@ -20,6 +21,8 @@ struct framebuffer {
     
     [[nodiscard]] glm::uvec2 get_size() const;
     [[nodiscard]] glm::uint get_handle() const;
+
+    static void use_default();
 
 private:
     bool _is_owning;
