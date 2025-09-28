@@ -463,20 +463,63 @@ namespace detail {
         return true;
     }
 
-    static std::unique_ptr<ImFontAtlas> imgui_shared_font_atlas = nullptr;
-    static ImGuiContext* imgui_screen_context = nullptr;
-    static std::unordered_map<void*, ImGuiContext*> imgui_additional_contexts = {};
-
-    static void setup_imgui()
+    ImGui_ImplOpenGL3_Data* ImGui_ImplOpenGL3_GetBackendData()
     {
-        IMGUI_CHECKVERSION();
-        imgui_shared_font_atlas = std::make_unique<ImFontAtlas>();
-        imgui_shared_font_atlas->AddFontDefault();
-        ImGui::CreateContext(imgui_shared_font_atlas.get());
+        return ImGui::GetCurrentContext() ? (ImGui_ImplOpenGL3_Data*)ImGui::GetIO().BackendRendererUserData : nullptr;
+    }
+
+    ImGuiContext* create_shared_context()
+    {
+        ImGuiContext* _context = ImGui::CreateContext(imgui_shared_font_atlas.get());
+        ImGui::SetCurrentContext(_context);
 #if !defined(__EMSCRIPTEN__)
         ImGui_ImplGlfw_InitForOpenGL(glfw_window, true);
 #endif
         ImGui_ImplOpenGL3_Init("#version 300 es");
+
+        // Tell the GL3 backend we already have a font texture
+        if (auto* bd = ImGui_ImplOpenGL3_GetBackendData()) {
+            bd->FontTexture = imgui_shared_font_texture;
+        }
+
+        return _context;
+    }
+
+    void ReuploadSharedFontTextureRGBA32()
+    {
+        unsigned char* pixels = nullptr;
+        int w = 0, h = 0;
+        imgui_shared_font_atlas->GetTexDataAsRGBA32(&pixels, &w, &h); // builds if needed
+
+        if (imgui_shared_font_texture == 0)
+            glGenTextures(1, &imgui_shared_font_texture);
+
+        GLint last_tex = 0;
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_tex);
+        glBindTexture(GL_TEXTURE_2D, imgui_shared_font_texture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+#ifdef GL_UNPACK_ROW_LENGTH
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+#endif
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+        glBindTexture(GL_TEXTURE_2D, last_tex);
+
+        // Make the atlas point to the shared GL texture id
+        imgui_shared_font_atlas->SetTexID((ImTextureID)(intptr_t)imgui_shared_font_texture);
+    }
+
+    static void setup_imgui()
+    {
+        IMGUI_CHECKVERSION();
+
+        imgui_shared_font_atlas = std::make_unique<ImFontAtlas>();
+        imgui_shared_font_atlas->AddFontDefault();
+
+        ReuploadSharedFontTextureRGBA32();
+
+        imgui_screen_context = create_shared_context();
+
         ImGui::GetIO().IniFilename = NULL;
         ImGui::StyleColorsLight();
     }

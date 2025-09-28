@@ -6,6 +6,7 @@
 #include <lucaria/core/error.hpp>
 #include <lucaria/core/font.hpp>
 #include <lucaria/core/hash.hpp>
+#include <lucaria/core/window.hpp>
 
 namespace lucaria {
 namespace {
@@ -13,21 +14,20 @@ namespace {
     ImFont* load_data_from_bytes(const std::vector<char>& data_bytes, const glm::float32 font_size)
     {
         int _data_size = static_cast<int>(data_bytes.size());
-        // char* _char_data_ptr = const_cast<char*>(data_bytes.data());
-        // void* _void_data_ptr = static_cast<void*>(_char_data_ptr);
-
         void* _owned_data = IM_ALLOC(_data_size);
         memcpy(_owned_data, data_bytes.data(), _data_size);
 
-        ImFontConfig cfg;
-        cfg.FontDataOwnedByAtlas = true; // <- ImGui will call IM_FREE(owned) when clearing atlas
+        ImFontConfig _config;
+        _config.FontDataOwnedByAtlas = true;
 
-        ImFont* _font = ImGui::GetIO().Fonts->AddFontFromMemoryTTF(_owned_data, _data_size, font_size, &cfg);
-        if (!ImGui::GetIO().Fonts->Build()) {
+        ImFont* _font = detail::imgui_shared_font_atlas->AddFontFromMemoryTTF(_owned_data, _data_size, font_size, &_config);
+        if (!detail::imgui_shared_font_atlas->Build()) {
             LUCARIA_RUNTIME_ERROR("Failed to build ImGui font atlas")
         }
-        ImGui_ImplOpenGL3_DestroyFontsTexture(); // un peu sale mdr
-        ImGui_ImplOpenGL3_CreateFontsTexture();
+        // ImGui_ImplOpenGL3_DestroyFontsTexture();
+        // ImGui_ImplOpenGL3_CreateFontsTexture();
+
+        detail::ReuploadSharedFontTextureRGBA32();
         return _font;
     }
 

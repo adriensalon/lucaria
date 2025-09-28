@@ -11,23 +11,14 @@
 #include <lucaria/core/world.hpp>
 
 namespace lucaria {
-namespace detail {
-    void run_impl(const std::function<void()>& start, const std::function<void()>& update);
-}
 
 enum struct keyboard_key {
+    // clang-format off
     a, z, e, r, t, y, u, i, o, p,
     q, s, d, f, g, h, j, k, l, m, 
     w, x, c, v, b, n
+    // clang-format on
 };
-
-// template <typename scene_t>
-// void run(const std::function<void()>& update)
-// {
-//     detail::run_impl([] () {
-//         make_scene<scene_t>();
-//     }, update);
-// }
 
 void graphics_assert();
 void audio_assert();
@@ -47,7 +38,19 @@ glm::vec2 get_mouse_position();
 glm::vec2& get_mouse_position_delta();
 glm::float64 get_time_delta();
 
-
 void use_imgui_rendering(const bool use);
 
+namespace detail {
+
+    inline std::unique_ptr<ImFontAtlas> imgui_shared_font_atlas = nullptr;
+    inline ImGuiContext* imgui_screen_context = nullptr;
+    inline glm::uint imgui_shared_font_texture = 0;
+
+    
+    void run_impl(const std::function<void()>& start, const std::function<void()>& update);
+
+    void ReuploadSharedFontTextureRGBA32();
+    [[nodiscard]] ImGuiContext* create_shared_context();
+
+}
 }
