@@ -38,7 +38,7 @@ namespace detail {
         static void draw_skybox();
         static void draw_blockout_meshes();
         static void draw_unlit_meshes();
-        static void draw_imgui_meshes();
+        static void draw_imgui_screen_interfaces();
         static void draw_debug_guizmos();
     };
 

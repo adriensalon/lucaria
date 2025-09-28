@@ -693,5 +693,10 @@ namespace detail {
         }
     }
 
+    void rendering_system::draw_imgui_screen_interfaces()
+    {
+        
+    }
+
 }
 }

@@ -7,6 +7,10 @@
 #include <lucaria/core/viewport.hpp>
 
 namespace lucaria {
+namespace detail {
+    struct rendering_system;
+}
+
 namespace ecs {
 
     enum struct interface_mode {
@@ -32,7 +36,7 @@ namespace ecs {
         bool _is_owning = false;
         std::function<void()> _imgui_callback = nullptr;
         ImGuiContext* _imgui_context = nullptr;
-        friend struct rendering_system;
+        friend struct detail::rendering_system;
     };
 
     template <>
