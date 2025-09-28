@@ -169,6 +169,32 @@ void program::bind_attribute(const std::string& name, const mesh& from, const me
     glEnableVertexAttribArray(_location);
 }
 
+void program::bind_attribute(const std::string& name, viewport& from, const mesh_attribute attribute)
+{
+    if (attribute != mesh_attribute::position && attribute != mesh_attribute::texcoord) {
+        LUCARIA_RUNTIME_ERROR("Failed to bind viewport attribute because only position or texcoord is expected")
+    }
+    _bound_indices_count = from.get_size();
+    _bound_array_id = from.get_array_handle();
+    const std::unordered_map<mesh_attribute, glm::uint> _attribute_handles = {
+        { mesh_attribute::position, from.get_positions_handle() },
+        { mesh_attribute::texcoord, from.get_texcoords_handle() }
+    };
+    if (_attributes.find(name) == _attributes.end()) {
+        LUCARIA_RUNTIME_ERROR("Name " + name + " not found in shader")
+    }
+    glm::int32 _location = _attributes.at(name);
+    glm::uint _size = detail::mesh_attribute_sizes.at(attribute);
+    glBindVertexArray(_bound_array_id);
+    glBindBuffer(GL_ARRAY_BUFFER, _attribute_handles.at(attribute));
+    if (attribute == mesh_attribute::bones) {
+        glVertexAttribIPointer(_location, _size, GL_INT, _size * sizeof(glm::int32), (void*)0);
+    } else {
+        glVertexAttribPointer(_location, _size, GL_FLOAT, GL_FALSE, _size * sizeof(glm::float32), (void*)0);
+    }
+    glEnableVertexAttribArray(_location);
+}
+
 #if LUCARIA_GUIZMO
 
 void program::bind_guizmo(const std::string& name, const guizmo_mesh& from)
@@ -343,7 +369,7 @@ fetched<program> fetch_program(const std::filesystem::path& vertex_data_path, co
         _shaders_promise->set_value(std::move(_shaders));
     });
 
-    return fetched<program>(_shaders_promise->get_future(), [] (const std::pair<shader, shader>& _from) {
+    return fetched<program>(_shaders_promise->get_future(), [](const std::pair<shader, shader>& _from) {
         return program(_from.first, _from.second);
     });
 }

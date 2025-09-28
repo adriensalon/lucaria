@@ -4,6 +4,7 @@
 #include <lucaria/core/mesh.hpp>
 #include <lucaria/core/texture.hpp>
 #include <lucaria/core/shader.hpp>
+#include <lucaria/core/viewport.hpp>
 
 namespace lucaria {
     
@@ -29,6 +30,10 @@ struct program {
     /// @param from mesh to bind from 
     /// @param attribute attribute type to bind
     void bind_attribute(const std::string& name, const mesh& from, const mesh_attribute attribute);
+    
+    /// @brief 
+    /// @param from 
+    void bind_attribute(const std::string& name, viewport& from, const mesh_attribute attribute);
     
     /// @brief Uses a cubemap uniform for draw calls
     /// @param name source name of the uniform

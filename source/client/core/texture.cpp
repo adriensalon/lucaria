@@ -89,6 +89,41 @@ texture::texture(const image& from)
     graphics_assert();
 }
 
+texture::texture(const glm::uvec2 size)
+{
+    _size = size;
+    glGenTextures(1, &_handle);
+    glBindTexture(GL_TEXTURE_2D, _handle);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // Allocate storage without data
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,                 // mipmap level
+        GL_RGBA,           // internal format (choose GL_RGB if you don’t need alpha)
+        size.x,
+        size.y,
+        0,                 // border (must be 0)
+        GL_RGBA,           // format
+        GL_UNSIGNED_BYTE,  // type
+        nullptr            // no data → just allocate memory
+    );
+
+#if LUCARIA_DEBUG
+    std::cout << "Created EMPTY TEXTURE_2D buffer of size "
+              << size.x << "x" << size.y
+              << " with id " << _handle << std::endl;
+#endif
+
+    _is_owning = true;
+    graphics_assert();
+}
+
+
 glm::uvec2 texture::get_size() const
 {
     return _size;

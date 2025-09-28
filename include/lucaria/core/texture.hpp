@@ -17,6 +17,10 @@ struct texture {
     /// @param from
     texture(const image& from);
 
+    /// @brief
+    /// @param size
+    texture(const glm::uvec2 size);
+
     // set parameters
 
     // generate mipmaps

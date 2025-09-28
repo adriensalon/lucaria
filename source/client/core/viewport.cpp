@@ -1,5 +1,6 @@
-#include <lucaria/core/viewport.hpp>
 #include <lucaria/core/opengl.hpp>
+#include <lucaria/core/viewport.hpp>
+
 
 namespace lucaria {
 namespace {
@@ -176,6 +177,36 @@ viewport::viewport(const geometry& from, const glm::float32 pixels_per_meter)
     _texcoords_handle = create_attribute_buffer(from.data.texcoords);
 
     _is_owning = true;
+}
+
+glm::uvec2 viewport::get_computed_screen_size() const
+{
+    return _computed_framebuffer_size;
+}
+
+glm::uint viewport::get_size() const
+{
+    return _size;
+}
+
+glm::uint viewport::get_array_handle() const
+{
+    return _array_handle;
+}
+
+glm::uint viewport::get_elements_handle() const
+{
+    return _elements_handle;
+}
+
+glm::uint viewport::get_positions_handle() const
+{
+    return _positions_handle;
+}
+
+glm::uint viewport::get_texcoords_handle() const
+{
+    return _texcoords_handle;
 }
 
 fetched<viewport> fetch_viewport(const std::filesystem::path& data_path, const glm::float32 pixels_per_meter)

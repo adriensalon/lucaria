@@ -45,15 +45,18 @@ framebuffer::~framebuffer()
 }
 
 framebuffer::framebuffer(const glm::uvec2 size)
-: _size(size)
-, _texture_color_id(std::nullopt)
-, _texture_depth_id(std::nullopt)
-, _renderbuffer_color_id(std::nullopt)
-, _renderbuffer_depth_id(std::nullopt)
+    : _size(size)
+    , _texture_color_id(std::nullopt)
+    , _texture_depth_id(std::nullopt)
+    , _renderbuffer_color_id(std::nullopt)
+    , _renderbuffer_depth_id(std::nullopt)
 {
     glGenFramebuffers(1, &_handle);
     glBindFramebuffer(GL_FRAMEBUFFER, _handle);
     // glDrawBuffer(GL_NONE);
+    GLenum none = GL_NONE;
+    glDrawBuffers(1, &none);
+
     glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -106,6 +109,8 @@ void framebuffer::bind_depth(texture& depth_tex)
 
     if (!_texture_color_id && !_renderbuffer_color_id) {
         // glDrawBuffer(GL_NONE);
+        GLenum none = GL_NONE;
+        glDrawBuffers(1, &none);
         glReadBuffer(GL_NONE);
     }
 
@@ -125,6 +130,8 @@ void framebuffer::bind_depth(renderbuffer_ref& depth_rb)
 
     if (!_texture_color_id && !_renderbuffer_color_id) {
         // glDrawBuffer(GL_NONE);
+        GLenum none = GL_NONE;
+        glDrawBuffers(1, &none);
         glReadBuffer(GL_NONE);
     }
 

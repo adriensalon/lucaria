@@ -547,10 +547,12 @@ namespace detail {
         });
     }
 
+    static std::optional<program> _persistent_unlit_program = std::nullopt;
+
     void rendering_system::draw_unlit_meshes()
     {
         static bool _is_program_setup = false;
-        static std::optional<program> _persistent_unlit_program = std::nullopt;
+
         static std::optional<program> _persistent_unlit_skinned_program = std::nullopt;
         if (!_is_program_setup) {
             shader _unlit_vertex_shader;
@@ -699,6 +701,50 @@ namespace detail {
         }
     }
 
+    void rendering_system::draw_imgui_spatial_interfaces()
+    {
+        each_scene([](entt::registry& scene) {
+            scene.view<ecs::spatial_interface_component>().each([](ecs::spatial_interface_component& interface) {
+                if (interface._viewport.has_value()
+                    && interface._imgui_callback
+                    && (!interface._refresh_mode
+                        || (interface._refresh_mode != ecs::spatial_refresh_mode::never))) {
+
+                    // interface._imgui_framebuffer-> BIND
+
+                    ImGui::SetCurrentContext(interface._imgui_context);
+                    const glm::uvec2 _framebuffer_size = interface._imgui_framebuffer->get_size();
+                    ImGui::GetIO().DisplaySize = ImVec2(
+                        static_cast<glm::float32>(_framebuffer_size.x),
+                        static_cast<glm::float32>(_framebuffer_size.y));
+                    ImGui_ImplOpenGL3_NewFrame();
+                    ImGui::NewFrame();
+
+                    interface._imgui_callback();
+
+                    ImGui::SetCurrentContext(interface._imgui_context);
+                    ImGui::Render();
+                    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+                    //rebind default framebuffer
+
+                    program& _unlit_program = _persistent_unlit_program.value();
+
+                    _unlit_program.use();
+                    _unlit_program.bind_attribute("vert_position", interface._viewport.value(), mesh_attribute::position);
+                    _unlit_program.bind_attribute("vert_texcoord", interface._viewport.value(), mesh_attribute::texcoord);
+                    _unlit_program.bind_uniform("uniform_color", *(interface._imgui_color_texture.get()), 0);
+                    _unlit_program.bind_uniform("uniform_view", camera_view_projection);
+                    _unlit_program.draw();
+
+                    if (interface._refresh_mode != ecs::spatial_refresh_mode::always) {
+                        interface._refresh_mode = ecs::spatial_refresh_mode::never;
+                    }
+                }
+            });
+        });
+    }
+
     void rendering_system::draw_imgui_screen_interfaces()
     {
         ImGui::SetCurrentContext(imgui_screen_context);
@@ -716,36 +762,6 @@ namespace detail {
         ImGui::SetCurrentContext(imgui_screen_context);
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    }
-
-    void rendering_system::draw_imgui_spatial_interfaces()
-    {
-        each_scene([](entt::registry& scene) {
-            scene.view<ecs::spatial_interface_component>().each([](ecs::spatial_interface_component& interface) {
-                
-                // we will check if viewport has value to 
-                // draw only when available framebuffer size
-                
-                if (interface._imgui_callback
-                    && (!interface._refresh_mode
-                        || (interface._refresh_mode != ecs::spatial_refresh_mode::never))) {
-
-                    ImGui::SetCurrentContext(interface._imgui_context);
-
-                    ImGui::GetIO().DisplaySize = ImVec2(1600, 900); // lol
-                    ImGui_ImplOpenGL3_NewFrame();
-                    ImGui::NewFrame();
-                    interface._imgui_callback();
-                    ImGui::SetCurrentContext(interface._imgui_context);
-                    ImGui::Render();
-                    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-                    if (interface._refresh_mode != ecs::spatial_refresh_mode::always) {
-                        interface._refresh_mode = ecs::spatial_refresh_mode::never;
-                    }
-                }
-            });
-        });
     }
 
 }

@@ -48,14 +48,20 @@ namespace ecs {
     interface_component<interface_mode::spatial>& interface_component<interface_mode::spatial>::use_viewport(viewport& from)
     {
         _viewport.emplace(from);
-        // create framebuffer from size etc
+        const glm::uvec2 _computed_size = _viewport.value().get_computed_screen_size();
+        _imgui_color_texture = std::make_unique<texture>(_computed_size);
+        _imgui_framebuffer = std::make_unique<framebuffer>(_computed_size);
+        _imgui_framebuffer->bind_color(*(_imgui_color_texture.get()));
         return *this;
     }
 
     interface_component<interface_mode::spatial>& interface_component<interface_mode::spatial>::use_viewport(fetched<viewport>& from)
     {
         _viewport.emplace(from, [this]() {
-            // create framebuffer from size etc
+            const glm::uvec2 _computed_size = _viewport.value().get_computed_screen_size();
+            _imgui_color_texture = std::make_unique<texture>(_computed_size);
+            _imgui_framebuffer = std::make_unique<framebuffer>(_computed_size);
+            _imgui_framebuffer->bind_color(*(_imgui_color_texture.get()));
         });
         return *this;
     }
