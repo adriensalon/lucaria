@@ -13,16 +13,18 @@ struct framebuffer {
     ~framebuffer();
 
     framebuffer(const glm::uvec2 size);
-    void bind_color(const texture& color);
-    void bind_color(const renderbuffer_ref& color);
-    void bind_depth(const texture& depth);
-    void bind_depth(const renderbuffer_ref& depth);
+    void bind_color(texture& color);
+    void bind_color(renderbuffer_ref& color);
+    void bind_depth(texture& depth);
+    void bind_depth(renderbuffer_ref& depth);
     
-    glm::uvec2 size;
-    glm::uint handle;
+    [[nodiscard]] glm::uvec2 get_size() const;
+    [[nodiscard]] glm::uint get_handle() const;
 
 private:
     bool _is_owning;
+    glm::uvec2 _size;
+    glm::uint _handle;
     std::optional<glm::uint> _texture_color_id;
     std::optional<glm::uint> _texture_depth_id;
     std::optional<glm::uint> _renderbuffer_color_id;
