@@ -1,17 +1,10 @@
 #pragma once
 
-#include <functional>
-#include <future>
-#include <memory>
-
 #include <imgui.h>
 
-#include <lucaria/core/fetch.hpp>
 #include <lucaria/core/font.hpp>
 #include <lucaria/core/framebuffer.hpp>
-#include <lucaria/core/mesh.hpp>
-#include <lucaria/core/texture.hpp>
-#include <lucaria/core/world.hpp>
+#include <lucaria/core/viewport.hpp>
 
 namespace lucaria {
 namespace ecs {
@@ -26,24 +19,21 @@ namespace ecs {
 
     template <>
     struct interface_component<interface_mode::screen> {
-        interface_component() = default;
+        interface_component();
         interface_component(const interface_component& other) = delete;
         interface_component& operator=(const interface_component& other) = delete;
-        interface_component(interface_component&& other) = default;
-        interface_component& operator=(interface_component&& other) = default;
-
-        interface_component& use_font(const std::shared_future<std::shared_ptr<font>>& fetched_font);
-        interface_component& use_callback(const std::function<void(const std::vector<ImFont*>&)>& imgui_callback);
+        interface_component(interface_component&& other);
+        interface_component& operator=(interface_component&& other);
+        ~interface_component(); // delete imgui context
+        
+        interface_component& set_callback(const std::function<void()>& callback);
 
     private:
-        detail::fetched_container<viewport> _viewport = {};
         std::function<void(const std::vector<ImFont*>&)> _imgui_callback = nullptr;
         ImGuiContext* _imgui_context = nullptr;
-        std::vector<ImFont*> _imgui_fonts = {};
-        std::unique_ptr<texture> _imgui_color_texture = nullptr;
         std::unique_ptr<framebuffer> _imgui_framebuffer = nullptr;
+        std::unique_ptr<texture> _imgui_color_texture = nullptr;
         bool _is_imgui_input_enabled = true;
-        bool _is_imgui_backend_ready = false;
         friend struct rendering_system;
     };
 
