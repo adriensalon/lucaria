@@ -48,11 +48,16 @@ namespace detail {
             });
             scene.view<ecs::speaker_component, ecs::transform_component>().each([](ecs::speaker_component& _speaker, ecs::transform_component& _transform) {
                 if (_speaker._sound.has_value()) {
-                    glm::vec3 _position = _transform.get_position();
-                    glm::vec3 _forward = _transform.get_forward();
-                    alSource3f(_speaker._sound.value().get_handle(), AL_POSITION, _position.x, _position.y, _position.z);
-                    alSource3f(_speaker._sound.value().get_handle(), AL_DIRECTION, _forward.x, _forward.y, _forward.z);
-                    alSourcei(_speaker._sound.value().get_handle(), AL_SOURCE_RELATIVE, AL_FALSE);
+                    const ALuint h = _speaker._sound.value().get_handle();
+
+                    glm::vec3 pos = _transform.get_position(); // world pos
+                    glm::vec3 fwd = _transform.get_forward(); // −Z forward by our convention
+
+                    alSourcei(h, AL_SOURCE_RELATIVE, AL_FALSE);
+                    alSource3f(h, AL_POSITION, pos.x, pos.y, pos.z);
+
+                    // `AL_DIRECTION` only matters if you use a cone. Otherwise you can skip it.
+                    alSource3f(h, AL_DIRECTION, fwd.x, fwd.y, fwd.z);
                 }
             });
         });
@@ -61,19 +66,25 @@ namespace detail {
     void mixer_system::apply_listener_transform()
     {
         if (listener_transform.has_value()) {
-            const glm::mat4& _transform = listener_transform.value().get()._transform;
-            const glm::vec3 _position = glm::vec3(_transform[3]);
-            const glm::mat3 R(_transform);
-            glm::vec3 at = -glm::normalize(glm::vec3(R[2])); // -Z forward
-            glm::vec3 up = glm::normalize(glm::vec3(R[1])); // +Y up
+            const glm::mat4& T = listener_transform->get()._transform;
 
-            // Re-orthogonalize up in case of scale/shear
+            glm::vec3 pos = glm::vec3(T[3]);
+            glm::vec3 at = glm::normalize(glm::vec3(T[2])); // −Z forward
+            glm::vec3 up = glm::normalize(glm::vec3(T[1])); // +Y up
+
+            // Re-orthogonalize (protects against scaling)
             up = glm::normalize(up - glm::dot(up, at) * at);
 
-            float _orientation[6] = { at.x, at.y, at.z, up.x, up.y, up.z };
+            // (Optional) sanity: ensure right-handedness (+X right)
+            glm::vec3 right = glm::cross(at, up);
+            if (glm::dot(right, glm::vec3(T[0])) < 0.0f) {
+                // If this ever trips, your basis is flipped somewhere.
+                right = -right; // or log/adjust as you like
+            }
 
-            alListener3f(AL_POSITION, _position.x, _position.y, _position.z);
-            alListenerfv(AL_ORIENTATION, _orientation);
+            float orientation[6] = { at.x, at.y, at.z, up.x, up.y, up.z };
+            alListener3f(AL_POSITION, pos.x, pos.y, pos.z);
+            alListenerfv(AL_ORIENTATION, orientation);
         }
     }
 

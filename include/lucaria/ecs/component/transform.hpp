@@ -35,6 +35,8 @@ namespace ecs {
         transform_component& set_transform_warp(const glm::mat4& transform);
 
         [[nodiscard]] glm::vec3 get_position() const;
+        [[nodiscard]] glm::vec3 get_right() const;
+        [[nodiscard]] glm::vec3 get_up() const;
         [[nodiscard]] glm::vec3 get_forward() const;
         [[nodiscard]] glm::quat get_rotation() const;
         [[nodiscard]] glm::vec3 get_euler() const;

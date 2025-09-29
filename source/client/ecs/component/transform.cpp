@@ -73,9 +73,19 @@ namespace ecs {
         return _transform[3];
     }
 
+    glm::vec3 transform_component::get_right() const
+    {
+        return glm::normalize(glm::vec3(_transform[0]));
+    }
+
+    glm::vec3 transform_component::get_up() const
+    {
+        return glm::normalize(glm::vec3(_transform[1]));
+    }
+
     glm::vec3 transform_component::get_forward() const
     {
-        return glm::normalize(glm::vec3(_transform[2]));
+        return glm::normalize(-glm::vec3(_transform[2]));
     }
 
 }
