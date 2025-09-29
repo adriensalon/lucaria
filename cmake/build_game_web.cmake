@@ -2,7 +2,7 @@
 
 function(add_lucaria_game_web TARGET)
     set(options)
-    set(one_value_args INSTALL_DIR)
+    set(one_value_args INSTALL_DIR HTML_SHELL)
     set(multi_value_args SOURCES INCLUDES DEFINES BUILD_ARGS)
     cmake_parse_arguments(PARSE_ARGV 0 LBG "${options}" "${one_value_args}" "${multi_value_args}")
     
@@ -47,7 +47,8 @@ function(add_lucaria_game_web TARGET)
             "${LBG_INSTALL_DIR}"
             "${LBG_INCLUDES}"
             "${LBG_DEFINES}"
-            "${LBG_BUILD_ARGS}")
+            "${LBG_BUILD_ARGS}"
+            "-DLUCARIA_HTML_SHELL=${LBG_HTML_SHELL}")
         
         if(LBG_INSTALL_DIR)
             add_custom_command(

@@ -16,7 +16,8 @@ function(add_lucaria_game_win32 TARGET)
             "${LBG_INSTALL_DIR}"
             "${LBG_INCLUDES}"
             "${LBG_DEFINES}"
-            "${LBG_BUILD_ARGS}")
+            "${LBG_BUILD_ARGS}"
+            "")
 
         if(LBG_INSTALL_DIR)
             add_custom_command(

@@ -9,7 +9,8 @@ function(lucaria_build_game
         INSTALL_DIR 
         INCLUDES 
         DEFINES 
-        BUILD_ARGS)
+        BUILD_ARGS
+        ARGS)
 
     set(game_source_dir "${LUCARIA_SOURCE_DIR}/game")
     set(game_output_dir "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}/${PLATFORM}")
@@ -36,7 +37,7 @@ function(lucaria_build_game
 
     add_custom_target(${TARGET}_${PLATFORM}
         ALL
-        COMMAND "${CMAKE_COMMAND}" -S "${game_source_dir}" -B "${game_output_dir}" -G "${GENERATOR}" ${game_toolchain} ${game_forward}
+        COMMAND "${CMAKE_COMMAND}" -S "${game_source_dir}" -B "${game_output_dir}" -G "${GENERATOR}" ${game_toolchain} ${game_forward} ${ARGS}
         COMMAND "${CMAKE_COMMAND}" --build "${game_output_dir}" --config $<CONFIG>
         WORKING_DIRECTORY "${game_output_dir}"
         COMMENT "Building ${TARGET} for ${PLATFORM}..."
