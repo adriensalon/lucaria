@@ -1,14 +1,9 @@
-#include <cereal/archives/json.hpp>
-#include <cereal/archives/portable_binary.hpp>
-#include <cereal/cereal.hpp>
-#include <cereal/types/string.hpp>
+
 #include <glm/gtc/type_ptr.hpp>
 #include <ozz/base/containers/vector.h>
 #include <ozz/base/maths/simd_math.h>
 
 #include <lucaria/core/error.hpp>
-#include <lucaria/core/fetch.hpp>
-#include <lucaria/core/hash.hpp>
 #include <lucaria/core/opengl.hpp>
 #include <lucaria/core/program.hpp>
 #include <lucaria/core/window.hpp>

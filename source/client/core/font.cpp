@@ -5,7 +5,6 @@
 
 #include <lucaria/core/error.hpp>
 #include <lucaria/core/font.hpp>
-#include <lucaria/core/hash.hpp>
 #include <lucaria/core/window.hpp>
 
 namespace lucaria {

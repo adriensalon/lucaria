@@ -11,7 +11,7 @@
 #endif
 
 #include <lucaria/core/fetch.hpp>
-#include <lucaria/core/hash.hpp>
+// #include <lucaria/core/hash.hpp>
 #include <lucaria/core/opengl.hpp>
 #include <lucaria/core/program.hpp>
 #include <lucaria/core/window.hpp>
@@ -32,12 +32,22 @@ namespace detail {
 
 namespace {
 
+    struct vec3_hash {
+        std::size_t operator()(const glm::vec3& vec) const
+        {
+            std::size_t _h1 = std::hash<glm::float32> {}(vec.x);
+            std::size_t _h2 = std::hash<glm::float32> {}(vec.y);
+            std::size_t _h3 = std::hash<glm::float32> {}(vec.z);
+            return _h1 ^ (_h2 << 1) ^ (_h3 << 2);
+        }
+    };
+
 #if LUCARIA_GUIZMO
 
     struct guizmo_debug_draw : public btIDebugDraw {
 
-        std::unordered_map<glm::vec3, std::vector<glm::vec3>, detail::vec3_hash> positions = {};
-        std::unordered_map<glm::vec3, std::vector<glm::uvec2>, detail::vec3_hash> indices = {};
+        std::unordered_map<glm::vec3, std::vector<glm::vec3>, vec3_hash> positions = {};
+        std::unordered_map<glm::vec3, std::vector<glm::uvec2>, vec3_hash> indices = {};
 
         virtual void drawLine(const btVector3& from, const btVector3& to, const btVector3& color) override
         {
@@ -306,7 +316,7 @@ namespace {
 
 #if LUCARIA_GUIZMO
     static guizmo_debug_draw guizmo_draw = {};
-    static std::unordered_map<glm::vec3, guizmo_mesh, detail::vec3_hash> guizmo_meshes = {};
+    static std::unordered_map<glm::vec3, guizmo_mesh, vec3_hash> guizmo_meshes = {};
 
     void draw_guizmo_line(const btVector3& from, const btVector3& to, const btVector3& color)
     {
@@ -447,7 +457,7 @@ namespace detail {
         camera_projection = glm::perspective(_fov_rad, _aspect_ratio, camera_near, camera_far);
     }
 
-    inline glm::vec3 forward_from_yaw_pitch(float yaw_deg, float pitch_deg)
+    static glm::vec3 forward_from_yaw_pitch(float yaw_deg, float pitch_deg)
     {
         float y = glm::radians(yaw_deg), p = glm::radians(pitch_deg);
         float cp = cos(p), sp = sin(p), cy = cos(y), sy = sin(y);
@@ -465,13 +475,13 @@ namespace detail {
 
     void rendering_system::compute_view_projection()
     {
-
         if (get_is_mouse_locked() && _follow && _follow_animator && !_follow_bone_name.empty()) {
-            const glm::vec2 md = get_mouse_position_delta();
+
+            const glm::vec2 _mouse_delta = get_mouse_position_delta();
 
             // ---- INPUT: use delta yaw to rotate the MODEL; accumulate only pitch for camera
-            const float yawDeltaDeg = -md.x * mouse_sensitivity; // flip if you prefer
-            player_pitch -= md.y * mouse_sensitivity;
+            const float _yaw_delta_degrees = -_mouse_delta.x * mouse_sensitivity; // flip if you prefer
+            player_pitch -= _mouse_delta.y * mouse_sensitivity;
             player_pitch = glm::clamp(player_pitch, -89.0f, 89.0f);
 
             // ---- EXTRACT CURRENT WORLD ROTATION (handles external rotations)
@@ -486,7 +496,7 @@ namespace detail {
 
             // ---- ROTATE THE MODEL BY yawDelta AROUND ITS OWN UP AXIS
             const glm::vec3 charUp = glm::normalize(qFollow0 * glm::vec3(0, 1, 0));
-            const glm::quat qYawDelta = glm::angleAxis(glm::radians(yawDeltaDeg), charUp);
+            const glm::quat qYawDelta = glm::angleAxis(glm::radians(_yaw_delta_degrees), charUp);
 
             glm::quat qFollow1 = glm::normalize(qYawDelta * qFollow0);
 
@@ -521,9 +531,6 @@ namespace detail {
 
             player_position = boneWorld - groundF * boomDist + worldUp * camHeight;
             camera_view = glm::lookAt(player_position, player_position + camForward, camUp);
-
-            // player_position = boneWorld - groundF * boomDist + worldUp * camHeight;
-            // camera_view = glm::lookAt(player_position, player_position + camForward, camUp);
         }
 
         camera_view_projection = camera_projection * camera_view;
@@ -537,15 +544,13 @@ namespace detail {
             static std::optional<program> _persistent_skybox_program = std::nullopt;
 
             if (!_is_skybox_setup) {
-                geometry _skybox_geometry;
-                _skybox_geometry.data.positions = skybox_positions;
-                _skybox_geometry.data.indices = skybox_indices;
+                geometry_data _geometry_data;
+                _geometry_data.positions = skybox_positions;
+                _geometry_data.indices = skybox_indices;
+                geometry _skybox_geometry(std::move(_geometry_data));
 
-                shader _skybox_vertex_shader;
-                _skybox_vertex_shader.data.text = skybox_vertex;
-
-                shader _skybox_fragment_shader;
-                _skybox_fragment_shader.data.text = skybox_fragment;
+                shader _skybox_vertex_shader(shader_data { skybox_vertex });
+                shader _skybox_fragment_shader(shader_data { skybox_fragment });
 
                 _persistent_skybox_mesh = mesh(_skybox_geometry);
                 _persistent_skybox_program = program(_skybox_vertex_shader, _skybox_fragment_shader);
@@ -570,18 +575,15 @@ namespace detail {
         static std::optional<program> _persistent_blockout_program = std::nullopt;
 
         if (!_is_program_setup) {
-            shader _blockout_vertex_shader;
-            _blockout_vertex_shader.data.text = blockout_vertex;
-
-            shader _blockout_fragment_shader;
-            _blockout_fragment_shader.data.text = blockout_fragment;
+            shader _blockout_vertex_shader(shader_data { blockout_vertex });
+            shader _blockout_fragment_shader(shader_data { blockout_fragment });
 
             _persistent_blockout_program = program(_blockout_vertex_shader, _blockout_fragment_shader);
             _is_program_setup = true;
         }
 
         program& _blockout_program = _persistent_blockout_program.value();
-        each_scene([&](entt::registry& scene) {
+        detail::each_scene([&](entt::registry& scene) {
             scene.view<ecs::model_component<ecs::model_shader::blockout>, ecs::transform_component>().each([&](ecs::model_component<ecs::model_shader::blockout>& _model, ecs::transform_component& _transform) {
                 if (_model._mesh.has_value()) {
                     const glm::mat4 _model_view_projection = camera_view_projection * _transform._transform;
@@ -615,14 +617,11 @@ namespace detail {
 
         static std::optional<program> _persistent_unlit_skinned_program = std::nullopt;
         if (!_is_program_setup) {
-            shader _unlit_vertex_shader;
-            shader _unlit_fragment_shader;
-            _unlit_vertex_shader.data.text = unlit_vertex;
-            _unlit_fragment_shader.data.text = unlit_fragment;
+            shader _unlit_vertex_shader(shader_data { unlit_vertex });
+            shader _unlit_fragment_shader(shader_data { unlit_fragment });
             _persistent_unlit_program = program(_unlit_vertex_shader, _unlit_fragment_shader);
 
-            shader _unlit_skinned_vertex_shader;
-            _unlit_skinned_vertex_shader.data.text = unlit_skinned_vertex;
+            shader _unlit_skinned_vertex_shader(shader_data { unlit_skinned_vertex });
             _persistent_unlit_skinned_program = program(_unlit_skinned_vertex_shader, _unlit_fragment_shader);
 
             _is_program_setup = true;
@@ -630,7 +629,7 @@ namespace detail {
 
         program& _unlit_program = _persistent_unlit_program.value();
         program& _unlit_skinned_program = _persistent_unlit_skinned_program.value();
-        each_scene([&](entt::registry& scene) {
+        detail::each_scene([&](entt::registry& scene) {
             scene.view<ecs::model_component<ecs::model_shader::unlit>, ecs::transform_component, ecs::animator_component>().each([&](ecs::model_component<ecs::model_shader::unlit>& _model, ecs::transform_component& _transform, ecs::animator_component& animator) {
                 if (_model._mesh.has_value() && _model._color.has_value() && animator._skeleton.has_value()) {
                     const glm::mat4 _model_view_projection = camera_view_projection * _transform._transform;
@@ -695,11 +694,6 @@ namespace detail {
         });
     }
 
-    // void rendering_system::draw_pbr_meshes()
-    // {
-    //     // TODO
-    // }
-
     void rendering_system::clear_debug_guizmos()
     {
 #if LUCARIA_GUIZMO
@@ -739,11 +733,8 @@ namespace detail {
             static bool _is_program_setup = false;
             static std::optional<program> _persistent_guizmo_program = std::nullopt;
             if (!_is_program_setup) {
-                shader _guizmo_vertex_shader;
-                _guizmo_vertex_shader.data.text = guizmo_vertex;
-
-                shader _guizmo_fragment_shader;
-                _guizmo_fragment_shader.data.text = guizmo_fragment;
+                shader _guizmo_vertex_shader(shader_data { guizmo_vertex });
+                shader _guizmo_fragment_shader(shader_data { guizmo_fragment });
 
                 _persistent_guizmo_program = program(_guizmo_vertex_shader, _guizmo_fragment_shader);
                 _is_program_setup = true;
@@ -763,7 +754,7 @@ namespace detail {
 
     void rendering_system::draw_imgui_spatial_interfaces()
     {
-        each_scene([](entt::registry& scene) {
+        detail::each_scene([](entt::registry& scene) {
             scene.view<ecs::spatial_interface_component>().each([](ecs::spatial_interface_component& interface) {
                 if (interface._viewport.has_value()
                     && interface._imgui_callback
@@ -815,7 +806,7 @@ namespace detail {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui::NewFrame();
 
-        each_scene([](entt::registry& scene) {
+        detail::each_scene([](entt::registry& scene) {
             scene.view<ecs::screen_interface_component>().each([](ecs::screen_interface_component& interface) {
                 if (interface._imgui_callback) {
                     interface._imgui_callback();

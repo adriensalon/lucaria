@@ -2,12 +2,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <lucaria/core/hash.hpp>
-#include <lucaria/core/layer.hpp>
-#include <lucaria/core/mesh.hpp>
-#include <lucaria/core/program.hpp>
 #include <lucaria/core/window.hpp>
 #include <lucaria/core/world.hpp>
+#include <lucaria/ecs/component/collider.hpp>
 #include <lucaria/ecs/component/rigidbody.hpp>
 #include <lucaria/ecs/component/transform.hpp>
 #include <lucaria/ecs/system/dynamics.hpp>
@@ -26,10 +23,6 @@ namespace {
     static btCollisionDispatcher* dispatcher = nullptr;
     static btBroadphaseInterface* overlapping_pair_cache = nullptr;
     static btSequentialImpulseConstraintSolver* solver = nullptr;
-
-#if LUCARIA_GUIZMO
-
-#endif
 
     static bool setup_bullet_worlds()
     {
@@ -165,7 +158,12 @@ namespace detail {
 
     void dynamics_system::step_simulation()
     {
-        each_scene([&](entt::registry& scene) {
+        detail::each_scene([&](entt::registry& scene) {
+
+            scene.view<ecs::collider_component>().each([](ecs::collider_component& collider) {
+                collider._shape.has_value(); // we only collect fetching shapes
+            });
+
             scene.view<ecs::transform_component, ecs::kinematic_rigidbody_component>().each([](ecs::transform_component& transform, ecs::kinematic_rigidbody_component& rigidbody) {
                 if (rigidbody._shape.has_value()) {
                     const glm::float32 _zdistance = rigidbody._shape.value().get_zdistance();
@@ -177,7 +175,7 @@ namespace detail {
 
         detail::dynamics_world->stepSimulation(static_cast<float>(get_time_delta()), 10);
 
-        each_scene([&](entt::registry& scene) {
+        detail::each_scene([&](entt::registry& scene) {
             scene.view<ecs::transform_component, ecs::dynamic_rigidbody_component>().each([](ecs::transform_component& transform, ecs::dynamic_rigidbody_component& rigidbody) {
                 const glm::mat4 _transform = bullet_to_glm(rigidbody._rigidbody->getWorldTransform());
                 transform._transform = _transform;
@@ -189,7 +187,7 @@ namespace detail {
     {
         ecs::kinematic_collision _collision;
         btManifoldArray _manifold_array;
-        each_scene([&](entt::registry& scene) {
+        detail::each_scene([&](entt::registry& scene) {
             scene.view<ecs::transform_component, ecs::kinematic_rigidbody_component>().each([&](ecs::transform_component& transform, ecs::kinematic_rigidbody_component& rigidbody) {
                 rigidbody._ground_collision.reset();
                 rigidbody._wall_collisions.clear();

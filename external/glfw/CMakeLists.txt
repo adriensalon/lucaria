@@ -45,8 +45,6 @@ set(glfw_sources
     ${glfw_main_sources}
     ${glfw_platform_sources})
 
-message(${glfw_platform_sources})
-
 add_library(lucaria_external_glfw STATIC ${glfw_sources})
 set_target_properties(lucaria_external_glfw PROPERTIES CXX_STANDARD 17)
 target_include_directories(lucaria_external_glfw PUBLIC "upstream/glfw/include")

@@ -54,7 +54,7 @@ namespace detail {
 
     void motion_system::advance_controllers()
     {
-        each_scene([](entt::registry& scene) {
+        detail::each_scene([](entt::registry& scene) {
             scene.view<ecs::animator_component>().each([](ecs::animator_component& animator) {
                 for (std::pair<const std::string, ecs::animation_controller>& _pair : animator._controllers) {
 
@@ -74,7 +74,7 @@ namespace detail {
 
     void motion_system::apply_animations()
     {
-        each_scene([](entt::registry& scene) {
+        detail::each_scene([](entt::registry& scene) {
             scene.view<ecs::animator_component>().each([](ecs::animator_component& animator) {
                 if (animator._skeleton.has_value()) {
 
@@ -128,7 +128,7 @@ namespace detail {
 
     void motion_system::apply_motion_tracks()
     {
-        each_scene([](entt::registry& scene) {
+        detail::each_scene([](entt::registry& scene) {
             scene.view<const ecs::animator_component, ecs::transform_component>().each([](const ecs::animator_component& animator, ecs::transform_component& transform) {
                 for (const std::pair<const std::string, fetched_container<motion_track>>& _pair : animator._motion_tracks) {
 
@@ -157,7 +157,7 @@ namespace detail {
     void motion_system::collect_debug_guizmos()
     {
         // #if LUCARIA_GUIZMO
-        each_scene([](entt::registry& scene) {
+        detail::each_scene([](entt::registry& scene) {
             scene.view<ecs::animator_component>(entt::exclude<ecs::transform_component>).each([](ecs::animator_component& animator) {
                 if (animator._skeleton.has_value()) {
 

@@ -8,11 +8,15 @@ namespace lucaria {
 
 /// @brief Represents any geometry on the host
 struct geometry {
-    geometry() = default;
+    LUCARIA_DELETE_DEFAULT_SEMANTICS(geometry)
     geometry(const geometry& other) = delete;
     geometry& operator=(const geometry& other) = delete;
     geometry(geometry&& other) = default;
     geometry& operator=(geometry&& other) = default;
+    
+    /// @brief Creates audio from data
+    /// @param data to create from
+    geometry(geometry_data&& data);
 
     /// @brief Creates geometry from bytes synchronously
     /// @param data_bytes bytes to load from

@@ -1,3 +1,4 @@
+#include <btBulletDynamicsCommon.h>
 #include <lucaria/ecs/component/collider.hpp>
 #include <lucaria/ecs/system/dynamics.hpp>
 

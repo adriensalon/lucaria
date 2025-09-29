@@ -1,19 +1,11 @@
 #include <lucaria/core/openal.hpp>
 #include <lucaria/core/window.hpp>
+#include <lucaria/core/world.hpp>
 #include <lucaria/ecs/component/speaker.hpp>
 #include <lucaria/ecs/system/mixer.hpp>
 
 namespace lucaria {
 namespace {
-
-    // void setListenerVelocity(float x, float y, float z)
-    // {
-    //     alListener3f(AL_VELOCITY, x, y, z);
-    //     ALenum error = alGetError();
-    //     if (error != AL_NO_ERROR) {
-    //         std::cerr << "Error setting listener velocity: " << error << std::endl;
-    //     }
-    // }
 
     std::optional<std::reference_wrapper<ecs::transform_component>> listener_transform = std::nullopt;
 
@@ -24,9 +16,7 @@ namespace ecs {
 
         void use_listener_transform(transform_component& transform)
         {
-            on_audio_locked([&]() {
-                listener_transform = transform;
-            });
+            listener_transform = transform;
         }
     }
 }
@@ -36,30 +26,32 @@ namespace detail {
     void mixer_system::apply_speaker_transforms()
     {
         if (listener_transform.has_value()) {
-            each_scene([&](entt::registry& scene) {
+            detail::each_scene([&](entt::registry& scene) {
                 scene.view<ecs::speaker_component>().each([](ecs::speaker_component& _speaker) {
                     if (_speaker._sound.has_value() && _speaker._want_playing != _speaker._is_playing) {
+
                         if (_speaker._want_playing) {
                             alSourcePlay(_speaker._handle);
+
                         } else {
                             alSourcePause(_speaker._handle);
                         }
+
                         _speaker._is_playing = _speaker._want_playing;
                     }
                 });
+                
                 scene.view<ecs::speaker_component, ecs::transform_component>().each([](ecs::speaker_component& _speaker, ecs::transform_component& _transform) {
                     if (_speaker._sound.has_value()) {
-                        const ALuint h = _speaker._handle;
-                        
+                        const ALuint _handle = _speaker._handle;
+                        const glm::vec3 _position = _transform.get_position();
+                        const glm::vec3 _forward = _transform.get_forward();
 
-                        glm::vec3 pos = _transform.get_position(); // world pos
-                        glm::vec3 fwd = _transform.get_forward(); // −Z forward by our convention
+                        alSourcei(_handle, AL_SOURCE_RELATIVE, AL_FALSE);
+                        alSource3f(_handle, AL_POSITION, _position.x, _position.y, _position.z);
 
-                        alSourcei(h, AL_SOURCE_RELATIVE, AL_FALSE);
-                        alSource3f(h, AL_POSITION, pos.x, pos.y, pos.z);
-
-                        // `AL_DIRECTION` only matters if you use a cone. Otherwise you can skip it.
-                        alSource3f(h, AL_DIRECTION, fwd.x, fwd.y, fwd.z);
+                        // AL_DIRECTION only matters if we use a cone otherwise we can skip it
+                        alSource3f(_handle, AL_DIRECTION, _forward.x, _forward.y, _forward.z);
                     }
                 });
             });
@@ -69,25 +61,18 @@ namespace detail {
     void mixer_system::apply_listener_transform()
     {
         if (listener_transform.has_value()) {
-            const glm::mat4& T = listener_transform->get()._transform;
+            const ecs::transform_component& _transform = listener_transform->get();
 
-            glm::vec3 pos = glm::vec3(T[3]);
-            glm::vec3 at = glm::normalize(-glm::vec3(T[2])); // −Z forward
-            glm::vec3 up = glm::normalize(glm::vec3(T[1])); // +Y up
+            const glm::vec3 _position = _transform.get_position();
+            const glm::vec3 _forward = _transform.get_forward();
+            glm::vec3 _up = _transform.get_up();
 
-            // Re-orthogonalize (protects against scaling)
-            up = glm::normalize(up - glm::dot(up, at) * at);
+            // reorthogonalize (protects against scaling)
+            _up = glm::normalize(_up - glm::dot(_up, _forward) * _forward);
 
-            // (Optional) sanity: ensure right-handedness (+X right)
-            glm::vec3 right = glm::cross(at, up);
-            if (glm::dot(right, glm::vec3(T[0])) < 0.0f) {
-                // If this ever trips, your basis is flipped somewhere.
-                right = -right; // or log/adjust as you like
-            }
-
-            float orientation[6] = { at.x, at.y, at.z, up.x, up.y, up.z };
-            alListener3f(AL_POSITION, pos.x, pos.y, pos.z);
-            alListenerfv(AL_ORIENTATION, orientation);
+            const float _orientation[6] = { _forward.x, _forward.y, _forward.z, _up.x, _up.y, _up.z };
+            alListener3f(AL_POSITION, _position.x, _position.y, _position.z);
+            alListenerfv(AL_ORIENTATION, _orientation);
         }
     }
 

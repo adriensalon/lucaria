@@ -14,6 +14,10 @@ struct audio {
     audio(audio&& other) = default;
     audio& operator=(audio&& other) = default;
 
+    /// @brief Creates audio from data
+    /// @param data to create from
+    audio(audio_data&& data);
+
     /// @brief Creates audio from bytes synchronously
     /// @param data_bytes bytes to load from
     audio(const std::vector<char>& data_bytes);

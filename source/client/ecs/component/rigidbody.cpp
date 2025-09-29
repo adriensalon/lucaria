@@ -1,3 +1,4 @@
+#include <btBulletDynamicsCommon.h>
 #include <glm/gtc/constants.hpp>
 
 #include <lucaria/ecs/component/rigidbody.hpp>

@@ -7,7 +7,6 @@
 #include <lucaria/core/font.hpp>
 #include <lucaria/core/framebuffer.hpp>
 #include <lucaria/core/geometry.hpp>
-#include <lucaria/core/hash.hpp>
 #include <lucaria/core/image.hpp>
 #include <lucaria/core/layer.hpp>
 #include <lucaria/core/math.hpp>

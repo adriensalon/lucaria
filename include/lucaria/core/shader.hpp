@@ -7,11 +7,15 @@
 namespace lucaria {
 
 struct shader {
-    shader() = default;
+    LUCARIA_DELETE_DEFAULT_SEMANTICS(shader)
     shader(const shader& other) = delete;
     shader& operator=(const shader& other) = delete;
     shader(shader&& other) = default;
     shader& operator=(shader&& other) = default;
+
+    /// @brief Creates a shader from data
+    /// @param data to create from
+    shader(shader_data&& data);
 
     /// @brief Creates a shader from bytes synchronously
     /// @param image_bytes bytes to load from

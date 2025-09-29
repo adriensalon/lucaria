@@ -4,6 +4,10 @@
 #include <lucaria/core/shape.hpp>
 
 namespace lucaria {
+namespace detail {
+    struct dynamics_system;
+}
+
 namespace ecs {
 
     struct collider_component {
@@ -27,7 +31,7 @@ namespace ecs {
         std::unique_ptr<btRigidBody> _rigidbody = nullptr;
         std::int16_t _group = 0;
         std::int16_t _mask = detail::bulletgroupID_kinematic_rigidbody;
-        friend struct dynamics_system;
+        friend struct detail::dynamics_system;
     };
 
 }

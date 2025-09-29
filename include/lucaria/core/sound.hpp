@@ -12,6 +12,8 @@ struct sound {
     sound& operator=(sound&& other);
     ~sound();
 
+    /// @brief 
+    /// @param from 
     sound(const audio& from);    
     
     [[nodiscard]] glm::uint get_handle() const;

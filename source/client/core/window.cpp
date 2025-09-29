@@ -138,7 +138,7 @@ namespace detail {
     static glm::float64 time_delta = 0.f; // seconds
     static std::function<void()> start_callback = nullptr;
     static std::function<void()> update_callback = nullptr;
-    static std::vector<std::function<void()>> on_audio_locked_callbacks = {};
+    // static std::vector<std::function<void()>> on_audio_locked_callbacks = {};
 
     static bool is_etc_supported = false;
     static bool is_s3tc_supported = false;
@@ -216,13 +216,13 @@ namespace detail {
     {
         if (!is_audio_locked) {
             is_audio_locked = setup_openal();
-            if (is_audio_locked) {
+            // if (is_audio_locked) {
                 // TODO execute callbacks
-                for (const auto& _callback : on_audio_locked_callbacks) {
-                    _callback();
-                }
-                on_audio_locked_callbacks.clear();
-            }
+                // for (const auto& _callback : on_audio_locked_callbacks) {
+                //     _callback();
+                // }
+                // on_audio_locked_callbacks.clear();
+            // }
         }
         if (!is_mouse_locked) {
             emscripten_assert(emscripten_request_pointerlock("#canvas", 1));
@@ -628,7 +628,7 @@ namespace detail {
 #endif
     }
 
-    void run_impl(const std::function<void()>& start, const std::function<void()>& update)
+    void run_game(const std::function<void()>& start, const std::function<void()>& update)
     {
         detail::setup_platform();
         detail::setup_opengl();
@@ -689,86 +689,28 @@ namespace detail {
 
 }
 
-ImDrawList* get_gui_drawlist()
-{
-    return ImGui::GetBackgroundDrawList();
-}
+// ImDrawList* get_gui_drawlist()
+// {
+//     return ImGui::GetBackgroundDrawList();
+// }
 
-void gui_mvp(const std::optional<glm::mat4>& mvp)
-{
-    void* _void_mvp = nullptr;
-    if (mvp.has_value()) {
-        _void_mvp = new glm::mat4(mvp.value());
-    }
-    ImGui::GetBackgroundDrawList()->AddCallback(detail::imgui_special_callback, _void_mvp);
-}
+// void gui_mvp(const std::optional<glm::mat4>& mvp)
+// {
+//     void* _void_mvp = nullptr;
+//     if (mvp.has_value()) {
+//         _void_mvp = new glm::mat4(mvp.value());
+//     }
+//     ImGui::GetBackgroundDrawList()->AddCallback(detail::imgui_special_callback, _void_mvp);
+// }
 
-void graphics_assert()
-{
-#if LUCARIA_DEBUG
-    GLenum _gl_err;
-    while ((_gl_err = glGetError()) != GL_NO_ERROR) {
-        std::string _brief, _description;
-        switch (_gl_err) {
-        case GL_INVALID_ENUM:
-            _brief = "Invalid OpenGL enum";
-            _description = "This is given when an enumeration parameter is not a legal enumeration for that function. this is given only for local problems; if the spec allows the enumeration in certain circumstances, where other parameters or state dictate those circumstances, then 'Invalid operation' is the _compilation_result instead";
-            break;
-        case GL_INVALID_VALUE:
-            _brief = "Invalid OpenGL value";
-            _description = "This is given when a value parameter is not a legal value for that function. this is only given for local problems; if the spec allows the value in certain circumstances, where other parameters or state dictate those circumstances, then 'Invalid operation' is the _compilation_result instead";
-            break;
-        case GL_INVALID_OPERATION:
-            _brief = "Invalid OpenGL operation";
-            _description = "This is given when the set of state for a command is not legal for the parameters given to that command. it is also given for commands where combinations of parameters define what the legal parameters are";
-            break;
-        case GL_OUT_OF_MEMORY:
-            _brief = "OpenGL out of memory";
-            _description = "This is given when performing an operation that can allocate memory, and the memory cannot be allocated. the _compilation_results of OpenGL functions that return this void are undefined; it is allowable for partial execution of an operation to happen in this circumstance";
-            break;
-        case GL_INVALID_FRAMEBUFFER_OPERATION:
-            _brief = "Invalid OpenGL framebuffer operation";
-            _description = "This is given when doing anything that would attempt to read from or write/render to a framebuffer that is not complete";
-            break;
-        default:
-            _brief = "Unknown OpenGL error";
-            _description = "This error hasn't been coded into glite yet, please sumbit an issue report on github.com/127Soft/glite :)";
-            break;
-        }
-        LUCARIA_RUNTIME_ERROR("Failed OpenGL operation with result '" + _brief + "' (" + _description + ")")
-    }
-#endif
-}
-
-void audio_assert()
-{
-#if LUCARIA_DEBUG
-    std::string _reason;
-    ALenum _al_error = alGetError();
-    if (_al_error != AL_NO_ERROR) {
-        if (_al_error == AL_INVALID_NAME)
-            _reason = "invalid name";
-        else if (_al_error == AL_INVALID_ENUM)
-            _reason = " invalid enum";
-        else if (_al_error == AL_INVALID_VALUE)
-            _reason = " invalid value";
-        else if (_al_error == AL_INVALID_OPERATION)
-            _reason = " invalid operation";
-        else if (_al_error == AL_OUT_OF_MEMORY)
-            _reason = "out of memory";
-        LUCARIA_RUNTIME_ERROR("Failed OpenAL operation with result '" + _reason + "'")
-    }
-#endif
-}
-
-void on_audio_locked(const std::function<void()>& callback)
-{
-    if (detail::is_audio_locked) {
-        callback();
-    } else {
-        detail::on_audio_locked_callbacks.emplace_back(callback);
-    }
-}
+// void on_audio_locked(const std::function<void()>& callback)
+// {
+//     if (detail::is_audio_locked) {
+//         callback();
+//     } else {
+//         detail::on_audio_locked_callbacks.emplace_back(callback);
+//     }
+// }
 
 std::unordered_map<keyboard_key, bool>& get_keys()
 {

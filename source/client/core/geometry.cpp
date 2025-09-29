@@ -17,6 +17,11 @@ namespace {
     }
 }
 
+geometry::geometry(geometry_data&& data)
+{
+    this->data = std::move(data);
+}
+
 geometry::geometry(const std::vector<char>& data_bytes)
 {
     load_data_from_bytes(data, data_bytes);

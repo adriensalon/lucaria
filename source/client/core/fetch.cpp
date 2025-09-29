@@ -43,6 +43,7 @@ namespace {
             std::fprintf(stderr, "fetch_bytes error: %s (%d)\n", fetch->statusText, fetch->status);
             delete cbp;
             emscripten_fetch_close(fetch);
+            std::terminate();
         };
 
         emscripten_fetch(&attr, file_path.c_str());

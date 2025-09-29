@@ -11,7 +11,7 @@ struct image_data {
     glm::uint height;
     std::vector<glm::uint8> pixels;
     bool is_compressed_s3tc;
-    bool is_compressed_etc2;
+    bool is_compressed_etc;
 
     template <typename archive_t>
     void serialize(archive_t& archive)

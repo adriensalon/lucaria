@@ -118,6 +118,11 @@ namespace {
 
 }
 
+audio::audio(audio_data&& data)
+{
+    this->data = std::move(data);
+}
+
 audio::audio(const std::vector<char>& data_bytes)
 {
     load_data_from_bytes(data, data_bytes);

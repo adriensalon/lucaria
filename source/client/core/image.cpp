@@ -11,7 +11,7 @@ namespace {
     {
         const std::vector<uint8_t>& _content = *(reinterpret_cast<const std::vector<uint8_t>*>(&data_bytes));
         const uint32_t* _data32 = (uint32_t*)_content.data();
-        data.is_compressed_etc2 = false;
+        data.is_compressed_etc = false;
         data.is_compressed_s3tc = false;
 
         if (*_data32 == 0x03525650) {
@@ -29,12 +29,12 @@ namespace {
             case 22:
                 std::cout << "PVR ETC2 RGB" << std::endl;
                 data.channels = 3;
-                data.is_compressed_etc2 = true;
+                data.is_compressed_etc = true;
                 break;
             case 23:
                 std::cout << "PVR ETC2 RGBA" << std::endl;
                 data.channels = 4;
-                data.is_compressed_etc2 = true;
+                data.is_compressed_etc = true;
                 break;
             default:
                 assert(false);
@@ -52,12 +52,12 @@ namespace {
             case 0x9274:
                 std::cout << "KTX ETC2 RGB" << std::endl;
                 data.channels = 3;
-                data.is_compressed_etc2 = true;
+                data.is_compressed_etc = true;
                 break;
             case 0x9278:
                 std::cout << "KTX ETC2 RGBA" << std::endl;
                 data.channels = 4;
-                data.is_compressed_etc2 = true;
+                data.is_compressed_etc = true;
                 break;
             default:
                 assert(false);

@@ -141,4 +141,13 @@
 #     target_compile_options(lucaria_external_alsoft PRIVATE /wd5030)
 # endif()
 
+function(message)
+	if(NOT MESSAGE_QUIET)
+		_message(${ARGN})
+	endif()
+endfunction()
+
+set(LIBTYPE STATIC)
+set(MESSAGE_QUIET ON)
 add_subdirectory(upstream/alsoft)
+set(MESSAGE_QUIET OFF)
