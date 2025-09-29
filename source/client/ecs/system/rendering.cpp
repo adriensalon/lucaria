@@ -451,8 +451,8 @@ namespace detail {
     {
         float y = glm::radians(yaw_deg), p = glm::radians(pitch_deg);
         float cp = cos(p), sp = sin(p), cy = cos(y), sy = sin(y);
-        // +Z forward at yaw=0, pitch=0
-        return glm::normalize(glm::vec3(cp * sy, sp, cp * cy));
+        // −Z forward at yaw=0, pitch=0
+        return glm::normalize(glm::vec3(cp * sy, sp, -cp * cy));
     }
 
     static void camera_basis_from_forward(
@@ -521,6 +521,9 @@ namespace detail {
 
             player_position = boneWorld - groundF * boomDist + worldUp * camHeight;
             camera_view = glm::lookAt(player_position, player_position + camForward, camUp);
+
+            // player_position = boneWorld - groundF * boomDist + worldUp * camHeight;
+            // camera_view = glm::lookAt(player_position, player_position + camForward, camUp);
         }
 
         camera_view_projection = camera_projection * camera_view;

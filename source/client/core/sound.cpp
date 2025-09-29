@@ -1,7 +1,8 @@
 #include <lucaria/core/error.hpp>
+#include <lucaria/core/openal.hpp>
 #include <lucaria/core/sound.hpp>
 #include <lucaria/core/window.hpp>
-#include <lucaria/core/openal.hpp>
+
 
 namespace lucaria {
 

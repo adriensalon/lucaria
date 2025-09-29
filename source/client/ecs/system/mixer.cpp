@@ -35,32 +35,35 @@ namespace detail {
 
     void mixer_system::apply_speaker_transforms()
     {
-        each_scene([&](entt::registry& scene) {
-            scene.view<ecs::speaker_component>().each([](ecs::speaker_component& _speaker) {
-                if (_speaker._sound.has_value() && _speaker._want_playing != _speaker._is_playing) {
-                    if (_speaker._want_playing) {
-                        alSourcePlay(_speaker._sound.value().get_handle());
-                    } else {
-                        alSourcePause(_speaker._sound.value().get_handle());
+        if (listener_transform.has_value()) {
+            each_scene([&](entt::registry& scene) {
+                scene.view<ecs::speaker_component>().each([](ecs::speaker_component& _speaker) {
+                    if (_speaker._sound.has_value() && _speaker._want_playing != _speaker._is_playing) {
+                        if (_speaker._want_playing) {
+                            alSourcePlay(_speaker._handle);
+                        } else {
+                            alSourcePause(_speaker._handle);
+                        }
+                        _speaker._is_playing = _speaker._want_playing;
                     }
-                    _speaker._is_playing = _speaker._want_playing;
-                }
+                });
+                scene.view<ecs::speaker_component, ecs::transform_component>().each([](ecs::speaker_component& _speaker, ecs::transform_component& _transform) {
+                    if (_speaker._sound.has_value()) {
+                        const ALuint h = _speaker._handle;
+                        
+
+                        glm::vec3 pos = _transform.get_position(); // world pos
+                        glm::vec3 fwd = _transform.get_forward(); // −Z forward by our convention
+
+                        alSourcei(h, AL_SOURCE_RELATIVE, AL_FALSE);
+                        alSource3f(h, AL_POSITION, pos.x, pos.y, pos.z);
+
+                        // `AL_DIRECTION` only matters if you use a cone. Otherwise you can skip it.
+                        alSource3f(h, AL_DIRECTION, fwd.x, fwd.y, fwd.z);
+                    }
+                });
             });
-            scene.view<ecs::speaker_component, ecs::transform_component>().each([](ecs::speaker_component& _speaker, ecs::transform_component& _transform) {
-                if (_speaker._sound.has_value()) {
-                    const ALuint h = _speaker._sound.value().get_handle();
-
-                    glm::vec3 pos = _transform.get_position(); // world pos
-                    glm::vec3 fwd = _transform.get_forward(); // −Z forward by our convention
-
-                    alSourcei(h, AL_SOURCE_RELATIVE, AL_FALSE);
-                    alSource3f(h, AL_POSITION, pos.x, pos.y, pos.z);
-
-                    // `AL_DIRECTION` only matters if you use a cone. Otherwise you can skip it.
-                    alSource3f(h, AL_DIRECTION, fwd.x, fwd.y, fwd.z);
-                }
-            });
-        });
+        }
     }
 
     void mixer_system::apply_listener_transform()
@@ -69,7 +72,7 @@ namespace detail {
             const glm::mat4& T = listener_transform->get()._transform;
 
             glm::vec3 pos = glm::vec3(T[3]);
-            glm::vec3 at = glm::normalize(glm::vec3(T[2])); // −Z forward
+            glm::vec3 at = glm::normalize(-glm::vec3(T[2])); // −Z forward
             glm::vec3 up = glm::normalize(glm::vec3(T[1])); // +Y up
 
             // Re-orthogonalize (protects against scaling)

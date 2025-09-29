@@ -425,6 +425,7 @@ namespace detail {
 
         gladLoadGL(glfwGetProcAddress);
         glfwSwapInterval(1);
+        // glfwSwapInterval(0);
 
 #endif
         return true;
@@ -483,6 +484,7 @@ namespace detail {
 
         ImGui_ImplOpenGL3_DestroyFontsTexture();
         ImGui::GetIO().Fonts->SetTexID((ImTextureID)(intptr_t)imgui_shared_font_texture);
+        ImGui::GetIO().IniFilename = nullptr;
 
         // (Optional) if you want the backend struct to know the id too:
         if (auto* bd = (ImGui_ImplOpenGL3_Data*)ImGui::GetIO().BackendRendererUserData)
@@ -572,7 +574,7 @@ namespace detail {
     {
 
 #if defined(__EMSCRIPTEN__)
-        emscripten_set_main_loop_timing(EM_TIMING_RAF, 1);
+        // emscripten_set_main_loop_timing(EM_TIMING_RAF, 1);
         static double _last_render_time = 0;
         double _render_time = emscripten_get_now();
         detail::time_delta = (_render_time - _last_render_time) / 1000.f;
@@ -613,7 +615,7 @@ namespace detail {
         detail::keys_changed.clear();
         detail::buttons_changed.clear();
 
-        graphics_assert();
+        // graphics_assert();
         if (is_audio_locked) {
             // audio_assert();
         }
@@ -635,6 +637,7 @@ namespace detail {
 #if defined(__EMSCRIPTEN__)
         start();
         emscripten_set_main_loop(detail::update, 0, EM_TRUE);
+        emscripten_set_main_loop_timing(EM_TIMING_RAF, 1);
 #else
         detail::is_audio_locked = detail::setup_openal();
         start();

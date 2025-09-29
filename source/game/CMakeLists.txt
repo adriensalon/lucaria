@@ -19,7 +19,9 @@ if(EMSCRIPTEN)
         -g \
         --shell-file ${CMAKE_CURRENT_LIST_DIR}/shell.html \
         -s LLD_REPORT_UNDEFINED \
-        -s ALLOW_MEMORY_GROWTH=1 \
+        -s ALLOW_MEMORY_GROWTH=0\
+        -sINITIAL_MEMORY=671088640 \
+        -sMALLOC=emmalloc\
         -s MAX_WEBGL_VERSION=2 \
         -s USE_WEBGL2=1 \
         -s GL_DEBUG=1 \
