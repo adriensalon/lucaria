@@ -447,25 +447,58 @@ namespace detail {
         camera_projection = glm::perspective(_fov_rad, _aspect_ratio, camera_near, camera_far);
     }
 
+    inline glm::vec3 forward_from_yaw_pitch(float yaw_deg, float pitch_deg)
+    {
+        float y = glm::radians(yaw_deg), p = glm::radians(pitch_deg);
+        float cp = cos(p), sp = sin(p), cy = cos(y), sy = sin(y);
+        return glm::normalize(glm::vec3(cp * sy, sp, cp * cy));
+    }
+
+    static void camera_basis_from_forward(
+        const glm::vec3& fwd, const glm::vec3& worldUp,
+        glm::vec3& right, glm::vec3& up)
+    {
+        right = glm::normalize(glm::cross(fwd, worldUp)); // (1,0,0) when fwd=(0,0,-1)
+        // Recompute camera up to keep the basis orthonormal even near ±90° pitch
+        up = glm::normalize(glm::cross(right, fwd));
+    }
+
     void rendering_system::compute_view_projection()
     {
-        if (show_free_camera) {
-            // compute_rotation();
-            // player_position = compute_position();
-        } else {
-            if (get_is_mouse_locked() && _follow && _follow_animator && !_follow_bone_name.empty()) {
-                const glm::vec2 _mouse_delta = get_mouse_position_delta();
-                player_yaw -= _mouse_delta.x * mouse_sensitivity;
-                player_pitch -= _mouse_delta.y * mouse_sensitivity;
 
-                _follow->set_rotation_warp({ 0.f, glm::radians(player_yaw), 0.f });
-                player_pitch = glm::clamp(player_pitch, -89.0f, 89.0f);
-                player_position = _follow->get_position() + glm::vec3(_follow_animator->get_bone_transform(_follow_bone_name)[3]) + _follow->get_forward() * 0.23f;
-                player_forward = _follow->get_forward();
-                player_forward = rotateForwardVector(player_forward, player_pitch);
-                camera_view = glm::lookAt(player_position, player_position + player_forward, player_up);
-            }
+        if (get_is_mouse_locked() && _follow && _follow_animator && !_follow_bone_name.empty()) {
+            const glm::vec2 _mouse_delta = get_mouse_position_delta();
+            player_yaw -= _mouse_delta.x * mouse_sensitivity;
+            player_pitch -= _mouse_delta.y * mouse_sensitivity;
+            player_pitch = glm::clamp(player_pitch, -89.0f, 89.0f);
+            _follow->set_rotation_warp({ 0.f, glm::radians(player_yaw), 0.f });
+            glm::vec3 camForward = forward_from_yaw_pitch(player_yaw, player_pitch);
+
+            glm::vec3 camRight, camUp;
+            camera_basis_from_forward(camForward, player_up, camRight, camUp);
+
+            // Bone world position (ensure correct space!)
+            const glm::mat4 boneLocal = _follow_animator->get_bone_transform(_follow_bone_name);
+            const glm::mat4 followW = _follow->_transform; // or compose as needed
+            const glm::vec3 boneWorld = glm::vec3((followW * boneLocal)[3]);
+
+            // Ground-aligned forward (ignore pitch)
+            glm::vec3 groundForward = forward_from_yaw_pitch(player_yaw, 0.0f);
+
+            // Optional: vertical camera height above the bone
+            const float boomDist = -0.23f;
+            const float camHeight = 0.0f; // tweak if you want eye/shoulder offset
+
+            player_position = boneWorld - groundForward * boomDist + player_up * camHeight;
+            camera_view = glm::lookAt(player_position, player_position + camForward, camUp);
+
+            // _follow->set_rotation_warp({ 0.f, glm::radians(player_yaw), 0.f });
+            // player_position = _follow->get_position() + glm::vec3(_follow_animator->get_bone_transform(_follow_bone_name)[3]) + _follow->get_forward() * 0.23f;
+            // player_forward = _follow->get_forward();
+            // player_forward = rotateForwardVector(player_forward, player_pitch);
+            // camera_view = glm::lookAt(player_position, player_position + player_forward, player_up);
         }
+
         camera_view_projection = camera_projection * camera_view;
     }
 
@@ -731,7 +764,7 @@ namespace detail {
                     //
                     //
                     //
-                    
+
                     program& _unlit_program = _persistent_unlit_program.value();
 
                     _unlit_program.use();

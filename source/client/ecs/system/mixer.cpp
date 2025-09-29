@@ -46,6 +46,15 @@ namespace detail {
                     _speaker._is_playing = _speaker._want_playing;
                 }
             });
+            scene.view<ecs::speaker_component, ecs::transform_component>().each([](ecs::speaker_component& _speaker, ecs::transform_component& _transform) {
+                if (_speaker._sound.has_value()) {
+                    glm::vec3 _position = _transform.get_position();
+                    glm::vec3 _forward = _transform.get_forward();
+                    alSource3f(_speaker._sound.value().get_handle(), AL_POSITION, _position.x, _position.y, _position.z);
+                    alSource3f(_speaker._sound.value().get_handle(), AL_DIRECTION, _forward.x, _forward.y, _forward.z);
+                    alSourcei(_speaker._sound.value().get_handle(), AL_SOURCE_RELATIVE, AL_FALSE);
+                }
+            });
         });
     }
 
@@ -54,10 +63,15 @@ namespace detail {
         if (listener_transform.has_value()) {
             const glm::mat4& _transform = listener_transform.value().get()._transform;
             const glm::vec3 _position = glm::vec3(_transform[3]);
-            glm::mat3 _rotation(_transform);
-            const glm::vec3 _forward = glm::normalize(_rotation * glm::vec3(0.0f, 0.0f, -1.0f));
-            const glm::vec3 _up = glm::normalize(_rotation * glm::vec3(0.0f, 1.0f, 0.0f));
-            glm::float32 _orientation[] = { _forward.x, _forward.y, _forward.z, _up.x, _up.y, _up.z };
+            const glm::mat3 R(_transform);
+            glm::vec3 at = -glm::normalize(glm::vec3(R[2])); // -Z forward
+            glm::vec3 up = glm::normalize(glm::vec3(R[1])); // +Y up
+
+            // Re-orthogonalize up in case of scale/shear
+            up = glm::normalize(up - glm::dot(up, at) * at);
+
+            float _orientation[6] = { at.x, at.y, at.z, up.x, up.y, up.z };
+
             alListener3f(AL_POSITION, _position.x, _position.y, _position.z);
             alListenerfv(AL_ORIENTATION, _orientation);
         }
