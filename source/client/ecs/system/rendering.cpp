@@ -761,6 +761,8 @@ namespace detail {
                     && (!interface._refresh_mode
                         || (interface._refresh_mode != ecs::spatial_refresh_mode::never))) {
 
+                    // raycast to set imgui inputs
+
                     interface._imgui_framebuffer->use();
 
                     ImGui::SetCurrentContext(interface._imgui_context);
@@ -768,6 +770,15 @@ namespace detail {
                     ImGui::GetIO().DisplaySize = ImVec2(
                         static_cast<glm::float32>(_framebuffer_size.x),
                         static_cast<glm::float32>(_framebuffer_size.y));
+
+                    const std::optional<glm::vec2> _raycasted_uvs = interface._viewport.value().raycast(camera_view);
+                    if (_raycasted_uvs) {
+                        ImGui::GetIO().MousePos = ImVec2(
+                            _raycasted_uvs.value().x * _framebuffer_size.x,
+                            _raycasted_uvs.value().y * _framebuffer_size.y);
+                        ImGui::GetIO().MouseDown[0] = get_buttons()[0];
+                    }
+
                     ImGui_ImplOpenGL3_NewFrame();
                     ImGui::NewFrame();
 

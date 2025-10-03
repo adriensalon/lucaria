@@ -22,6 +22,10 @@ struct viewport {
     /// @param from
     viewport(const geometry& from, const glm::float32 pixels_per_meter);
 
+    /// @brief 
+    /// @param view 
+    [[nodiscard]] std::optional<glm::vec2> raycast(const glm::mat4& view);
+
     [[nodiscard]] glm::uvec2 get_computed_screen_size() const;
     [[nodiscard]] glm::uint get_size() const;
     [[nodiscard]] glm::uint get_array_handle() const;
@@ -31,8 +35,11 @@ struct viewport {
 
 private:
     bool _is_owning;
-    glm::uvec2 _computed_framebuffer_size;
     glm::uint _size;
+    std::vector<glm::vec3> _positions;
+    std::vector<glm::vec2> _texcoords;
+    std::vector<glm::uvec3> _indices;
+    glm::uvec2 _computed_framebuffer_size;
     glm::uint _array_handle;
     glm::uint _elements_handle;
     glm::uint _positions_handle;

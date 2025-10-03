@@ -1,3 +1,5 @@
+#include <glm/gtc/matrix_inverse.hpp>
+
 #include <lucaria/core/opengl.hpp>
 #include <lucaria/core/viewport.hpp>
 
@@ -142,6 +144,59 @@ namespace {
         return _attribute_id;
     }
 
+    struct ray_data {
+        glm::vec3 o, d;
+    };
+
+    // Ray from camera center (forward through view -Z)
+    static ray_data makeCameraCenterRay(const glm::mat4& view)
+    {
+        glm::mat4 invV = glm::inverse(view);
+        glm::vec3 origin = glm::vec3(invV * glm::vec4(0, 0, 0, 1));
+        glm::vec3 forward = glm::normalize(glm::vec3(invV * glm::vec4(0, 0, -1, 0)));
+        return { origin, forward };
+    }
+
+    // Möller–Trumbore with barycentric output; one-sided
+    static bool rayTriangle(const ray_data& r,
+        const glm::vec3& a,
+        const glm::vec3& b,
+        const glm::vec3& c,
+        float& t, float& u, float& v)
+    {
+        const float EPS = 1e-7f;
+        glm::vec3 ab = b - a;
+        glm::vec3 ac = c - a;
+
+        glm::vec3 p = glm::cross(r.d, ac);
+        float det = glm::dot(ab, p);
+        if (det < EPS) // backface culling
+            return false;
+        float invDet = 1.0f / det;
+
+        glm::vec3 s = r.o - a;
+        u = glm::dot(s, p) * invDet;
+        if (u < 0.0f || u > 1.0f)
+            return false;
+
+        glm::vec3 q = glm::cross(s, ab);
+        v = glm::dot(r.d, q) * invDet;
+        if (v < 0.0f || u + v > 1.0f)
+            return false;
+
+        t = glm::dot(ac, q) * invDet;
+        return t >= 0.0f;
+    }
+
+    inline glm::vec2 lerpUV(const glm::vec2& uv0,
+        const glm::vec2& uv1,
+        const glm::vec2& uv2,
+        float u, float v)
+    {
+        float w = 1.0f - u - v;
+        return uv0 * w + uv1 * u + uv2 * v;
+    }
+
 }
 
 viewport::viewport(viewport&& other)
@@ -154,6 +209,9 @@ viewport& viewport::operator=(viewport&& other)
     _is_owning = true;
     _computed_framebuffer_size = other._computed_framebuffer_size;
     _size = other._size;
+    _positions = other._positions;
+    _texcoords = other._texcoords;
+    _indices = other._indices;
     _array_handle = other._array_handle;
     _elements_handle = other._elements_handle;
     _positions_handle = other._positions_handle;
@@ -176,6 +234,10 @@ viewport::viewport(const geometry& from, const glm::uvec2& size_pixels)
 {
     _computed_framebuffer_size = size_pixels;
 
+    _positions = from.data.positions;
+    _texcoords = from.data.texcoords;
+    _indices = from.data.indices;
+
     _size = 3 * static_cast<glm::uint>(from.data.indices.size());
     _array_handle = create_vertex_array();
     _elements_handle = create_elements_buffer(from.data.indices);
@@ -192,6 +254,10 @@ viewport::viewport(const geometry& from, const glm::float32 pixels_per_meter)
         from.data.indices,
         pixels_per_meter);
 
+    _positions = from.data.positions;
+    _texcoords = from.data.texcoords;
+    _indices = from.data.indices;
+
     _size = 3 * static_cast<glm::uint>(from.data.indices.size());
     _array_handle = create_vertex_array();
     _elements_handle = create_elements_buffer(from.data.indices);
@@ -199,6 +265,39 @@ viewport::viewport(const geometry& from, const glm::float32 pixels_per_meter)
     _texcoords_handle = create_attribute_buffer(invert_texcoords(from.data.texcoords));
 
     _is_owning = true;
+}
+
+std::optional<glm::vec2> viewport::raycast(const glm::mat4& view)
+{
+    ray_data ray = makeCameraCenterRay(view);
+
+    bool hitAny = false;
+    float bestT = std::numeric_limits<float>::infinity();
+    glm::vec2 bestUV { 0.0f };
+
+    for (const glm::uvec3& tri : _indices) {
+        const glm::vec3& a = _positions[tri.x];
+        const glm::vec3& b = _positions[tri.y];
+        const glm::vec3& c = _positions[tri.z];
+
+        float t, u, v;
+        if (!rayTriangle(ray, a, b, c, t, u, v))
+            continue;
+
+        if (t < bestT) {
+            const glm::vec2& uv0 = _texcoords[tri.x];
+            const glm::vec2& uv1 = _texcoords[tri.y];
+            const glm::vec2& uv2 = _texcoords[tri.z];
+
+            bestT = t;
+            bestUV = lerpUV(uv0, uv1, uv2, u, v);
+            hitAny = true;
+        }
+    }
+
+    if (!hitAny)
+        return std::nullopt;
+    return bestUV;
 }
 
 glm::uvec2 viewport::get_computed_screen_size() const

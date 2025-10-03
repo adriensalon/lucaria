@@ -217,11 +217,11 @@ namespace detail {
         if (!is_audio_locked) {
             is_audio_locked = setup_openal();
             // if (is_audio_locked) {
-                // TODO execute callbacks
-                // for (const auto& _callback : on_audio_locked_callbacks) {
-                //     _callback();
-                // }
-                // on_audio_locked_callbacks.clear();
+            // TODO execute callbacks
+            // for (const auto& _callback : on_audio_locked_callbacks) {
+            //     _callback();
+            // }
+            // on_audio_locked_callbacks.clear();
             // }
         }
         if (!is_mouse_locked) {
@@ -358,6 +358,11 @@ namespace detail {
 
     static void glfw_mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     {
+        if (action == GLFW_PRESS) {
+            buttons[static_cast<glm::uint>(button)] = true;
+        } else if (action == GLFW_RELEASE) {
+            buttons[static_cast<glm::uint>(button)] = false;
+        }
     }
 
 #endif
