@@ -782,7 +782,6 @@ namespace detail {
                     }
 
                     interface._imgui_framebuffer->use();
-                    glViewport(0, 0, static_cast<GLsizei>(_framebuffer_size.x), static_cast<GLsizei>(_framebuffer_size.y));
                     glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
                     glClear(GL_COLOR_BUFFER_BIT);
                     ImGui_ImplOpenGL3_NewFrame();

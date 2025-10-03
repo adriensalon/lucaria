@@ -141,5 +141,78 @@ namespace ecs {
         return *this;
     }
 
+    // character
+
+    rigidbody_component<rigidbody_kind::character>& rigidbody_component<rigidbody_kind::character>::use_shape(shape& from)
+    {
+        _shape.emplace(from);
+        _state = std::make_unique<btDefaultMotionState>(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 0)));
+        _rigidbody = std::make_unique<btRigidBody>(btRigidBody::btRigidBodyConstructionInfo(_mass, _state.get(), _shape.value().get_handle(), btVector3(0, 0, 0)));
+        detail::dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
+        _is_added = true;
+
+        return *this;
+    }
+
+    rigidbody_component<rigidbody_kind::character>& rigidbody_component<rigidbody_kind::character>::use_shape(fetched<shape>& from)
+    {
+        _shape.emplace(from, [this]() {
+            _state = std::make_unique<btDefaultMotionState>(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 0)));
+            _rigidbody = std::make_unique<btRigidBody>(btRigidBody::btRigidBodyConstructionInfo(_mass, _state.get(), _shape.value().get_handle(), btVector3(0, 0, 0)));
+            detail::dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
+            _is_added = true;
+        });
+
+        return *this;
+    }
+
+    rigidbody_component<rigidbody_kind::character>& rigidbody_component<rigidbody_kind::character>::set_mass(const glm::float32 kg)
+    {
+
+        return *this;
+    }
+
+    rigidbody_component<rigidbody_kind::character>& rigidbody_component<rigidbody_kind::character>::set_enable_ccd(const bool on)
+    {
+
+        return *this;
+    }
+
+    rigidbody_component<rigidbody_kind::character>& rigidbody_component<rigidbody_kind::character>::set_friction(const glm::float32 mu)
+    {
+
+        return *this;
+    }
+
+    rigidbody_component<rigidbody_kind::character>& rigidbody_component<rigidbody_kind::character>::set_lock_angular(const bool x, const bool y, const bool z)
+    {
+
+        return *this;
+    }
+
+    rigidbody_component<rigidbody_kind::character>& rigidbody_component<rigidbody_kind::character>::set_pd_xy(glm::float32 Kp, glm::float32 Kd, glm::float32 Fmax)
+    {
+
+        return *this;
+    }
+
+    rigidbody_component<rigidbody_kind::character>& rigidbody_component<rigidbody_kind::character>::set_pd_rot(glm::float32 Kp, glm::float32 Kd, glm::float32 Tmax)
+    {
+
+        return *this;
+    }
+
+    rigidbody_component<rigidbody_kind::character>& rigidbody_component<rigidbody_kind::character>::set_up_axis(const glm::vec3& up)
+    {
+
+        return *this;
+    }
+
+    rigidbody_component<rigidbody_kind::character>& rigidbody_component<rigidbody_kind::character>::set_gravity(float g)
+    {
+
+        return *this;
+    }
+
 }
 }
