@@ -761,28 +761,47 @@ namespace detail {
                     && (!interface._refresh_mode
                         || (interface._refresh_mode != ecs::spatial_refresh_mode::never))) {
 
-                    // raycast to set imgui inputs
-
-                    interface._imgui_framebuffer->use();
-
                     ImGui::SetCurrentContext(interface._imgui_context);
                     const glm::uvec2 _framebuffer_size = interface._imgui_framebuffer->get_size();
                     ImGui::GetIO().DisplaySize = ImVec2(
                         static_cast<glm::float32>(_framebuffer_size.x),
                         static_cast<glm::float32>(_framebuffer_size.y));
 
-                    const std::optional<glm::vec2> _raycasted_uvs = interface._viewport.value().raycast(camera_view);
-                    if (_raycasted_uvs) {
-                        ImGui::GetIO().MousePos = ImVec2(
-                            _raycasted_uvs.value().x * _framebuffer_size.x,
-                            _raycasted_uvs.value().y * _framebuffer_size.y);
-                        ImGui::GetIO().MouseDown[0] = get_buttons()[0];
+                    std::optional<glm::vec2> _raycasted_uvs;
+                    glm::vec2 _interaction_screen_position;
+                    if (interface._use_interaction) {
+                        _raycasted_uvs = interface._viewport.value().raycast(camera_view);
+                        if (_raycasted_uvs) {
+                            _interaction_screen_position = {
+                                _raycasted_uvs.value().x * _framebuffer_size.x,
+                                _raycasted_uvs.value().y * _framebuffer_size.y
+                            };
+                            ImGui::GetIO().MousePos = ImVec2(_interaction_screen_position.x, _interaction_screen_position.y);
+                            ImGui::GetIO().MouseDown[0] = get_buttons()[0];
+                        }
                     }
 
+                    interface._imgui_framebuffer->use();
+                    glViewport(0, 0, static_cast<GLsizei>(_framebuffer_size.x), static_cast<GLsizei>(_framebuffer_size.y));
+                    glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+                    glClear(GL_COLOR_BUFFER_BIT);
                     ImGui_ImplOpenGL3_NewFrame();
                     ImGui::NewFrame();
 
                     interface._imgui_callback();
+
+                    if (interface._use_interaction && interface._interaction_texture.has_value()) {
+                        const ImTextureID _texture_id = reinterpret_cast<ImTextureID>(static_cast<std::uintptr_t>(interface._interaction_texture.value().get_handle()));
+                        if (_raycasted_uvs) {
+                            const ImVec2 _cursor_min(_interaction_screen_position.x, _interaction_screen_position.y);
+                            const ImVec2 _cursor_max(
+                                _cursor_min.x + interface._cursor_size.x,
+                                _cursor_min.y + interface._cursor_size.y);
+
+                            ImDrawList* _drawlist = ImGui::GetForegroundDrawList(); // screen space
+                            _drawlist->AddImage(_texture_id, _cursor_min, _cursor_max); // UVs default (0,0)-(1,1), color = white
+                        }
+                    }
 
                     ImGui::SetCurrentContext(interface._imgui_context);
                     ImGui::Render();

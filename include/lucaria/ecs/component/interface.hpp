@@ -28,7 +28,7 @@ namespace ecs {
         interface_component& operator=(const interface_component& other) = delete;
         interface_component(interface_component&& other) = default;
         interface_component& operator=(interface_component&& other) = default;
-        
+
         interface_component& set_callback(const std::function<void()>& callback);
 
     private:
@@ -53,19 +53,20 @@ namespace ecs {
 
         interface_component& use_viewport(viewport& from);
         interface_component& use_viewport(fetched<viewport>& from);
+        interface_component& use_interaction_texture(texture& from);
+        interface_component& use_interaction_texture(fetched<texture>& from);
 
         interface_component& set_callback(const std::function<void()>& callback);
         interface_component& set_refresh(const spatial_refresh_mode mode);
-        interface_component& set_mouse_position_pixels(const glm::uint x, const glm::uint y);
-        interface_component& set_mouse_position_uv(const glm::float32 x, const glm::float32 y);
-        interface_component& set_mouse_down(const glm::uint button = 0);
-        interface_component& set_mouse_up(const glm::uint button = 0);
-        interface_component& set_mouse_click(const glm::uint button = 0, int release_after_frames = 1);
-        interface_component& set_scroll(const glm::float32 x, const glm::float32 y);
+        interface_component& set_interaction(const bool interaction);
+        interface_component& set_cursor_size(const glm::vec2& size);
 
     private:
         bool _is_owning = false;
+        bool _use_interaction = false;
         detail::fetched_container<viewport> _viewport = {};
+        detail::fetched_container<texture> _interaction_texture = {};
+        glm::vec2 _cursor_size = { 10, 10 };
         std::function<void()> _imgui_callback = nullptr;
         std::optional<spatial_refresh_mode> _refresh_mode = std::nullopt;
         ImGuiContext* _imgui_context = nullptr;

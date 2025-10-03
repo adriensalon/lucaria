@@ -66,6 +66,18 @@ namespace ecs {
         return *this;
     }
 
+    interface_component<interface_mode::spatial>& interface_component<interface_mode::spatial>::use_interaction_texture(texture& from)
+    {
+        _interaction_texture.emplace(from);
+        return *this;
+    }
+
+    interface_component<interface_mode::spatial>& interface_component<interface_mode::spatial>::use_interaction_texture(fetched<texture>& from)
+    {
+        _interaction_texture.emplace(from);
+        return *this;
+    }
+
     interface_component<interface_mode::spatial>& interface_component<interface_mode::spatial>::set_callback(const std::function<void()>& callback)
     {
         _imgui_callback = callback;
@@ -77,40 +89,15 @@ namespace ecs {
         _refresh_mode = mode;
         return *this;
     }
-
-    interface_component<interface_mode::spatial>& interface_component<interface_mode::spatial>::set_mouse_position_pixels(const glm::uint x, const glm::uint y)
+    interface_component<interface_mode::spatial>& interface_component<interface_mode::spatial>::set_interaction(const bool interaction)
     {
-        // todo
+        _use_interaction = interaction;
         return *this;
     }
 
-    interface_component<interface_mode::spatial>& interface_component<interface_mode::spatial>::set_mouse_position_uv(const glm::float32 x, const glm::float32 y)
+    interface_component<interface_mode::spatial>& interface_component<interface_mode::spatial>::set_cursor_size(const glm::vec2& cursor_size)
     {
-        // todo
-        return *this;
-    }
-
-    interface_component<interface_mode::spatial>& interface_component<interface_mode::spatial>::set_mouse_down(const glm::uint button)
-    {
-        // todo
-        return *this;
-    }
-
-    interface_component<interface_mode::spatial>& interface_component<interface_mode::spatial>::set_mouse_up(const glm::uint button)
-    {
-        // todo
-        return *this;
-    }
-
-    interface_component<interface_mode::spatial>& interface_component<interface_mode::spatial>::set_mouse_click(const glm::uint button, int release_after_frames)
-    {
-        // todo
-        return *this;
-    }
-
-    interface_component<interface_mode::spatial>& interface_component<interface_mode::spatial>::set_scroll(const glm::float32 x, const glm::float32 y)
-    {
-        // todo
+        _cursor_size = cursor_size;
         return *this;
     }
 
