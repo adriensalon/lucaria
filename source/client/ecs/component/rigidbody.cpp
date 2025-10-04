@@ -1,6 +1,7 @@
 #include <btBulletDynamicsCommon.h>
 #include <glm/gtc/constants.hpp>
 
+#include <lucaria/core/math.hpp>
 #include <lucaria/ecs/component/rigidbody.hpp>
 #include <lucaria/ecs/system/dynamics.hpp>
 
@@ -148,6 +149,19 @@ namespace ecs {
         _shape.emplace(from);
         _state = std::make_unique<btDefaultMotionState>(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 0)));
         _rigidbody = std::make_unique<btRigidBody>(btRigidBody::btRigidBodyConstructionInfo(_mass, _state.get(), _shape.value().get_handle(), btVector3(0, 0, 0)));
+
+        _rigidbody->setActivationState(DISABLE_DEACTIVATION);
+        _rigidbody->setGravity(-_g * detail::reinterpret_bullet(_up));
+        _rigidbody->setFriction(_mu);
+        _rigidbody->setAngularFactor(detail::reinterpret_bullet(_angular_factor));
+
+        if (_use_ccd) {
+            // todo
+        } else {
+            _rigidbody->setCcdMotionThreshold(0);
+            _rigidbody->setCcdSweptSphereRadius(0);
+        }
+
         detail::dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
         _is_added = true;
 
@@ -159,6 +173,19 @@ namespace ecs {
         _shape.emplace(from, [this]() {
             _state = std::make_unique<btDefaultMotionState>(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 0)));
             _rigidbody = std::make_unique<btRigidBody>(btRigidBody::btRigidBodyConstructionInfo(_mass, _state.get(), _shape.value().get_handle(), btVector3(0, 0, 0)));
+
+            _rigidbody->setActivationState(DISABLE_DEACTIVATION);
+            _rigidbody->setGravity(-_g * detail::reinterpret_bullet(_up));
+            _rigidbody->setFriction(_mu);
+            _rigidbody->setAngularFactor(detail::reinterpret_bullet(_angular_factor));
+
+            if (_use_ccd) {
+                // todo
+            } else {
+                _rigidbody->setCcdMotionThreshold(0);
+                _rigidbody->setCcdSweptSphereRadius(0);
+            }
+
             detail::dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
             _is_added = true;
         });
@@ -166,50 +193,68 @@ namespace ecs {
         return *this;
     }
 
-    rigidbody_component<rigidbody_kind::character>& rigidbody_component<rigidbody_kind::character>::set_mass(const glm::float32 kg)
+    rigidbody_component<rigidbody_kind::character>& rigidbody_component<rigidbody_kind::character>::set_mass(const glm::float32 kilograms)
     {
+        _mass = kilograms;
+        if (_is_added) {
+            _rigidbody->setMassProps(_mass, btVector3(0.f, 0.f, 0.f));
+        }
 
         return *this;
     }
 
-    rigidbody_component<rigidbody_kind::character>& rigidbody_component<rigidbody_kind::character>::set_enable_ccd(const bool on)
+    rigidbody_component<rigidbody_kind::character>& rigidbody_component<rigidbody_kind::character>::set_gravity(const glm::float32 newtons)
     {
+        _g = newtons;
+        if (_is_added) {
+            _rigidbody->setGravity(-_g * detail::reinterpret_bullet(_up));
+        }
 
         return *this;
     }
+
+    // rigidbody_component<rigidbody_kind::character>& rigidbody_component<rigidbody_kind::character>::set_enable_ccd(const bool on)
+    // {
+
+    //     return *this;
+    // }
 
     rigidbody_component<rigidbody_kind::character>& rigidbody_component<rigidbody_kind::character>::set_friction(const glm::float32 mu)
     {
+        _mu = mu;
+        if (_is_added) {
+            _rigidbody->setFriction(_mu);
+            _rigidbody->activate(true);
+        }
 
         return *this;
     }
 
-    rigidbody_component<rigidbody_kind::character>& rigidbody_component<rigidbody_kind::character>::set_lock_angular(const bool x, const bool y, const bool z)
+    rigidbody_component<rigidbody_kind::character>& rigidbody_component<rigidbody_kind::character>::set_lock_angular(const bool xlock, const bool ylock, const bool zlock)
     {
+        _angular_factor = glm::vec3(xlock ? 0 : 1, ylock ? 0 : 1, zlock ? 0 : 1);
+        if (_is_added) {
+            _rigidbody->setAngularFactor(detail::reinterpret_bullet(_angular_factor));
+            _rigidbody->activate(true);
+        }
 
         return *this;
     }
 
     rigidbody_component<rigidbody_kind::character>& rigidbody_component<rigidbody_kind::character>::set_pd_xy(glm::float32 Kp, glm::float32 Kd, glm::float32 Fmax)
     {
+        _Kp_xy = Kp;
+        _Kd_xy = Kd;
+        _Fmax_xy = Fmax;
 
         return *this;
     }
 
     rigidbody_component<rigidbody_kind::character>& rigidbody_component<rigidbody_kind::character>::set_pd_rot(glm::float32 Kp, glm::float32 Kd, glm::float32 Tmax)
     {
-
-        return *this;
-    }
-
-    rigidbody_component<rigidbody_kind::character>& rigidbody_component<rigidbody_kind::character>::set_up_axis(const glm::vec3& up)
-    {
-
-        return *this;
-    }
-
-    rigidbody_component<rigidbody_kind::character>& rigidbody_component<rigidbody_kind::character>::set_gravity(float g)
-    {
+        _Kp_rot = Kp;
+        _Kd_rot = Kd;
+        _Tmax_rot = Tmax;
 
         return *this;
     }

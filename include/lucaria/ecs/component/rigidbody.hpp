@@ -100,19 +100,18 @@ namespace ecs {
         rigidbody_component& use_shape(fetched<shape>& from);
 
         rigidbody_component& set_teleporting();
-        rigidbody_component& set_mass(const glm::float32 kg);
-        rigidbody_component& set_enable_ccd(const bool on = true);
+        rigidbody_component& set_mass(const glm::float32 kilograms);
+        rigidbody_component& set_gravity(const glm::float32 newtons);
+        // rigidbody_component& set_enable_ccd(const bool on = true);
         rigidbody_component& set_friction(const glm::float32 mu);
-        rigidbody_component& set_lock_angular(const bool x = false, const bool y = false, const bool z = false);
+        rigidbody_component& set_lock_angular(const bool xlock, const bool ylock, const bool zlock);
         rigidbody_component& set_pd_xy(glm::float32 Kp, glm::float32 Kd, glm::float32 Fmax);
         rigidbody_component& set_pd_rot(glm::float32 Kp, glm::float32 Kd, glm::float32 Tmax);
-        rigidbody_component& set_up_axis(const glm::vec3& up);
-        rigidbody_component& set_gravity(float g); // |g| used for impulse calc
 
     private:
         // bullet
         bool _is_added = false;
-        bool _pending_teleport = false;
+        bool _pending_teleport = true;
         detail::fetched_container<shape> _shape = {};
         std::unique_ptr<btDefaultMotionState> _state = nullptr;
         std::unique_ptr<btRigidBody> _rigidbody = nullptr;
@@ -121,8 +120,12 @@ namespace ecs {
 
         // tuning
         float _mass = 70.f;
+        float _mu = 1.f;
         glm::vec3 _up = { 0, 1, 0 };
-        float _g = 9.81f;
+        glm::vec3 _angular_factor = { 0, 1, 0 };
+        bool _use_ccd = false;
+        // float _g = 9.81f;
+        float _g = 0.f;
 
         // PD params
         float _Kp_xy = 1800.f, _Kd_xy = 0.f, _Fmax_xy = 6000.f;

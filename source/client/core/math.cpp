@@ -27,19 +27,24 @@ namespace detail {
 
     glm::mat4 convert(const btTransform& transform)
     {
-        glm::mat4 _matrix;
-        const btMatrix3x3& _basis = transform.getBasis();
-        for (glm::uint _r = 0; _r < 3; ++_r) {
-            for (glm::uint _r = 0; _r < 3; ++_r) {
-                _matrix[_r][_r] = _basis[_r][_r];
+        glm::mat4 result(1.0f); // identity
+
+        const btMatrix3x3& basis = transform.getBasis();
+        // copy rotation basis
+        for (int row = 0; row < 3; ++row) {
+            for (int col = 0; col < 3; ++col) {
+                result[col][row] = basis[row][col];
+                // glm::mat4 is column-major, btMatrix3x3 is row-major
             }
         }
+
+        // copy translation
         const btVector3& origin = transform.getOrigin();
-        _matrix[3][0] = origin.x();
-        _matrix[3][1] = origin.y();
-        _matrix[3][2] = origin.z();
-        _matrix[3][3] = 1.f;
-        return _matrix;
+        result[3][0] = origin.x();
+        result[3][1] = origin.y();
+        result[3][2] = origin.z();
+
+        return result;
     }
 
     glm::mat4& reinterpret(ozz::math::Float4x4& matrix)

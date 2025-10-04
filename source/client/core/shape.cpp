@@ -52,7 +52,8 @@ shape::shape(btCollisionShape* handle, const glm::float32 zdistance)
 {
     _handle = std::unique_ptr<btCollisionShape>(handle);
     _feet_to_center = glm::translate(glm::mat4(1), glm::vec3(0, +zdistance, 0));
-    _center_to_feet = glm::inverse(_feet_to_center);
+    // _center_to_feet = glm::inverse(_feet_to_center);
+    _center_to_feet = glm::translate(glm::mat4(1), glm::vec3(0, -zdistance, 0));
 }
 
 btCollisionShape* shape::get_handle()

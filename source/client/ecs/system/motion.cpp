@@ -189,7 +189,33 @@ namespace detail {
                     return;
                 }
 
-                const btTransform Tb = body->getWorldTransform();
+                const btTransform Tb = convert_bullet(character._shape.value().get_feet_to_center() * transform._transform);
+                body->setWorldTransform(Tb);
+
+                //                 btTransform Tb = body->getWorldTransform();
+
+                // // keep translation from Bullet
+                // btVector3 pos = Tb.getOrigin();
+
+                // // compute new orientation (only yaw from camera)
+                // btQuaternion qNow = Tb.getRotation();
+                // glm::quat q_now(qNow.getW(), qNow.getX(), qNow.getY(), qNow.getZ());
+
+                // // your camera yaw input
+                // glm::quat qYawDelta = glm::angleAxis(glm::radians(yaw_delta), glm::vec3(0,1,0));
+
+                // // apply only yaw override
+                // glm::quat q_new = qYawDelta * q_now;
+                // btQuaternion qNew(q_new.x, q_new.y, q_new.z, q_new.w);
+
+                // // write back
+                // Tb.setOrigin(pos);
+                // Tb.setRotation(qNew);
+                // body->setWorldTransform(Tb);
+                // body->getMotionState()->setWorldTransform(Tb);
+                // body->setInterpolationWorldTransform(Tb);
+
+                // const btTransform Tb = body->getWorldTransform();
                 const glm::vec3 p_now = { Tb.getOrigin().x(), Tb.getOrigin().y(), Tb.getOrigin().z() };
                 const btQuaternion bq = Tb.getRotation();
                 const glm::quat q_now(bq.getW(), bq.getX(), bq.getY(), bq.getZ());
@@ -228,15 +254,21 @@ namespace detail {
 
                     // Per-frame delta in track space
                     glm::mat4 D = T1 * glm::inverse(T0);
-                    glm::vec3 dpos = glm::vec3(D[3]); // translation delta
-                    glm::quat drot = glm::quat_cast(D); // rotation delta
+                    glm::vec3 dpos_local = glm::vec3(D[3]); // in *root bone local space*
+                    glm::quat drot_local = glm::quat_cast(D);
 
-                    // Project translation to ground plane (ignore vertical while grounded)
+                    // Rotate displacement into world using current physics orientation
+                    glm::vec3 dpos_world = q_now * dpos_local;
+
+                    // Project to ground
                     auto projOnPlane = [&](const glm::vec3& v) { return v - up * glm::dot(up, v); };
-                    glm::vec3 dpos_xy = projOnPlane(dpos);
+                    glm::vec3 dpos_xy = projOnPlane(dpos_world);
                     glm::vec3 v_des_xy = dpos_xy / dt;
 
-                    // Extract yaw-only delta around 'up' and turn it into a yaw rate
+                    // Rotate into world by composing with current orientation
+                    glm::quat q_world_after = q_now * drot_local;
+                    glm::quat q_delta_world = q_world_after * glm::inverse(q_now);
+
                     auto yawOnly = [&](const glm::quat& q) {
                         const glm::vec3 fwd = glm::normalize(q * glm::vec3(0, 0, 1));
                         const glm::vec3 fwd_xy = glm::normalize(projOnPlane(fwd));
@@ -244,13 +276,15 @@ namespace detail {
                         const glm::mat3 R { right, up, fwd_xy }; // columns
                         return glm::quat_cast(glm::mat4(R));
                     };
-                    glm::quat drot_yaw = yawOnly(drot);
 
+                    glm::quat drot_yaw = yawOnly(q_delta_world);
+
+                    // Turn yaw delta into angular speed around up
                     glm::quat dq = drot_yaw;
                     if (dq.w < 0)
                         dq = { -dq.w, -dq.x, -dq.y, -dq.z };
-                    float angle = 2.f * std::acos(glm::clamp(dq.w, 0.f, 1.f)); // radians this frame
-                    // sign by projecting axis onto 'up'
+
+                    float angle = 2.f * std::acos(glm::clamp(dq.w, 0.f, 1.f));
                     glm::vec3 axis = (std::abs(angle) < 1e-6f) ? up : glm::normalize(glm::vec3(dq.x, dq.y, dq.z));
                     float yaw_rate = (glm::dot(axis, up)) * (angle / dt);
 
@@ -336,7 +370,7 @@ namespace detail {
                                 ozz::math::GetY(_current_transform.cols[3]),
                                 ozz::math::GetZ(_current_transform.cols[3]));
 
-                            detail::draw_guizmo_line(_from, _to, btVector3(1, 0, 0)); // red
+                            detail::draw_guizmo_line(_from, _to, btVector3(0, 1, 1)); // cyan
                         }
                     }
                 }
@@ -372,7 +406,7 @@ namespace detail {
                                 ozz::math::GetY(_current_transform.cols[3]),
                                 ozz::math::GetZ(_current_transform.cols[3]));
 
-                            detail::draw_guizmo_line(_from, _to, btVector3(1, 0, 0)); // red
+                            detail::draw_guizmo_line(_from, _to, btVector3(0, 1, 1)); // cyan
                         }
                     }
                 }
