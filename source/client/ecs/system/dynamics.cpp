@@ -93,25 +93,6 @@ namespace {
         transform[3] = glm::vec4(_new_position, 1.0f);
     }
 
-    // static bool compute_snap_ground(glm::mat4& transform, ecs::kinematic_collision& collision, const glm::float32 half_height)
-    // {
-    //     glm::vec3 position = glm::vec3(transform[3]);
-    //     btVector3 start(position.x, position.y + half_height, position.z);
-    //     btVector3 end(position.x, position.y - snap_ground_distance - half_height, position.z);
-    //     btCollisionWorld::ClosestRayResultCallback rayCallback(start, end);
-    //     rayCallback.m_collisionFilterGroup = detail::bulletgroupID_kinematic_rigidbody;
-    //     rayCallback.m_collisionFilterMask = detail::bulletgroupID_collider_ground;
-    //     detail::dynamics_world->rayTest(start, end, rayCallback);
-    //     if (rayCallback.hasHit()) {
-    //         collision.distance = glm::distance(position, collision.position);
-    //         collision.position = glm::vec3(rayCallback.m_hitPointWorld.x(), rayCallback.m_hitPointWorld.y(), rayCallback.m_hitPointWorld.z());
-    //         collision.normal = glm::vec3(rayCallback.m_hitNormalWorld.x(), rayCallback.m_hitNormalWorld.y(), rayCallback.m_hitNormalWorld.z());
-    //         transform[3][1] = collision.position.y;
-    //         return true;
-    //     }
-    //     return false;
-    // }
-
     // project onto plane orthogonal to "up"
     static inline btVector3 projOnPlane(const btVector3& v, const btVector3& up)
     {
@@ -120,25 +101,23 @@ namespace {
 
     // simple grounded test via manifolds (cos(max slope) ≈ cos 50°)
     static bool is_grounded(btRigidBody* body, const btVector3& up, btDynamicsWorld* world,
-        btScalar cosMaxSlope = btScalar(0.6427876), btScalar maxDist = btScalar(0.05))
+        btScalar cosMaxSlope = btCos(btRadians(160.0f)), // 60° slope
+        btScalar maxDist = btScalar(0.5))
     {
-        auto* disp = world->getDispatcher();
-        const int n = disp->getNumManifolds();
-        for (int i = 0; i < n; ++i) {
-            btPersistentManifold* m = disp->getManifoldByIndexInternal(i);
-            const btCollisionObject* a = m->getBody0();
-            const btCollisionObject* b = m->getBody1();
-            if (a != body && b != body)
-                continue;
+        btTransform tr = body->getWorldTransform();
+        btVector3 origin = tr.getOrigin();
 
-            for (int j = 0; j < m->getNumContacts(); ++j) {
-                const btManifoldPoint& cp = m->getContactPoint(j);
-                if (cp.getDistance() > maxDist)
-                    continue;
-                // normal points from B to A; make it point out of "body"
-                btVector3 n = (a == body) ? -cp.m_normalWorldOnB : cp.m_normalWorldOnB;
-                if (n.dot(up) > cosMaxSlope)
-                    return true;
+        btVector3 from = origin;
+        btVector3 to = origin - up.normalized() * (maxDist + 1.0f); // ray length > maxDist
+
+        btCollisionWorld::ClosestRayResultCallback rayCB(from, to);
+        rayCB.m_collisionFilterMask = ~0; // collide with everything
+        world->rayTest(from, to, rayCB);
+
+        if (rayCB.hasHit()) {
+            btVector3 hitNormal = rayCB.m_hitNormalWorld.normalized();
+            if (hitNormal.dot(up) > cosMaxSlope) {
+                return true;
             }
         }
         return false;
@@ -161,7 +140,7 @@ namespace ecs {
 }
 
 namespace detail {
-    
+
     void dynamics_system::step_simulation()
     {
         detail::each_scene([&](entt::registry& scene) {
@@ -294,11 +273,6 @@ namespace detail {
                         }
                     }
                 }
-                // if (rigidbody._is_snap_ground && rigidbody._shape.has_value()) {
-                //     if (compute_snap_ground(transform._transform, _collision, rigidbody._shape.value().get_zdistance())) {
-                //         rigidbody._ground_collision = _collision;
-                //     }
-                // }
             });
         });
 
