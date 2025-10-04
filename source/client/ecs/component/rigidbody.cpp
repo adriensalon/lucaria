@@ -42,12 +42,6 @@ namespace ecs {
         return *this;
     }
 
-    rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_kind::kinematic>::set_collide_grounds(const bool enabled)
-    {
-        _is_snap_ground = enabled;
-        return *this;
-    }
-
     rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_kind::kinematic>::set_collide_walls(const bool enabled)
     {
         if (enabled) {
@@ -75,11 +69,6 @@ namespace ecs {
             detail::dynamics_world->addCollisionObject(_ghost.get(), _group, _mask);
         }
         return *this;
-    }
-
-    const std::optional<kinematic_collision>& rigidbody_component<rigidbody_kind::kinematic>::get_ground_collision() const
-    {
-        return _ground_collision;
     }
 
     const std::vector<kinematic_collision>& rigidbody_component<rigidbody_kind::kinematic>::get_wall_collisions() const

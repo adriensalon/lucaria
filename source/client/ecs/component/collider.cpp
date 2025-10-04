@@ -53,19 +53,6 @@ namespace ecs {
         return *this;
     }
 
-    collider_component& collider_component::set_ground()
-    {
-        if (_group != detail::bulletgroupID_collider_ground) {
-            _group = detail::bulletgroupID_collider_ground;
-            _mask = _mask | detail::bulletgroupID_dynamic_rigidbody;
-            if (_is_added) {
-                detail::dynamics_world->removeRigidBody(_rigidbody.get());
-                detail::dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
-            }
-        }
-        return *this;
-    }
-
     collider_component& collider_component::set_wall()
     {
         if (_group != detail::bulletgroupID_collider_wall) {

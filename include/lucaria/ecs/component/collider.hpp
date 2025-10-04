@@ -20,7 +20,6 @@ namespace ecs {
         collider_component& use_shape(shape& from);
         collider_component& use_shape(fetched<shape>& from);
 
-        collider_component& set_ground();
         collider_component& set_wall();
         collider_component& set_layer(const kinematic_layer layer);
 

@@ -40,11 +40,9 @@ namespace ecs {
         rigidbody_component& use_shape(shape& from);
         rigidbody_component& use_shape(fetched<shape>& from);
 
-        rigidbody_component& set_collide_grounds(const bool enabled = true);
         rigidbody_component& set_collide_walls(const bool enabled = true);
         rigidbody_component& set_collide_layer(const kinematic_layer layer, const bool enabled = true);
 
-        [[nodiscard]] const std::optional<kinematic_collision>& get_ground_collision() const;
         [[nodiscard]] const std::vector<kinematic_collision>& get_wall_collisions() const;
         [[nodiscard]] const std::vector<kinematic_collision>& get_layer_collisions(const kinematic_layer layer) const;
 
@@ -84,7 +82,7 @@ namespace ecs {
         std::unique_ptr<btRigidBody> _rigidbody = nullptr;
         glm::float32 _mass = 0.f;
         std::int16_t _group = detail::bulletgroupID_dynamic_rigidbody;
-        std::int16_t _mask = detail::bulletgroupID_collider_ground | detail::bulletgroupID_collider_wall;
+        std::int16_t _mask = detail::bulletgroupID_collider_wall;
         friend struct detail::dynamics_system;
     };
 
@@ -116,7 +114,7 @@ namespace ecs {
         std::unique_ptr<btDefaultMotionState> _state = nullptr;
         std::unique_ptr<btRigidBody> _rigidbody = nullptr;
         std::int16_t _group = detail::bulletgroupID_dynamic_rigidbody;
-        std::int16_t _mask = detail::bulletgroupID_collider_ground | detail::bulletgroupID_collider_wall;
+        std::int16_t _mask = detail::bulletgroupID_collider_wall;
 
         // tuning
         float _mass = 70.f;
