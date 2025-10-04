@@ -1,5 +1,7 @@
 #include <memory>
 
+#include <glm/gtc/type_ptr.hpp>
+
 #include <lucaria/core/math.hpp>
 
 namespace lucaria {
@@ -22,6 +24,23 @@ namespace {
 namespace detail {
 
     // to glm
+
+    glm::mat4 convert(const btTransform& transform)
+    {
+        glm::mat4 _matrix;
+        const btMatrix3x3& _basis = transform.getBasis();
+        for (glm::uint _r = 0; _r < 3; ++_r) {
+            for (glm::uint _r = 0; _r < 3; ++_r) {
+                _matrix[_r][_r] = _basis[_r][_r];
+            }
+        }
+        const btVector3& origin = transform.getOrigin();
+        _matrix[3][0] = origin.x();
+        _matrix[3][1] = origin.y();
+        _matrix[3][2] = origin.z();
+        _matrix[3][3] = 1.f;
+        return _matrix;
+    }
 
     glm::mat4& reinterpret(ozz::math::Float4x4& matrix)
     {
@@ -46,6 +65,14 @@ namespace detail {
     }
 
     // to bullet
+
+    btTransform convert_bullet(const glm::mat4& matrix)
+    {
+        btMatrix3x3 _basis;
+        _basis.setFromOpenGLSubMatrix(glm::value_ptr(matrix));
+        btVector3 _origin(matrix[3][0], matrix[3][1], matrix[3][2]);
+        return btTransform(_basis, _origin);
+    }
 
     btVector3& reinterpret_bullet(glm::vec3& vector)
     {

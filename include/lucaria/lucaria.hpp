@@ -15,6 +15,7 @@
 #include <lucaria/core/opengl.hpp>
 #include <lucaria/core/program.hpp>
 #include <lucaria/core/renderbuffer.hpp>
+#include <lucaria/core/run.hpp>
 #include <lucaria/core/semantics.hpp>
 #include <lucaria/core/shader.hpp>
 #include <lucaria/core/shape.hpp>
@@ -25,7 +26,6 @@
 #include <lucaria/core/weight.hpp>
 #include <lucaria/core/window.hpp>
 #include <lucaria/core/world.hpp>
-
 
 #include <lucaria/ecs/component/animator.hpp>
 #include <lucaria/ecs/component/collider.hpp>

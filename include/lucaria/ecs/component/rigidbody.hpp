@@ -8,6 +8,7 @@
 
 namespace lucaria {
 namespace detail {
+    struct motion_system;
     struct dynamics_system;
 }
 
@@ -17,7 +18,6 @@ namespace ecs {
         kinematic,
         dynamic,
         character,
-        character_multibody,
     };
 
     template <rigidbody_kind kind_t>
@@ -99,6 +99,7 @@ namespace ecs {
         rigidbody_component& use_shape(shape& from);
         rigidbody_component& use_shape(fetched<shape>& from);
 
+        rigidbody_component& set_teleporting();
         rigidbody_component& set_mass(const glm::float32 kg);
         rigidbody_component& set_enable_ccd(const bool on = true);
         rigidbody_component& set_friction(const glm::float32 mu);
@@ -111,6 +112,7 @@ namespace ecs {
     private:
         // bullet
         bool _is_added = false;
+        bool _pending_teleport = false;
         detail::fetched_container<shape> _shape = {};
         std::unique_ptr<btDefaultMotionState> _state = nullptr;
         std::unique_ptr<btRigidBody> _rigidbody = nullptr;
@@ -133,12 +135,13 @@ namespace ecs {
         glm::vec3 _v_d { 0 };
         glm::vec3 _w_d { 0 };
 
+        friend struct detail::motion_system;
         friend struct detail::dynamics_system;
     };
 
     using kinematic_rigidbody_component = rigidbody_component<rigidbody_kind::kinematic>;
     using dynamic_rigidbody_component = rigidbody_component<rigidbody_kind::dynamic>;
-    using character_rigidbody_component = rigidbody_component<rigidbody_kind::dynamic>;
+    using character_rigidbody_component = rigidbody_component<rigidbody_kind::character>;
 
 }
 }

@@ -1,3 +1,5 @@
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <lucaria/core/math.hpp>
 #include <lucaria/core/shape.hpp>
 
@@ -41,13 +43,16 @@ shape::shape(const geometry& from, const shape_algorithm algorithm)
     }
 
     // todo impact triangle mesh
-    _zdistance = 0.f;// NOOOOOOOOOOOOOOOO
+    float _zdistance = 0.f;// NOOOOOOOOOOOOOOOO
+    _feet_to_center = glm::translate(glm::mat4(1), glm::vec3(0, +_zdistance, 0));
+    _center_to_feet = glm::inverse(_feet_to_center);
 }
 
 shape::shape(btCollisionShape* handle, const glm::float32 zdistance)
 {
     _handle = std::unique_ptr<btCollisionShape>(handle);
-    _zdistance = zdistance;
+    _feet_to_center = glm::translate(glm::mat4(1), glm::vec3(0, +zdistance, 0));
+    _center_to_feet = glm::inverse(_feet_to_center);
 }
 
 btCollisionShape* shape::get_handle()
@@ -60,9 +65,14 @@ const btCollisionShape* shape::get_handle() const
     return _handle.get();
 }
 
-glm::float32 shape::get_zdistance() const
+glm::mat4 shape::get_feet_to_center() const
 {
-    return _zdistance;
+    return _feet_to_center;
+}
+
+glm::mat4 shape::get_center_to_feet() const
+{
+    return _center_to_feet;
 }
 
 shape create_box_shape(const glm::vec3& half_extents)
@@ -79,7 +89,7 @@ shape create_capsule_shape(const glm::float32 radius, const glm::float32 height)
 {
     return shape(new btCapsuleShape(
         static_cast<btScalar>(radius),
-        static_cast<btScalar>(height)), height * 0.5f);
+        static_cast<btScalar>(height)), radius + height * 0.5f);
 }
 
 shape create_cone_shape(const glm::float32 radius, const glm::float32 height)

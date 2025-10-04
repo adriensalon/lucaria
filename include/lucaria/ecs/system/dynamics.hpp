@@ -21,8 +21,9 @@ namespace detail {
         dynamics_system(dynamics_system&& other) = delete;
         dynamics_system& operator=(dynamics_system&& other) = delete;
 
+        static void step_characters();
         static void step_simulation();
-        static void compute_kinematic_collisions();
+        static void compute_collisions();
         static void collect_debug_guizmos();
     };
 }

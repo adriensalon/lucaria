@@ -54,13 +54,6 @@ struct ImGui_ImplOpenGL3_Data {
     ImGui_ImplOpenGL3_Data() { memset((void*)this, 0, sizeof(*this)); }
 };
 
-static bool _use_imgui = false;
-static bool _use_imgui_command = false;
-void use_imgui_rendering(const bool use)
-{
-    _use_imgui_command = use;
-}
-
 namespace detail {
 
     static bool setup_platform();

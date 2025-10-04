@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include <glm/glm.hpp>
 #include <btBulletDynamicsCommon.h>
 
 #include <lucaria/core/geometry.hpp>
@@ -32,11 +33,14 @@ struct shape {
 
     [[nodiscard]] btCollisionShape* get_handle();
     [[nodiscard]] const btCollisionShape* get_handle() const;
-    [[nodiscard]] glm::float32 get_zdistance() const;
+    [[nodiscard]] glm::mat4 get_feet_to_center() const;
+    [[nodiscard]] glm::mat4 get_center_to_feet() const;
 
 private:
     std::unique_ptr<btCollisionShape> _handle;
     std::unique_ptr<btTriangleMesh> _triangle_handle;
+    glm::mat4 _feet_to_center;
+    glm::mat4 _center_to_feet;
     glm::float32 _zdistance;
 };
 

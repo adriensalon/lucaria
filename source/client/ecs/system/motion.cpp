@@ -14,15 +14,12 @@
 #include <lucaria/core/world.hpp>
 #include <lucaria/ecs/component/animator.hpp>
 #include <lucaria/ecs/component/model.hpp>
+#include <lucaria/ecs/component/rigidbody.hpp>
 #include <lucaria/ecs/component/transform.hpp>
 #include <lucaria/ecs/system/motion.hpp>
 
 namespace lucaria {
 namespace {
-
-#if LUCARIA_GUIZMO
-    extern void draw_guizmo_line(const btVector3& from, const btVector3& to, const btVector3& color);
-#endif
 
     glm::mat4 sample_motion_track(const motion_track& motion_track, float ratio) // on pourrait le mettre dans le motion_track jsp...
     {
@@ -51,6 +48,10 @@ namespace {
 }
 
 namespace detail {
+
+#if LUCARIA_GUIZMO
+    extern void draw_guizmo_line(const btVector3& from, const btVector3& to, const btVector3& color);
+#endif
 
     void motion_system::advance_controllers()
     {
@@ -129,7 +130,8 @@ namespace detail {
     void motion_system::apply_motion_tracks()
     {
         detail::each_scene([](entt::registry& scene) {
-            scene.view<const ecs::animator_component, ecs::transform_component>().each([](const ecs::animator_component& animator, ecs::transform_component& transform) {
+            // with no character
+            scene.view<const ecs::animator_component, ecs::transform_component>(entt::exclude<ecs::character_rigidbody_component>).each([](const ecs::animator_component& animator, ecs::transform_component& transform) {
                 for (const std::pair<const std::string, fetched_container<motion_track>>& _pair : animator._motion_tracks) {
 
                     if (_pair.second.has_value()) {
@@ -151,6 +153,133 @@ namespace detail {
                     }
                 }
             });
+
+            // characters
+            scene.view<const ecs::animator_component, ecs::transform_component, ecs::character_rigidbody_component>().each([](const ecs::animator_component& animator, ecs::transform_component& transform, ecs::character_rigidbody_component& character) {
+                btRigidBody* body = character._rigidbody.get();
+                if (!body)
+                    return;
+
+                const float dt = float(get_time_delta());
+                if (dt <= 0.f)
+                    return;
+
+                if (character._pending_teleport) {
+
+                    if (!character._shape.has_value())
+                        return;
+                    character._pending_teleport = false;
+
+                    const glm::mat4 M = character._shape.value().get_feet_to_center() * transform._transform;
+                    const btTransform Tb = convert_bullet(M);
+                    body->setWorldTransform(Tb);
+                    body->getMotionState()->setWorldTransform(Tb);
+                    body->setInterpolationWorldTransform(Tb);
+
+                    body->setLinearVelocity(btVector3(0, 0, 0));
+                    body->setAngularVelocity(btVector3(0, 0, 0));
+                    body->clearForces();
+                    body->activate(true);
+
+                    // sync PD targets to avoid elastic correction
+                    character._p_d = glm::vec3(M[3]); // translation part
+                    character._q_d = glm::quat_cast(M); // orientation
+                    character._v_d = glm::vec3(0);
+                    character._w_d = glm::vec3(0);
+                    return;
+                }
+
+                const btTransform Tb = body->getWorldTransform();
+                const glm::vec3 p_now = { Tb.getOrigin().x(), Tb.getOrigin().y(), Tb.getOrigin().z() };
+                const btQuaternion bq = Tb.getRotation();
+                const glm::quat q_now(bq.getW(), bq.getX(), bq.getY(), bq.getZ());
+
+                const glm::vec3 up = character._up;
+
+                // Accumulators if you have multiple motion tracks (blend by controller weight)
+                glm::vec3 sum_dpos_xy(0.0f); // desired horizontal displacement this frame
+                glm::vec3 sum_v_xy(0.0f); // desired horizontal velocity
+                float sum_yaw_rate = 0.0f; // rad/s around up
+                float sum_w = 0.0f;
+
+                for (const auto& kv : animator._motion_tracks) {
+                    if (!kv.second.has_value())
+                        continue;
+
+                    const motion_track& track = kv.second.value();
+                    const auto itCtrl = animator._controllers.find(kv.first);
+                    if (itCtrl == animator._controllers.end())
+                        continue;
+                    const ecs::animation_controller& ctrl = itCtrl->second;
+                    const float w = ctrl._computed_weight; // your layer weight
+                    if (w <= 0.f)
+                        continue;
+
+                    // Sample local root-motion at t0/t1
+                    glm::mat4 T0 = sample_motion_track(track, ctrl._last_time_ratio);
+                    glm::mat4 T1 = sample_motion_track(track, ctrl._time_ratio);
+
+                    // Handle wrapping of the clip (preserve the authored end->start delta)
+                    if (ctrl._has_looped) {
+                        glm::mat4 Tend = sample_motion_track(track, 1.f);
+                        glm::mat4 Tbeg = sample_motion_track(track, 0.f);
+                        T1 = Tend * glm::inverse(Tbeg) * T1;
+                    }
+
+                    // Per-frame delta in track space
+                    glm::mat4 D = T1 * glm::inverse(T0);
+                    glm::vec3 dpos = glm::vec3(D[3]); // translation delta
+                    glm::quat drot = glm::quat_cast(D); // rotation delta
+
+                    // Project translation to ground plane (ignore vertical while grounded)
+                    auto projOnPlane = [&](const glm::vec3& v) { return v - up * glm::dot(up, v); };
+                    glm::vec3 dpos_xy = projOnPlane(dpos);
+                    glm::vec3 v_des_xy = dpos_xy / dt;
+
+                    // Extract yaw-only delta around 'up' and turn it into a yaw rate
+                    auto yawOnly = [&](const glm::quat& q) {
+                        const glm::vec3 fwd = glm::normalize(q * glm::vec3(0, 0, 1));
+                        const glm::vec3 fwd_xy = glm::normalize(projOnPlane(fwd));
+                        const glm::vec3 right = glm::normalize(glm::cross(up, fwd_xy));
+                        const glm::mat3 R { right, up, fwd_xy }; // columns
+                        return glm::quat_cast(glm::mat4(R));
+                    };
+                    glm::quat drot_yaw = yawOnly(drot);
+
+                    glm::quat dq = drot_yaw;
+                    if (dq.w < 0)
+                        dq = { -dq.w, -dq.x, -dq.y, -dq.z };
+                    float angle = 2.f * std::acos(glm::clamp(dq.w, 0.f, 1.f)); // radians this frame
+                    // sign by projecting axis onto 'up'
+                    glm::vec3 axis = (std::abs(angle) < 1e-6f) ? up : glm::normalize(glm::vec3(dq.x, dq.y, dq.z));
+                    float yaw_rate = (glm::dot(axis, up)) * (angle / dt);
+
+                    // Accumulate weighted contributions
+                    sum_dpos_xy += w * dpos_xy;
+                    sum_v_xy += w * v_des_xy;
+                    sum_yaw_rate += w * yaw_rate;
+                    sum_w += w;
+                }
+
+                // Normalize by total weight if you blended multiple tracks
+                if (sum_w > 0.f) {
+                    sum_dpos_xy /= sum_w;
+                    sum_v_xy /= sum_w;
+                    sum_yaw_rate /= sum_w;
+                }
+
+                // --- Build absolute PD targets relative to current physics pose ---
+                character._p_d = p_now + sum_dpos_xy; // where to be at end of this frame
+                // rotate around 'up' by (rate * dt) from current orient:
+                auto angleAxis = [&](float ang, const glm::vec3& ax) {
+                    return glm::angleAxis(ang, glm::normalize(ax));
+                };
+                glm::quat q_target = glm::normalize(angleAxis(sum_yaw_rate * dt, up) * q_now);
+                character._q_d = q_target;
+
+                character._v_d = sum_v_xy; // desired horizontal velocity
+                character._w_d = up * sum_yaw_rate; // desired angular velocity about up
+            });
         });
     }
 
@@ -158,6 +287,30 @@ namespace detail {
     {
         // #if LUCARIA_GUIZMO
         detail::each_scene([](entt::registry& scene) {
+            scene.view<ecs::transform_component>().each([](ecs::transform_component& transform) {
+                // Origin (world)
+                const glm::vec3 p = glm::vec3(transform._transform[3]); // translation column
+
+                // Basis directions (world). Normalize so lines are exactly lengthMeters long.
+                auto nrm = [](glm::vec3 v) {
+                    float L = glm::length(v);
+                    return (L > 1e-6f) ? (v / L) : glm::vec3(0.0f);
+                };
+                const glm::vec3 x = nrm(glm::vec3(transform._transform[0])); // X axis direction
+                const glm::vec3 y = nrm(glm::vec3(transform._transform[1])); // Y axis direction
+                const glm::vec3 z = nrm(glm::vec3(transform._transform[2])); // Z axis direction
+
+                // Endpoints
+                const glm::vec3 px = p + x * .2f;
+                const glm::vec3 py = p + y * .2f;
+                const glm::vec3 pz = p + z * .2f;
+
+                // Colors (R,G,B)
+                draw_guizmo_line(reinterpret_bullet(p), reinterpret_bullet(px), btVector3(1, 0, 0)); // X = red
+                draw_guizmo_line(reinterpret_bullet(p), reinterpret_bullet(py), btVector3(0, 1, 0)); // Y = green
+                draw_guizmo_line(reinterpret_bullet(p), reinterpret_bullet(pz), btVector3(0, 0, 1)); // Z = blue
+            });
+
             scene.view<ecs::animator_component>(entt::exclude<ecs::transform_component>).each([](ecs::animator_component& animator) {
                 if (animator._skeleton.has_value()) {
 

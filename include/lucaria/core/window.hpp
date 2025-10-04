@@ -36,8 +36,6 @@ enum struct keyboard_key {
 
 [[nodiscard]] glm::float64 get_time_delta();
 
-void use_imgui_rendering(const bool use);
-
 namespace detail {
 
     inline std::unique_ptr<ImFontAtlas> imgui_shared_font_atlas = nullptr;

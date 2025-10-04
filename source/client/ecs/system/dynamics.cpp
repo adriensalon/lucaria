@@ -1,7 +1,6 @@
 #include <btBulletDynamicsCommon.h>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
+#include <lucaria/core/math.hpp>
 #include <lucaria/core/window.hpp>
 #include <lucaria/core/world.hpp>
 #include <lucaria/ecs/component/collider.hpp>
@@ -37,31 +36,6 @@ namespace {
     }
 
     static bool is_bullet_worlds_setup = setup_bullet_worlds();
-
-    static btTransform glm_to_bullet(const glm::mat4& matrix)
-    {
-        btMatrix3x3 _basis;
-        _basis.setFromOpenGLSubMatrix(glm::value_ptr(matrix));
-        btVector3 _origin(matrix[3][0], matrix[3][1], matrix[3][2]);
-        return btTransform(_basis, _origin);
-    }
-
-    static glm::mat4 bullet_to_glm(const btTransform& transform)
-    {
-        glm::mat4 _matrix;
-        const btMatrix3x3& _basis = transform.getBasis();
-        for (glm::uint _r = 0; _r < 3; ++_r) {
-            for (glm::uint _r = 0; _r < 3; ++_r) {
-                _matrix[_r][_r] = _basis[_r][_r];
-            }
-        }
-        const btVector3& origin = transform.getOrigin();
-        _matrix[3][0] = origin.x();
-        _matrix[3][1] = origin.y();
-        _matrix[3][2] = origin.z();
-        _matrix[3][3] = 1.f;
-        return _matrix;
-    }
 
     static bool get_manifold(btPersistentManifold** manifold, const btManifoldArray& array, const int index)
     {
@@ -137,6 +111,38 @@ namespace {
         }
         return false;
     }
+
+    // project onto plane orthogonal to "up"
+    static inline btVector3 projOnPlane(const btVector3& v, const btVector3& up)
+    {
+        return v - up * v.dot(up);
+    }
+
+    // simple grounded test via manifolds (cos(max slope) ≈ cos 50°)
+    static bool is_grounded(btRigidBody* body, const btVector3& up, btDynamicsWorld* world,
+        btScalar cosMaxSlope = btScalar(0.6427876), btScalar maxDist = btScalar(0.05))
+    {
+        auto* disp = world->getDispatcher();
+        const int n = disp->getNumManifolds();
+        for (int i = 0; i < n; ++i) {
+            btPersistentManifold* m = disp->getManifoldByIndexInternal(i);
+            const btCollisionObject* a = m->getBody0();
+            const btCollisionObject* b = m->getBody1();
+            if (a != body && b != body)
+                continue;
+
+            for (int j = 0; j < m->getNumContacts(); ++j) {
+                const btManifoldPoint& cp = m->getContactPoint(j);
+                if (cp.getDistance() > maxDist)
+                    continue;
+                // normal points from B to A; make it point out of "body"
+                btVector3 n = (a == body) ? -cp.m_normalWorldOnB : cp.m_normalWorldOnB;
+                if (n.dot(up) > cosMaxSlope)
+                    return true;
+            }
+        }
+        return false;
+    }
 }
 
 namespace ecs {
@@ -155,36 +161,95 @@ namespace ecs {
 }
 
 namespace detail {
-
+    
     void dynamics_system::step_simulation()
     {
         detail::each_scene([&](entt::registry& scene) {
-
             scene.view<ecs::collider_component>().each([](ecs::collider_component& collider) {
                 collider._shape.has_value(); // we only collect fetching shapes
             });
 
             scene.view<ecs::transform_component, ecs::kinematic_rigidbody_component>().each([](ecs::transform_component& transform, ecs::kinematic_rigidbody_component& rigidbody) {
                 if (rigidbody._shape.has_value()) {
-                    const glm::float32 _zdistance = rigidbody._shape.value().get_zdistance();
-                    const btTransform _transform = glm_to_bullet(glm::translate(glm::mat4(1.f), glm::vec3(0.f, _zdistance, 0.f)) * transform._transform);
+                    const glm::mat4 _feet_to_center = rigidbody._shape.value().get_feet_to_center();
+                    const btTransform _transform = convert_bullet(_feet_to_center * transform._transform);
                     rigidbody._ghost->setWorldTransform(_transform);
                 }
+            });
+
+            scene.view<ecs::rigidbody_component<ecs::rigidbody_kind::character>>().each([&](ecs::rigidbody_component<ecs::rigidbody_kind::character>& ch) {
+                btRigidBody* body = ch._rigidbody.get();
+                if (!body)
+                    return;
+
+                // --- read current physics state ---
+                const btTransform T = body->getWorldTransform();
+                const btVector3 x = T.getOrigin();
+                const btQuaternion q = T.getRotation();
+                const btVector3 v = body->getLinearVelocity();
+                const btVector3 w = body->getAngularVelocity();
+                const btVector3 up = detail::reinterpret_bullet(ch._up);
+
+                // desired (filled in apply_motion_tracks)
+                const btVector3 p_d = detail::reinterpret_bullet(ch._p_d);
+                const btVector3 v_d = detail::reinterpret_bullet(ch._v_d);
+                const btQuaternion q_d(ch._q_d.x, ch._q_d.y, ch._q_d.z, ch._q_d.w);
+                const btVector3 w_d = detail::reinterpret_bullet(ch._w_d);
+
+                // --- grounded? ---
+                const bool grounded = is_grounded(body, up, detail::dynamics_world);
+
+                // --- linear PD on horizontal plane ---
+                const btVector3 e_p_xy = projOnPlane(p_d - x, up);
+                const btVector3 e_v_xy = projOnPlane(v_d - v, up);
+
+                btVector3 F = btScalar(ch._Kp_xy) * e_p_xy + btScalar(ch._Kd_xy) * e_v_xy;
+                const btScalar Fmax = btScalar(ch._Fmax_xy);
+                const btScalar Flen2 = F.length2();
+                if (Flen2 > Fmax * Fmax)
+                    F *= Fmax / btSqrt(Flen2);
+                body->applyCentralForce(F);
+
+                // --- yaw-only rotation PD about "up" ---
+                auto forwardXY = [&](const btQuaternion& qq) {
+                    btVector3 f = quatRotate(qq, btVector3(0, 0, 1));
+                    f = projOnPlane(f, up);
+                    btScalar L = f.length();
+                    return (L > BT_ZERO) ? (f * (1.f / L)) : btVector3(0, 0, 1);
+                };
+                const btVector3 f_now = forwardXY(q);
+                const btVector3 f_des = forwardXY(q_d);
+
+                // signed yaw angle from now -> des around "up"
+                const btScalar cosang = btClamped(f_now.dot(f_des), btScalar(-1), btScalar(1));
+                const btScalar sinang = (f_now.cross(f_des)).dot(up);
+                const btScalar yaw_err = btAtan2(sinang, cosang); // radians
+
+                // desired yaw rate (take up-component from w_d; you set it in apply_motion_tracks)
+                const btScalar yaw_rate_d = w_d.dot(up);
+                const btScalar yaw_rate = w.dot(up);
+
+                const btScalar KpR = btScalar(ch._Kp_rot) * (grounded ? btScalar(1) : btScalar(ch._air_rot_scale));
+                const btScalar KdR = btScalar(ch._Kd_rot) * (grounded ? btScalar(1) : btScalar(ch._air_rot_scale));
+
+                btVector3 Tau = up * (KpR * yaw_err + KdR * (yaw_rate_d - yaw_rate));
+                const btScalar Tmax = btScalar(ch._Tmax_rot);
+                const btScalar Tlen = Tau.length();
+                if (Tlen > Tmax && Tlen > btScalar(0))
+                    Tau *= Tmax / Tlen;
+
+                body->applyTorque(Tau);
+
+                body->activate(true);
             });
         });
 
         detail::dynamics_world->stepSimulation(static_cast<float>(get_time_delta()), 10);
-
-        detail::each_scene([&](entt::registry& scene) {
-            scene.view<ecs::transform_component, ecs::dynamic_rigidbody_component>().each([](ecs::transform_component& transform, ecs::dynamic_rigidbody_component& rigidbody) {
-                const glm::mat4 _transform = bullet_to_glm(rigidbody._rigidbody->getWorldTransform());
-                transform._transform = _transform;
-            });
-        });
     }
 
-    void dynamics_system::compute_kinematic_collisions()
+    void dynamics_system::compute_collisions()
     {
+        // kinematic
         ecs::kinematic_collision _collision;
         btManifoldArray _manifold_array;
         detail::each_scene([&](entt::registry& scene) {
@@ -229,11 +294,29 @@ namespace detail {
                         }
                     }
                 }
-                if (rigidbody._is_snap_ground && rigidbody._shape.has_value()) {
-                    if (compute_snap_ground(transform._transform, _collision, rigidbody._shape.value().get_zdistance())) {
-                        rigidbody._ground_collision = _collision;
-                    }
-                }
+                // if (rigidbody._is_snap_ground && rigidbody._shape.has_value()) {
+                //     if (compute_snap_ground(transform._transform, _collision, rigidbody._shape.value().get_zdistance())) {
+                //         rigidbody._ground_collision = _collision;
+                //     }
+                // }
+            });
+        });
+
+        // dynamic
+        detail::each_scene([&](entt::registry& scene) {
+            scene.view<ecs::transform_component, ecs::dynamic_rigidbody_component>().each([](ecs::transform_component& transform, ecs::dynamic_rigidbody_component& rigidbody) {
+                const glm::mat4 _transform = convert(rigidbody._rigidbody->getWorldTransform());
+                const glm::mat4 _center_to_feet = rigidbody._shape.value().get_center_to_feet();
+                transform._transform = _transform * _center_to_feet;
+            });
+        });
+
+        // character
+        detail::each_scene([&](entt::registry& scene) {
+            scene.view<ecs::transform_component, ecs::character_rigidbody_component>().each([](ecs::transform_component& transform, ecs::character_rigidbody_component& rigidbody) {
+                const glm::mat4 _transform = convert(rigidbody._rigidbody->getWorldTransform());
+                const glm::mat4 _center_to_feet = rigidbody._shape.value().get_center_to_feet();
+                transform._transform = _transform * _center_to_feet;
             });
         });
     }

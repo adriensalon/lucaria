@@ -1,17 +1,8 @@
 #include <iostream>
 
-#include <backends/imgui_impl_opengl3.h>
-#include <btBulletDynamicsCommon.h>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
+#include <backends/imgui_impl_opengl3.h>
 
-#if !defined(__EMSCRIPTEN__)
-#include <backends/imgui_impl_glfw.h>
-#endif
-
-#include <lucaria/core/fetch.hpp>
-// #include <lucaria/core/hash.hpp>
 #include <lucaria/core/opengl.hpp>
 #include <lucaria/core/program.hpp>
 #include <lucaria/core/window.hpp>
@@ -28,9 +19,12 @@ namespace lucaria {
 namespace detail {
 
     extern btDiscreteDynamicsWorld* dynamics_world;
+
 }
 
 namespace {
+
+#if LUCARIA_GUIZMO
 
     struct vec3_hash {
         std::size_t operator()(const glm::vec3& vec) const
@@ -41,8 +35,6 @@ namespace {
             return _h1 ^ (_h2 << 1) ^ (_h3 << 2);
         }
     };
-
-#if LUCARIA_GUIZMO
 
     struct guizmo_debug_draw : public btIDebugDraw {
 
@@ -276,43 +268,25 @@ namespace {
     static bool show_physics_guizmos = false;
     static bool last_show_physics_guizmos_key = false;
 
-    static bool show_performance_metrics = false;
-    static bool last_performance_metrics_key = false;
-
-    extern bool show_free_camera;
-    static bool last_free_camera_key = false;
-
-    // #if LUCARIA_DEBUG
-    void draw_debug_gui()
+    static glm::vec3 forward_from_yaw_pitch(float yaw_deg, float pitch_deg)
     {
-        static bool show_debug_gui = false;
-        static bool last_show_gui_key = false;
-        if (!last_show_gui_key && get_keys()[keyboard_key::p]) {
-            show_debug_gui = !show_debug_gui;
-        }
-        last_show_gui_key = get_keys()[keyboard_key::p];
-        if (show_debug_gui) {
-
-            if (!last_show_physics_guizmos_key && get_keys()[keyboard_key::o]) {
-                show_physics_guizmos = !show_physics_guizmos;
-            }
-            if (!last_performance_metrics_key && get_keys()[keyboard_key::i]) {
-                show_performance_metrics = !show_performance_metrics;
-            }
-            if (!last_free_camera_key && get_keys()[keyboard_key::u]) {
-                show_free_camera = !show_free_camera;
-            }
-            last_show_physics_guizmos_key = get_keys()[keyboard_key::o];
-            last_performance_metrics_key = get_keys()[keyboard_key::i];
-            last_free_camera_key = get_keys()[keyboard_key::u];
-            ImGui::Begin("Debug features [P]", nullptr, ImGuiWindowFlags_NoCollapse);
-            ImGui::Checkbox("Show guizmos [O]", &show_physics_guizmos);
-            ImGui::Checkbox("Show performance [I]", &show_performance_metrics);
-            ImGui::Checkbox("Free camera [U]", &show_free_camera);
-            ImGui::End();
-        }
+        float y = glm::radians(yaw_deg), p = glm::radians(pitch_deg);
+        float cp = cos(p), sp = sin(p), cy = cos(y), sy = sin(y);
+        // −Z forward at yaw=0, pitch=0
+        return glm::normalize(glm::vec3(cp * sy, sp, -cp * cy));
     }
-    // #endif
+
+    static void camera_basis_from_forward(
+        const glm::vec3& fwd, const glm::vec3& upRef,
+        glm::vec3& right, glm::vec3& up)
+    {
+        right = glm::normalize(glm::cross(fwd, upRef));
+        up = glm::normalize(glm::cross(right, fwd));
+    }
+
+}
+
+namespace detail {
 
 #if LUCARIA_GUIZMO
     static guizmo_debug_draw guizmo_draw = {};
@@ -323,66 +297,6 @@ namespace {
         guizmo_draw.drawLine(from, to, color);
     }
 #endif
-
-    // static glm::vec3 compute_position()
-    // {
-    //     glm::vec3 _position = player_position;
-    //     float _forward_dir = 0.f, _right_dir = 0.f;
-    //     if (get_is_mouse_locked()) {
-    //         std::unordered_map<keyboard_key, bool>& _keys = get_keys();
-    //         _forward_dir = static_cast<float>(_keys[keyboard_key::w]) - static_cast<float>(_keys[keyboard_key::s]);
-    //         _right_dir = static_cast<float>(_keys[keyboard_key::d]) - static_cast<float>(_keys[keyboard_key::a]);
-    //     }
-    //     const glm::vec3 _player_right = glm::normalize(glm::cross(player_forward, player_up));
-    //     const float _time_delta = get_time_delta();
-    //     _position += _forward_dir * player_speed * player_forward * _time_delta;
-    //     _position += _right_dir * player_speed * _player_right * _time_delta;
-    //     return _position;
-    // }
-
-    // static void compute_rotation()
-    // {
-    //     if (get_is_mouse_locked()) {
-    //         const glm::vec2 _mouse_delta = get_mouse_position_delta();
-    //         const double _time_delta = get_time_delta();
-    //         player_yaw += _mouse_delta.x * mouse_sensitivity * static_cast<glm::float32>(_time_delta);
-    //         player_pitch -= _mouse_delta.y * mouse_sensitivity * static_cast<glm::float32>(_time_delta);
-    //     }
-    //     player_pitch = glm::clamp(player_pitch, -89.0f, 89.0f);
-    //     const glm::vec3 _player_direction = {
-    //         glm::cos(glm::radians(player_yaw)) * glm::cos(glm::radians(player_pitch)),
-    //         glm::sin(glm::radians(player_pitch)),
-    //         glm::sin(glm::radians(player_yaw)) * glm::cos(glm::radians(player_pitch))
-    //     };
-    //     player_forward = glm::normalize(_player_direction);
-    //     camera_view = glm::lookAt(player_position, player_position + player_forward, player_up);
-    // }
-
-    static glm::vec3 rotateForwardVector(const glm::vec3& forward, float pitch)
-    {
-        // Clamp pitch to the range [-89, 89] degrees
-        pitch = glm::clamp(pitch, -89.0f, 89.0f);
-
-        // Convert pitch from degrees to radians
-        float pitchRadians = glm::radians(pitch);
-
-        // Calculate the rotation axis (cross product of forward and world-right vector)
-        glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f)));
-
-        // If forward is parallel to the Y-axis, use the global X-axis as a fallback
-        if (glm::length(right) < 1e-6) {
-            right = glm::vec3(1.0f, 0.0f, 0.0f);
-        }
-
-        // Create a quaternion representing the pitch rotation
-        glm::quat pitchRotation = glm::angleAxis(pitchRadians, right);
-
-        // Apply the rotation to the forward vector
-        glm::vec3 rotatedForward = glm::normalize(pitchRotation * forward);
-
-        return rotatedForward;
-    }
-
 }
 
 namespace ecs {
@@ -455,22 +369,6 @@ namespace detail {
         float _fov_rad = glm::radians(camera_fov);
         float _aspect_ratio = _screen_size.x / _screen_size.y;
         camera_projection = glm::perspective(_fov_rad, _aspect_ratio, camera_near, camera_far);
-    }
-
-    static glm::vec3 forward_from_yaw_pitch(float yaw_deg, float pitch_deg)
-    {
-        float y = glm::radians(yaw_deg), p = glm::radians(pitch_deg);
-        float cp = cos(p), sp = sin(p), cy = cos(y), sy = sin(y);
-        // −Z forward at yaw=0, pitch=0
-        return glm::normalize(glm::vec3(cp * sy, sp, -cp * cy));
-    }
-
-    static void camera_basis_from_forward(
-        const glm::vec3& fwd, const glm::vec3& upRef,
-        glm::vec3& right, glm::vec3& up)
-    {
-        right = glm::normalize(glm::cross(fwd, upRef));
-        up = glm::normalize(glm::cross(right, fwd));
     }
 
     void rendering_system::compute_view_projection()
@@ -714,10 +612,7 @@ namespace detail {
             show_physics_guizmos = !show_physics_guizmos;
         }
         last_show_physics_guizmos_key = get_keys()[keyboard_key::o];
-        // #if LUCARIA_DEBUG
-        // ::draw_debug_gui();
-
-        // #endif
+        
         if (show_physics_guizmos) {
 #if LUCARIA_GUIZMO
             for (const std::pair<const glm::vec3, std::vector<glm::vec3>>& _pair : guizmo_draw.positions) {
