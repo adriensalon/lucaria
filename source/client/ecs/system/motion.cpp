@@ -148,7 +148,7 @@ namespace detail {
                             _delta_transform = _end_transform * glm::inverse(_begin_transform) * _delta_transform;
                         }
 
-                        // _delta_transform = glm::interpolate(glm::mat4(1.f), _delta_transform, _controller._computed_weight);
+                        _delta_transform = glm::interpolate(glm::mat4(1.f), _delta_transform, _controller._computed_weight);
                         transform.set_transform_relative(_delta_transform);
                     }
                 }
@@ -285,59 +285,58 @@ namespace detail {
 
     void motion_system::collect_debug_guizmos()
     {
-        // #if LUCARIA_GUIZMO
+#if LUCARIA_GUIZMO
         detail::each_scene([](entt::registry& scene) {
+            // transform guizmos
             scene.view<ecs::transform_component>().each([](ecs::transform_component& transform) {
-                // Origin (world)
-                const glm::vec3 p = glm::vec3(transform._transform[3]); // translation column
+                constexpr glm::float32 _line_length = .2f;
 
-                // Basis directions (world). Normalize so lines are exactly lengthMeters long.
-                auto nrm = [](glm::vec3 v) {
-                    float L = glm::length(v);
-                    return (L > 1e-6f) ? (v / L) : glm::vec3(0.0f);
-                };
-                const glm::vec3 x = nrm(glm::vec3(transform._transform[0])); // X axis direction
-                const glm::vec3 y = nrm(glm::vec3(transform._transform[1])); // Y axis direction
-                const glm::vec3 z = nrm(glm::vec3(transform._transform[2])); // Z axis direction
+                const glm::vec3 _origin = glm::vec3(transform._transform[3]);
 
-                // Endpoints
-                const glm::vec3 px = p + x * .2f;
-                const glm::vec3 py = p + y * .2f;
-                const glm::vec3 pz = p + z * .2f;
+                const glm::vec3 _xaxis = glm::normalize(glm::vec3(transform._transform[0]));
+                const glm::vec3 _yaxis = glm::normalize(glm::vec3(transform._transform[1]));
+                const glm::vec3 _zaxis = glm::normalize(glm::vec3(transform._transform[2]));
 
-                // Colors (R,G,B)
-                draw_guizmo_line(reinterpret_bullet(p), reinterpret_bullet(px), btVector3(1, 0, 0)); // X = red
-                draw_guizmo_line(reinterpret_bullet(p), reinterpret_bullet(py), btVector3(0, 1, 0)); // Y = green
-                draw_guizmo_line(reinterpret_bullet(p), reinterpret_bullet(pz), btVector3(0, 0, 1)); // Z = blue
+                const glm::vec3 _xendpoint = _origin + _xaxis * _line_length;
+                const glm::vec3 _yendpoint = _origin + _yaxis * _line_length;
+                const glm::vec3 _zendpoint = _origin + _zaxis * _line_length;
+
+                draw_guizmo_line(reinterpret_bullet(_origin), reinterpret_bullet(_xendpoint), btVector3(1, 0, 0)); // red
+                draw_guizmo_line(reinterpret_bullet(_origin), reinterpret_bullet(_yendpoint), btVector3(0, 1, 0)); // green
+                draw_guizmo_line(reinterpret_bullet(_origin), reinterpret_bullet(_zendpoint), btVector3(0, 0, 1)); // blue
             });
 
+            // animator guizmos
             scene.view<ecs::animator_component>(entt::exclude<ecs::transform_component>).each([](ecs::animator_component& animator) {
                 if (animator._skeleton.has_value()) {
+                    const ozz::vector<ozz::math::Float4x4>& _model_transforms = animator._model_transforms;
 
-                    const ozz::vector<ozz::math::Float4x4>& model_transforms = animator._model_transforms;
-                    if (!model_transforms.empty()) {
-                        const auto& joint_parents = animator._skeleton.value().get_handle().joint_parents();
+                    if (!_model_transforms.empty()) {
+                        const ozz::span<const std::int16_t>& _joint_parents = animator._skeleton.value().get_handle().joint_parents();
 
-                        if (model_transforms.size() != joint_parents.size()) {
+                        if (_model_transforms.size() != _joint_parents.size()) {
                             LUCARIA_RUNTIME_ERROR("Mismatch between model transforms and joint parents sizes")
                         }
-                        for (size_t i = 0; i < model_transforms.size(); ++i) {
-                            int parent_index = joint_parents[i];
-                            if (parent_index == ozz::animation::Skeleton::kNoParent) {
-                                // // Handle root bone separately
+
+                        for (std::size_t _index = 0; _index < _model_transforms.size(); ++_index) {
+                            const int _parent_index = _joint_parents[_index];
+                            if (_parent_index == ozz::animation::Skeleton::kNoParent) {
                                 continue;
                             }
-                            const ozz::math::Float4x4& current_transform = model_transforms[i];
-                            const ozz::math::Float4x4& parent_transform = model_transforms[parent_index];
-#if defined(__EMSCRIPTEN__)
-                            btVector3 from(parent_transform.cols[3].x, parent_transform.cols[3].y, parent_transform.cols[3].z);
-                            btVector3 to(current_transform.cols[3].x, current_transform.cols[3].y, current_transform.cols[3].z);
-#else
-                            // btVector3 from(parent_transform.cols[3][0], parent_transform.cols[3][1], parent_transform.cols[3][2]);
-                            // btVector3 to(current_transform.cols[3][0], current_transform.cols[3][1], current_transform.cols[3][2]);
-#endif
-                            btVector3 color(1.0f, 0.0f, 0.0f); // Red color for bones
-                            // detail::draw_guizmo_line(from, to, color);
+
+                            const ozz::math::Float4x4& _current_transform = _model_transforms[_index];
+                            const ozz::math::Float4x4& _parent_transform = _model_transforms[_parent_index];
+
+                            const btVector3 _from(
+                                ozz::math::GetX(_parent_transform.cols[3]),
+                                ozz::math::GetY(_parent_transform.cols[3]),
+                                ozz::math::GetZ(_parent_transform.cols[3]));
+                            const btVector3 _to(
+                                ozz::math::GetX(_current_transform.cols[3]),
+                                ozz::math::GetY(_current_transform.cols[3]),
+                                ozz::math::GetZ(_current_transform.cols[3]));
+
+                            detail::draw_guizmo_line(_from, _to, btVector3(1, 0, 0)); // red
                         }
                     }
                 }
@@ -345,38 +344,41 @@ namespace detail {
 
             scene.view<ecs::animator_component, ecs::transform_component>().each([](ecs::animator_component& animator, ecs::transform_component& transform) {
                 if (animator._skeleton.has_value()) {
+                    const ozz::vector<ozz::math::Float4x4>& _model_transforms = animator._model_transforms;
 
-                    const ozz::vector<ozz::math::Float4x4>& model_transforms = animator._model_transforms;
-                    if (!model_transforms.empty()) {
-                        const auto& joint_parents = animator._skeleton.value().get_handle().joint_parents();
-                        if (model_transforms.size() != joint_parents.size()) {
+                    if (!_model_transforms.empty()) {
+                        const ozz::span<const std::int16_t>& _joint_parents = animator._skeleton.value().get_handle().joint_parents();
+
+                        if (_model_transforms.size() != _joint_parents.size()) {
                             LUCARIA_RUNTIME_ERROR("Mismatch between model transforms and joint parents sizes")
                         }
-                        for (size_t i = 0; i < model_transforms.size(); ++i) {
-                            int parent_index = joint_parents[i];
-                            if (parent_index == ozz::animation::Skeleton::kNoParent) {
-                                // // Handle root bone separately
+
+                        for (std::size_t _index = 0; _index < _model_transforms.size(); ++_index) {
+                            const int _parent_index = _joint_parents[_index];
+                            if (_parent_index == ozz::animation::Skeleton::kNoParent) {
                                 continue;
                             }
+
                             const ozz::math::Float4x4& _modifier_transform = reinterpret_ozz(transform._transform);
-                            const ozz::math::Float4x4 current_transform = _modifier_transform * model_transforms[i];
-                            const ozz::math::Float4x4 parent_transform = _modifier_transform * model_transforms[parent_index];
-#if defined(__EMSCRIPTEN__)
-                            btVector3 from(parent_transform.cols[3].x, parent_transform.cols[3].y, parent_transform.cols[3].z);
-                            btVector3 to(current_transform.cols[3].x, current_transform.cols[3].y, current_transform.cols[3].z);
-#else
-                            // btVector3 from(parent_transform.cols[3][0], parent_transform.cols[3][1], parent_transform.cols[3][2]);
-                            // btVector3 to(current_transform.cols[3][0], current_transform.cols[3][1], current_transform.cols[3][2]);
-#endif
-                            btVector3 color(1.0f, 0.0f, 0.0f); // Red color for bones
-                            // detail::draw_guizmo_line(from, to, color);
+                            const ozz::math::Float4x4 _current_transform = _modifier_transform * _model_transforms[_index];
+                            const ozz::math::Float4x4 _parent_transform = _modifier_transform * _model_transforms[_parent_index];
+
+                            const btVector3 _from(
+                                ozz::math::GetX(_parent_transform.cols[3]),
+                                ozz::math::GetY(_parent_transform.cols[3]),
+                                ozz::math::GetZ(_parent_transform.cols[3]));
+                            const btVector3 _to(
+                                ozz::math::GetX(_current_transform.cols[3]),
+                                ozz::math::GetY(_current_transform.cols[3]),
+                                ozz::math::GetZ(_current_transform.cols[3]));
+
+                            detail::draw_guizmo_line(_from, _to, btVector3(1, 0, 0)); // red
                         }
                     }
                 }
             });
         });
-        // #endif
+#endif
     }
-
 }
 }

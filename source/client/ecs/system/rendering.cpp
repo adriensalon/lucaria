@@ -425,6 +425,7 @@ namespace detail {
 
             // Boom offset: behind character along ground heading
             const float boomDist = -0.23f; // distance behind
+            // const float boomDist = 0.53f; // distance behind
             const float camHeight = 0.0f; // tweak if needed
 
             player_position = boneWorld - groundF * boomDist + worldUp * camHeight;
