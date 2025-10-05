@@ -150,8 +150,7 @@ namespace detail {
 
             scene.view<ecs::transform_component, ecs::kinematic_rigidbody_component>().each([](ecs::transform_component& transform, ecs::kinematic_rigidbody_component& rigidbody) {
                 if (rigidbody._shape.has_value()) {
-                    const glm::mat4 _feet_to_center = rigidbody._shape.value().get_feet_to_center();
-                    const btTransform _transform = convert_bullet(_feet_to_center * transform._transform);
+                    const btTransform _transform = convert_bullet(transform._transform); // not translating along +Y
                     rigidbody._ghost->setWorldTransform(_transform);
                 }
             });
