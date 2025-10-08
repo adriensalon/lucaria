@@ -16,6 +16,7 @@ namespace ecs {
         collider_component& operator=(const collider_component& other) = delete;
         collider_component(collider_component&& other) = default;
         collider_component& operator=(collider_component&& other) = default;
+        ~collider_component();
 
         collider_component& use_shape(shape& from);
         collider_component& use_shape(fetched<shape>& from);

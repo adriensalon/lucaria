@@ -144,7 +144,7 @@ mesh& mesh::operator=(mesh&& other)
 mesh::~mesh()
 {
     if (_is_owning) {
-        glDeleteBuffers(1, &_array_handle);
+        glDeleteVertexArrays(1, &_array_handle);
         glDeleteBuffers(1, &_elements_handle);
         for (const std::pair<const mesh_attribute, glm::uint>& _pair : _attribute_handles) {
             glDeleteBuffers(1, &_pair.second);

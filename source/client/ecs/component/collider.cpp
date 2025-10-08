@@ -11,6 +11,13 @@ namespace detail {
 
 namespace ecs {
 
+    collider_component::~collider_component()
+    {
+        if (_is_added) {
+            detail::dynamics_world->removeRigidBody(_rigidbody.get());
+        }
+    }
+
     collider_component& collider_component::use_shape(shape& from)
     {
         _shape.emplace(from);

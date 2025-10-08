@@ -182,6 +182,13 @@ namespace ecs {
         return *this;
     }
 
+    
+    rigidbody_component<rigidbody_kind::character>& rigidbody_component<rigidbody_kind::character>::set_teleporting()
+    {
+        _pending_teleport = true;
+        return *this;
+    }
+
     rigidbody_component<rigidbody_kind::character>& rigidbody_component<rigidbody_kind::character>::set_mass(const glm::float32 kilograms)
     {
         _mass = kilograms;
