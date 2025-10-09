@@ -59,6 +59,8 @@ texture::texture(const image& from)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     const GLsizei _pixels_count = static_cast<GLsizei>(from.data.pixels.size());
     const GLubyte* _pixels_ptr = from.data.pixels.data();
+    
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     switch (from.data.channels) {
     case 3:
         if (from.data.is_compressed_etc && get_is_etc_supported()) {
@@ -82,6 +84,7 @@ texture::texture(const image& from)
         LUCARIA_RUNTIME_ERROR("Invalid texture channels count, must be 3 or 4")
         break;
     }
+    LUCARIA_RUNTIME_OPENGL_ASSERT
 #if LUCARIA_DEBUG
     std::cout << "Created TEXTURE_2D buffer of size " << from.data.width << "x" << from.data.height << " with id " << _handle << std::endl;
 #endif

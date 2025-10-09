@@ -223,7 +223,7 @@ viewport& viewport::operator=(viewport&& other)
 viewport::~viewport()
 {
     if (_is_owning) {
-        glDeleteBuffers(1, &_array_handle);
+        glDeleteVertexArrays(1, &_array_handle);
         glDeleteBuffers(1, &_elements_handle);
         glDeleteBuffers(1, &_positions_handle);
         glDeleteBuffers(1, &_texcoords_handle);

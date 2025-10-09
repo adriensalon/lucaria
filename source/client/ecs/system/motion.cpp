@@ -62,7 +62,7 @@ namespace detail {
                     ecs::animation_controller& _controller = _pair.second;
                     if (_controller._is_playing) {
                         _controller._last_time_ratio = _controller._time_ratio;
-                        _controller._time_ratio += static_cast<float>(get_time_delta()); // * 0.1f; // c'est bien le temps qu'il faut multiplier par le weight des fadeins
+                        _controller._time_ratio += _controller._playback_speed * static_cast<float>(get_time_delta()); // * 0.1f; // c'est bien le temps qu'il faut multiplier par le weight des fadeins
                     }
                     _controller._has_looped = _controller._time_ratio > 1.f;
                     _controller._time_ratio = glm::mod(_controller._time_ratio, 1.f);
