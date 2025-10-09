@@ -225,8 +225,6 @@ fetched<mesh> fetch_mesh(const std::filesystem::path& geometry_data_path)
     });
 }
 
-#if LUCARIA_GUIZMO
-
 guizmo_mesh::guizmo_mesh(guizmo_mesh&& other)
 {
     *this = std::move(other);
@@ -246,7 +244,7 @@ guizmo_mesh& guizmo_mesh::operator=(guizmo_mesh&& other)
 guizmo_mesh::~guizmo_mesh()
 {
     if (_is_owning) {
-        glDeleteBuffers(1, &_array_handle);
+        glDeleteVertexArrays(1, &_array_handle);
         glDeleteBuffers(1, &_elements_handle);
         glDeleteBuffers(1, &_positions_handle);
     }
@@ -300,7 +298,5 @@ glm::uint guizmo_mesh::get_positions_handle() const
 {
     return _positions_handle;
 }
-
-#endif
 
 }

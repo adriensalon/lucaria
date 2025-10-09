@@ -49,6 +49,8 @@ namespace ecs {
         friend struct detail::motion_system;
         friend struct detail::mixer_system;
         friend struct detail::rendering_system;
+
+        void apply_delta_to_children(const glm::mat4& delta);
     };
 
 }

@@ -130,7 +130,6 @@ namespace detail {
     void motion_system::apply_motion_tracks()
     {
         detail::each_scene([](entt::registry& scene) {
-            // with no character
             scene.view<const ecs::animator_component, ecs::transform_component>(entt::exclude<ecs::character_rigidbody_component>).each([](const ecs::animator_component& animator, ecs::transform_component& transform) {
                 for (const std::pair<const std::string, fetched_container<motion_track>>& _pair : animator._motion_tracks) {
 
@@ -153,7 +152,9 @@ namespace detail {
                     }
                 }
             });
+        });
 
+        detail::each_scene([](entt::registry& scene) {
             // characters
             scene.view<const ecs::animator_component, ecs::transform_component, ecs::character_rigidbody_component>().each([](const ecs::animator_component& animator, ecs::transform_component& transform, ecs::character_rigidbody_component& character) {
                 btRigidBody* body = character._rigidbody.get();

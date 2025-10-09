@@ -7,6 +7,15 @@
 namespace lucaria {
 namespace ecs {
 
+    void transform_component::apply_delta_to_children(const glm::mat4& delta)
+    {
+        for (std::reference_wrapper<transform_component>& _child_reference : _children) {
+            transform_component& _child = _child_reference.get();
+            _child._transform = delta * _child._transform;
+            _child.apply_delta_to_children(delta);
+        }
+    }
+
     transform_component& transform_component::use_parent(transform_component& transform)
     {
         transform._children.emplace_back(std::ref(*this));
@@ -21,50 +30,60 @@ namespace ecs {
 
     transform_component& transform_component::set_position_relative(const glm::vec3& value)
     {
+        const glm::mat4 _old_transform = _transform;
         _transform = glm::translate(_transform, value);
-        // apply transform to children
+        const glm::mat4 _delta_transform = _transform * glm::inverse(_old_transform);
+        apply_delta_to_children(_delta_transform);
         return *this;
     }
 
     transform_component& transform_component::set_position_warp(const glm::vec3& value)
     {
+        const glm::mat4 _old_transform = _transform;
         _transform[3] = glm::vec4(value, 1.0f);
-        // apply transform to children
+        const glm::mat4 _delta_transform = _transform * glm::inverse(_old_transform);
+        apply_delta_to_children(_delta_transform);
         return *this;
     }
 
     transform_component& transform_component::set_rotation_relative(const glm::vec3& value)
     {
+        const glm::mat4 _old_transform = _transform;
         _transform = glm::rotate(_transform, value.x, glm::vec3(1.0f, 0.0f, 0.0f));
         _transform = glm::rotate(_transform, value.y, glm::vec3(0.0f, 1.0f, 0.0f));
         _transform = glm::rotate(_transform, value.z, glm::vec3(0.0f, 0.0f, 1.0f));
-        // apply transform to children
+        const glm::mat4 _delta_transform = _transform * glm::inverse(_old_transform);
+        apply_delta_to_children(_delta_transform);
         return *this;
     }
 
     transform_component& transform_component::set_rotation_warp(const glm::vec3& value)
     {
-        glm::vec4 _position = _transform[3];
-        _transform = glm::mat4(1.0f); // Reset to identity
+        const glm::mat4 _old_transform = _transform;
+        const glm::vec4 _position = _transform[3];
+        _transform = glm::mat4(1.0f); // reset to identity
         _transform[3] = _position;
         _transform = glm::rotate(_transform, value.x, glm::vec3(1.0f, 0.0f, 0.0f));
         _transform = glm::rotate(_transform, value.y, glm::vec3(0.0f, 1.0f, 0.0f));
         _transform = glm::rotate(_transform, value.z, glm::vec3(0.0f, 0.0f, 1.0f));
-        // apply transform to children
+        const glm::mat4 _delta_transform = _transform * glm::inverse(_old_transform);
+        apply_delta_to_children(_delta_transform);
         return *this;
     }
 
     transform_component& transform_component::set_transform_relative(const glm::mat4& value)
     {
         _transform = value * _transform;
-        // apply transform to children
+        apply_delta_to_children(value);
         return *this;
     }
 
     transform_component& transform_component::set_transform_warp(const glm::mat4& value)
     {
+        const glm::mat4 _old_transform = _transform;
         _transform = value;
-        // apply transform to children
+        const glm::mat4 _delta_transform = _transform * glm::inverse(_old_transform);
+        apply_delta_to_children(_delta_transform);
         return *this;
     }
 

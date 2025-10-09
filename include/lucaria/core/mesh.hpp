@@ -62,8 +62,6 @@ private:
 /// @param data_path path to load from
 [[nodiscard]] fetched<mesh> fetch_mesh(const std::filesystem::path& geometry_data_path);
 
-#if LUCARIA_GUIZMO
-
 struct guizmo_mesh {
     LUCARIA_DELETE_DEFAULT_SEMANTICS(guizmo_mesh)
     guizmo_mesh(const guizmo_mesh& other) = delete;
@@ -97,8 +95,6 @@ private:
     glm::uint _elements_handle;
     glm::uint _positions_handle;
 };
-
-#endif
 
 namespace detail {
 

@@ -289,7 +289,7 @@ namespace detail {
             scene.view<ecs::transform_component, ecs::character_rigidbody_component>().each([](ecs::transform_component& transform, ecs::character_rigidbody_component& rigidbody) {
                 const glm::mat4 _transform = convert(rigidbody._rigidbody->getWorldTransform());
                 const glm::mat4 _center_to_feet = rigidbody._shape.value().get_center_to_feet();
-                transform._transform = _transform * _center_to_feet;
+                transform.set_transform_warp(_transform * _center_to_feet);
             });
         });
     }
