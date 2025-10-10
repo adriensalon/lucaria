@@ -46,12 +46,12 @@ lucaria::event_track_data import_event_track(const std::filesystem::path& json_p
     };
 
     lucaria::event_track_data out {};
-    out.frames_per_second = require_number("fps");
-    out.frame_start = require_number("animation_frame_start");
-    out.frame_end = require_number("animation_frame_end");
-    out.duration_seconds = require_number("animation_duration_seconds");
+    out.frames_per_second = require_number("frames_per_second");
+    out.frame_start = require_number("frame_start");
+    out.frame_end = require_number("frame_end");
+    out.duration_seconds = require_number("duration_seconds");
 
-    const Value& events = require_array("animation_events");
+    const Value& events = require_array("events");
     out.events.reserve(events.Size());
 
     for (const Value& e : events.GetArray()) {
@@ -73,7 +73,7 @@ lucaria::event_track_data import_event_track(const std::filesystem::path& json_p
         ev.name = req_str(e, "name");
         ev.frame = req_num(e, "frame");
         ev.time = req_num(e, "time");
-        ev.time_normalized = req_num(e, "t_normalized");
+        ev.time_normalized = req_num(e, "time_normalized");
 
         out.events.push_back(std::move(ev));
     }
