@@ -24,7 +24,7 @@ if(EMSCRIPTEN)
         -g \
         --shell-file ${LUCARIA_HTML_SHELL} \
         -s LLD_REPORT_UNDEFINED \
-        -s ALLOW_MEMORY_GROWTH=0\
+        -s ALLOW_MEMORY_GROWTH=1\
         -sINITIAL_MEMORY=671088640 \
         -sMALLOC=emmalloc\
         -s MAX_WEBGL_VERSION=2 \

@@ -6,6 +6,8 @@ glm::float32 fadein_weight::compute_weight(const glm::float32 cursor)
 {
     if (cursor >= length) {
         return 1.f;
+    } else if (cursor < 0.f) {
+        return 0.f;
     }
     return glm::clamp(0.5f * (1.f - glm::cos(glm::pi<glm::float32>() * cursor / length)), 0.0f, 1.0f);
 }
