@@ -37,17 +37,20 @@ namespace ecs {
         animation_controller& fade_out(const float duration = 0.1f); // trigger once then disappear
         animation_controller& weight(const float ratio);
 
+        animation_controller& set_on_event(const std::string& name, const std::function<void()>& callback);
+
     private:
         bool _is_playing = false;
         bool _is_looping = true;
         float _playback_speed = 1.f;
-        float _weight = 0.1f;
+        float _weight = 1.f;
         float _computed_weight = 1.f;
         float _time_ratio = 0.f;
         std::optional<std::pair<float, float>> _fade_in_time_and_duration = std::nullopt;
         std::optional<std::pair<float, float>> _fade_out_time_and_duration = std::nullopt;
         float _last_time_ratio = 0.f;
         bool _has_looped = false;
+        std::unordered_map<std::string, std::function<void()>> _event_callbacks = {};
         friend struct detail::motion_system;
     };
 
@@ -62,6 +65,8 @@ namespace ecs {
         animator_component& use_animation(const std::string name, fetched<animation>& from);
         animator_component& use_motion_track(const std::string name, motion_track& from);
         animator_component& use_motion_track(const std::string name, fetched<motion_track>& from);
+        animator_component& use_event_track(const std::string name, event_track& from);
+        animator_component& use_event_track(const std::string name, fetched<event_track>& from);
         animator_component& use_skeleton(skeleton& from);
         animator_component& use_skeleton(fetched<skeleton>& from);
         // animator_component& use_inverse_kinematics_chain(const std::string name, const std::string& start, const std::string& end);
@@ -74,6 +79,7 @@ namespace ecs {
         detail::fetched_container<skeleton> _skeleton = {};
         std::unordered_map<std::string, detail::fetched_container<animation>> _animations = {};
         std::unordered_map<std::string, detail::fetched_container<motion_track>> _motion_tracks = {};
+        std::unordered_map<std::string, detail::fetched_container<event_track>> _event_tracks = {};
         ozz::vector<ozz::math::SoaTransform> _blended_local_transforms = {};
         ozz::vector<ozz::math::Float4x4> _model_transforms = {};
         std::unordered_map<std::string, std::vector<std::reference_wrapper<transform_component>>> _children_transforms = {};
@@ -88,4 +94,3 @@ namespace ecs {
 
 }
 }
-

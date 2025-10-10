@@ -66,8 +66,40 @@ namespace detail {
                     }
                     _controller._has_looped = _controller._time_ratio > 1.f;
                     _controller._time_ratio = glm::mod(_controller._time_ratio, 1.f);
-                    _controller._computed_weight = 1.f;
-                    // _controller._computed_weight = _controller._weight; // add fade in and fade out
+                    _controller._computed_weight = _controller._weight; // add fade in and fade out
+
+                    // if we passed an event trigger
+                    if (_controller._is_playing && animator._event_tracks[_pair.first].has_value()) {
+                        const float last = _controller._last_time_ratio; // in [0,1)
+                        const float curr = _controller._time_ratio; // in [0,1)
+
+                        // crossing test: open-left / closed-right interval (last, curr], with wrap
+                        auto crossed = [&](float t) -> bool {
+                            // assume t is already in [0,1]
+                            if (last <= curr) {
+                                return (last < t) && (t <= curr);
+                            } else {
+                                // wrapped: (last,1] U (0,curr]
+                                return (last < t) || (t <= curr);
+                            }
+                        };
+
+                        // get events from the controller's fetched event track
+                        const lucaria::event_track& track = animator._event_tracks[_pair.first].value(); // event_track&
+                        const std::vector<lucaria::event_data>& events = track.data.events; // std::vector<event_data>
+
+                        for (const auto& ev : events) {
+                            const float t = glm::clamp(ev.time_normalized, 0.f, 1.f);
+                            if (!crossed(t))
+                                continue;
+
+                            // call registered callback if any
+                            if (auto it = _controller._event_callbacks.find(ev.name);
+                                it != _controller._event_callbacks.end() && it->second) {
+                                it->second();
+                            }
+                        }
+                    }
                 }
             });
         });

@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "import/assimp.hpp"
+#include "import/json.hpp"
 #include "import/stb.hpp"
 #include "import/text.hpp"
 
@@ -284,6 +285,9 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
 
     } else if (_extension == ".wav" || _extension == ".aiff") {
         execute_oggenc(oggenc_executable, input_file, output_file.parent_path());
+
+    } else if (_extension == ".evtt") {
+        export_binary(import_event_track(input_file), output_file);
 
     } else {
         std::cout << "Invalid input file with extension " << _extension << std::endl;

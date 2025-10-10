@@ -1,5 +1,8 @@
+#include <cereal/archives/json.hpp>
+#include <cereal/archives/portable_binary.hpp>
 #include <ozz/base/io/archive.h>
 #include <ozz/base/memory/allocator.h>
+
 
 #include <lucaria/core/animation.hpp>
 #include <lucaria/core/error.hpp>
@@ -34,6 +37,20 @@ namespace {
         _ozz_archive >> rotation_handle;
 #if LUCARIA_DEBUG
         std::cout << "Loaded motion track with position and rotation" << std::endl;
+#endif
+    }
+
+    static void load_event_track_data_from_bytes(event_track_data& data, const std::vector<char>& data_bytes)
+    {
+        detail::bytes_stream _stream(data_bytes);
+#if LUCARIA_JSON
+        cereal::JSONInputArchive _archive(_stream);
+#else
+        cereal::PortableBinaryInputArchive _archive(_stream);
+#endif
+        _archive(data);
+#if LUCARIA_DEBUG
+        std::cout << "Loaded event track" << std::endl;
 #endif
     }
 }
@@ -116,6 +133,33 @@ fetched<motion_track> fetch_motion_track(const std::filesystem::path& data_path)
 
     // create motion track on worker thread is ok
     return fetched<motion_track>(_promise->get_future());
+}
+
+// event track
+
+event_track::event_track(const std::vector<char>& data_bytes)
+{
+    load_event_track_data_from_bytes(data, data_bytes);
+}
+
+event_track::event_track(const std::filesystem::path& data_path)
+{
+    detail::load_bytes(data_path, [this](const std::vector<char>& _data_bytes) {
+        load_event_track_data_from_bytes(data, _data_bytes);
+    });
+}
+
+fetched<event_track> fetch_event_track(const std::filesystem::path& data_path)
+{
+    std::shared_ptr<std::promise<event_track>> _promise = std::make_shared<std::promise<event_track>>();
+
+    detail::fetch_bytes(data_path, [_promise](const std::vector<char>& _data_bytes) {
+        event_track _event_track(_data_bytes);
+        _promise->set_value(std::move(_event_track));
+    });
+
+    // create event track on worker thread is ok
+    return fetched<event_track>(_promise->get_future());
 }
 
 }

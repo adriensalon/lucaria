@@ -62,6 +62,12 @@ namespace ecs {
     // animation_controller& fade_out(const float duration = 0.1f); // trigger once then disappear
     // animation_controller& weight(const float ratio);
 
+    animation_controller& animation_controller::set_on_event(const std::string& name, const std::function<void()>& callback)
+    {
+        _event_callbacks[name] = callback;
+        return *this;
+    }
+
     // animator
 
     animator_component& animator_component::use_animation(const std::string name, animation& from)
@@ -86,7 +92,6 @@ namespace ecs {
     animator_component& animator_component::use_animation(const std::string name, fetched<animation>& from)
     {
         _animations[name].emplace(from, [this, name]() {
-
             if (_skeleton.has_value()) {
 #if LUCARIA_DEBUG
                 const int _animation_tracks = _animations[name].value().get_handle().num_tracks();
@@ -123,6 +128,26 @@ namespace ecs {
         return *this;
     }
 
+    animator_component& animator_component::use_event_track(const std::string name, event_track& from)
+    {
+        if (_animations.find(name) == _animations.end()) {
+            LUCARIA_RUNTIME_ERROR("Impossible to emplace event track because animation does not exist with this name")
+        }
+
+        _event_tracks[name].emplace(from);
+        return *this;
+    }
+
+    animator_component& animator_component::use_event_track(const std::string name, fetched<event_track>& from)
+    {
+        if (_animations.find(name) == _animations.end()) {
+            LUCARIA_RUNTIME_ERROR("Impossible to emplace event track because animation does not exist with this name")
+        }
+
+        _event_tracks[name].emplace(from);
+        return *this;
+    }
+
     animator_component& animator_component::use_skeleton(skeleton& from)
     {
         _skeleton.emplace(from);
@@ -151,7 +176,6 @@ namespace ecs {
     animator_component& animator_component::use_skeleton(fetched<skeleton>& from)
     {
         _skeleton.emplace(from, [this]() {
-
             for (const std::pair<const std::string, detail::fetched_container<animation>>& _pair : _animations) {
                 if (_pair.second.has_value()) {
 #if LUCARIA_DEBUG
@@ -191,7 +215,7 @@ namespace ecs {
                 }
             }
         }
-        
+
         return glm::mat4(1.f);
     }
 
