@@ -143,18 +143,31 @@ namespace detail {
 
     void dynamics_system::step_simulation()
     {
+        // update collider transforms
         detail::each_scene([&](entt::registry& scene) {
-            scene.view<ecs::collider_component>().each([](ecs::collider_component& collider) {
-                collider._shape.has_value(); // we only collect fetching shapes
+            scene.view<ecs::collider_component>(entt::exclude<ecs::transform_component>).each([](ecs::collider_component& collider) {
+                collider._shape.has_value(); // colliders can have no transform
             });
+            scene.view<ecs::collider_component, ecs::transform_component>().each([](ecs::collider_component& collider, ecs::transform_component& transform) {
+                if (collider._shape.has_value()) {
+                    const btTransform _transform = convert_bullet(transform._transform);
+                    collider._rigidbody->setWorldTransform(_transform);
+                }
+            });
+        });
 
-            scene.view<ecs::transform_component, ecs::kinematic_rigidbody_component>().each([](ecs::transform_component& transform, ecs::kinematic_rigidbody_component& rigidbody) {
+        // update kinematic rigidbody transforms
+        detail::each_scene([&](entt::registry& scene) {
+            scene.view<ecs::kinematic_rigidbody_component, ecs::transform_component>().each([](ecs::kinematic_rigidbody_component& rigidbody, ecs::transform_component& transform) {
                 if (rigidbody._shape.has_value()) {
-                    const btTransform _transform = convert_bullet(transform._transform); // not translating along +Y
+                    const btTransform _transform = convert_bullet(transform._transform);
                     rigidbody._ghost->setWorldTransform(_transform);
                 }
             });
+        });
 
+        // apply dynamic rigidbody forces
+        detail::each_scene([&](entt::registry& scene) {
             scene.view<ecs::rigidbody_component<ecs::rigidbody_kind::character>>().each([&](ecs::rigidbody_component<ecs::rigidbody_kind::character>& ch) {
                 btRigidBody* body = ch._rigidbody.get();
                 if (!body)
