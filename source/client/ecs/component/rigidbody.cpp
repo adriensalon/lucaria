@@ -255,5 +255,17 @@ namespace ecs {
         return *this;
     }
 
+    
+    glm::vec3 rigidbody_component<rigidbody_kind::character>::get_translation_speed()
+    {
+        return _translation_speed;
+    }
+
+    glm::vec3 rigidbody_component<rigidbody_kind::character>::get_rotation_speed()
+    {
+        return _rotation_speed;
+    }
+
+
 }
 }

@@ -2,8 +2,9 @@
 #include <cereal/archives/portable_binary.hpp>
 #include <ozz/base/io/archive.h>
 #include <ozz/base/memory/allocator.h>
+#include <ozz/animation/runtime/track_sampling_job.h>
 
-
+#include <lucaria/core/math.hpp>
 #include <lucaria/core/animation.hpp>
 #include <lucaria/core/error.hpp>
 
@@ -120,6 +121,29 @@ ozz::animation::QuaternionTrack& motion_track::get_rotation_handle()
 const ozz::animation::QuaternionTrack& motion_track::get_rotation_handle() const
 {
     return _rotation_handle;
+}
+
+glm::vec3 motion_track::get_total_translation() const
+{
+    ozz::math::Float3 t0_ozz, t1_ozz;
+
+    {
+        ozz::animation::Float3TrackSamplingJob job {};
+        job.track = &_translation_handle;
+        job.ratio = 0.f; // start
+        job.result = &t0_ozz;
+        job.Run();
+    }
+
+    {
+        ozz::animation::Float3TrackSamplingJob job {};
+        job.track = &_translation_handle;
+        job.ratio = 1.f; // end
+        job.result = &t1_ozz;
+        job.Run();
+    }
+
+    return detail::reinterpret(t1_ozz - t0_ozz); 
 }
 
 fetched<motion_track> fetch_motion_track(const std::filesystem::path& data_path)

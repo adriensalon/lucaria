@@ -106,6 +106,9 @@ namespace ecs {
         rigidbody_component& set_pd_xy(glm::float32 Kp, glm::float32 Kd, glm::float32 Fmax);
         rigidbody_component& set_pd_rot(glm::float32 Kp, glm::float32 Kd, glm::float32 Tmax);
 
+        [[nodiscard]] glm::vec3 get_translation_speed();
+        [[nodiscard]] glm::vec3 get_rotation_speed();
+
     private:
         // bullet
         bool _is_added = false;
@@ -115,6 +118,8 @@ namespace ecs {
         std::unique_ptr<btRigidBody> _rigidbody = nullptr;
         std::int16_t _group = detail::bulletgroupID_dynamic_rigidbody;
         std::int16_t _mask = detail::bulletgroupID_collider_wall;
+        glm::vec3 _translation_speed = {};
+        glm::vec3 _rotation_speed = {};
 
         // tuning
         float _mass = 70.f;

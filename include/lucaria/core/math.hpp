@@ -9,6 +9,13 @@ namespace lucaria {
 namespace detail {
 
 [[nodiscard]] glm::mat4 convert(const btTransform& transform);
+
+// vec3 -> glm
+[[nodiscard]] glm::vec3& reinterpret(btVector3& vector);
+[[nodiscard]] const glm::vec3& reinterpret(const btVector3& vector);
+[[nodiscard]] glm::vec3& reinterpret(ozz::math::Float3& vector);
+[[nodiscard]] const glm::vec3& reinterpret(const ozz::math::Float3& vector);
+
 [[nodiscard]] glm::mat4& reinterpret(ozz::math::Float4x4& matrix);
 [[nodiscard]] const glm::mat4& reinterpret(const ozz::math::Float4x4& matrix);
 

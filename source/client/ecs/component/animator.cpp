@@ -219,5 +219,14 @@ namespace ecs {
         return glm::mat4(1.f);
     }
 
+    glm::vec3 animator_component::get_translation_speed(const std::string& name)
+    {
+        if (_animations[name].has_value() && _motion_tracks[name].has_value()) {
+            const glm::float32 _duration = _animations[name].value().get_handle().duration() / _controllers[name]._playback_speed;
+            return _motion_tracks[name].value().get_total_translation() / _duration;
+        }
+        return glm::vec3(777);
+    }
+
 }
 }

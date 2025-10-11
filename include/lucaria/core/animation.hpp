@@ -52,6 +52,7 @@ struct motion_track {
     [[nodiscard]] const ozz::animation::Float3Track& get_translation_handle() const;
     [[nodiscard]] ozz::animation::QuaternionTrack& get_rotation_handle();
     [[nodiscard]] const ozz::animation::QuaternionTrack& get_rotation_handle() const;
+    [[nodiscard]] glm::vec3 get_total_translation() const;
 
 private:
     ozz::animation::Float3Track _translation_handle;

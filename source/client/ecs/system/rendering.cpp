@@ -401,7 +401,7 @@ namespace detail {
             // Write back to transform (preserve translation; assuming unit scale)
             glm::mat4 followW1 = glm::mat4_cast(qFollow1);
             followW1[3] = followW0[3];
-            _follow->_transform = followW1;
+            _follow->set_transform_warp(followW1);
 
             // ---- RECOMPUTE after applying yaw to the model
             const glm::mat4 followW = _follow->_transform;
@@ -424,9 +424,9 @@ namespace detail {
             const glm::vec3 boneWorld = glm::vec3((followW * boneLocal)[3]);
 
             // Boom offset: behind character along ground heading
-            const float boomDist = -0.23f; // distance behind
+            const float boomDist = show_physics_guizmos ? 1.f : -0.23f; // distance behind
             // const float boomDist = 1.53f; // distance behind
-            const float camHeight = 0.0f; // tweak if needed
+            const float camHeight = show_physics_guizmos ? 1.f : 0.0f; // tweak if needed
 
             player_position = boneWorld - groundF * boomDist + worldUp * camHeight;
             camera_view = glm::lookAt(player_position, player_position + camForward, camUp);

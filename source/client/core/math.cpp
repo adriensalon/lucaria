@@ -47,6 +47,26 @@ namespace detail {
         return result;
     }
 
+    glm::vec3& reinterpret(btVector3& vector)
+    {
+        return reinterpret_impl<btVector3, glm::vec3>(vector);
+    }
+
+    const glm::vec3& reinterpret(const btVector3& vector)
+    {
+        return reinterpret_impl<btVector3, glm::vec3>(vector);
+    }
+    
+    glm::vec3& reinterpret(ozz::math::Float3& vector)
+    {        
+        return reinterpret_impl<ozz::math::Float3, glm::vec3>(vector);
+    }
+
+    const glm::vec3& reinterpret(const ozz::math::Float3& vector)
+    {
+        return reinterpret_impl<ozz::math::Float3, glm::vec3>(vector);
+    }
+
     glm::mat4& reinterpret(ozz::math::Float4x4& matrix)
     {
         return reinterpret_impl<ozz::math::Float4x4, glm::mat4>(matrix);

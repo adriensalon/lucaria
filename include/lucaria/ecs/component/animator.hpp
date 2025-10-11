@@ -52,6 +52,7 @@ namespace ecs {
         bool _has_looped = false;
         std::unordered_map<std::string, std::function<void()>> _event_callbacks = {};
         friend struct detail::motion_system;
+        friend struct animator_component;
     };
 
     struct animator_component {
@@ -74,6 +75,7 @@ namespace ecs {
 
         [[nodiscard]] animation_controller& get_controller(const std::string& name);
         [[nodiscard]] glm::mat4 get_bone_transform(const std::string& bone);
+        [[nodiscard]] glm::vec3 get_translation_speed(const std::string& name);
 
     private:
         detail::fetched_container<skeleton> _skeleton = {};

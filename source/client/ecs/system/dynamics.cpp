@@ -70,19 +70,40 @@ namespace {
         return false;
     }
 
-    static bool get_collision(ecs::kinematic_collision& collision, const btPersistentManifold* manifold)
+    static std::vector<ecs::kinematic_collision> get_collisions(const btPersistentManifold* manifold, btGhostObject* ghost)
     {
+        std::vector<ecs::kinematic_collision> _collisions;
         for (int _p = 0; _p < manifold->getNumContacts(); ++_p) {
             const btManifoldPoint& _point = manifold->getContactPoint(_p);
             if (_point.getDistance() > 0.0f) {
                 continue;
             }
+
+            // pick point/normal on the OTHER object (mesh), correctly oriented:
+            const bool ghostIsA = (manifold->getBody0() == ghost);
+            const btVector3 posOther = ghostIsA ? _point.getPositionWorldOnB() : _point.getPositionWorldOnA();
+            const btVector3 nBA = _point.m_normalWorldOnB.normalized(); // B->A
+            const btVector3 nOther = ghostIsA ? -nBA : nBA; // outward from the mesh
+
+            // const float upDot = btFabs(nOther.dot(btVector3(0, 1, 0)));
+            // if (upDot < 0.35f && !gotWall) { // vertical-ish = wall
+            //     rigidbody._wall_collisions.push_back({ _point.getDistance(),
+            //         { posOther.x(), posOther.y(), posOther.z() },
+            //         { nOther.x(), nOther.y(), nOther.z() } });
+            //     gotWall = true;
+            // } else if (upDot >= 0.35f && !gotRoof) { // horizontal-ish = roof
+            //     rigidbody._layer_collisions[kinematic_layer::roof].push_back({ _point.getDistance(),
+            //         { posOther.x(), posOther.y(), posOther.z() },
+            //         { nOther.x(), nOther.y(), nOther.z() } });
+            //     gotRoof = true;
+            // }
+
+            ecs::kinematic_collision& collision = _collisions.emplace_back();
             collision.distance = _point.getDistance();
-            collision.position = glm::vec3(_point.getPositionWorldOnA().x(), _point.getPositionWorldOnA().y(), _point.getPositionWorldOnA().z());
-            collision.normal = glm::vec3(_point.m_normalWorldOnB.x(), _point.m_normalWorldOnB.y(), _point.m_normalWorldOnB.z());
-            return true;
+            collision.position = detail::reinterpret(posOther);
+            collision.normal = detail::reinterpret(nOther);
         }
-        return false;
+        return _collisions;
     }
 
     static void compute_collide_wall(const ecs::kinematic_collision& collision, glm::mat4& transform)
@@ -140,6 +161,10 @@ namespace ecs {
 }
 
 namespace detail {
+
+#if LUCARIA_GUIZMO
+    extern void draw_guizmo_line(const btVector3& from, const btVector3& to, const btVector3& color);
+#endif
 
     void dynamics_system::step_simulation()
     {
@@ -241,7 +266,7 @@ namespace detail {
     void dynamics_system::compute_collisions()
     {
         // kinematic
-        ecs::kinematic_collision _collision;
+        // ecs::kinematic_collision _collision;
         btManifoldArray _manifold_array;
         detail::each_scene([&](entt::registry& scene) {
             scene.view<ecs::transform_component, ecs::kinematic_rigidbody_component>().each([&](ecs::transform_component& transform, ecs::kinematic_rigidbody_component& rigidbody) {
@@ -274,14 +299,11 @@ namespace detail {
                         if (!get_other_group(_other_group, _other_object)) {
                             continue;
                         }
-                        if (!get_collision(_collision, _manifold)) {
-                            continue;
-                        }
                         if (_other_group == bulletgroupID_collider_wall) {
-                            compute_collide_wall(_collision, transform._transform);
-                            rigidbody._wall_collisions.emplace_back(_collision);
+                            // compute_collide_wall(_collision, transform._transform);
+                            rigidbody._wall_collisions = get_collisions(_manifold, rigidbody._ghost.get());
                         } else {
-                            rigidbody._layer_collisions[static_cast<kinematic_layer>(_other_group)].emplace_back(_collision);
+                            rigidbody._layer_collisions[static_cast<kinematic_layer>(_other_group)] = get_collisions(_manifold, rigidbody._ghost.get());
                         }
                     }
                 }
@@ -303,6 +325,8 @@ namespace detail {
                 const glm::mat4 _transform = convert(rigidbody._rigidbody->getWorldTransform());
                 const glm::mat4 _center_to_feet = rigidbody._shape.value().get_center_to_feet();
                 transform.set_transform_warp(_transform * _center_to_feet);
+                rigidbody._translation_speed = reinterpret(rigidbody._rigidbody->getLinearVelocity());
+                rigidbody._rotation_speed = reinterpret(rigidbody._rigidbody->getAngularVelocity());
             });
         });
     }
@@ -312,7 +336,16 @@ namespace detail {
 #if LUCARIA_GUIZMO
         detail::dynamics_world->debugDrawWorld();
 #endif
-    }
 
+        detail::each_scene([&](entt::registry& scene) {
+            scene.view<ecs::transform_component, ecs::kinematic_rigidbody_component>().each([&](ecs::transform_component& transform, ecs::kinematic_rigidbody_component& rigidbody) {
+                for (const lucaria::ecs::kinematic_collision& _collision : rigidbody._wall_collisions) {
+                    const glm::vec3 _from = _collision.position;
+                    const glm::vec3 _to = _collision.position + 0.2f * glm::normalize(_collision.normal);
+                    draw_guizmo_line(reinterpret_bullet(_from), reinterpret_bullet(_to), btVector3(1, 0, 1)); // purple
+                }
+            });
+        });
+    }
 }
 }
