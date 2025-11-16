@@ -54,7 +54,7 @@ struct ImGui_ImplOpenGL3_Data {
     ImGui_ImplOpenGL3_Data() { memset((void*)this, 0, sizeof(*this)); }
 };
 
-namespace detail {
+namespace {
 
     static bool setup_platform();
     static bool setup_opengl();
@@ -128,10 +128,9 @@ namespace detail {
     static glm::vec2 mouse_position = { 0.f, 0.f };
     static glm::vec2 mouse_position_delta = { 0.f, 0.f };
     static glm::vec2 accumulated_mouse_position_delta = { 0.f, 0.f };
-    static glm::float64 time_delta = 0.f; // seconds
+    static glm::float64 time_delta_seconds = 0.f;
     static std::function<void()> start_callback = nullptr;
     static std::function<void()> update_callback = nullptr;
-    // static std::vector<std::function<void()>> on_audio_locked_callbacks = {};
 
     static bool is_etc_supported = false;
     static bool is_s3tc_supported = false;
@@ -227,12 +226,12 @@ namespace detail {
     {
         const keyboard_key _key(emscripten_keyboard_mappings[std::string(event->key)]);
         if (event_type == EMSCRIPTEN_EVENT_KEYDOWN) {
-            detail::keys[_key] = true;
-            detail::keys_changed.emplace_back(_key);
+            keys[_key] = true;
+            keys_changed.emplace_back(_key);
             process_lock();
         } else if (event_type == EMSCRIPTEN_EVENT_KEYUP) {
-            detail::keys[_key] = false;
-            detail::keys_changed.emplace_back(_key);
+            keys[_key] = false;
+            keys_changed.emplace_back(_key);
         }
         return 0;
     }
@@ -240,21 +239,21 @@ namespace detail {
     EM_BOOL mouse_callback(int event_type, const EmscriptenMouseEvent* event, void* user_data)
     {
         if (event_type == EMSCRIPTEN_EVENT_MOUSEMOVE) {
-            detail::accumulated_mouse_position_delta += glm::vec2((float)event->movementX, (float)event->movementY);
+            accumulated_mouse_position_delta += glm::vec2(event->movementX, event->movementY);
             // std::cout << "x = " << event->screenX << ", y = " << event->screenY << "ok" << std::endl;
-            // detail::mouse_position_delta = glm::vec2((float)event->clientX, (float)event->clientY) - detail::mouse_position;
-            detail::mouse_position = glm::vec2((float)event->clientX, (float)event->clientY);
+            // detail::mouse_position_delta = glm::vec2(event->clientX, event->clientY) - detail::mouse_position;
+            mouse_position = glm::vec2(event->clientX, event->clientY);
             ImGui::GetIO().AddMousePosEvent(mouse_position.x, mouse_position.y);
         } else if (event_type == EMSCRIPTEN_EVENT_MOUSEDOWN) {
             glm::uint _button = event->button;
-            detail::buttons[_button] = true;
-            detail::buttons_changed.emplace_back(_button);
+            buttons[_button] = true;
+            buttons_changed.emplace_back(_button);
             ImGui::GetIO().AddMouseButtonEvent(_button, true);
             process_lock();
         } else if (event_type == EMSCRIPTEN_EVENT_MOUSEUP) {
             glm::uint _button = event->button;
-            detail::buttons[_button] = false;
-            detail::buttons_changed.emplace_back(_button);
+            buttons[_button] = false;
+            buttons_changed.emplace_back(_button);
             ImGui::GetIO().AddMouseButtonEvent(_button, false);
         } else if (event_type == EMSCRIPTEN_EVENT_CLICK) {
         } else if (event_type == EMSCRIPTEN_EVENT_MOUSEOVER) {
@@ -266,13 +265,13 @@ namespace detail {
     EM_BOOL touch_callback(int event_type, const EmscriptenTouchEvent* event, void* user_data)
     {
         const EmscriptenTouchPoint* _touch_point = &(event->touches[0]);
-        glm::vec2 _touch_move_position = glm::vec2((float)_touch_point->clientX, (float)_touch_point->clientY);
+        glm::vec2 _touch_move_position = glm::vec2(_touch_point->clientX, _touch_point->clientY);
         if (event_type == EMSCRIPTEN_EVENT_TOUCHSTART) {
             process_lock();
-            detail::mouse_position_delta = { 0, 0 };
+            mouse_position_delta = { 0, 0 };
         } else if (event_type == EMSCRIPTEN_EVENT_TOUCHMOVE)
-            detail::mouse_position_delta = _touch_move_position - detail::mouse_position;
-        detail::mouse_position = _touch_move_position;
+            mouse_position_delta = _touch_move_position - mouse_position;
+        mouse_position = _touch_move_position;
         return EM_TRUE; // we use preventDefault() for touch callbacks (see Safari on iPad)
     }
 
@@ -339,14 +338,14 @@ namespace detail {
         }
     }
 
-    static void glfw_mouse_position_callback(GLFWwindow* window, double xpos, double ypos)
+    static void glfw_mouse_position_callback(GLFWwindow* window, const glm::float64 xpos, const glm::float64 ypos)
     {
-        static double _last_x, _last_y;
-        double _delta_x = xpos - _last_x;
-        double _delta_y = ypos - _last_y;
+        static glm::float64 _last_x, _last_y;
+        const glm::float64 _delta_x = xpos - _last_x;
+        const glm::float64 _delta_y = ypos - _last_y;
         _last_x = xpos;
         _last_y = ypos;
-        detail::accumulated_mouse_position_delta += glm::vec2((float)_delta_x, (float)_delta_y);
+        accumulated_mouse_position_delta += glm::vec2(_delta_x, _delta_y);
     }
 
     static void glfw_mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
@@ -410,8 +409,8 @@ namespace detail {
             exit(EXIT_FAILURE);
         }
 
-        for (const std::pair<int, keyboard_key> _pair : detail::glfw_keyboard_mappings) {
-            detail::keys[_pair.second] = false;
+        for (const std::pair<int, keyboard_key> _pair : glfw_keyboard_mappings) {
+            keys[_pair.second] = false;
         }
 
         glfwSetKeyCallback(glfw_window, glfw_key_callback);
@@ -448,83 +447,40 @@ namespace detail {
         if (emscripten_webgl_enable_extension(_webgl_context, "WEBGL_compressed_texture_etc")) {
             is_etc_supported = true;
 #if LUCARIA_DEBUG
-            std::cout << "Extension WEBGL_compressed_texture_etc is supported." << std::endl;
+            std::cout << "Extension WEBGL_compressed_texture_etc is supported" << std::endl;
 #endif
         }
         if (emscripten_webgl_enable_extension(_webgl_context, "WEBGL_compressed_texture_s3tc")) {
             is_s3tc_supported = true;
 #if LUCARIA_DEBUG
-            std::cout << "Extension WEBGL_compressed_texture_s3tc is supported." << std::endl;
+            std::cout << "Extension WEBGL_compressed_texture_s3tc is supported" << std::endl;
 #endif
         }
+#else
+        glm::int32 _found_extensions_count = 0;
+        glGetIntegerv(GL_NUM_EXTENSIONS, &_found_extensions_count);
+        for (glm::int32 _extension_index = 0; _extension_index < _found_extensions_count; ++_extension_index) {
+            const char* _extension_name = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, _extension_index));
+            if (std::string(_extension_name) == "GL_EXT_texture_compression_s3tc") {
+                is_s3tc_supported = true;
+#if LUCARIA_DEBUG
+                std::cout << "Extension GL_EXT_texture_compression_s3tc is supported" << std::endl;
 #endif
-
+            }
+        }
+#endif
         return true;
-    }
-
-    ImGui_ImplOpenGL3_Data* ImGui_ImplOpenGL3_GetBackendData()
-    {
-        return ImGui::GetCurrentContext() ? (ImGui_ImplOpenGL3_Data*)ImGui::GetIO().BackendRendererUserData : nullptr;
-    }
-
-    ImGuiContext* create_shared_context()
-    {
-        ImGuiContext* _context = ImGui::CreateContext(imgui_shared_font_atlas.get());
-        ImGui::SetCurrentContext(_context);
-#if !defined(__EMSCRIPTEN__)
-        static bool _must_install_callbacks = true;
-        if (_must_install_callbacks) {
-            ImGui_ImplGlfw_InitForOpenGL(glfw_window, true);
-            _must_install_callbacks = false;
-        }
-#endif
-        ImGui_ImplOpenGL3_Init("#version 300 es");
-
-        ImGui_ImplOpenGL3_DestroyFontsTexture();
-        ImGui::GetIO().Fonts->SetTexID((ImTextureID)(intptr_t)imgui_shared_font_texture);
-        ImGui::GetIO().IniFilename = nullptr;
-
-        // (Optional) if you want the backend struct to know the id too:
-        if (auto* bd = (ImGui_ImplOpenGL3_Data*)ImGui::GetIO().BackendRendererUserData)
-            bd->FontTexture = imgui_shared_font_texture;
-
-        return _context;
-    }
-
-    void reupload_shared_font_texture_RGBA32()
-    {
-        unsigned char* pixels = nullptr;
-        int w = 0, h = 0;
-        imgui_shared_font_atlas->GetTexDataAsRGBA32(&pixels, &w, &h); // builds if needed
-
-        if (imgui_shared_font_texture == 0)
-            glGenTextures(1, &imgui_shared_font_texture);
-
-        GLint last_tex = 0;
-        glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_tex);
-        glBindTexture(GL_TEXTURE_2D, imgui_shared_font_texture);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-#ifdef GL_UNPACK_ROW_LENGTH
-        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-#endif
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-        glBindTexture(GL_TEXTURE_2D, last_tex);
-
-        // Make the atlas point to the shared GL texture id
-        imgui_shared_font_atlas->SetTexID((ImTextureID)(intptr_t)imgui_shared_font_texture);
     }
 
     static void setup_imgui()
     {
         IMGUI_CHECKVERSION();
 
-        imgui_shared_font_atlas = std::make_unique<ImFontAtlas>();
-        imgui_shared_font_atlas->AddFontDefault();
+        detail::global_imgui_shared_font_atlas = std::make_unique<ImFontAtlas>();
+        detail::global_imgui_shared_font_atlas->AddFontDefault();
 
-        reupload_shared_font_texture_RGBA32();
-
-        imgui_screen_context = create_shared_context();
+        detail::reupload_shared_font_texture_RGBA32();
+        detail::global_imgui_screen_context = detail::create_shared_context();
 
         ImGui::GetIO().IniFilename = NULL;
         ImGui::StyleColorsLight();
@@ -559,27 +515,25 @@ namespace detail {
         return true;
     }
 
-    // static void destroy_openal()
-    // {
-    //     ALCcontext* _webaudio_context = alcGetCurrentContext();
-    //     ALCdevice* _webaudio_device = alcGetContextsDevice(_webaudio_context);
-    //     alcMakeContextCurrent(nullptr);
-    //     alcDestroyContext(_webaudio_context);
-    //     alcCloseDevice(_webaudio_device);
-    // }
-
-    void update()
+    static void destroy_openal()
     {
+        ALCcontext* _webaudio_context = alcGetCurrentContext();
+        ALCdevice* _webaudio_device = alcGetContextsDevice(_webaudio_context);
+        alcMakeContextCurrent(nullptr);
+        alcDestroyContext(_webaudio_context);
+        alcCloseDevice(_webaudio_device);
+    }
 
+    void update_loop()
+    {
 #if defined(__EMSCRIPTEN__)
-        // emscripten_set_main_loop_timing(EM_TIMING_RAF, 1);
-        static double _last_render_time = 0;
-        double _render_time = emscripten_get_now();
-        detail::time_delta = (_render_time - _last_render_time) / 1000.f;
+        static glm::float64 _last_render_time = 0;
+        const glm::float64 _render_time = emscripten_get_now();
+        time_delta_seconds = (_render_time - _last_render_time) / 1000.f;
 #else
         static std::chrono::high_resolution_clock::time_point _last_render_time = std::chrono::high_resolution_clock::now();
-        std::chrono::steady_clock::time_point _render_time = std::chrono::high_resolution_clock::now();
-        detail::time_delta = std::chrono::duration<double>(_render_time - _last_render_time).count();
+        const std::chrono::steady_clock::time_point _render_time = std::chrono::high_resolution_clock::now();
+        time_delta_seconds = std::chrono::duration<glm::float64>(_render_time - _last_render_time).count();
 #endif
 
         int _screen_width, _screen_height;
@@ -589,176 +543,159 @@ namespace detail {
 #else
         glfwGetFramebufferSize(glfw_window, &_screen_width, &_screen_height);
 #endif
-        detail::screen_size = { _screen_width, _screen_height };
-        if (detail::screen_size == glm::vec2(0.f, 0.f)) {
+        screen_size = { _screen_width, _screen_height };
+        if (screen_size == glm::vec2(0, 0)) {
             return;
         }
 
-        static glm::vec2 _last_accum_pos_delta(0.f, 0.f);
-        detail::mouse_position_delta = detail::accumulated_mouse_position_delta - _last_accum_pos_delta;
-        _last_accum_pos_delta = detail::accumulated_mouse_position_delta;
+        static glm::vec2 _last_accum_pos_delta = glm::vec2(0, 0);
+        mouse_position_delta = accumulated_mouse_position_delta - _last_accum_pos_delta;
+        _last_accum_pos_delta = accumulated_mouse_position_delta;
         _last_render_time = _render_time;
 
-        ImGui::SetCurrentContext(imgui_screen_context);
 #if !defined(__EMSCRIPTEN__)
         ImGui_ImplGlfw_NewFrame();
 #endif
-        ImGuiIO& io = ImGui::GetIO();
-        io.DisplaySize = ImVec2(detail::screen_size.x, detail::screen_size.y);
-
+        ImGui::GetIO().DisplaySize = ImVec2(screen_size.x, screen_size.y);
         update_mouse_lock();
-
         update_callback();
+        keys_changed.clear();
+        buttons_changed.clear();
 
-        detail::keys_changed.clear();
-        detail::buttons_changed.clear();
-
-        // graphics_assert();
+        LUCARIA_RUNTIME_OPENGL_ASSERT
         if (is_audio_locked) {
-            // audio_assert();
+            LUCARIA_RUNTIME_OPENAL_ASSERT
         }
 
 #if !defined(__EMSCRIPTEN__)
-        glfwSwapBuffers(detail::glfw_window);
-
-        ImGui::SetCurrentContext(imgui_screen_context);
+        glfwSwapBuffers(glfw_window);
         glfwPollEvents();
 #endif
     }
+}
+
+namespace detail {
 
     void run_game(const std::function<void()>& start, const std::function<void()>& update)
     {
-        detail::setup_platform();
-        detail::setup_opengl();
-        detail::setup_imgui();
-        detail::update_callback = update;
+        setup_platform();
+        setup_opengl();
+        setup_imgui();
+        update_callback = update;
 #if defined(__EMSCRIPTEN__)
         start();
-        emscripten_set_main_loop(detail::update, 0, EM_TRUE);
+        emscripten_set_main_loop(update_loop, 0, EM_TRUE);
         emscripten_set_main_loop_timing(EM_TIMING_RAF, 1);
 #else
-        detail::is_audio_locked = detail::setup_openal();
+        is_audio_locked = setup_openal();
         start();
 
-        GLint numExtensions = 0;
-        glGetIntegerv(GL_NUM_EXTENSIONS, &numExtensions);
-
-        std::cout << "Supported Extensions (Modern):" << std::endl;
-        for (GLint i = 0; i < numExtensions; ++i) {
-            const char* extension = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i));
-            std::cout << extension << std::endl;
-
-            if (std::string(extension) == "GL_EXT_texture_compression_s3tc") {
-                detail::is_s3tc_supported = true;
-            }
-        }
-
-        while (!glfwWindowShouldClose(detail::glfw_window)) {
-            detail::update();
+        while (!glfwWindowShouldClose(glfw_window)) {
+            update_loop();
         }
 
         destroy_scenes();
-        glfwDestroyWindow(detail::glfw_window);
+        glfwDestroyWindow(glfw_window);
         glfwTerminate();
 #endif
     }
 
-    void imgui_special_callback(const ImDrawList* parent_list, const ImDrawCmd* cmd)
+    ImGuiContext* create_shared_context()
     {
-        if (cmd->UserCallbackData) {
-            glm::mat4& _mvp = *static_cast<glm::mat4*>(cmd->UserCallbackData);
-            glUniformMatrix4fv(detail::gui_mvp_uniform, 1, GL_FALSE, &_mvp[0][0]);
-            delete &_mvp;
-        } else {
-            ImDrawData* _draw_data = ImGui::GetDrawData();
-            float L = _draw_data->DisplayPos.x;
-            float R = _draw_data->DisplayPos.x + _draw_data->DisplaySize.x;
-            float T = _draw_data->DisplayPos.y;
-            float B = _draw_data->DisplayPos.y + _draw_data->DisplaySize.y;
-            const float ortho_projection[4][4] = {
-                { 2.0f / (R - L), 0.0f, 0.0f, 0.0f },
-                { 0.0f, 2.0f / (T - B), 0.0f, 0.0f },
-                { 0.0f, 0.0f, -1.0f, 0.0f },
-                { (R + L) / (L - R), (T + B) / (B - T), 0.0f, 1.0f },
-            };
-            glUniformMatrix4fv(detail::gui_mvp_uniform, 1, GL_FALSE, &ortho_projection[0][0]);
+        ImGuiContext* _context = ImGui::CreateContext(global_imgui_shared_font_atlas.get());
+        ImGui::SetCurrentContext(_context);
+#if !defined(__EMSCRIPTEN__)
+        static bool _must_install_callbacks = true;
+        if (_must_install_callbacks) {
+            ImGui_ImplGlfw_InitForOpenGL(glfw_window, true);
+            _must_install_callbacks = false;
         }
+#endif
+        ImGui_ImplOpenGL3_Init("#version 300 es");
+        ImGui_ImplOpenGL3_DestroyFontsTexture();
+        ImGui::GetIO().Fonts->SetTexID((ImTextureID)(intptr_t)global_imgui_shared_font_texture);
+        ImGui::GetIO().IniFilename = nullptr;
+
+        if (ImGui_ImplOpenGL3_Data* bd = static_cast<ImGui_ImplOpenGL3_Data*>(ImGui::GetIO().BackendRendererUserData)) {
+            bd->FontTexture = global_imgui_shared_font_texture;
+        }
+
+        return _context;
     }
 
+    void reupload_shared_font_texture_RGBA32()
+    {
+        unsigned char* _pixels = nullptr;
+        int _width, _height;
+        global_imgui_shared_font_atlas->GetTexDataAsRGBA32(&_pixels, &_width, &_height);
+
+        if (global_imgui_shared_font_texture == 0) {
+            glGenTextures(1, &global_imgui_shared_font_texture);
+        }
+
+        GLint _last_texture_handle = 0;
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, &_last_texture_handle);
+        glBindTexture(GL_TEXTURE_2D, global_imgui_shared_font_texture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+#ifdef GL_UNPACK_ROW_LENGTH
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+#endif
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _width, _height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels);
+        glBindTexture(GL_TEXTURE_2D, _last_texture_handle);
+
+        global_imgui_shared_font_atlas->SetTexID((ImTextureID)(intptr_t)global_imgui_shared_font_texture);
+    }
 }
-
-// ImDrawList* get_gui_drawlist()
-// {
-//     return ImGui::GetBackgroundDrawList();
-// }
-
-// void gui_mvp(const std::optional<glm::mat4>& mvp)
-// {
-//     void* _void_mvp = nullptr;
-//     if (mvp.has_value()) {
-//         _void_mvp = new glm::mat4(mvp.value());
-//     }
-//     ImGui::GetBackgroundDrawList()->AddCallback(detail::imgui_special_callback, _void_mvp);
-// }
-
-// void on_audio_locked(const std::function<void()>& callback)
-// {
-//     if (detail::is_audio_locked) {
-//         callback();
-//     } else {
-//         detail::on_audio_locked_callbacks.emplace_back(callback);
-//     }
-// }
 
 std::unordered_map<keyboard_key, bool>& get_keys()
 {
-    return detail::keys;
+    return keys;
 }
 
 std::unordered_map<glm::uint, bool>& get_buttons()
 {
-    return detail::buttons;
+    return buttons;
 }
 
 glm::vec2 get_screen_size()
 {
-    return detail::screen_size;
+    return screen_size;
 }
 
 glm::vec2 get_mouse_position()
 {
-    return detail::mouse_position;
+    return mouse_position;
 }
 
 glm::vec2& get_mouse_position_delta()
 {
-    return detail::mouse_position_delta;
+    return mouse_position_delta;
 }
 
 glm::float64 get_time_delta()
 {
-    return detail::time_delta;
-    // return 1.0 / 60.0;
+    return time_delta_seconds;
 }
 
 bool get_is_etc2_supported()
 {
-    return detail::is_etc_supported;
+    return is_etc_supported;
 }
 
 bool get_is_s3tc_supported()
 {
-    return detail::is_s3tc_supported;
+    return is_s3tc_supported;
 }
 
 bool get_is_audio_locked()
 {
-    return detail::is_audio_locked;
+    return is_audio_locked;
 }
 
 bool get_is_mouse_locked()
 {
-    return detail::is_mouse_locked;
+    return is_mouse_locked;
 }
 
 }

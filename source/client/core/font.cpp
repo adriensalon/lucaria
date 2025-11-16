@@ -19,8 +19,8 @@ namespace {
         ImFontConfig _config;
         _config.FontDataOwnedByAtlas = true;
 
-        ImFont* _font = detail::imgui_shared_font_atlas->AddFontFromMemoryTTF(_owned_data, _data_size, font_size, &_config);
-        if (!detail::imgui_shared_font_atlas->Build()) {
+        ImFont* _font = detail::global_imgui_shared_font_atlas->AddFontFromMemoryTTF(_owned_data, _data_size, font_size, &_config);
+        if (!detail::global_imgui_shared_font_atlas->Build()) {
             LUCARIA_RUNTIME_ERROR("Failed to build ImGui font atlas")
         }
         // ImGui_ImplOpenGL3_DestroyFontsTexture();

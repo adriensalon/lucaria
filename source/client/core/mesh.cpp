@@ -3,8 +3,8 @@
 #include <cereal/archives/json.hpp>
 #include <cereal/archives/portable_binary.hpp>
 
-#include <lucaria/core/opengl.hpp>
 #include <lucaria/core/mesh.hpp>
+#include <lucaria/core/opengl.hpp>
 
 namespace lucaria {
 namespace {
@@ -225,78 +225,83 @@ fetched<mesh> fetch_mesh(const std::filesystem::path& data_path)
     });
 }
 
-guizmo_mesh::guizmo_mesh(guizmo_mesh&& other)
-{
-    *this = std::move(other);
-}
+namespace detail {
 
-guizmo_mesh& guizmo_mesh::operator=(guizmo_mesh&& other)
-{
-    _is_owning = true;
-    _size = other._size;
-    _array_handle = other._array_handle;
-    _elements_handle = other._elements_handle;
-    _positions_handle = other._positions_handle;
-    other._is_owning = false;
-    return *this;
-}
-
-guizmo_mesh::~guizmo_mesh()
-{
-    if (_is_owning) {
-        glDeleteVertexArrays(1, &_array_handle);
-        glDeleteBuffers(1, &_elements_handle);
-        glDeleteBuffers(1, &_positions_handle);
+#if LUCARIA_GUIZMO
+    guizmo_mesh::guizmo_mesh(guizmo_mesh&& other)
+    {
+        *this = std::move(other);
     }
-}
 
-guizmo_mesh::guizmo_mesh(const geometry& from)
-{
-    const std::vector<glm::uvec2> _line_indices = generate_line_indices(from.data.indices);
-    _array_handle = create_vertex_array();
-    _size = 2 * static_cast<glm::uint>(_line_indices.size());
-    _elements_handle = create_elements_buffer(_line_indices);
-    _positions_handle = create_attribute_buffer(from.data.positions);
-    _is_owning = true;
-}
+    guizmo_mesh& guizmo_mesh::operator=(guizmo_mesh&& other)
+    {
+        _is_owning = true;
+        _size = other._size;
+        _array_handle = other._array_handle;
+        _elements_handle = other._elements_handle;
+        _positions_handle = other._positions_handle;
+        other._is_owning = false;
+        return *this;
+    }
 
-guizmo_mesh::guizmo_mesh(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices)
-{
-    _array_handle = create_vertex_array();
-    _size = 2 * static_cast<glm::uint>(indices.size());
-    _elements_handle = create_elements_buffer(indices);
-    _positions_handle = create_attribute_buffer(positions);
-    _is_owning = true;
-}
+    guizmo_mesh::~guizmo_mesh()
+    {
+        if (_is_owning) {
+            glDeleteVertexArrays(1, &_array_handle);
+            glDeleteBuffers(1, &_elements_handle);
+            glDeleteBuffers(1, &_positions_handle);
+        }
+    }
 
-void guizmo_mesh::update(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices)
-{
-    glBindVertexArray(_array_handle);
-    glBindBuffer(GL_ARRAY_BUFFER, _positions_handle);
-    glBufferData(GL_ARRAY_BUFFER, 3 * positions.size() * sizeof(glm::float32), positions.data(), GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _elements_handle);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 2 * indices.size() * sizeof(glm::uint), indices.data(), GL_STATIC_DRAW);
-    _size = 2 * static_cast<glm::uint>(indices.size());
-}
+    guizmo_mesh::guizmo_mesh(const geometry& from)
+    {
+        const std::vector<glm::uvec2> _line_indices = generate_line_indices(from.data.indices);
+        _array_handle = create_vertex_array();
+        _size = 2 * static_cast<glm::uint>(_line_indices.size());
+        _elements_handle = create_elements_buffer(_line_indices);
+        _positions_handle = create_attribute_buffer(from.data.positions);
+        _is_owning = true;
+    }
 
-glm::uint guizmo_mesh::get_size() const
-{
-    return _size;
-}
+    guizmo_mesh::guizmo_mesh(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices)
+    {
+        _array_handle = create_vertex_array();
+        _size = 2 * static_cast<glm::uint>(indices.size());
+        _elements_handle = create_elements_buffer(indices);
+        _positions_handle = create_attribute_buffer(positions);
+        _is_owning = true;
+    }
 
-glm::uint guizmo_mesh::get_array_handle() const
-{
-    return _array_handle;
-}
+    void guizmo_mesh::update(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices)
+    {
+        glBindVertexArray(_array_handle);
+        glBindBuffer(GL_ARRAY_BUFFER, _positions_handle);
+        glBufferData(GL_ARRAY_BUFFER, 3 * positions.size() * sizeof(glm::float32), positions.data(), GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _elements_handle);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, 2 * indices.size() * sizeof(glm::uint), indices.data(), GL_STATIC_DRAW);
+        _size = 2 * static_cast<glm::uint>(indices.size());
+    }
 
-glm::uint guizmo_mesh::get_elements_handle() const
-{
-    return _elements_handle;
-}
+    glm::uint guizmo_mesh::get_size() const
+    {
+        return _size;
+    }
 
-glm::uint guizmo_mesh::get_positions_handle() const
-{
-    return _positions_handle;
-}
+    glm::uint guizmo_mesh::get_array_handle() const
+    {
+        return _array_handle;
+    }
 
+    glm::uint guizmo_mesh::get_elements_handle() const
+    {
+        return _elements_handle;
+    }
+
+    glm::uint guizmo_mesh::get_positions_handle() const
+    {
+        return _positions_handle;
+    }
+#endif
+
+}
 }

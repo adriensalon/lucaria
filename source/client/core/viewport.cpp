@@ -6,7 +6,7 @@
 namespace lucaria {
 namespace {
 
-    [[nodiscard]] static inline std::vector<glm::vec2> invert_texcoords(const std::vector<glm::vec2>& texcoords)
+    [[nodiscard]] static std::vector<glm::vec2> invert_texcoords(const std::vector<glm::vec2>& texcoords)
     {
         std::vector<glm::vec2> _inverted;
         _inverted.reserve(texcoords.size());
@@ -16,86 +16,72 @@ namespace {
         return _inverted;
     }
 
-    // Branchless Frisvad ONB with the singular pole at N.y == -1
-    // N must be (approximately) normalized.
-    static inline void make_onb_frisvad_branchless_poleY(const glm::vec3& N, glm::vec3& U, glm::vec3& V)
+    static void make_onb_frisvad_branchless_pole_y(const glm::vec3& n, glm::vec3& u, glm::vec3& v)
     {
-        // Permute so Y becomes Z in the formula
-        const glm::vec3 Np(N.x, N.z, N.y); // (x, z, y)
+        const glm::vec3 _np(n.x, n.z, n.y);
+        const glm::float32 _sign = std::copysign(1.0f, _np.z);
+        glm::float32 _denominator = _sign + _np.z;
+        _denominator = (std::fabs(_denominator) < 1e-12f) ? ((_denominator < 0.0f) ? -1e-12f : 1e-12f) : _denominator;
 
-        // Duff/Frisvad branchless form (normally singular at Np.z == -1)
-        glm::float32 sign = std::copysign(1.0f, Np.z);
-        glm::float32 denom = sign + Np.z;
+        const glm::float32 _a = -1.0f / _denominator;
+        const glm::float32 _b = _np.x * _np.y * _a;
+        const glm::vec3 _up(1.0f + _sign * _np.x * _np.x * _a, _sign * _b, -_sign * _np.x);
+        const glm::vec3 _vp(_b, _sign + _np.y * _np.y * _a, -_np.y);
 
-        // (Optional) safety clamp to avoid Inf at exactly -1 while keeping it branchless-ish
-        // Comment this out if you truly want no conditionals at all.
-        denom = (std::fabs(denom) < 1e-12f) ? ((denom < 0.0f) ? -1e-12f : 1e-12f) : denom;
-
-        const glm::float32 a = -1.0f / denom;
-        const glm::float32 b = Np.x * Np.y * a;
-
-        // Tangent/bitangent in permuted space
-        const glm::vec3 Up(1.0f + sign * Np.x * Np.x * a, sign * b, -sign * Np.x);
-        const glm::vec3 Vp(b, sign + Np.y * Np.y * a, -Np.y);
-
-        // Un-permute back (swap Y↔Z)
-        U = glm::vec3(Up.x, Up.z, Up.y);
-        V = glm::vec3(Vp.x, Vp.z, Vp.y);
-
-        // Optional: normalize in case N isn't unit, and enforce right-handedness
-        U = glm::normalize(U);
-        V = glm::normalize(V);
-        if (glm::dot(glm::cross(U, V), N) < 0.0f) {
-            V = -V;
+        u = glm::normalize(glm::vec3(_up.x, _up.z, _up.y));
+        v = glm::normalize(glm::vec3(_vp.x, _vp.z, _vp.y));
+        if (glm::dot(glm::cross(u, v), n) < 0.0f) {
+            v = -v;
         }
 
-        // Optional: deterministic sign to avoid 180° flips across frames
-        // if (U.x < 0) { U = -U; V = -V; }
+        if (u.x < 0) {
+            u = -u;
+            v = -v;
+        }
     }
 
-    [[nodiscard]] static inline glm::uvec2 compute_size_planar_fast(
+    [[nodiscard]] static glm::uvec2 compute_size_planar_fast(
         const std::vector<glm::vec3>& positions,
         const std::vector<glm::uvec3>& indices,
         const glm::float32 pixels_per_meter,
         const glm::uint min_side = 16,
         const glm::uint max_side = 4096)
     {
-        // 1) Find a face normal (assumes coplanar faces)
-        glm::vec3 N(0, 0, 1);
-        for (auto& tri : indices) {
-            const glm::vec3 a = positions[tri.x];
-            const glm::vec3 b = positions[tri.y];
-            const glm::vec3 c = positions[tri.z];
+        glm::vec3 _face_normal(0, 0, 1);
+        for (const glm::uvec3& _triangle : indices) {
+            const glm::vec3 a = positions[_triangle.x];
+            const glm::vec3 b = positions[_triangle.y];
+            const glm::vec3 c = positions[_triangle.z];
             const glm::vec3 n = glm::cross(b - a, c - a);
-            if (glm::length(n) > 1e-10f) { // note: threshold must be sqrt of before
-                N = glm::normalize(n);
+            if (glm::length(n) > 1e-10f) { // threshold must be sqrt of before
+                _face_normal = glm::normalize(n);
                 break;
             }
         }
 
-        // 2) Robust in-plane basis (orientation-agnostic)
-        glm::vec3 U, V;
-        make_onb_frisvad_branchless_poleY(N, U, V);
+        glm::vec3 _u, _v;
+        make_onb_frisvad_branchless_pole_y(_face_normal, _u, _v);
 
-        // 3) Project to plane and compute in-plane AABB
-        glm::float32 minU = FLT_MAX, maxU = -FLT_MAX, minV = FLT_MAX, maxV = -FLT_MAX;
-        for (auto& p : positions) {
-            const glm::float32 u = glm::dot(p, U);
-            const glm::float32 v = glm::dot(p, V);
-            minU = std::min(minU, u);
-            maxU = std::max(maxU, u);
-            minV = std::min(minV, v);
-            maxV = std::max(maxV, v);
+        glm::float32 _min_u = FLT_MAX;
+        glm::float32 _max_u = -FLT_MAX;
+        glm::float32 _min_v = FLT_MAX;
+        glm::float32 _max_v = -FLT_MAX;
+        for (const glm::vec3& _position : positions) {
+            const glm::float32 u = glm::dot(_position, _u);
+            const glm::float32 v = glm::dot(_position, _v);
+            _min_u = std::min(_min_u, u);
+            _max_u = std::max(_max_u, u);
+            _min_v = std::min(_min_v, v);
+            _max_v = std::max(_max_v, v);
         }
-        const glm::float32 width_m = std::max(0.0f, maxU - minU);
-        const glm::float32 height_m = std::max(0.0f, maxV - minV);
 
-        // 4) Convert to pixels (+ clamps)
-        glm::uint W = static_cast<glm::uint>(std::lround(pixels_per_meter * width_m));
-        glm::uint H = static_cast<glm::uint>(std::lround(pixels_per_meter * height_m));
-        W = glm::clamp(W, min_side, max_side);
-        H = glm::clamp(H, min_side, max_side);
-        return { W, H };
+        const glm::float32 _width_meters = std::max(0.0f, _max_u - _min_u);
+        const glm::float32 _height_meters = std::max(0.0f, _max_v - _min_v);        
+        glm::uint _width_pixels = static_cast<glm::uint>(std::lround(pixels_per_meter * _width_meters));
+        glm::uint _height_pixels = static_cast<glm::uint>(std::lround(pixels_per_meter * _height_meters));
+        _width_pixels = glm::clamp(_width_pixels, min_side, max_side);
+        _height_pixels = glm::clamp(_height_pixels, min_side, max_side);
+        return { _width_pixels, _height_pixels };
     }
 
     [[nodiscard]] static glm::uint create_vertex_array()
@@ -144,57 +130,62 @@ namespace {
         return _attribute_id;
     }
 
-    struct ray_data {
-        glm::vec3 o, d;
+    struct raycast_data {
+        glm::vec3 origin;
+        glm::vec3 direction;
     };
 
-    // Ray from camera center (forward through view -Z)
-    static ray_data makeCameraCenterRay(const glm::mat4& view)
+    [[nodiscard]] static raycast_data camera_center_ray(const glm::mat4& view)
     {
-        glm::mat4 invV = glm::inverse(view);
-        glm::vec3 origin = glm::vec3(invV * glm::vec4(0, 0, 0, 1));
-        glm::vec3 forward = glm::normalize(glm::vec3(invV * glm::vec4(0, 0, -1, 0)));
-        return { origin, forward };
+        glm::mat4 _inverse_view = glm::inverse(view);
+        glm::vec3 _origin = glm::vec3(_inverse_view * glm::vec4(0, 0, 0, 1));
+        glm::vec3 _direction = glm::normalize(glm::vec3(_inverse_view * glm::vec4(0, 0, -1, 0)));
+        return { _origin, _direction };
     }
 
-    // Möller–Trumbore with barycentric output; one-sided
-    static bool rayTriangle(const ray_data& r,
-        const glm::vec3& a,
-        const glm::vec3& b,
-        const glm::vec3& c,
-        float& t, float& u, float& v)
+    [[nodiscard]] static bool raycast_triangle(
+        const raycast_data& raycast,
+        const glm::vec3& vertex_position_a,
+        const glm::vec3& vertex_position_b,
+        const glm::vec3& vertex_position_c,
+        glm::vec3& collision_position)
     {
-        const float EPS = 1e-7f;
-        glm::vec3 ab = b - a;
-        glm::vec3 ac = c - a;
+        const glm::float32 _eps = 1e-7f;
+        const glm::vec3 _ab = vertex_position_b - vertex_position_a;
+        const glm::vec3 _ac = vertex_position_c - vertex_position_a;
 
-        glm::vec3 p = glm::cross(r.d, ac);
-        float det = glm::dot(ab, p);
-        if (det < EPS) // backface culling
+        const glm::vec3 _p = glm::cross(raycast.direction, _ac);
+        const glm::float32 _det = glm::dot(_ab, _p);
+        if (_det < _eps) {
+            return false; // we cull backfaces
+        }
+
+        const glm::float32 _inv_det = 1.f / _det;
+        const glm::vec3 _s = raycast.origin - vertex_position_a;
+        collision_position.y = glm::dot(_s, _p) * _inv_det;
+        if (collision_position.y < 0.f || collision_position.y > 1.f) {
             return false;
-        float invDet = 1.0f / det;
+        }
 
-        glm::vec3 s = r.o - a;
-        u = glm::dot(s, p) * invDet;
-        if (u < 0.0f || u > 1.0f)
+        const glm::vec3 _q = glm::cross(_s, _ab);
+        collision_position.z = glm::dot(raycast.direction, _q) * _inv_det;
+        if (collision_position.z < 0.f || collision_position.x + collision_position.z > 1.f) {
             return false;
+        }
 
-        glm::vec3 q = glm::cross(s, ab);
-        v = glm::dot(r.d, q) * invDet;
-        if (v < 0.0f || u + v > 1.0f)
-            return false;
-
-        t = glm::dot(ac, q) * invDet;
-        return t >= 0.0f;
+        collision_position.x = glm::dot(_ac, _q) * _inv_det;
+        return collision_position.x >= 0.f;
     }
 
-    inline glm::vec2 lerpUV(const glm::vec2& uv0,
-        const glm::vec2& uv1,
-        const glm::vec2& uv2,
-        float u, float v)
+    [[nodiscard]] static glm::vec2 lerp_uv(
+        const glm::vec2& vertex_texcoord_a,
+        const glm::vec2& vertex_texcoord_b,
+        const glm::vec2& vertex_texcoord_c,
+        const glm::float32 lerp_texcoord_u,
+        const glm::float32 lerp_texcoord_v)
     {
-        float w = 1.0f - u - v;
-        return uv0 * w + uv1 * u + uv2 * v;
+        const glm::float32 _w = 1.0f - lerp_texcoord_u - lerp_texcoord_v;
+        return vertex_texcoord_a * _w + vertex_texcoord_b * lerp_texcoord_u + vertex_texcoord_c * lerp_texcoord_v;
     }
 
 }
@@ -269,35 +260,37 @@ viewport::viewport(const geometry& from, const glm::float32 pixels_per_meter)
 
 std::optional<glm::vec2> viewport::raycast(const glm::mat4& view)
 {
-    ray_data ray = makeCameraCenterRay(view);
+    const raycast_data _raycast = camera_center_ray(view);
 
-    bool hitAny = false;
-    float bestT = std::numeric_limits<float>::infinity();
-    glm::vec2 bestUV { 0.0f };
+    bool _has_hit = false;
+    glm::float32 _best_distance = std::numeric_limits<glm::float32>::infinity();
+    glm::vec2 _best_uv = glm::vec2(0);
 
-    for (const glm::uvec3& tri : _indices) {
-        const glm::vec3& a = _positions[tri.x];
-        const glm::vec3& b = _positions[tri.y];
-        const glm::vec3& c = _positions[tri.z];
+    for (const glm::uvec3& _triangle : _indices) {
+        const glm::vec3& _vertex_a = _positions[_triangle.x];
+        const glm::vec3& _vertex_b = _positions[_triangle.y];
+        const glm::vec3& _vertex_c = _positions[_triangle.z];
 
-        float t, u, v;
-        if (!rayTriangle(ray, a, b, c, t, u, v))
+        glm::vec3 _collision_position;
+        if (!raycast_triangle(_raycast, _vertex_a, _vertex_b, _vertex_c, _collision_position)) {
             continue;
+        }
 
-        if (t < bestT) {
-            const glm::vec2& uv0 = _texcoords[tri.x];
-            const glm::vec2& uv1 = _texcoords[tri.y];
-            const glm::vec2& uv2 = _texcoords[tri.z];
+        if (_collision_position.x < _best_distance) {
+            const glm::vec2& _texcoord_a = _texcoords[_triangle.x];
+            const glm::vec2& _texcoord_b = _texcoords[_triangle.y];
+            const glm::vec2& _texcoord_c = _texcoords[_triangle.z];
 
-            bestT = t;
-            bestUV = lerpUV(uv0, uv1, uv2, u, v);
-            hitAny = true;
+            _best_distance = _collision_position.x;
+            _best_uv = lerp_uv(_texcoord_a, _texcoord_b, _texcoord_c, _collision_position.y, _collision_position.z);
+            _has_hit = true;
         }
     }
 
-    if (!hitAny)
+    if (!_has_hit) {
         return std::nullopt;
-    return bestUV;
+    }
+    return _best_uv;
 }
 
 glm::uvec2 viewport::get_computed_screen_size() const

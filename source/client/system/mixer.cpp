@@ -1,24 +1,19 @@
+#include <lucaria/component/speaker.hpp>
 #include <lucaria/core/openal.hpp>
 #include <lucaria/core/window.hpp>
 #include <lucaria/core/world.hpp>
-#include <lucaria/ecs/component/speaker.hpp>
-#include <lucaria/ecs/system/mixer.hpp>
+#include <lucaria/system/mixer.hpp>
 
 namespace lucaria {
 namespace {
 
-    std::optional<std::reference_wrapper<ecs::transform_component>> listener_transform = std::nullopt;
+    std::optional<std::reference_wrapper<transform_component>> listener_transform = std::nullopt;
 
 }
 
-namespace ecs {
-    namespace mixer {
-
-        void use_listener_transform(transform_component& transform)
-        {
-            listener_transform = transform;
-        }
-    }
+void use_listener_transform(transform_component& transform)
+{
+    listener_transform = transform;
 }
 
 namespace detail {
@@ -27,7 +22,7 @@ namespace detail {
     {
         if (listener_transform.has_value()) {
             detail::each_scene([&](entt::registry& scene) {
-                scene.view<ecs::speaker_component>().each([](ecs::speaker_component& _speaker) {
+                scene.view<speaker_component>().each([](speaker_component& _speaker) {
                     if (_speaker._sound.has_value() && _speaker._want_playing != _speaker._is_playing) {
 
                         if (_speaker._want_playing) {
@@ -40,8 +35,8 @@ namespace detail {
                         _speaker._is_playing = _speaker._want_playing;
                     }
                 });
-                
-                scene.view<ecs::speaker_component, ecs::transform_component>().each([](ecs::speaker_component& _speaker, ecs::transform_component& _transform) {
+
+                scene.view<speaker_component, transform_component>().each([](speaker_component& _speaker, transform_component& _transform) {
                     if (_speaker._sound.has_value()) {
                         const ALuint _handle = _speaker._handle;
                         const glm::vec3 _position = _transform.get_position();
@@ -61,7 +56,7 @@ namespace detail {
     void mixer_system::apply_listener_transform()
     {
         if (listener_transform.has_value()) {
-            const ecs::transform_component& _transform = listener_transform->get();
+            const transform_component& _transform = listener_transform->get();
 
             const glm::vec3 _position = _transform.get_position();
             const glm::vec3 _forward = _transform.get_forward();

@@ -190,23 +190,6 @@ void program::bind_attribute(const std::string& name, const viewport& from, cons
     glEnableVertexAttribArray(_location);
 }
 
-#if LUCARIA_GUIZMO
-
-void program::bind_guizmo(const std::string& name, const guizmo_mesh& from)
-{
-    _bound_indices_count = from.get_size();
-    _bound_array_id = from.get_array_handle();
-    glm::uint _positions_id = from.get_positions_handle();
-    glm::int32 _location = _attributes.at(name);
-    glm::uint _size = 3;
-    glBindVertexArray(_bound_array_id);
-    glBindBuffer(GL_ARRAY_BUFFER, _positions_id);
-    glVertexAttribPointer(_location, _size, GL_FLOAT, GL_FALSE, _size * sizeof(GLfloat), (void*)0);
-    glEnableVertexAttribArray(_location);
-}
-
-#endif
-
 void program::bind_uniform(const std::string& name, const cubemap& from, const glm::uint slot) const
 {
     glm::int32 _location = _uniforms.at(name);
@@ -335,6 +318,18 @@ void program::draw(const bool use_depth) const
 }
 
 #if LUCARIA_GUIZMO
+void program::bind_guizmo(const std::string& name, const detail::guizmo_mesh& from)
+{
+    _bound_indices_count = from.get_size();
+    _bound_array_id = from.get_array_handle();
+    glm::uint _positions_id = from.get_positions_handle();
+    glm::int32 _location = _attributes.at(name);
+    glm::uint _size = 3;
+    glBindVertexArray(_bound_array_id);
+    glBindBuffer(GL_ARRAY_BUFFER, _positions_id);
+    glVertexAttribPointer(_location, _size, GL_FLOAT, GL_FALSE, _size * sizeof(GLfloat), (void*)0);
+    glEnableVertexAttribArray(_location);
+}
 
 void program::draw_guizmo() const
 {
@@ -343,12 +338,21 @@ void program::draw_guizmo() const
     glBindVertexArray(_bound_array_id);
     glDrawElements(GL_LINES, _bound_indices_count, GL_UNSIGNED_INT, 0);
 }
-
 #endif
 
 glm::uint program::get_handle() const
 {
     return _handle;
+}
+
+const std::unordered_map<std::string, glm::int32>& program::get_attributes() const
+{
+    return _attributes;
+}
+
+const std::unordered_map<std::string, glm::int32>& program::get_uniforms() const
+{
+    return _uniforms;
 }
 
 fetched<program> fetch_program(const std::filesystem::path& vertex_data_path, const std::filesystem::path& fragment_data_path)

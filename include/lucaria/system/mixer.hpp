@@ -1,15 +1,12 @@
 #pragma once
 
-#include <lucaria/ecs/component/transform.hpp>
+#include <lucaria/component/transform.hpp>
 
 namespace lucaria {
-namespace ecs {
 
-    namespace mixer {
-
-        void use_listener_transform(transform_component& transform);
-    }
-}
+/// @brief Uses a transform component as the audio listener
+/// @param transform the transform component to use
+void use_listener_transform(transform_component& transform);
 
 namespace detail {
 

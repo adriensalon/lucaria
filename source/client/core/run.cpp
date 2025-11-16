@@ -1,11 +1,10 @@
 #include <lucaria/core/run.hpp>
 #include <lucaria/core/window.hpp>
 #include <lucaria/core/world.hpp>
-
-#include <lucaria/ecs/system/dynamics.hpp>
-#include <lucaria/ecs/system/mixer.hpp>
-#include <lucaria/ecs/system/motion.hpp>
-#include <lucaria/ecs/system/rendering.hpp>
+#include <lucaria/system/dynamics.hpp>
+#include <lucaria/system/mixer.hpp>
+#include <lucaria/system/motion.hpp>
+#include <lucaria/system/rendering.hpp>
 
 namespace lucaria {
 void run(
@@ -13,15 +12,16 @@ void run(
     const std::function<void()>& on_start,
     const std::function<void()>& on_update)
 {
-#if defined(LUCARIA_DEBUG)
-    std::cout << "[dev] running lucaria with OPTION debug ON" << std::endl;
+#if LUCARIA_DEBUG
+    std::cout << "Running Lucaria with debug ON" << std::endl;
 #else
-    std::cout << "[dev] running lucaria with OPTION debug OFF" << std::endl;
+    std::cout << "Running Lucaria with debug OFF" << std::endl;
 #endif
-#if defined(LUCARIA_GUIZMO)
-    std::cout << "[dev] running lucaria with OPTION guizmo ON" << std::endl;
+
+#if LUCARIA_GUIZMO
+    std::cout << "Running Lucaria with guizmos ON" << std::endl;
 #else
-    std::cout << "[dev] running lucaria with OPTION guizmo OFF" << std::endl;
+    std::cout << "Running Lucaria with guizmos OFF" << std::endl;
 #endif
 
     detail::set_scenes(scenes);
@@ -41,19 +41,19 @@ void run(
 
         detail::rendering_system::compute_projection();
 
-
         detail::rendering_system::clear_screen();
         detail::rendering_system::compute_view_projection();
         detail::rendering_system::draw_skybox();
         detail::rendering_system::draw_blockout_meshes();
         detail::rendering_system::draw_unlit_meshes();
-        
+
         detail::motion_system::collect_debug_guizmos();
         detail::dynamics_system::collect_debug_guizmos();
         detail::rendering_system::draw_debug_guizmos();
-        
+
         detail::rendering_system::draw_imgui_spatial_interfaces();
         detail::rendering_system::draw_imgui_screen_interfaces();
-        detail::rendering_system::clear_debug_guizmos(); });
+        detail::rendering_system::clear_debug_guizmos();
+    });
 }
 }

@@ -5,27 +5,21 @@
 #include <optional>
 
 namespace lucaria {
-namespace ecs {
 
-    namespace dynamics {
+/// @brief Represents a detected collision from a raycast
+struct raycast_collision {
+    glm::vec3 position;
+    glm::vec3 normal;
+};
 
-        /// @brief
-        struct raycast_collision {
-            glm::vec3 position;
-            glm::vec3 normal;
-        };
+/// @brief Raycasts shapes geometry
+/// @param from the position to raycast from
+/// @param to the position to raycast to
+[[nodiscard]] std::optional<raycast_collision> raycast(const glm::vec3& from, const glm::vec3& to);
 
-        /// @brief
-        /// @param from
-        /// @param to
-        [[nodiscard]] std::optional<raycast_collision> compute_raycast(const glm::vec3& from, const glm::vec3& to);
-
-        /// @brief
-        /// @param newtons
-        void set_world_gravity(const glm::vec3& newtons);
-
-    }
-}
+/// @brief Sets the global gravity
+/// @param newtons global gravity along -Y axis
+void set_world_gravity(const glm::vec3& newtons);
 
 namespace detail {
 

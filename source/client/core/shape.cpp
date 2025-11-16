@@ -40,10 +40,12 @@ shape::shape(const geometry& from, const shape_algorithm algorithm)
 
     } else if (algorithm == shape_algorithm::triangle_mesh) {
         make_triangle_mesh_shape(from, _handle, _triangle_handle);
+
+    } else if (algorithm == shape_algorithm::impact_triangle_mesh) {
+        LUCARIA_RUNTIME_ERROR("Impact triangle mesh not implemented") // TODO
     }
 
-    // todo impact triangle mesh
-    float _zdistance = 0.f;// NOOOOOOOOOOOOOOOO
+    glm::float32 _zdistance = 0.f;// lets compute ?
     _feet_to_center = glm::translate(glm::mat4(1), glm::vec3(0, +_zdistance, 0));
     _center_to_feet = glm::inverse(_feet_to_center);
 }
@@ -77,7 +79,7 @@ glm::mat4 shape::get_center_to_feet() const
 
 shape create_box_shape(const glm::vec3& half_extents)
 {
-    return shape(new btBoxShape(detail::reinterpret_bullet(half_extents)), half_extents.z);
+    return shape(new btBoxShape(detail::convert_bullet(half_extents)), half_extents.z);
 }
 
 shape create_sphere_shape(const glm::float32 radius)

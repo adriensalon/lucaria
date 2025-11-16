@@ -8,15 +8,15 @@
 #include <ozz/base/maths/simd_math.h>
 #include <ozz/base/maths/transform.h>
 
+#include <lucaria/component/animator.hpp>
+#include <lucaria/component/model.hpp>
+#include <lucaria/component/rigidbody.hpp>
+#include <lucaria/component/transform.hpp>
 #include <lucaria/core/error.hpp>
 #include <lucaria/core/math.hpp>
 #include <lucaria/core/window.hpp>
 #include <lucaria/core/world.hpp>
-#include <lucaria/ecs/component/animator.hpp>
-#include <lucaria/ecs/component/model.hpp>
-#include <lucaria/ecs/component/rigidbody.hpp>
-#include <lucaria/ecs/component/transform.hpp>
-#include <lucaria/ecs/system/motion.hpp>
+#include <lucaria/system/motion.hpp>
 
 namespace lucaria {
 namespace {
@@ -43,7 +43,7 @@ namespace {
 
         _ozz_affine_transform.scale = ozz::math::Float3::one();
         ozz::math::Float4x4 _ozz_transform = ozz::math::Float4x4::FromAffine(_ozz_affine_transform);
-        return detail::reinterpret(_ozz_transform);
+        return detail::convert(_ozz_transform);
     }
 }
 
@@ -56,10 +56,10 @@ namespace detail {
     void motion_system::advance_controllers()
     {
         detail::each_scene([](entt::registry& scene) {
-            scene.view<ecs::animator_component>().each([](ecs::animator_component& animator) {
-                for (std::pair<const std::string, ecs::animation_controller>& _pair : animator._controllers) {
+            scene.view<animator_component>().each([](animator_component& animator) {
+                for (std::pair<const std::string, animation_controller>& _pair : animator._controllers) {
 
-                    ecs::animation_controller& _controller = _pair.second;
+                    animation_controller& _controller = _pair.second;
                     if (_controller._is_playing) {
                         _controller._last_time_ratio = _controller._time_ratio;
                         _controller._time_ratio += _controller._playback_speed * static_cast<float>(get_time_delta()); // * 0.1f; // c'est bien le temps qu'il faut multiplier par le weight des fadeins
@@ -108,7 +108,7 @@ namespace detail {
     void motion_system::apply_animations()
     {
         detail::each_scene([](entt::registry& scene) {
-            scene.view<ecs::animator_component>().each([](ecs::animator_component& animator) {
+            scene.view<animator_component>().each([](animator_component& animator) {
                 if (animator._skeleton.has_value()) {
 
                     ozz::vector<ozz::animation::BlendingJob::Layer> _blend_layers;
@@ -116,7 +116,7 @@ namespace detail {
 
                         if (_pair.second.has_value()) {
 
-                            const ecs::animation_controller& _controller = animator._controllers[_pair.first];
+                            const animation_controller& _controller = animator._controllers[_pair.first];
                             ozz::animation::Animation& _animation = _pair.second.value().get_handle();
                             ozz::vector<ozz::math::SoaTransform>& _local_transforms = animator._local_transforms[_pair.first];
                             ozz::animation::SamplingJob sampling_job;
@@ -162,13 +162,13 @@ namespace detail {
     void motion_system::apply_motion_tracks()
     {
         detail::each_scene([](entt::registry& scene) {
-            scene.view<const ecs::animator_component, ecs::transform_component>(entt::exclude<ecs::character_rigidbody_component>).each([](const ecs::animator_component& animator, ecs::transform_component& transform) {
+            scene.view<const animator_component, transform_component>(entt::exclude<character_rigidbody_component>).each([](const animator_component& animator, transform_component& transform) {
                 for (const std::pair<const std::string, fetched_container<motion_track>>& _pair : animator._motion_tracks) {
 
                     if (_pair.second.has_value()) {
 
                         const motion_track& _motion_track = _pair.second.value();
-                        const ecs::animation_controller& _controller = animator._controllers.at(_pair.first);
+                        const animation_controller& _controller = animator._controllers.at(_pair.first);
                         const glm::mat4 _new_transform = transform._transform * sample_motion_track(_motion_track, _controller._time_ratio);
                         const glm::mat4 _last_transform = transform._transform * sample_motion_track(_motion_track, _controller._last_time_ratio);
                         glm::mat4 _delta_transform = _new_transform * glm::inverse(_last_transform);
@@ -188,7 +188,7 @@ namespace detail {
 
         detail::each_scene([](entt::registry& scene) {
             // characters
-            scene.view<const ecs::animator_component, ecs::transform_component, ecs::character_rigidbody_component>().each([](const ecs::animator_component& animator, ecs::transform_component& transform, ecs::character_rigidbody_component& character) {
+            scene.view<const animator_component, transform_component, character_rigidbody_component>().each([](const animator_component& animator, transform_component& transform, character_rigidbody_component& character) {
                 btRigidBody* body = character._rigidbody.get();
                 if (!body)
                     return;
@@ -269,7 +269,7 @@ namespace detail {
                     const auto itCtrl = animator._controllers.find(kv.first);
                     if (itCtrl == animator._controllers.end())
                         continue;
-                    const ecs::animation_controller& ctrl = itCtrl->second;
+                    const animation_controller& ctrl = itCtrl->second;
                     const float w = ctrl._computed_weight; // your layer weight
                     if (w <= 0.f)
                         continue;
@@ -355,7 +355,7 @@ namespace detail {
 #if LUCARIA_GUIZMO
         detail::each_scene([](entt::registry& scene) {
             // transform guizmos
-            scene.view<ecs::transform_component>().each([](ecs::transform_component& transform) {
+            scene.view<transform_component>().each([](transform_component& transform) {
                 constexpr glm::float32 _line_length = .2f;
 
                 const glm::vec3 _origin = glm::vec3(transform._transform[3]);
@@ -368,13 +368,13 @@ namespace detail {
                 const glm::vec3 _yendpoint = _origin + _yaxis * _line_length;
                 const glm::vec3 _zendpoint = _origin + _zaxis * _line_length;
 
-                draw_guizmo_line(reinterpret_bullet(_origin), reinterpret_bullet(_xendpoint), btVector3(1, 0, 0)); // red
-                draw_guizmo_line(reinterpret_bullet(_origin), reinterpret_bullet(_yendpoint), btVector3(0, 1, 0)); // green
-                draw_guizmo_line(reinterpret_bullet(_origin), reinterpret_bullet(_zendpoint), btVector3(0, 0, 1)); // blue
+                draw_guizmo_line(convert_bullet(_origin), convert_bullet(_xendpoint), btVector3(1, 0, 0)); // red
+                draw_guizmo_line(convert_bullet(_origin), convert_bullet(_yendpoint), btVector3(0, 1, 0)); // green
+                draw_guizmo_line(convert_bullet(_origin), convert_bullet(_zendpoint), btVector3(0, 0, 1)); // blue
             });
 
             // animator guizmos
-            scene.view<ecs::animator_component>(entt::exclude<ecs::transform_component>).each([](ecs::animator_component& animator) {
+            scene.view<animator_component>(entt::exclude<transform_component>).each([](animator_component& animator) {
                 if (animator._skeleton.has_value()) {
                     const ozz::vector<ozz::math::Float4x4>& _model_transforms = animator._model_transforms;
 
@@ -409,7 +409,7 @@ namespace detail {
                 }
             });
 
-            scene.view<ecs::animator_component, ecs::transform_component>().each([](ecs::animator_component& animator, ecs::transform_component& transform) {
+            scene.view<animator_component, transform_component>().each([](animator_component& animator, transform_component& transform) {
                 if (animator._skeleton.has_value()) {
                     const ozz::vector<ozz::math::Float4x4>& _model_transforms = animator._model_transforms;
 
@@ -426,7 +426,7 @@ namespace detail {
                                 continue;
                             }
 
-                            const ozz::math::Float4x4& _modifier_transform = reinterpret_ozz(transform._transform);
+                            const ozz::math::Float4x4 _modifier_transform = convert_ozz(transform._transform);
                             const ozz::math::Float4x4 _current_transform = _modifier_transform * _model_transforms[_index];
                             const ozz::math::Float4x4 _parent_transform = _modifier_transform * _model_transforms[_parent_index];
 

@@ -5,108 +5,66 @@
 #include <lucaria/core/math.hpp>
 
 namespace lucaria {
-namespace {
-
-    template <typename from_t, typename to_t>
-    to_t& reinterpret_impl(from_t& from)
-    {
-        return *(reinterpret_cast<to_t*>(std::addressof(from)));
-    }
-
-    template <typename from_t, typename to_t>
-    const to_t& reinterpret_impl(const from_t& from)
-    {
-        return *(reinterpret_cast<const to_t*>(std::addressof(from)));
-    }
-
-}
-
 namespace detail {
 
     // to glm
 
+    glm::vec3 convert(const btVector3& vector)
+    {
+        return glm::vec3(vector.x(), vector.y(), vector.z());
+    }
+
+    glm::vec3 convert(const ozz::math::Float3& vector)
+    {
+        return glm::vec3(vector.x, vector.y, vector.z);
+    }
+
     glm::mat4 convert(const btTransform& transform)
     {
-        glm::mat4 result(1.0f); // identity
+        glm::mat4 _result(1.f);
+        transform.getOpenGLMatrix(glm::value_ptr(_result));
+        return _result;
+    }
 
-        const btMatrix3x3& basis = transform.getBasis();
-        // copy rotation basis
-        for (int row = 0; row < 3; ++row) {
-            for (int col = 0; col < 3; ++col) {
-                result[col][row] = basis[row][col];
-                // glm::mat4 is column-major, btMatrix3x3 is row-major
-            }
+    glm::mat4 convert(const ozz::math::Float4x4& matrix)
+    {
+        glm::mat4 _result(1.f);
+        for (int _col_index = 0; _col_index < 4; ++_col_index) {
+            _result[_col_index][0] = ozz::math::GetX(matrix.cols[_col_index]);
+            _result[_col_index][1] = ozz::math::GetY(matrix.cols[_col_index]);
+            _result[_col_index][2] = ozz::math::GetZ(matrix.cols[_col_index]);
+            _result[_col_index][3] = ozz::math::GetW(matrix.cols[_col_index]);
         }
-
-        // copy translation
-        const btVector3& origin = transform.getOrigin();
-        result[3][0] = origin.x();
-        result[3][1] = origin.y();
-        result[3][2] = origin.z();
-
-        return result;
-    }
-
-    glm::vec3& reinterpret(btVector3& vector)
-    {
-        return reinterpret_impl<btVector3, glm::vec3>(vector);
-    }
-
-    const glm::vec3& reinterpret(const btVector3& vector)
-    {
-        return reinterpret_impl<btVector3, glm::vec3>(vector);
-    }
-    
-    glm::vec3& reinterpret(ozz::math::Float3& vector)
-    {        
-        return reinterpret_impl<ozz::math::Float3, glm::vec3>(vector);
-    }
-
-    const glm::vec3& reinterpret(const ozz::math::Float3& vector)
-    {
-        return reinterpret_impl<ozz::math::Float3, glm::vec3>(vector);
-    }
-
-    glm::mat4& reinterpret(ozz::math::Float4x4& matrix)
-    {
-        return reinterpret_impl<ozz::math::Float4x4, glm::mat4>(matrix);
-    }
-
-    const glm::mat4& reinterpret(const ozz::math::Float4x4& matrix)
-    {
-        return reinterpret_impl<ozz::math::Float4x4, glm::mat4>(matrix);
+        return _result;
     }
 
     // to ozz
 
-    ozz::math::Float4x4& reinterpret_ozz(glm::mat4& matrix)
+    ozz::math::Float4x4 convert_ozz(const glm::mat4& matrix)
     {
-        return reinterpret_impl<glm::mat4, ozz::math::Float4x4>(matrix);
-    }
-
-    const ozz::math::Float4x4& reinterpret_ozz(const glm::mat4& matrix)
-    {
-        return reinterpret_impl<glm::mat4, ozz::math::Float4x4>(matrix);
+        ozz::math::Float4x4 _result;
+        for (int _col_index = 0; _col_index < 4; ++_col_index) {
+            _result.cols[_col_index] = ozz::math::simd_float4::Load(
+                matrix[_col_index][0],
+                matrix[_col_index][1],
+                matrix[_col_index][2],
+                matrix[_col_index][3]);
+        }
+        return _result;
     }
 
     // to bullet
 
+    btVector3 convert_bullet(const glm::vec3& vector)
+    {
+        return btVector3(vector.x, vector.y, vector.z);
+    }
+
     btTransform convert_bullet(const glm::mat4& matrix)
     {
-        btMatrix3x3 _basis;
-        _basis.setFromOpenGLSubMatrix(glm::value_ptr(matrix));
-        btVector3 _origin(matrix[3][0], matrix[3][1], matrix[3][2]);
-        return btTransform(_basis, _origin);
-    }
-
-    btVector3& reinterpret_bullet(glm::vec3& vector)
-    {
-        return reinterpret_impl<glm::vec3, btVector3>(vector);
-    }
-
-    const btVector3& reinterpret_bullet(const glm::vec3& vector)
-    {
-        return reinterpret_impl<glm::vec3, btVector3>(vector);
+        btTransform _result;
+        _result.setFromOpenGLMatrix(glm::value_ptr(matrix));
+        return _result;
     }
 
 }

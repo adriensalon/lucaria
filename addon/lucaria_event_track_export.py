@@ -1,10 +1,10 @@
 bl_info = {
     "name": "Lucaria: Export Action Markers to Event Track (.evtt)",
-    "author": "You",
+    "author": "LucariaCorp",
     "version": (1, 0, 0),
     "blender": (4, 0, 0),
     "location": "File > Export",
-    "description": "Export the active Action's (Dope Sheet Action) markers to a JSON .evtt sidecar",
+    "description": "Export the active Action's (Dope Sheet Action) markers to a JSON .evtt",
     "category": "Import-Export",
 }
 
@@ -51,7 +51,6 @@ def get_active_armature_and_action():
         if o.type == 'ARMATURE' and o.animation_data and o.animation_data.action:
             return o, o.animation_data.action
 
-    # Try Action Editor pinned action
     try:
         for area in bpy.context.window.screen.areas:
             if area.type == 'DOPESHEET_EDITOR':

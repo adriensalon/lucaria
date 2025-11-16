@@ -59,9 +59,9 @@ enum struct keyboard_key {
 
 namespace detail {
 
-    inline std::unique_ptr<ImFontAtlas> imgui_shared_font_atlas = nullptr;
-    inline ImGuiContext* imgui_screen_context = nullptr;
-    inline glm::uint imgui_shared_font_texture = 0;
+    inline std::unique_ptr<ImFontAtlas> global_imgui_shared_font_atlas = nullptr;
+    inline ImGuiContext* global_imgui_screen_context = nullptr;
+    inline glm::uint global_imgui_shared_font_texture = 0;
 
     void run_game(const std::function<void()>& start, const std::function<void()>& update);
     ImGuiContext* create_shared_context();

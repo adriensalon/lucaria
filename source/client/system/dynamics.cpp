@@ -1,12 +1,12 @@
 #include <btBulletDynamicsCommon.h>
 
+#include <lucaria/component/collider.hpp>
+#include <lucaria/component/rigidbody.hpp>
+#include <lucaria/component/transform.hpp>
 #include <lucaria/core/math.hpp>
 #include <lucaria/core/window.hpp>
 #include <lucaria/core/world.hpp>
-#include <lucaria/ecs/component/collider.hpp>
-#include <lucaria/ecs/component/rigidbody.hpp>
-#include <lucaria/ecs/component/transform.hpp>
-#include <lucaria/ecs/system/dynamics.hpp>
+#include <lucaria/system/dynamics.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -73,9 +73,9 @@ namespace {
         return false;
     }
 
-    static std::vector<ecs::kinematic_collision> get_collisions(const btPersistentManifold* manifold, btGhostObject* ghost)
+    static std::vector<kinematic_collision> get_collisions(const btPersistentManifold* manifold, btGhostObject* ghost)
     {
-        std::vector<ecs::kinematic_collision> _collisions;
+        std::vector<kinematic_collision> _collisions;
         for (int _p = 0; _p < manifold->getNumContacts(); ++_p) {
             const btManifoldPoint& _point = manifold->getContactPoint(_p);
             if (_point.getDistance() > 0.0f) {
@@ -101,15 +101,15 @@ namespace {
             //     gotRoof = true;
             // }
 
-            ecs::kinematic_collision& collision = _collisions.emplace_back();
+            kinematic_collision& collision = _collisions.emplace_back();
             collision.distance = _point.getDistance();
-            collision.position = detail::reinterpret(posOther);
-            collision.normal = detail::reinterpret(nOther);
+            collision.position = detail::convert(posOther);
+            collision.normal = detail::convert(nOther);
         }
         return _collisions;
     }
 
-    static void compute_collide_wall(const ecs::kinematic_collision& collision, glm::mat4& transform)
+    static void compute_collide_wall(const kinematic_collision& collision, glm::mat4& transform)
     {
         glm::vec3 _position = glm::vec3(transform[3]);
         glm::vec3 _normal_xz = glm::normalize(glm::vec3(collision.normal.x, 0.f, collision.normal.z));
@@ -148,46 +148,36 @@ namespace {
     }
 }
 
-namespace ecs {
-    namespace dynamics {
+std::optional<raycast_collision> raycast(const glm::vec3& from, const glm::vec3& to)
+{
+    const btVector3& _from = detail::convert_bullet(from);
+    const btVector3& _to = detail::convert_bullet(to);
+    btCollisionWorld::ClosestRayResultCallback _raycallback(_from, _to);
 
-        std::optional<raycast_collision> compute_raycast(const glm::vec3& from, const glm::vec3& to)
-        {
-            const btVector3& _from = detail::reinterpret_bullet(from);
-            const btVector3& _to = detail::reinterpret_bullet(to);
-            btCollisionWorld::ClosestRayResultCallback _raycallback(_from, _to);
-
-            detail::dynamics_world->rayTest(_from, _to, _raycallback);
+    detail::dynamics_world->rayTest(_from, _to, _raycallback);
 #if LUCARIA_GUIZMO
-            detail::draw_guizmo_line(_from, _to, btVector3(1, 0, 1)); // purple
+    detail::draw_guizmo_line(_from, _to, btVector3(1, 0, 1)); // purple
 #endif
 
-            if (_raycallback.hasHit()) {
-                btVector3 _hitpoint = _raycallback.m_hitPointWorld;
-                btVector3 _hitnormal = _raycallback.m_hitNormalWorld.normalized();
+    if (_raycallback.hasHit()) {
+        btVector3 _hitpoint = _raycallback.m_hitPointWorld;
+        btVector3 _hitnormal = _raycallback.m_hitNormalWorld.normalized();
 #if LUCARIA_GUIZMO
-                detail::draw_guizmo_line(_hitpoint, _hitpoint + _hitnormal * 0.2f, btVector3(1, 1, 1)); // white
+        detail::draw_guizmo_line(_hitpoint, _hitpoint + _hitnormal * 0.2f, btVector3(1, 1, 1)); // white
 #endif
 
-                return raycast_collision {
-                    detail::reinterpret(_hitpoint),
-                    detail::reinterpret(_hitnormal)
-                };
-            }
-
-            return std::nullopt;
-        }
-
-        void set_world_gravity(const glm::vec3& newtons)
-        {
-            detail::dynamics_world->setGravity(btVector3(newtons.x, newtons.y, newtons.z));
-        }
-
-        // void use_snap_ground_distance(const glm::float32 meters)
-        // {
-        //     snap_ground_distance = meters;
-        // }
+        return raycast_collision {
+            detail::convert(_hitpoint),
+            detail::convert(_hitnormal)
+        };
     }
+
+    return std::nullopt;
+}
+
+void set_world_gravity(const glm::vec3& newtons)
+{
+    detail::dynamics_world->setGravity(btVector3(newtons.x, newtons.y, newtons.z));
 }
 
 namespace detail {
@@ -196,10 +186,10 @@ namespace detail {
     {
         // update collider transforms
         detail::each_scene([&](entt::registry& scene) {
-            scene.view<ecs::collider_component>(entt::exclude<ecs::transform_component>).each([](ecs::collider_component& collider) {
+            scene.view<collider_component>(entt::exclude<transform_component>).each([](collider_component& collider) {
                 collider._shape.has_value(); // colliders can have no transform
             });
-            scene.view<ecs::collider_component, ecs::transform_component>().each([](ecs::collider_component& collider, ecs::transform_component& transform) {
+            scene.view<collider_component, transform_component>().each([](collider_component& collider, transform_component& transform) {
                 if (collider._shape.has_value()) {
                     const btTransform _transform = convert_bullet(transform._transform);
                     collider._rigidbody->setWorldTransform(_transform);
@@ -209,7 +199,7 @@ namespace detail {
 
         // update kinematic rigidbody transforms
         detail::each_scene([&](entt::registry& scene) {
-            scene.view<ecs::kinematic_rigidbody_component, ecs::transform_component>().each([](ecs::kinematic_rigidbody_component& rigidbody, ecs::transform_component& transform) {
+            scene.view<kinematic_rigidbody_component, transform_component>().each([](kinematic_rigidbody_component& rigidbody, transform_component& transform) {
                 if (rigidbody._shape.has_value()) {
                     const btTransform _transform = convert_bullet(transform._transform);
                     rigidbody._ghost->setWorldTransform(_transform);
@@ -219,7 +209,7 @@ namespace detail {
 
         // apply dynamic rigidbody forces
         detail::each_scene([&](entt::registry& scene) {
-            scene.view<ecs::rigidbody_component<ecs::rigidbody_kind::character>>().each([&](ecs::rigidbody_component<ecs::rigidbody_kind::character>& ch) {
+            scene.view<rigidbody_component<rigidbody_kind::character>>().each([&](rigidbody_component<rigidbody_kind::character>& ch) {
                 btRigidBody* body = ch._rigidbody.get();
                 if (!body)
                     return;
@@ -230,13 +220,13 @@ namespace detail {
                 const btQuaternion q = T.getRotation();
                 const btVector3 v = body->getLinearVelocity();
                 const btVector3 w = body->getAngularVelocity();
-                const btVector3 up = detail::reinterpret_bullet(ch._up);
+                const btVector3 up = detail::convert_bullet(ch._up);
 
                 // desired (filled in apply_motion_tracks)
-                const btVector3 p_d = detail::reinterpret_bullet(ch._p_d);
-                const btVector3 v_d = detail::reinterpret_bullet(ch._v_d);
+                const btVector3 v_d = detail::convert_bullet(ch._v_d);
+                const btVector3 p_d = detail::convert_bullet(ch._p_d);
                 const btQuaternion q_d(ch._q_d.x, ch._q_d.y, ch._q_d.z, ch._q_d.w);
-                const btVector3 w_d = detail::reinterpret_bullet(ch._w_d);
+                const btVector3 w_d = detail::convert_bullet(ch._w_d);
 
                 // --- grounded? ---
                 const bool grounded = is_grounded(body, up, detail::dynamics_world);
@@ -294,7 +284,7 @@ namespace detail {
         // kinematic
         btManifoldArray _manifold_array;
         detail::each_scene([&](entt::registry& scene) {
-            scene.view<ecs::transform_component, ecs::kinematic_rigidbody_component>().each([&](ecs::transform_component& transform, ecs::kinematic_rigidbody_component& rigidbody) {
+            scene.view<transform_component, kinematic_rigidbody_component>().each([&](transform_component& transform, kinematic_rigidbody_component& rigidbody) {
                 rigidbody._ground_collision.reset();
                 rigidbody._wall_collisions.clear();
                 rigidbody._layer_collisions.clear();
@@ -337,7 +327,7 @@ namespace detail {
 
         // dynamic
         detail::each_scene([&](entt::registry& scene) {
-            scene.view<ecs::transform_component, ecs::dynamic_rigidbody_component>().each([](ecs::transform_component& transform, ecs::dynamic_rigidbody_component& rigidbody) {
+            scene.view<transform_component, dynamic_rigidbody_component>().each([](transform_component& transform, dynamic_rigidbody_component& rigidbody) {
                 const glm::mat4 _transform = convert(rigidbody._rigidbody->getWorldTransform());
                 const glm::mat4 _center_to_feet = rigidbody._shape.value().get_center_to_feet();
                 transform._transform = _transform * _center_to_feet;
@@ -346,12 +336,12 @@ namespace detail {
 
         // character
         detail::each_scene([&](entt::registry& scene) {
-            scene.view<ecs::transform_component, ecs::character_rigidbody_component>().each([](ecs::transform_component& transform, ecs::character_rigidbody_component& rigidbody) {
+            scene.view<transform_component, character_rigidbody_component>().each([](transform_component& transform, character_rigidbody_component& rigidbody) {
                 const glm::mat4 _transform = convert(rigidbody._rigidbody->getWorldTransform());
                 const glm::mat4 _center_to_feet = rigidbody._shape.value().get_center_to_feet();
                 transform.set_transform_warp(_transform * _center_to_feet);
-                rigidbody._translation_speed = reinterpret(rigidbody._rigidbody->getLinearVelocity());
-                rigidbody._rotation_speed = reinterpret(rigidbody._rigidbody->getAngularVelocity());
+                rigidbody._translation_speed = convert(rigidbody._rigidbody->getLinearVelocity());
+                rigidbody._rotation_speed = convert(rigidbody._rigidbody->getAngularVelocity());
             });
         });
     }
@@ -362,11 +352,11 @@ namespace detail {
         detail::dynamics_world->debugDrawWorld();
 
         detail::each_scene([&](entt::registry& scene) {
-            scene.view<ecs::transform_component, ecs::kinematic_rigidbody_component>().each([&](ecs::transform_component& transform, ecs::kinematic_rigidbody_component& rigidbody) {
-                for (const lucaria::ecs::kinematic_collision& _collision : rigidbody._wall_collisions) {
+            scene.view<transform_component, kinematic_rigidbody_component>().each([&](transform_component& transform, kinematic_rigidbody_component& rigidbody) {
+                for (const lucaria::kinematic_collision& _collision : rigidbody._wall_collisions) {
                     const glm::vec3 _from = _collision.position;
                     const glm::vec3 _to = _collision.position + 0.2f * glm::normalize(_collision.normal);
-                    draw_guizmo_line(reinterpret_bullet(_from), reinterpret_bullet(_to), btVector3(1, 0, 1)); // purple
+                    draw_guizmo_line(convert_bullet(_from), convert_bullet(_to), btVector3(1, 0, 1)); // purple
                 }
             });
         });

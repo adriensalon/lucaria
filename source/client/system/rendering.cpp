@@ -1,19 +1,19 @@
 #include <iostream>
 
-#include <imgui.h>
 #include <backends/imgui_impl_opengl3.h>
+#include <imgui.h>
 
+#include <lucaria/component/animator.hpp>
+#include <lucaria/component/collider.hpp>
+#include <lucaria/component/interface.hpp>
+#include <lucaria/component/model.hpp>
+#include <lucaria/component/rigidbody.hpp>
+#include <lucaria/component/transform.hpp>
 #include <lucaria/core/opengl.hpp>
 #include <lucaria/core/program.hpp>
 #include <lucaria/core/window.hpp>
 #include <lucaria/core/world.hpp>
-#include <lucaria/ecs/component/animator.hpp>
-#include <lucaria/ecs/component/collider.hpp>
-#include <lucaria/ecs/component/interface.hpp>
-#include <lucaria/ecs/component/model.hpp>
-#include <lucaria/ecs/component/rigidbody.hpp>
-#include <lucaria/ecs/component/transform.hpp>
-#include <lucaria/ecs/system/rendering.hpp>
+#include <lucaria/system/rendering.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -25,7 +25,6 @@ namespace detail {
 namespace {
 
 #if LUCARIA_GUIZMO
-
     struct vec3_hash {
         std::size_t operator()(const glm::vec3& vec) const
         {
@@ -83,21 +82,21 @@ namespace {
     };
 #endif
 
-    constexpr float mouse_sensitivity = 0.15f;
-    constexpr float player_speed = 1.f;
+    constexpr glm::float32 mouse_sensitivity = 0.15f;
+    constexpr glm::float32 player_speed = 1.f;
     static glm::vec3 player_position = { 0.0f, 1.8f, 3.0f };
     static glm::vec3 player_forward = { 0.0f, 0.0f, -1.0f };
     static glm::vec3 player_up = { 0.0f, 1.0f, 0.0f };
-    static float player_pitch = 0.f;
-    static float player_yaw = 0.f;
-    static ecs::transform_component* _follow = nullptr;
-    static ecs::animator_component* _follow_animator = nullptr;
+    static glm::float32 player_pitch = 0.f;
+    static glm::float32 player_yaw = 0.f;
+    static transform_component* _follow = nullptr;
+    static animator_component* _follow_animator = nullptr;
     static std::string _follow_bone_name = {};
     static glm::vec4 clear_color = { 1.f, 1.f, 1.f, 1.f };
     static bool clear_depth = true;
-    static float camera_fov = 60.f;
-    static float camera_near = 0.1f;
-    static float camera_far = 1000.f;
+    static glm::float32 camera_fov = 60.f;
+    static glm::float32 camera_near = 0.1f;
+    static glm::float32 camera_far = 1000.f;
     static glm::mat4x4 camera_projection;
     static glm::mat4x4 camera_view;
     static glm::mat4x4 camera_view_projection;
@@ -297,59 +296,55 @@ namespace detail {
         guizmo_draw.drawLine(from, to, color);
     }
 #endif
+
 }
 
-namespace ecs {
-    namespace rendering {
+void use_skybox_cubemap(cubemap& from)
+{
+    skybox_cubemap.emplace(from);
+}
 
-        void use_skybox_cubemap(cubemap& from)
-        {
-            skybox_cubemap.emplace(from);
-        }
+void use_skybox_cubemap(fetched<cubemap>& from)
+{
+    skybox_cubemap.emplace(from);
+}
 
-        void use_skybox_cubemap(fetched<cubemap>& from)
-        {
-            skybox_cubemap.emplace(from);
-        }
+void use_camera_transform(transform_component& camera)
+{
+    _follow = &camera;
+}
 
-        void use_camera_transform(transform_component& camera)
-        {
-            _follow = &camera;
-        }
+void use_camera_bone(animator_component& animator, const std::string& bone)
+{
+    _follow_animator = &animator;
+    _follow_bone_name = bone;
+}
 
-        void use_camera_bone(animator_component& animator, const std::string& bone)
-        {
-            _follow_animator = &animator;
-            _follow_bone_name = bone;
-        }
+void set_camera_projection(const glm::float32 fov, const glm::float32 near, const glm::float32 far)
+{
+    camera_fov = fov;
+    camera_near = near;
+    camera_far = far;
+}
 
-        void set_camera_projection(const float fov, const float near, const float far)
-        {
-            camera_fov = fov;
-            camera_near = near;
-            camera_far = far;
-        }
+void set_clear_color(const glm::vec4& color)
+{
+    clear_color = color;
+}
 
-        void set_clear_color(const glm::vec4& color)
-        {
-            clear_color = color;
-        }
+void set_clear_depth(const bool is_clearing)
+{
+    clear_depth = is_clearing;
+}
 
-        void set_clear_depth(const bool is_clearing)
-        {
-            clear_depth = is_clearing;
-        }
+glm::mat4 get_projection()
+{
+    return camera_projection;
+}
 
-        glm::mat4 get_projection()
-        {
-            return camera_projection;
-        }
-
-        glm::mat4 get_view()
-        {
-            return camera_view;
-        }
-    }
+glm::mat4 get_view()
+{
+    return camera_view;
 }
 
 namespace detail {
@@ -483,7 +478,7 @@ namespace detail {
 
         program& _blockout_program = _persistent_blockout_program.value();
         detail::each_scene([&](entt::registry& scene) {
-            scene.view<ecs::model_component<ecs::model_shader::blockout>, ecs::transform_component>().each([&](ecs::model_component<ecs::model_shader::blockout>& _model, ecs::transform_component& _transform) {
+            scene.view<model_component<model_shader::blockout>, transform_component>().each([&](model_component<model_shader::blockout>& _model, transform_component& _transform) {
                 if (_model._mesh.has_value()) {
                     const glm::mat4 _model_view_projection = camera_view_projection * _transform._transform;
                     const mesh& _mesh = _model._mesh.value();
@@ -495,7 +490,7 @@ namespace detail {
                 }
             });
 
-            scene.view<ecs::model_component<ecs::model_shader::blockout>>(entt::exclude<ecs::transform_component>).each([&](ecs::model_component<ecs::model_shader::blockout>& _model) {
+            scene.view<model_component<model_shader::blockout>>(entt::exclude<transform_component>).each([&](model_component<model_shader::blockout>& _model) {
                 if (_model._mesh.has_value()) {
                     const mesh& _mesh = _model._mesh.value();
                     _blockout_program.use();
@@ -529,7 +524,7 @@ namespace detail {
         program& _unlit_program = _persistent_unlit_program.value();
         program& _unlit_skinned_program = _persistent_unlit_skinned_program.value();
         detail::each_scene([&](entt::registry& scene) {
-            scene.view<ecs::model_component<ecs::model_shader::unlit>, ecs::transform_component, ecs::animator_component>().each([&](ecs::model_component<ecs::model_shader::unlit>& _model, ecs::transform_component& _transform, ecs::animator_component& animator) {
+            scene.view<model_component<model_shader::unlit>, transform_component, animator_component>().each([&](model_component<model_shader::unlit>& _model, transform_component& _transform, animator_component& animator) {
                 if (_model._mesh.has_value() && _model._color.has_value() && animator._skeleton.has_value()) {
                     const glm::mat4 _model_view_projection = camera_view_projection * _transform._transform;
                     const mesh& _mesh = _model._mesh.value();
@@ -547,7 +542,7 @@ namespace detail {
                 }
             });
 
-            scene.view<ecs::model_component<ecs::model_shader::unlit>, ecs::transform_component>(entt::exclude<ecs::animator_component>).each([&](ecs::model_component<ecs::model_shader::unlit>& _model, ecs::transform_component& _transform) {
+            scene.view<model_component<model_shader::unlit>, transform_component>(entt::exclude<animator_component>).each([&](model_component<model_shader::unlit>& _model, transform_component& _transform) {
                 if (_model._mesh.has_value() && _model._color.has_value()) {
                     const glm::mat4 _model_view_projection = camera_view_projection * _transform._transform;
                     const mesh& _mesh = _model._mesh.value();
@@ -561,7 +556,7 @@ namespace detail {
                 }
             });
 
-            scene.view<ecs::model_component<ecs::model_shader::unlit>, ecs::animator_component>(entt::exclude<ecs::transform_component>).each([&](ecs::model_component<ecs::model_shader::unlit>& _model, ecs::animator_component& animator) {
+            scene.view<model_component<model_shader::unlit>, animator_component>(entt::exclude<transform_component>).each([&](model_component<model_shader::unlit>& _model, animator_component& animator) {
                 if (_model._mesh.has_value() && _model._color.has_value() && animator._skeleton.has_value()) {
                     const mesh& _mesh = _model._mesh.value();
                     const texture& _color = _model._color.value();
@@ -578,7 +573,7 @@ namespace detail {
                 }
             });
 
-            scene.view<ecs::model_component<ecs::model_shader::unlit>>(entt::exclude<ecs::transform_component, ecs::animator_component>).each([&](ecs::model_component<ecs::model_shader::unlit>& _model) {
+            scene.view<model_component<model_shader::unlit>>(entt::exclude<transform_component, animator_component>).each([&](model_component<model_shader::unlit>& _model) {
                 if (_model._mesh.has_value() && _model._color.has_value()) {
                     const mesh& _mesh = _model._mesh.value();
                     const texture& _color = _model._color.value();
@@ -609,13 +604,13 @@ namespace detail {
 
     void rendering_system::draw_debug_guizmos()
     {
+#if LUCARIA_GUIZMO
         if (!last_show_physics_guizmos_key && get_keys()[keyboard_key::o]) {
             show_physics_guizmos = !show_physics_guizmos;
         }
         last_show_physics_guizmos_key = get_keys()[keyboard_key::o];
-        
+
         if (show_physics_guizmos) {
-#if LUCARIA_GUIZMO
             for (const std::pair<const glm::vec3, std::vector<glm::vec3>>& _pair : guizmo_draw.positions) {
                 const glm::vec3& _color = _pair.first;
                 const std::vector<glm::vec3>& _positions = _pair.second;
@@ -644,18 +639,18 @@ namespace detail {
                 _guizmo_program.bind_uniform("uniform_mvp", camera_view_projection);
                 _guizmo_program.draw_guizmo();
             }
-#endif
         }
+#endif
     }
 
     void rendering_system::draw_imgui_spatial_interfaces()
     {
         detail::each_scene([](entt::registry& scene) {
-            scene.view<ecs::spatial_interface_component>().each([](ecs::spatial_interface_component& interface) {
+            scene.view<spatial_interface_component>().each([](spatial_interface_component& interface) {
                 if (interface._viewport.has_value()
                     && interface._imgui_callback
                     && (!interface._refresh_mode
-                        || (interface._refresh_mode != ecs::spatial_refresh_mode::never))) {
+                        || (interface._refresh_mode != spatial_refresh_mode::never))) {
 
                     ImGui::SetCurrentContext(interface._imgui_context);
                     const glm::uvec2 _framebuffer_size = interface._imgui_framebuffer->get_size();
@@ -717,8 +712,8 @@ namespace detail {
                     _unlit_program.bind_uniform("uniform_view", camera_view_projection);
                     _unlit_program.draw();
 
-                    if (interface._refresh_mode != ecs::spatial_refresh_mode::always) {
-                        interface._refresh_mode = ecs::spatial_refresh_mode::never;
+                    if (interface._refresh_mode != spatial_refresh_mode::always) {
+                        interface._refresh_mode = spatial_refresh_mode::never;
                     }
                 }
             });
@@ -727,19 +722,19 @@ namespace detail {
 
     void rendering_system::draw_imgui_screen_interfaces()
     {
-        ImGui::SetCurrentContext(imgui_screen_context);
+        ImGui::SetCurrentContext(global_imgui_screen_context);
         ImGui_ImplOpenGL3_NewFrame();
         ImGui::NewFrame();
 
         detail::each_scene([](entt::registry& scene) {
-            scene.view<ecs::screen_interface_component>().each([](ecs::screen_interface_component& interface) {
+            scene.view<screen_interface_component>().each([](screen_interface_component& interface) {
                 if (interface._imgui_callback) {
                     interface._imgui_callback();
                 }
             });
         });
 
-        ImGui::SetCurrentContext(imgui_screen_context);
+        ImGui::SetCurrentContext(global_imgui_screen_context);
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }

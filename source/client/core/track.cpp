@@ -92,7 +92,7 @@ glm::vec3 motion_track::get_total_translation() const
     _job_end.result = &_position_end;
     _job_end.Run();
 
-    return detail::reinterpret(_position_end - _position_start);
+    return detail::convert(_position_end - _position_start);
 }
 
 fetched<motion_track> fetch_motion_track(const std::filesystem::path& data_path)

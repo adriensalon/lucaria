@@ -65,7 +65,7 @@ struct program {
     /// @brief 
     /// @param name 
     /// @param mesh 
-    void bind_guizmo(const std::string& name, const guizmo_mesh& from);
+    void bind_guizmo(const std::string& name, const detail::guizmo_mesh& from);
 
     /// @brief 
     void draw_guizmo() const;
