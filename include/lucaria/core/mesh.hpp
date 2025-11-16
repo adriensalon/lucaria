@@ -6,6 +6,7 @@
 
 namespace lucaria {
 
+/// @brief Represents the different available mesh attributes
 enum struct mesh_attribute {
     position,
     color,
@@ -26,27 +27,41 @@ struct mesh {
     mesh& operator=(mesh&& other);
     ~mesh();
 
-    /// @brief
-    /// @param from
+    /// @brief Creates a mesh from geometry data
+    /// @param from the geometry data to create from
     mesh(const geometry& from);
 
-    /// @brief
-    /// @param from
-    /// @param attribute
-    /// @param size
-    /// @param offset
+    /// @brief Update a mesh attribute buffer from geometry data
+    /// @param from the geometry data to update from
+    /// @param attribute the selected attribute to use from the geometry data
+    /// @param size the selected count to update
+    /// @param offset the selected offset to update from
     void update_attribute(const geometry& from, const mesh_attribute attribute, const glm::uint size, const glm::uint offset = 0);
 
-    /// @brief
-    /// @param from
-    /// @param size
-    /// @param offset
+    /// @brief Updates the mesh indices buffer from geometry data
+    /// @param from the geometry data to update from
+    /// @param size the selected count to update
+    /// @param offset the selected offset to update from
     void update_indices(const geometry& from, const glm::uint size, const glm::uint offset = 0);
 
+    /// @brief Returns the mesh vertices count
+    /// @return the vertices count
     [[nodiscard]] glm::uint get_size() const;
+    
+    /// @brief Returns a handle to the underlying implementation
+    /// @return the underlying implementation handle
     [[nodiscard]] glm::uint get_array_handle() const;
+    
+    /// @brief Returns a handle to the underlying implementation
+    /// @return the underlying implementation handle
     [[nodiscard]] glm::uint get_elements_handle() const;
+    
+    /// @brief Returns a handle to the underlying implementation
+    /// @return the underlying implementation handles
     [[nodiscard]] const std::unordered_map<mesh_attribute, glm::uint>& get_attribute_handles() const;
+    
+    /// @brief Returns a handle to the CPU stored invposes matrices
+    /// @return the CPU stored invposes matrices
     [[nodiscard]] const std::vector<glm::mat4>& get_invposes() const;
 
 private:
@@ -60,8 +75,9 @@ private:
 
 /// @brief Loads geometry from a file asynchronously and uploads directly to the device
 /// @param data_path path to load from
-[[nodiscard]] fetched<mesh> fetch_mesh(const std::filesystem::path& geometry_data_path);
+[[nodiscard]] fetched<mesh> fetch_mesh(const std::filesystem::path& data_path);
 
+/// @brief DEPRECATED -> move to line_mesh idk maybe template mesh type over lines, tris, quads?
 struct guizmo_mesh {
     LUCARIA_DELETE_DEFAULT_SEMANTICS(guizmo_mesh)
     guizmo_mesh(const guizmo_mesh& other) = delete;
@@ -70,17 +86,9 @@ struct guizmo_mesh {
     guizmo_mesh& operator=(guizmo_mesh&& other);
     ~guizmo_mesh();
 
-    /// @brief
-    /// @param from
     guizmo_mesh(const geometry& from);
-    
-    /// @brief
-    /// @param positions
-    /// @param indices
     guizmo_mesh(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices);
 
-    /// @brief
-    /// @param positions
     void update(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices);
     
     [[nodiscard]] glm::uint get_size() const;

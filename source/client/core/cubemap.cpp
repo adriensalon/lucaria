@@ -73,7 +73,7 @@ cubemap::cubemap(const std::array<image, 6>& images)
         const GLenum _side_enum = cubemap_enums[_index];
         switch (_image.data.channels) {
         case 3:
-            if (_image.data.is_compressed_etc && get_is_etc_supported()) {
+            if (_image.data.is_compressed_etc && get_is_etc2_supported()) {
                 glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGB8_ETC2, _image.data.width, _image.data.height, 0, _pixels_count, _pixels_ptr);
             } else if (_image.data.is_compressed_s3tc && get_is_s3tc_supported()) {
                 glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, _image.data.width, _image.data.height, 0, _pixels_count, _pixels_ptr);
@@ -82,7 +82,7 @@ cubemap::cubemap(const std::array<image, 6>& images)
             }
             break;
         case 4:
-            if (_image.data.is_compressed_etc && get_is_etc_supported()) {
+            if (_image.data.is_compressed_etc && get_is_etc2_supported()) {
                 glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGBA8_ETC2_EAC, _image.data.width, _image.data.height, 0, _pixels_count, _pixels_ptr);
             } else if (_image.data.is_compressed_s3tc && get_is_s3tc_supported()) {
                 glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, _image.data.width, _image.data.height, 0, _pixels_count, _pixels_ptr);
@@ -103,11 +103,11 @@ glm::uint cubemap::get_handle() const
 }
 
 fetched<cubemap> fetch_cubemap(
-    const std::array<std::filesystem::path, 6>& image_data_paths,
-    const std::optional<std::array<std::filesystem::path, 6>>& image_etc2_paths,
-    const std::optional<std::array<std::filesystem::path, 6>>& image_s3tc_paths)
+    const std::array<std::filesystem::path, 6>& data_paths,
+    const std::optional<std::array<std::filesystem::path, 6>>& etc2_paths,
+    const std::optional<std::array<std::filesystem::path, 6>>& s3tc_paths)
 {
-    const std::vector<std::filesystem::path> _image_paths = detail::resolve_image_paths(image_data_paths, image_etc2_paths, image_s3tc_paths);
+    const std::vector<std::filesystem::path> _image_paths = detail::resolve_image_paths(data_paths, etc2_paths, s3tc_paths);
     std::shared_ptr<std::promise<std::array<image, 6>>> _images_promise = std::make_shared<std::promise<std::array<image, 6>>>();
 
     detail::fetch_bytes(_image_paths, [_images_promise](const std::vector<std::vector<char>>& _data_bytes) {

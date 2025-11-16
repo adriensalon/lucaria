@@ -4,6 +4,7 @@
 
 namespace lucaria {
 
+/// @brief Represents a runtime sound
 struct sound {
     LUCARIA_DELETE_DEFAULT_SEMANTICS(sound)
     sound(const sound& other) = delete;
@@ -12,10 +13,12 @@ struct sound {
     sound& operator=(sound&& other);
     ~sound();
 
-    /// @brief 
-    /// @param from 
+    /// @brief Creates a sound from audio data
+    /// @param from the audio data to create from
     sound(const audio& from);    
     
+    /// @brief Returns a handle to the underlying implementation
+    /// @return the underlying implementation handle
     [[nodiscard]] glm::uint get_handle() const;
 
 private:

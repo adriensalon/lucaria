@@ -7,10 +7,10 @@
 
 namespace lucaria {
 
-/// @brief
-/// @param scenes
-/// @param on_start
-/// @param on_update
+/// @brief Runs a Lucaria application from user owned registries
+/// @param scenes user owned registries holding the components
+/// @param on_start callback to fire after Lucaria has initialized
+/// @param on_update callback to fire on evey frame
 void run(
     std::vector<entt::registry>& scenes,
     const std::function<void()>& on_start,

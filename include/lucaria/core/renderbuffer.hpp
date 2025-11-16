@@ -4,15 +4,15 @@
 
 namespace lucaria {
 
-struct renderbuffer_ref {
-    renderbuffer_ref() = delete;
-    renderbuffer_ref(const renderbuffer_ref& other) = delete;
-    renderbuffer_ref& operator=(const renderbuffer_ref& other) = delete;
-    renderbuffer_ref(renderbuffer_ref&& other);
-    renderbuffer_ref& operator=(renderbuffer_ref&& other);
-    ~renderbuffer_ref();
+struct deprecated_renderbuffer {
+    deprecated_renderbuffer() = delete;
+    deprecated_renderbuffer(const deprecated_renderbuffer& other) = delete;
+    deprecated_renderbuffer& operator=(const deprecated_renderbuffer& other) = delete;
+    deprecated_renderbuffer(deprecated_renderbuffer&& other);
+    deprecated_renderbuffer& operator=(deprecated_renderbuffer&& other);
+    ~deprecated_renderbuffer();
 
-    renderbuffer_ref(const glm::uint width, const glm::uint height, const glm::uint internal_format, const glm::uint samples = 1);
+    deprecated_renderbuffer(const glm::uint width, const glm::uint height, const glm::uint internal_format, const glm::uint samples = 1);
     glm::uint get_width() const;
     glm::uint get_height() const;
     glm::uint get_internal_format() const;

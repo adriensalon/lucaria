@@ -14,8 +14,20 @@
 
 namespace lucaria {
 
+/// @brief Throws an error on platforms that support it, logs and terminates otherwise
+/// @param file the file where the error happens
+/// @param line the line where the error happens
+/// @param message the error message
 void runtime_error(std::string_view file, const int line, const std::string& message);
+
+/// @brief Throws any pending OpenAL errors
+/// @param file the file where the assert happens
+/// @param line the line where the assert happens
 void runtime_openal_assert(std::string_view file, const int line);
+
+/// @brief Throws any pending OpenGL errors
+/// @param file the file where the assert happens
+/// @param line the line where the assert happens
 void runtime_opengl_assert(std::string_view file, const int line);
 
 }

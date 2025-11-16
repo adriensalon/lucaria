@@ -23,7 +23,12 @@ struct skeleton {
     /// @param data_path path to load from
     skeleton(const std::filesystem::path& data_path);
 
+    /// @brief Returns a handle to the underlying implementation
+    /// @return the underlying implementation handle
     [[nodiscard]] ozz::animation::Skeleton& get_handle();
+    
+    /// @brief Returns a handle to the underlying implementation
+    /// @return the underlying implementation handle
     [[nodiscard]] const ozz::animation::Skeleton& get_handle() const;
 
 private:

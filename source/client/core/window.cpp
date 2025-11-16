@@ -741,7 +741,7 @@ glm::float64 get_time_delta()
     // return 1.0 / 60.0;
 }
 
-bool get_is_etc_supported()
+bool get_is_etc2_supported()
 {
     return detail::is_etc_supported;
 }

@@ -26,7 +26,12 @@ struct font {
     /// @param font_size imgui size of the font
     font(const std::filesystem::path& data_path, const glm::float32 font_size);
 
+    /// @brief Returns a handle to the underlying implementation
+    /// @return the underlying implementation handle
     [[nodiscard]] ImFont* get_handle();
+    
+    /// @brief Returns a handle to the underlying implementation
+    /// @return the underlying implementation handle
     [[nodiscard]] const ImFont* get_handle() const;
 
 private:

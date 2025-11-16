@@ -31,9 +31,11 @@ struct program {
     /// @param attribute attribute type to bind
     void bind_attribute(const std::string& name, const mesh& from, const mesh_attribute attribute);
     
-    /// @brief 
-    /// @param from 
-    void bind_attribute(const std::string& name, viewport& from, const mesh_attribute attribute);
+    /// @brief Uses a mesh attribute for draw calls
+    /// @param name source name of the attribute
+    /// @param from viewport to bind from 
+    /// @param attribute attribute type to bind
+    void bind_attribute(const std::string& name, const viewport& from, const mesh_attribute attribute);
     
     /// @brief Uses a cubemap uniform for draw calls
     /// @param name source name of the uniform
@@ -41,21 +43,21 @@ struct program {
     /// @param slot texture slot to use
     void bind_uniform(const std::string& name, const cubemap& from, const glm::uint slot = 0) const;
     
-    /// @brief 
-    /// @param name 
-    /// @param from 
-    /// @param slot 
+    /// @brief Uses a texture uniform for draw calls
+    /// @param name source name of the uniform
+    /// @param from texture to bind from
+    /// @param slot texture slot to use
     void bind_uniform(const std::string& name, const texture& from, const glm::uint slot = 0) const;
     
-    /// @brief 
-    /// @tparam value_t 
-    /// @param name 
-    /// @param value 
-    template <typename value_t> 
-    void bind_uniform(const std::string& name, const value_t& value);
+    /// @brief Uses a uniform buffer for draw calls
+    /// @tparam value_t type of the uniform data
+    /// @param name source name of the uniform
+    /// @param value data to bind from
+    template <typename T> 
+    void bind_uniform(const std::string& name, const T& value);
     
-    /// @brief 
-    /// @param use_depth 
+    /// @brief Enqueues a draw call using all the bound resources
+    /// @param use_depth enables reads and writes to the depth buffer
     void draw(const bool use_depth = true) const;
 
 #if LUCARIA_GUIZMO
@@ -69,8 +71,16 @@ struct program {
     void draw_guizmo() const;
 #endif
 
+    /// @brief Returns a handle to the underlying implementation
+    /// @return the underlying implementation handle
     [[nodiscard]] glm::uint get_handle() const;
+
+    /// @brief Returns reflected attribute names from the compiled shaders
+    /// @return the reflected attribute names
     [[nodiscard]] const std::unordered_map<std::string, glm::int32>& get_attributes() const;
+    
+    /// @brief Returns reflected uniform names from the compiled shaders
+    /// @return the reflected uniform names
     [[nodiscard]] const std::unordered_map<std::string, glm::int32>& get_uniforms() const;
 
 private:

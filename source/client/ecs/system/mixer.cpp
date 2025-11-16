@@ -34,7 +34,7 @@ namespace detail {
                             alSourcePlay(_speaker._handle);
 
                         } else {
-                            alSourcePause(_speaker._handle);
+                            alSourceStop(_speaker._handle);
                         }
 
                         _speaker._is_playing = _speaker._want_playing;

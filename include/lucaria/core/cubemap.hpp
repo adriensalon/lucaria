@@ -17,12 +17,8 @@ struct cubemap {
     /// @param images the images to create from
     cubemap(const std::array<image, 6>& images);
 
-    // set parameters
-
-    // generate mipmaps
-
-    // update pixels
-
+    /// @brief Returns a handle to the underlying implementation
+    /// @return the underlying implementation handle
     [[nodiscard]] glm::uint get_handle() const;
 
 private:
@@ -32,12 +28,12 @@ private:
 
 /// @brief Loads a cubemap from files asynchronously and uploads directly to the device,
 /// lets the runtime choose the best format it can use without downloading the others
-/// @param image_data_paths paths to load uncompressed image versions from
-/// @param image_etc2_paths paths to load ETC2 compressed image versions from
-/// @param image_s3tc_paths paths to load S3TC compressed image versions from
+/// @param data_paths paths to load uncompressed image versions from
+/// @param etc2_paths paths to load ETC2 compressed image versions from
+/// @param s3tc_paths paths to load S3TC compressed image versions from
 [[nodiscard]] fetched<cubemap> fetch_cubemap(
-    const std::array<std::filesystem::path, 6>& image_data_paths,
-    const std::optional<std::array<std::filesystem::path, 6>>& image_etc2_paths = std::nullopt,
-    const std::optional<std::array<std::filesystem::path, 6>>& image_s3tc_paths = std::nullopt);
+    const std::array<std::filesystem::path, 6>& data_paths,
+    const std::optional<std::array<std::filesystem::path, 6>>& etc2_paths = std::nullopt,
+    const std::optional<std::array<std::filesystem::path, 6>>& s3tc_paths = std::nullopt);
 
 }

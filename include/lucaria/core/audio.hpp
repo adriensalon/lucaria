@@ -6,7 +6,7 @@
 
 namespace lucaria {
 
-/// @brief Represents audio on the host
+/// @brief Represents runtime audio on the host
 struct audio {
     LUCARIA_DELETE_DEFAULT_SEMANTICS(audio)
     audio(const audio& other) = delete;

@@ -37,6 +37,8 @@ namespace ecs {
     speaker_component& speaker_component::use_sound(sound& from)
     {
         _sound.emplace(from);
+        _is_playing = false;
+        alSourceStop(_handle);
         alSourcei(_handle, AL_BUFFER, _sound.value().get_handle());
         return *this;
     }
@@ -44,6 +46,8 @@ namespace ecs {
     speaker_component& speaker_component::use_sound(fetched<sound>& from)
     {
         _sound.emplace(from, [this]() {
+            _is_playing = false;
+            alSourceStop(_handle);
             alSourcei(_handle, AL_BUFFER, _sound.value().get_handle());
         });
         return *this;

@@ -5,13 +5,14 @@
 #endif
 
 #include <fstream>
+#include <iostream>
 
 #include <lucaria/core/fetch.hpp>
 
 namespace lucaria {
 namespace {
 
-    static std::atomic<int> _fetches_waiting = 0;
+    static std::atomic<std::size_t> _fetches_waiting = 0;
 
     static void fetch_bytes_impl(const std::filesystem::path& file_path,
         std::function<void(std::vector<char>)> callback,
@@ -56,7 +57,7 @@ namespace {
     }
 }
 
-int get_fetches_waiting()
+std::size_t get_fetches_waiting()
 {
     return _fetches_waiting.load();
 }

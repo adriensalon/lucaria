@@ -63,7 +63,7 @@ texture::texture(const image& from)
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     switch (from.data.channels) {
     case 3:
-        if (from.data.is_compressed_etc && get_is_etc_supported()) {
+        if (from.data.is_compressed_etc && get_is_etc2_supported()) {
             glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB8_ETC2, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
         } else if (from.data.is_compressed_s3tc && get_is_s3tc_supported()) {
             glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
@@ -72,7 +72,7 @@ texture::texture(const image& from)
         }
         break;
     case 4:
-        if (from.data.is_compressed_etc && get_is_etc_supported()) {
+        if (from.data.is_compressed_etc && get_is_etc2_supported()) {
             glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA8_ETC2_EAC, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
         } else if (from.data.is_compressed_s3tc && get_is_s3tc_supported()) {
             glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
@@ -136,11 +136,11 @@ glm::uint texture::get_handle() const
 }
 
 fetched<texture> fetch_texture(
-    const std::filesystem::path& image_data_path,
-    const std::optional<std::filesystem::path>& image_etc2_path,
-    const std::optional<std::filesystem::path>& image_s3tc_path)
+    const std::filesystem::path& data_path,
+    const std::optional<std::filesystem::path>& etc2_path,
+    const std::optional<std::filesystem::path>& s3tc_path)
 {
-    const std::filesystem::path& _image_path = detail::resolve_image_path(image_data_path, image_etc2_path, image_s3tc_path);
+    const std::filesystem::path& _image_path = detail::resolve_image_path(data_path, etc2_path, s3tc_path);
     std::shared_ptr<std::promise<image>> _image_promise = std::make_shared<std::promise<image>>();
 
     detail::fetch_bytes(_image_path, [_image_promise](const std::vector<char>& _data_bytes) {

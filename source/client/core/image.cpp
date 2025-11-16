@@ -122,7 +122,7 @@ namespace detail {
         const std::optional<std::filesystem::path>& etc2_path,
         const std::optional<std::filesystem::path>& s3tc_path)
     {
-        if (get_is_etc_supported() && etc2_path.has_value()) {
+        if (get_is_etc2_supported() && etc2_path.has_value()) {
             return etc2_path.value();
         } else if (get_is_s3tc_supported() && s3tc_path.has_value()) {
             return s3tc_path.value();
@@ -136,7 +136,7 @@ namespace detail {
         const std::optional<std::array<std::filesystem::path, 6>>& etc2_paths,
         const std::optional<std::array<std::filesystem::path, 6>>& s3tc_paths)
     {
-        if (get_is_etc_supported() && etc2_paths.has_value()) {
+        if (get_is_etc2_supported() && etc2_paths.has_value()) {
             return std::vector<std::filesystem::path>(etc2_paths.value().begin(), etc2_paths.value().end());
         } else if (get_is_s3tc_supported() && s3tc_paths.has_value()) {
             return std::vector<std::filesystem::path>(s3tc_paths.value().begin(), s3tc_paths.value().end());

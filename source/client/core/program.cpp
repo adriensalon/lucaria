@@ -164,7 +164,7 @@ void program::bind_attribute(const std::string& name, const mesh& from, const me
     glEnableVertexAttribArray(_location);
 }
 
-void program::bind_attribute(const std::string& name, viewport& from, const mesh_attribute attribute)
+void program::bind_attribute(const std::string& name, const viewport& from, const mesh_attribute attribute)
 {
     if (attribute != mesh_attribute::position && attribute != mesh_attribute::texcoord) {
         LUCARIA_RUNTIME_ERROR("Failed to bind viewport attribute because only position or texcoord is expected")

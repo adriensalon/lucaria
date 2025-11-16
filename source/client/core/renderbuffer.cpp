@@ -3,12 +3,12 @@
 
 namespace lucaria {
 
-renderbuffer_ref::renderbuffer_ref(renderbuffer_ref&& other)
+deprecated_renderbuffer::deprecated_renderbuffer(deprecated_renderbuffer&& other)
 {
     *this = std::move(other);
 }
 
-renderbuffer_ref& renderbuffer_ref::operator=(renderbuffer_ref&& other)
+deprecated_renderbuffer& deprecated_renderbuffer::operator=(deprecated_renderbuffer&& other)
 {
     if (_is_instanced) {
         throw std::runtime_error("Renderbuffer already owning a GL resource");
@@ -23,14 +23,14 @@ renderbuffer_ref& renderbuffer_ref::operator=(renderbuffer_ref&& other)
     return *this;
 }
 
-renderbuffer_ref::~renderbuffer_ref()
+deprecated_renderbuffer::~deprecated_renderbuffer()
 {
     if (_is_instanced) {
         glDeleteRenderbuffers(1, &_renderbuffer_id);
     }
 }
 
-renderbuffer_ref::renderbuffer_ref(const glm::uint width, const glm::uint height, const glm::uint internal_format, const glm::uint samples)
+deprecated_renderbuffer::deprecated_renderbuffer(const glm::uint width, const glm::uint height, const glm::uint internal_format, const glm::uint samples)
 {
     _width = width;
     _height = height;
@@ -65,27 +65,27 @@ renderbuffer_ref::renderbuffer_ref(const glm::uint width, const glm::uint height
     }
 }
 
-glm::uint renderbuffer_ref::get_width() const
+glm::uint deprecated_renderbuffer::get_width() const
 {
     return _width;
 }
 
-glm::uint renderbuffer_ref::get_height() const
+glm::uint deprecated_renderbuffer::get_height() const
 {
     return _height;
 }
 
-glm::uint renderbuffer_ref::get_internal_format() const
+glm::uint deprecated_renderbuffer::get_internal_format() const
 {
     return _internal_format;
 }
 
-glm::uint renderbuffer_ref::get_samples() const
+glm::uint deprecated_renderbuffer::get_samples() const
 {
     return _samples;
 }
 
-glm::uint renderbuffer_ref::get_id() const
+glm::uint deprecated_renderbuffer::get_id() const
 {
     return _renderbuffer_id;
 }

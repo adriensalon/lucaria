@@ -10,6 +10,7 @@
 #include <lucaria/core/fetch.hpp>
 #include <lucaria/core/math.hpp>
 #include <lucaria/core/skeleton.hpp>
+#include <lucaria/core/track.hpp>
 #include <lucaria/ecs/component/transform.hpp>
 
 namespace lucaria {

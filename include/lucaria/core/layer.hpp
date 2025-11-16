@@ -30,12 +30,18 @@ enum struct kinematic_layer : std::int16_t {
     layer_8 = detail::bulletgroupID_collider_layer_8,
 };
 
-inline bool contains_layer(const std::int16_t containing, const std::int16_t contained)
+/// @brief Checks if a layers bitset uses the selected layer
+/// @param containing the layers bitset
+/// @param contained the selected layer
+[[nodiscard]] inline bool contains_layer(const std::int16_t containing, const std::int16_t contained)
 {
     return (containing & contained) == contained;
 }
 
-inline std::int16_t remove_layer(const std::int16_t containing, const std::int16_t to_remove)
+/// @brief Removes the selected layer from a layers bitset
+/// @param containing the layers bitset
+/// @param to_remove the selected layer
+[[nodiscard]] inline std::int16_t remove_layer(const std::int16_t containing, const std::int16_t to_remove)
 {
     return containing & ~to_remove;
 }

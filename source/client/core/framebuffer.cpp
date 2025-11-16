@@ -44,7 +44,7 @@ framebuffer::~framebuffer()
     }
 }
 
-framebuffer::framebuffer(const glm::uvec2 size)
+framebuffer::framebuffer(const glm::uvec2& size)
     : _size(size)
     , _texture_color_id(std::nullopt)
     , _texture_depth_id(std::nullopt)
@@ -89,7 +89,7 @@ void framebuffer::bind_color(texture& color_tex)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void framebuffer::bind_color(renderbuffer_ref& color_rb)
+void framebuffer::bind_color(deprecated_renderbuffer& color_rb)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, _handle);
 
@@ -128,7 +128,7 @@ void framebuffer::bind_depth(texture& depth_tex)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void framebuffer::bind_depth(renderbuffer_ref& depth_rb)
+void framebuffer::bind_depth(deprecated_renderbuffer& depth_rb)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, _handle);
 

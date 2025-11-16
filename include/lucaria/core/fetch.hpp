@@ -3,7 +3,6 @@
 #include <filesystem>
 #include <functional>
 #include <future>
-#include <iostream>
 #include <optional>
 #include <type_traits>
 #include <vector>
@@ -15,13 +14,15 @@
 namespace lucaria {
 
 /// @brief Represents a fetched value
-/// @tparam value_t type being fetched
-template <typename value_t>
+/// @tparam T type being fetched
+template <typename T>
 struct fetched {
 
-    fetched(std::future<value_t>&& future)
+    /// @brief Creates a fetched object from an existing std::future<T>
+    /// @param future the future to create from
+    fetched(std::future<T>&& future)
     {
-        std::shared_ptr<std::future<value_t>> _shared_future = std::make_shared<std::future<value_t>>(std::move(future));
+        std::shared_ptr<std::future<T>> _shared_future = std::make_shared<std::future<T>>(std::move(future));
 
         _poll = [_shared_future]() -> bool {
             if (!_shared_future->valid()) {
@@ -30,16 +31,21 @@ struct fetched {
             return _shared_future->wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
         };
 
-        _get = [_shared_future]() -> value_t {
+        _get = [_shared_future]() -> T {
             return _shared_future->get();
         };
     }
 
-    template <typename U, typename Then, typename = std::enable_if_t<std::is_invocable_r_v<value_t, const Then&, const U&>>>
-    fetched(std::future<U>&& future, const Then& then_fn)
+    /// @brief Creates a fetched object from an existing std::future<U> and a continuation from U to T
+    /// @tparam U intermediate type to continuate
+    /// @tparam Then function type for the continuation
+    /// @param future the future to create from
+    /// @param then the continuation
+    template <typename U, typename Then, typename = std::enable_if_t<std::is_invocable_r_v<T, const Then&, const U&>>>
+    fetched(std::future<U>&& future, const Then& then)
     {
         std::shared_ptr<std::future<U>> _shared_intermediate_future = std::make_shared<std::future<U>>(std::move(future));
-        std::shared_ptr<std::decay_t<Then>> _shared_decayed_then = std::make_shared<std::decay_t<Then>>(then_fn);
+        std::shared_ptr<std::decay_t<Then>> _shared_decayed_then = std::make_shared<std::decay_t<Then>>(then);
 
         _poll = [_shared_intermediate_future]() -> bool {
             if (!_shared_intermediate_future->valid()) {
@@ -48,14 +54,14 @@ struct fetched {
             return _shared_intermediate_future->wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
         };
 
-        _get = [_shared_intermediate_future, _shared_decayed_then]() -> value_t {
+        _get = [_shared_intermediate_future, _shared_decayed_then]() -> T {
             const U _intermediate_value = _shared_intermediate_future->get();
             return std::invoke(*_shared_decayed_then, _intermediate_value);
         };
     }
 
-    /// @brief
-    /// @return
+    /// @brief Checks if the underlying std::future<T> has yet a value or is still computing
+    /// @return true if the value is available
     [[nodiscard]] bool has_value() const
     {
         if (_cache) {
@@ -72,9 +78,10 @@ struct fetched {
         return false;
     }
 
-    /// @brief
-    /// @return
-    [[nodiscard]] value_t& value()
+    /// @brief Gets the available value held by the underlying std::future<T>.
+    /// @throws throws a lucaria::runtime_error if the std::future result is not available yet
+    /// @return the available value
+    [[nodiscard]] T& value()
     {
         if (!has_value()) {
             LUCARIA_RUNTIME_ERROR("Failed to get fetched value&, please check has_value() before trying to access it")
@@ -82,9 +89,10 @@ struct fetched {
         return _cache.value();
     }
 
-    /// @brief
-    /// @return
-    [[nodiscard]] const value_t& value() const
+    /// @brief Gets the available value held by the underlying std::future<T>.
+    /// @throws throws a lucaria::runtime_error if the std::future result is not available yet
+    /// @return the available value
+    [[nodiscard]] const T& value() const
     {
         if (!has_value()) {
             LUCARIA_RUNTIME_ERROR("Failed to get fetched const value&, please check has_value() before trying to access it")
@@ -92,16 +100,21 @@ struct fetched {
         return _cache.value();
     }
 
-    /// @brief
-    [[nodiscard]] explicit operator bool() const { return has_value(); }
+    /// @brief Conversion operator for the has_value member function
+    [[nodiscard]] explicit operator bool() const
+    {
+        return has_value();
+    }
 
 private:
     mutable std::function<bool()> _poll;
-    mutable std::function<value_t()> _get;
-    mutable std::optional<value_t> _cache;
+    mutable std::function<T()> _get;
+    mutable std::optional<T> _cache;
 };
 
-[[nodiscard]] int get_fetches_waiting();
+/// @brief Gets the current count of fetched objects that still have a std::future waiting
+/// @return the current count
+[[nodiscard]] std::size_t get_fetches_waiting();
 
 namespace detail {
 
@@ -132,15 +145,15 @@ namespace detail {
         std::size_t _position;
     };
 
-    template <typename value_t>
+    template <typename T>
     struct fetched_container {
 
-        void emplace(value_t& obj)
+        void emplace(T& obj)
         {
             _ptr = &obj;
         }
 
-        void emplace(fetched<value_t>& fut, const std::function<void()>& callback = nullptr)
+        void emplace(fetched<T>& fut, const std::function<void()>& callback = nullptr)
         {
             _fut = &fut;
             _callback = callback;
@@ -162,12 +175,12 @@ namespace detail {
             return false;
         }
 
-        value_t& value()
+        T& value()
         {
             return _ptr ? *_ptr : _fut->value();
         }
 
-        const value_t& value() const
+        const T& value() const
         {
             return _ptr ? *_ptr : _fut->value();
         }
@@ -175,8 +188,8 @@ namespace detail {
         explicit operator bool() const { return has_value(); }
 
     private:
-        value_t* _ptr = nullptr;
-        fetched<value_t>* _fut = nullptr;
+        T* _ptr = nullptr;
+        fetched<T>* _fut = nullptr;
         mutable std::function<void()> _callback = nullptr;
         mutable bool _is_callback_invoked = false;
     };

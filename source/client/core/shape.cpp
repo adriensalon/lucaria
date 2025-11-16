@@ -52,7 +52,6 @@ shape::shape(btCollisionShape* handle, const glm::float32 zdistance)
 {
     _handle = std::unique_ptr<btCollisionShape>(handle);
     _feet_to_center = glm::translate(glm::mat4(1), glm::vec3(0, +zdistance, 0));
-    // _center_to_feet = glm::inverse(_feet_to_center);
     _center_to_feet = glm::translate(glm::mat4(1), glm::vec3(0, -zdistance, 0));
 }
 
@@ -100,11 +99,11 @@ shape create_cone_shape(const glm::float32 radius, const glm::float32 height)
         static_cast<btScalar>(height)), height * 0.5f);
 }
 
-fetched<shape> fetch_shape(const std::filesystem::path& geometry_data_path, const shape_algorithm algorithm)
+fetched<shape> fetch_shape(const std::filesystem::path& data_path, const shape_algorithm algorithm)
 {
     std::shared_ptr<std::promise<shape>> _promise = std::make_shared<std::promise<shape>>();
 
-    detail::fetch_bytes(geometry_data_path, [_promise, algorithm](const std::vector<char>& _data_bytes) {
+    detail::fetch_bytes(data_path, [_promise, algorithm](const std::vector<char>& _data_bytes) {
         geometry _geometry(_data_bytes);
         shape _shape(_geometry, algorithm);
         _promise->set_value(std::move(_shape));

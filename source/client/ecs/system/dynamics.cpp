@@ -13,8 +13,9 @@ namespace detail {
 
     btDiscreteDynamicsWorld* dynamics_world = nullptr;
 
+#if LUCARIA_GUIZMO
     extern void draw_guizmo_line(const btVector3& from, const btVector3& to, const btVector3& color);
-
+#endif
 }
 
 namespace {
@@ -157,12 +158,16 @@ namespace ecs {
             btCollisionWorld::ClosestRayResultCallback _raycallback(_from, _to);
 
             detail::dynamics_world->rayTest(_from, _to, _raycallback);
+#if LUCARIA_GUIZMO
             detail::draw_guizmo_line(_from, _to, btVector3(1, 0, 1)); // purple
+#endif
 
             if (_raycallback.hasHit()) {
                 btVector3 _hitpoint = _raycallback.m_hitPointWorld;
                 btVector3 _hitnormal = _raycallback.m_hitNormalWorld.normalized();
+#if LUCARIA_GUIZMO
                 detail::draw_guizmo_line(_hitpoint, _hitpoint + _hitnormal * 0.2f, btVector3(1, 1, 1)); // white
+#endif
 
                 return raycast_collision {
                     detail::reinterpret(_hitpoint),
@@ -355,7 +360,6 @@ namespace detail {
     {
 #if LUCARIA_GUIZMO
         detail::dynamics_world->debugDrawWorld();
-#endif
 
         detail::each_scene([&](entt::registry& scene) {
             scene.view<ecs::transform_component, ecs::kinematic_rigidbody_component>().each([&](ecs::transform_component& transform, ecs::kinematic_rigidbody_component& rigidbody) {
@@ -366,6 +370,7 @@ namespace detail {
                 }
             });
         });
+#endif
     }
 }
 }
