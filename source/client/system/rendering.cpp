@@ -282,7 +282,7 @@ namespace {
         vec3 _rgb_m = texture(uniform_color, frag_texcoord).rgb;
         float _luma_m = fxaa_luma(_rgb_m);
         vec3 _rgb_n = texture(uniform_color, frag_texcoord + vec2(0.0, -uniform_texel_size.y)).rgb;
-        vec3 _rgb_s = texture(uniform_color, frag_texcoord + vec2(0.0,  uniform_texel_size.y)).rgb;
+        vec3 _rgb_s = texture(uniform_color, frag_texcoord + vec2(0.0, uniform_texel_size.y)).rgb;
         vec3 _rgb_w = texture(uniform_color, frag_texcoord + vec2(-uniform_texel_size.x, 0.0)).rgb;
         vec3 _rgb_e = texture(uniform_color, frag_texcoord + vec2( uniform_texel_size.x, 0.0)).rgb;
         float _luma_n = fxaa_luma(_rgb_n);
@@ -296,7 +296,7 @@ namespace {
         if (_contrast < _threshold) {
             output_color = vec4(_rgb_m, 1.0);
             return;
-        }        
+        }
         vec2 _direction;
         _direction.x = (_luma_w - _luma_e);
         _direction.y = (_luma_n - _luma_s);
@@ -308,7 +308,7 @@ namespace {
         vec3 _aa_color = (_rgb_a + _rgb_b + _rgb_m) / 3.0;
         vec3 _final_color = mix(_rgb_m, _aa_color, uniform_fxaa_enable);
 
-        output_color = vec4(_final_color, 1.0);        
+        output_color = vec4(_final_color, 1.0);
     })";
 
     static const std::vector<glm::vec3> skybox_positions = {
