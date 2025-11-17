@@ -45,8 +45,8 @@ void run(
         detail::rendering_system::draw_blockout_meshes();
         detail::rendering_system::draw_unlit_meshes();
         detail::rendering_system::draw_imgui_spatial_interfaces();
-        detail::rendering_system::draw_imgui_screen_interfaces();
         detail::rendering_system::draw_post_processing();
+        detail::rendering_system::draw_imgui_screen_interfaces();
 
         detail::motion_system::collect_debug_guizmos();
         detail::dynamics_system::collect_debug_guizmos();

@@ -109,6 +109,12 @@ namespace {
     static std::optional<texture> scene_color_texture;
     static std::optional<renderbuffer> scene_depth_renderbuffer;
 
+    // fxaa
+    static bool fxaa_enable = false;
+    static glm::float32 fxaa_contrast_threshold = 0.0312f;
+    static glm::float32 fxaa_relative_threshold = 0.125f;
+    static glm::float32 fxaa_edge_sharpness = 1.5f;
+
     static const std::string unlit_vertex = R"(#version 300 es
     in vec3 vert_position;
     in vec2 vert_texcoord;
@@ -256,10 +262,53 @@ namespace {
     precision mediump float;
     in vec2 frag_texcoord;
     uniform sampler2D uniform_color;
+    uniform vec2 uniform_texel_size;
+
+    // fxaa
+    uniform float uniform_fxaa_enable;
+    uniform float uniform_fxaa_contrast_threshold;
+    uniform float uniform_fxaa_relative_threshold;
+    uniform float uniform_fxaa_edge_sharpness;
+
     out vec4 output_color;
+
+    float fxaa_luma(vec3 c) {
+        return dot(c, vec3(0.299, 0.587, 0.114));
+    }
+
     void main()
     {
-        output_color = texture(uniform_color, frag_texcoord);
+        // fxaa
+        vec3 _rgb_m = texture(uniform_color, frag_texcoord).rgb;
+        float _luma_m = fxaa_luma(_rgb_m);
+        vec3 _rgb_n = texture(uniform_color, frag_texcoord + vec2(0.0, -uniform_texel_size.y)).rgb;
+        vec3 _rgb_s = texture(uniform_color, frag_texcoord + vec2(0.0,  uniform_texel_size.y)).rgb;
+        vec3 _rgb_w = texture(uniform_color, frag_texcoord + vec2(-uniform_texel_size.x, 0.0)).rgb;
+        vec3 _rgb_e = texture(uniform_color, frag_texcoord + vec2( uniform_texel_size.x, 0.0)).rgb;
+        float _luma_n = fxaa_luma(_rgb_n);
+        float _luma_s = fxaa_luma(_rgb_s);
+        float _luma_w = fxaa_luma(_rgb_w);
+        float _luma_e = fxaa_luma(_rgb_e);
+        float _luma_min = min(_luma_m, min(min(_luma_n, _luma_s), min(_luma_w, _luma_e)));
+        float _luma_max = max(_luma_m, max(max(_luma_n, _luma_s), max(_luma_w, _luma_e)));
+        float _contrast = _luma_max - _luma_min;
+        float _threshold = max(uniform_fxaa_contrast_threshold, _luma_max * uniform_fxaa_relative_threshold);
+        if (_contrast < _threshold) {
+            output_color = vec4(_rgb_m, 1.0);
+            return;
+        }        
+        vec2 _direction;
+        _direction.x = (_luma_w - _luma_e);
+        _direction.y = (_luma_n - _luma_s);
+        float _direction_reduce = (abs(_direction.x) + abs(_direction.y)) + 1e-4;
+        _direction /= _direction_reduce;
+        _direction *= uniform_texel_size * uniform_fxaa_edge_sharpness;
+        vec3 _rgb_a = texture(uniform_color, frag_texcoord + _direction * 0.5).rgb;
+        vec3 _rgb_b = texture(uniform_color, frag_texcoord - _direction * 0.5).rgb;
+        vec3 _aa_color = (_rgb_a + _rgb_b + _rgb_m) / 3.0;
+        vec3 _final_color = mix(_rgb_m, _aa_color, uniform_fxaa_enable);
+
+        output_color = vec4(_final_color, 1.0);        
     })";
 
     static const std::vector<glm::vec3> skybox_positions = {
@@ -344,7 +393,10 @@ void use_camera_bone(animator_component& animator, const std::string& bone)
     _follow_bone_name = bone;
 }
 
-void set_camera_projection(const glm::float32 fov, const glm::float32 near, const glm::float32 far)
+void set_camera_projection(
+    const glm::float32 fov,
+    const glm::float32 near,
+    const glm::float32 far)
 {
     camera_fov = fov;
     camera_near = near;
@@ -359,6 +411,21 @@ void set_clear_color(const glm::vec4& color)
 void set_clear_depth(const bool is_clearing)
 {
     clear_depth = is_clearing;
+}
+
+void set_fxaa(const bool enable)
+{
+    fxaa_enable = enable;
+}
+
+void set_fxaa_parameters(
+    const glm::float32 contrast_threshold,
+    const glm::float32 relative_threshold,
+    const glm::float32 edge_sharpness)
+{
+    fxaa_contrast_threshold = contrast_threshold;
+    fxaa_relative_threshold = relative_threshold;
+    fxaa_edge_sharpness = edge_sharpness;
 }
 
 glm::mat4 get_projection()
@@ -814,6 +881,13 @@ namespace detail {
         _post_processing_program.use();
         _post_processing_program.bind_attribute("vert_position", _post_processing_mesh, mesh_attribute::position);
         _post_processing_program.bind_uniform("uniform_color", scene_color_texture.value(), 0);
+        _post_processing_program.bind_uniform("uniform_texel_size", 1.f / glm::vec2(get_screen_size()));
+
+        // fxaa
+        _post_processing_program.bind_uniform("uniform_fxaa_enable", fxaa_enable ? 1.f : 0.f);
+        _post_processing_program.bind_uniform("uniform_fxaa_contrast_threshold", fxaa_contrast_threshold);
+        _post_processing_program.bind_uniform("uniform_fxaa_relative_threshold", fxaa_relative_threshold);
+        _post_processing_program.bind_uniform("uniform_fxaa_edge_sharpness", fxaa_edge_sharpness);
 
         _post_processing_program.draw(false);
     }

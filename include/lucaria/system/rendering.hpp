@@ -26,7 +26,10 @@ void use_camera_bone(animator_component& animator, const std::string& bone);
 /// @param fov the FOV value in degrees
 /// @param near the minimum distance to draw
 /// @param far the maximum distance to draw
-void set_camera_projection(const glm::float32 fov = 60.f, const glm::float32 near = 0.1f, const glm::float32 far = 100.f);
+void set_camera_projection(
+    const glm::float32 fov = 60.f, 
+    const glm::float32 near = 0.1f, 
+    const glm::float32 far = 100.f);
 
 /// @brief Sets the RGBA clear color for all clear calls
 /// @param color the color to use
@@ -35,6 +38,19 @@ void set_clear_color(const glm::vec4& color);
 /// @brief Sets if the implemtation should clear depth for all clear calls
 /// @param is_clearing if depth clear calls are enabled
 void set_clear_depth(const bool is_clearing);
+
+/// @brief 
+/// @param enable 
+void set_fxaa(const bool enable);
+
+/// @brief 
+/// @param contrast_threshold 
+/// @param relative_threshold 
+/// @param edge_sharpness 
+void set_fxaa_parameters(
+    const glm::float32 contrast_threshold = 0.0312f,
+    const glm::float32 relative_threshold = 0.125f,
+    const glm::float32 edge_sharpness = 1.5f);
 
 /// @brief Returns the current camera projection matrix
 /// @return the projection matrix
