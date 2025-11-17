@@ -43,6 +43,9 @@ cubemap::cubemap(cubemap&& other)
 
 cubemap& cubemap::operator=(cubemap&& other)
 {
+    if (_is_owning) {
+        LUCARIA_RUNTIME_ERROR("Object already owning resources")
+    }
     _is_owning = true;
     _handle = other._handle;
     other._is_owning = false;

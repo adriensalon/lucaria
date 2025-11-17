@@ -330,7 +330,7 @@ namespace detail {
             scene.view<transform_component, dynamic_rigidbody_component>().each([](transform_component& transform, dynamic_rigidbody_component& rigidbody) {
                 const glm::mat4 _transform = convert(rigidbody._rigidbody->getWorldTransform());
                 const glm::mat4 _center_to_feet = rigidbody._shape.value().get_center_to_feet();
-                transform._transform = _transform * _center_to_feet;
+                transform._transform = _transform * _center_to_feet; // NON PROPAGE PAS AUX ENFANTS
             });
         });
 

@@ -24,7 +24,7 @@ framebuffer::framebuffer(framebuffer&& other)
 framebuffer& framebuffer::operator=(framebuffer&& other)
 {
     if (_is_owning) {
-        throw std::runtime_error("Framebuffer already owning a GL resource");
+        LUCARIA_RUNTIME_ERROR("Object already owning resources")
     }
     _is_owning = true;
     _size = other._size;
@@ -53,11 +53,16 @@ framebuffer::framebuffer(const glm::uvec2& size)
 {
     glGenFramebuffers(1, &_handle);
     glBindFramebuffer(GL_FRAMEBUFFER, _handle);
-    // glDrawBuffer(GL_NONE);
-    GLenum none = GL_NONE;
-    glDrawBuffers(1, &none);
+    GLenum _none = GL_NONE;
+    glDrawBuffers(1, &_none);
 
     glReadBuffer(GL_NONE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    _is_owning = true;
+}
+
+void framebuffer::use_default()
+{
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -66,18 +71,13 @@ void framebuffer::use()
     glBindFramebuffer(GL_FRAMEBUFFER, _handle);
 }
 
-void framebuffer::use_default()
-{
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-void framebuffer::bind_color(texture& color_tex)
+void framebuffer::bind_color(texture& color)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, _handle);
 
-    const GLuint _color_id = color_tex.get_handle();
+    const GLuint _color_id = color.get_handle();
     _texture_color_id = _color_id;
-    _renderbuffer_color_id = std::nullopt; // switch to texture-backed color
+    _renderbuffer_color_id = std::nullopt;
 
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _color_id, 0);
 
@@ -89,15 +89,15 @@ void framebuffer::bind_color(texture& color_tex)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void framebuffer::bind_color(deprecated_renderbuffer& color_rb)
+void framebuffer::bind_color(renderbuffer& color)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, _handle);
 
-    const GLuint rbId = color_rb.get_id();
-    _renderbuffer_color_id = rbId;
-    _texture_color_id = std::nullopt; // switch to RB-backed color
+    const GLuint _color_id = color.get_handle();
+    _renderbuffer_color_id = _color_id;
+    _texture_color_id = std::nullopt;
 
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rbId);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, _color_id);
 
     const GLenum buf = GL_COLOR_ATTACHMENT0;
     glDrawBuffers(1, &buf);
@@ -107,20 +107,19 @@ void framebuffer::bind_color(deprecated_renderbuffer& color_rb)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void framebuffer::bind_depth(texture& depth_tex)
+void framebuffer::bind_depth(texture& depth)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, _handle);
 
-    const GLuint texId = depth_tex.get_handle();
-    _texture_depth_id = texId;
+    const GLuint _depth_id = depth.get_handle();
+    _texture_depth_id = _depth_id;
     _renderbuffer_depth_id = 0;
 
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texId, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, _depth_id, 0);
 
     if (!_texture_color_id && !_renderbuffer_color_id) {
-        // glDrawBuffer(GL_NONE);
-        GLenum none = GL_NONE;
-        glDrawBuffers(1, &none);
+        GLenum _none = GL_NONE;
+        glDrawBuffers(1, &_none);
         glReadBuffer(GL_NONE);
     }
 
@@ -128,20 +127,19 @@ void framebuffer::bind_depth(texture& depth_tex)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void framebuffer::bind_depth(deprecated_renderbuffer& depth_rb)
+void framebuffer::bind_depth(renderbuffer& depth)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, _handle);
 
-    const GLuint rbId = depth_rb.get_id();
-    _renderbuffer_depth_id = rbId;
+    const GLuint _depth_id = depth.get_handle();
+    _renderbuffer_depth_id = _depth_id;
     _texture_depth_id = 0;
 
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbId);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _depth_id);
 
     if (!_texture_color_id && !_renderbuffer_color_id) {
-        // glDrawBuffer(GL_NONE);
-        GLenum none = GL_NONE;
-        glDrawBuffers(1, &none);
+        GLenum _none = GL_NONE;
+        glDrawBuffers(1, &_none);
         glReadBuffer(GL_NONE);
     }
 

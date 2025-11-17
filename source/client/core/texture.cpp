@@ -33,6 +33,9 @@ texture::texture(texture&& other)
 
 texture& texture::operator=(texture&& other)
 {
+    if (_is_owning) {
+        LUCARIA_RUNTIME_ERROR("Object already owning resources")
+    }
     _is_owning = true;
     _size = other._size;
     _handle = other._handle;

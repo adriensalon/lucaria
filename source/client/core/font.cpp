@@ -23,8 +23,6 @@ namespace {
         if (!detail::global_imgui_shared_font_atlas->Build()) {
             LUCARIA_RUNTIME_ERROR("Failed to build ImGui font atlas")
         }
-        // ImGui_ImplOpenGL3_DestroyFontsTexture();
-        // ImGui_ImplOpenGL3_CreateFontsTexture();
 
         detail::reupload_shared_font_texture_RGBA32();
         return _font;

@@ -14,7 +14,7 @@ struct geometry {
     geometry(geometry&& other) = default;
     geometry& operator=(geometry&& other) = default;
     
-    /// @brief Creates audio from data
+    /// @brief Creates geometry from data
     /// @param data to create from
     geometry(geometry_data&& data);
 

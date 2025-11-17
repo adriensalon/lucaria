@@ -131,6 +131,9 @@ mesh::mesh(mesh&& other)
 
 mesh& mesh::operator=(mesh&& other)
 {
+    if (_is_owning) {
+        LUCARIA_RUNTIME_ERROR("Object already owning resources")
+    }
     _is_owning = true;
     _size = other._size;
     _array_handle = other._array_handle;

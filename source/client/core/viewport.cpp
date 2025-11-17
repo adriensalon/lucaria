@@ -196,7 +196,10 @@ viewport::viewport(viewport&& other)
 }
 
 viewport& viewport::operator=(viewport&& other)
-{
+{    
+    if (_is_owning) {
+        LUCARIA_RUNTIME_ERROR("Object already owning resources")
+    }
     _is_owning = true;
     _computed_framebuffer_size = other._computed_framebuffer_size;
     _size = other._size;

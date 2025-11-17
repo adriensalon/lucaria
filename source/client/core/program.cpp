@@ -85,6 +85,9 @@ program::program(program&& other)
 
 program& program::operator=(program&& other)
 {
+    if (_is_owning) {
+        LUCARIA_RUNTIME_ERROR("Object already owning resources")
+    }
     _is_owning = true;
     _handle = other._handle;
     _attributes = std::move(other._attributes);

@@ -3,46 +3,46 @@
 
 namespace lucaria {
 
-deprecated_renderbuffer::deprecated_renderbuffer(deprecated_renderbuffer&& other)
+renderbuffer::renderbuffer(renderbuffer&& other)
 {
     *this = std::move(other);
 }
 
-deprecated_renderbuffer& deprecated_renderbuffer::operator=(deprecated_renderbuffer&& other)
+renderbuffer& renderbuffer::operator=(renderbuffer&& other)
 {
-    if (_is_instanced) {
-        throw std::runtime_error("Renderbuffer already owning a GL resource");
+    if (_is_owning) {
+        LUCARIA_RUNTIME_ERROR("Object already owning resources")
     }
-    _is_instanced = true;
-    _width = other._width;
-    _height = other._height;
+    _is_owning = true;
+    _size = other._size;
+    _handle = other._handle;
     _internal_format = other._internal_format;
     _samples = other._samples;
-    _renderbuffer_id = other._renderbuffer_id;
-    other._is_instanced = false;
+    other._is_owning = false;
     return *this;
 }
 
-deprecated_renderbuffer::~deprecated_renderbuffer()
+renderbuffer::~renderbuffer()
 {
-    if (_is_instanced) {
-        glDeleteRenderbuffers(1, &_renderbuffer_id);
+    if (_is_owning) {
+        glDeleteRenderbuffers(1, &_handle);
     }
 }
 
-deprecated_renderbuffer::deprecated_renderbuffer(const glm::uint width, const glm::uint height, const glm::uint internal_format, const glm::uint samples)
+renderbuffer::renderbuffer(const glm::uvec2& size, const glm::uint internal_format, const glm::uint samples)
 {
-    _width = width;
-    _height = height;
+    _size = size;
     _internal_format = internal_format;
     _samples = samples;
 
-    glGenRenderbuffers(1, &_renderbuffer_id);
-    glBindRenderbuffer(GL_RENDERBUFFER, _renderbuffer_id);
+    glGenRenderbuffers(1, &_handle);
+    glBindRenderbuffer(GL_RENDERBUFFER, _handle);
 
-    GLint _max_samples = 1;
-#ifdef GL_MAX_SAMPLES
-    glGetIntegerv(GL_MAX_SAMPLES, &_max_samples);
+    static GLint _max_samples = 1;
+#if defined(GL_MAX_SAMPLES)
+    if (_max_samples == 1) {
+        glGetIntegerv(GL_MAX_SAMPLES, &_max_samples);
+    }
 #endif
     _samples = static_cast<glm::uint>(std::clamp<int>(_samples, 1, _max_samples));
 
@@ -52,42 +52,38 @@ deprecated_renderbuffer::deprecated_renderbuffer(const glm::uint width, const gl
             GL_RENDERBUFFER,
             static_cast<GLsizei>(_samples),
             _internal_format,
-            static_cast<GLsizei>(_width),
-            static_cast<GLsizei>(_height));
+            static_cast<GLsizei>(_size.x),
+            static_cast<GLsizei>(_size.y));
     } else
 #endif
     {
         glRenderbufferStorage(
             GL_RENDERBUFFER,
             _internal_format,
-            static_cast<GLsizei>(_width),
-            static_cast<GLsizei>(_height));
+            static_cast<GLsizei>(_size.x),
+            static_cast<GLsizei>(_size.y));
     }
+    _is_owning = true;
 }
 
-glm::uint deprecated_renderbuffer::get_width() const
+glm::uvec2 renderbuffer::get_size() const
 {
-    return _width;
+    return _size;
 }
 
-glm::uint deprecated_renderbuffer::get_height() const
+glm::uint renderbuffer::get_handle() const
 {
-    return _height;
+    return _handle;
 }
 
-glm::uint deprecated_renderbuffer::get_internal_format() const
+glm::uint renderbuffer::get_internal_format() const
 {
     return _internal_format;
 }
 
-glm::uint deprecated_renderbuffer::get_samples() const
+glm::uint renderbuffer::get_samples() const
 {
     return _samples;
-}
-
-glm::uint deprecated_renderbuffer::get_id() const
-{
-    return _renderbuffer_id;
 }
 
 }
