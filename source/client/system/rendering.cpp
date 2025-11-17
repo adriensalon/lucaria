@@ -11,6 +11,7 @@
 #include <lucaria/component/transform.hpp>
 #include <lucaria/core/opengl.hpp>
 #include <lucaria/core/program.hpp>
+#include <lucaria/core/renderbuffer.hpp>
 #include <lucaria/core/window.hpp>
 #include <lucaria/core/world.hpp>
 #include <lucaria/system/rendering.hpp>
@@ -84,9 +85,9 @@ namespace {
 
     constexpr glm::float32 mouse_sensitivity = 0.15f;
     constexpr glm::float32 player_speed = 1.f;
-    static glm::vec3 player_position = { 0.0f, 1.8f, 3.0f };
-    static glm::vec3 player_forward = { 0.0f, 0.0f, -1.0f };
-    static glm::vec3 player_up = { 0.0f, 1.0f, 0.0f };
+    static glm::vec3 player_position = { 0.f, 1.8f, 3.f };
+    static glm::vec3 player_forward = { 0.f, 0.f, -1.f };
+    static glm::vec3 player_up = { 0.f, 1.f, 0.f };
     static glm::float32 player_pitch = 0.f;
     static glm::float32 player_yaw = 0.f;
     static transform_component* _follow = nullptr;
@@ -102,6 +103,11 @@ namespace {
     static glm::mat4x4 camera_view_projection;
     static detail::fetched_container<cubemap> skybox_cubemap = {};
     static bool show_free_camera = false;
+
+    // post processing
+    static std::optional<framebuffer> scene_framebuffer;
+    static std::optional<texture> scene_color_texture;
+    static std::optional<renderbuffer> scene_depth_renderbuffer;
 
     static const std::string unlit_vertex = R"(#version 300 es
     in vec3 vert_position;
@@ -238,18 +244,36 @@ namespace {
     })";
 #endif
 
-    const std::vector<glm::vec3> skybox_positions = {
-        glm::vec3(-1.0f, -1.0f, -1.0f),
-        glm::vec3(1.0f, -1.0f, -1.0f),
-        glm::vec3(1.0f, 1.0f, -1.0f),
-        glm::vec3(-1.0f, 1.0f, -1.0f),
-        glm::vec3(-1.0f, -1.0f, 1.0f),
-        glm::vec3(1.0f, -1.0f, 1.0f),
-        glm::vec3(1.0f, 1.0f, 1.0f),
-        glm::vec3(-1.0f, 1.0f, 1.0f)
+    static const std::string post_processing_vertex = R"(#version 300 es
+    in vec3 vert_position;
+    out vec2 frag_texcoord;
+    void main() {
+        gl_Position = vec4(vert_position, 1.0);
+        frag_texcoord = vert_position.xy * 0.5 + 0.5;
+    })";
+
+    static const std::string post_processing_fragment = R"(#version 300 es
+    precision mediump float;
+    in vec2 frag_texcoord;
+    uniform sampler2D uniform_color;
+    out vec4 output_color;
+    void main()
+    {
+        output_color = texture(uniform_color, frag_texcoord);
+    })";
+
+    static const std::vector<glm::vec3> skybox_positions = {
+        glm::vec3(-1.f, -1.f, -1.f),
+        glm::vec3(1.f, -1.f, -1.f),
+        glm::vec3(1.f, 1.f, -1.f),
+        glm::vec3(-1.f, 1.f, -1.f),
+        glm::vec3(-1.f, -1.f, 1.f),
+        glm::vec3(1.f, -1.f, 1.f),
+        glm::vec3(1.f, 1.f, 1.f),
+        glm::vec3(-1.f, 1.f, 1.f)
     };
 
-    const std::vector<glm::uvec3> skybox_indices = {
+    static const std::vector<glm::uvec3> skybox_indices = {
         glm::uvec3(0, 1, 2),
         glm::uvec3(0, 2, 3),
         glm::uvec3(4, 6, 5),
@@ -351,10 +375,31 @@ namespace detail {
 
     void rendering_system::clear_screen()
     {
-        GLbitfield _bits = clear_depth ? GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT : GL_COLOR_BUFFER_BIT;
-        glm::vec2 _screen_size = get_screen_size();
-        glViewport(0, 0, static_cast<GLsizei>(_screen_size.x), static_cast<GLsizei>(_screen_size.y));
+        const GLbitfield _bits = clear_depth ? GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT : GL_COLOR_BUFFER_BIT;
+        const glm::uvec2 _screen_size = get_screen_size();
+
+        if (!scene_framebuffer) {
+            scene_framebuffer = framebuffer();
+        }
+        if (!scene_color_texture) {
+            scene_color_texture = texture(_screen_size);
+            scene_framebuffer->bind_color(scene_color_texture.value());
+        } else {
+            scene_color_texture->resize(_screen_size);
+        }
+        if (!scene_depth_renderbuffer) {
+            scene_depth_renderbuffer = renderbuffer(_screen_size, GL_DEPTH_COMPONENT24);
+            scene_framebuffer->bind_depth(scene_depth_renderbuffer.value());
+        } else {
+            scene_depth_renderbuffer->resize(_screen_size);
+        }
+
+        scene_framebuffer->use();
+        glViewport(0, 0, _screen_size.x, _screen_size.y);
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+        if (clear_depth) {
+            glDepthMask(GL_TRUE);
+        }
         glClear(_bits);
     }
 
@@ -375,7 +420,7 @@ namespace detail {
             // ---- INPUT: use delta yaw to rotate the MODEL; accumulate only pitch for camera
             const float _yaw_delta_degrees = -_mouse_delta.x * mouse_sensitivity; // flip if you prefer
             player_pitch -= _mouse_delta.y * mouse_sensitivity;
-            player_pitch = glm::clamp(player_pitch, -89.0f, 89.0f);
+            player_pitch = glm::clamp(player_pitch, -89.f, 89.f);
 
             // ---- EXTRACT CURRENT WORLD ROTATION (handles external rotations)
             const glm::mat4 followW0 = _follow->_transform;
@@ -403,8 +448,8 @@ namespace detail {
             glm::quat qFollow = qFollow1; // already up-to-date
 
             // Camera directions: pitch only relative to character forward
-            const glm::vec3 camF_local = forward_from_yaw_pitch(0.0f, player_pitch);
-            const glm::vec3 flatF_local = forward_from_yaw_pitch(0.0f, 0.0f); // (0,0,+1)
+            const glm::vec3 camF_local = forward_from_yaw_pitch(0.f, player_pitch);
+            const glm::vec3 flatF_local = forward_from_yaw_pitch(0.f, 0.f); // (0,0,+1)
 
             const glm::vec3 camForward = glm::normalize(qFollow * camF_local);
             const glm::vec3 groundF = glm::normalize(qFollow * flatF_local);
@@ -421,7 +466,7 @@ namespace detail {
             // Boom offset: behind character along ground heading
             const float boomDist = show_physics_guizmos ? 1.f : -0.23f; // distance behind
             // const float boomDist = 1.53f; // distance behind
-            const float camHeight = show_physics_guizmos ? 1.f : 0.0f; // tweak if needed
+            const float camHeight = show_physics_guizmos ? 1.f : 0.f; // tweak if needed
 
             player_position = boneWorld - groundF * boomDist + worldUp * camHeight;
             camera_view = glm::lookAt(player_position, player_position + camForward, camUp);
@@ -535,8 +580,8 @@ namespace detail {
                     _unlit_skinned_program.bind_attribute("vert_bones", _mesh, mesh_attribute::bones);
                     _unlit_skinned_program.bind_attribute("vert_weights", _mesh, mesh_attribute::weights);
                     _unlit_skinned_program.bind_uniform("uniform_view", _model_view_projection);
-                    _unlit_skinned_program.bind_uniform("uniform_bones_invposes[0]", _mesh.get_invposes()); // std::vector<glm::mat4>
-                    _unlit_skinned_program.bind_uniform("uniform_bones_transforms[0]", animator._model_transforms); // std::vector<ozz::math::Float4x4>
+                    _unlit_skinned_program.bind_uniform("uniform_bones_invposes[0]", _mesh.get_invposes());
+                    _unlit_skinned_program.bind_uniform("uniform_bones_transforms[0]", animator._model_transforms);
                     _unlit_skinned_program.bind_uniform("uniform_color", _color, 0);
                     _unlit_skinned_program.draw();
                 }
@@ -566,8 +611,8 @@ namespace detail {
                     _unlit_skinned_program.bind_attribute("vert_bones", _mesh, mesh_attribute::bones);
                     _unlit_skinned_program.bind_attribute("vert_weights", _mesh, mesh_attribute::weights);
                     _unlit_skinned_program.bind_uniform("uniform_view", camera_view_projection);
-                    _unlit_skinned_program.bind_uniform("uniform_bones_transforms[0]", animator._model_transforms); // std::vector<ozz::math::Float4x4>
-                    _unlit_skinned_program.bind_uniform("uniform_bones_invposes[0]", _mesh.get_invposes()); // std::vector<glm::mat4>
+                    _unlit_skinned_program.bind_uniform("uniform_bones_transforms[0]", animator._model_transforms);
+                    _unlit_skinned_program.bind_uniform("uniform_bones_invposes[0]", _mesh.get_invposes());
                     _unlit_skinned_program.bind_uniform("uniform_color", _color, 0);
                     _unlit_skinned_program.draw();
                 }
@@ -653,10 +698,8 @@ namespace detail {
                         || (interface._refresh_mode != spatial_refresh_mode::never))) {
 
                     ImGui::SetCurrentContext(interface._imgui_context);
-                    const glm::uvec2 _framebuffer_size = interface._imgui_framebuffer->get_size();
-                    ImGui::GetIO().DisplaySize = ImVec2(
-                        static_cast<glm::float32>(_framebuffer_size.x),
-                        static_cast<glm::float32>(_framebuffer_size.y));
+                    const glm::uvec2 _framebuffer_size = interface._viewport.value().get_computed_screen_size();
+                    ImGui::GetIO().DisplaySize = ImVec2(static_cast<glm::float32>(_framebuffer_size.x), static_cast<glm::float32>(_framebuffer_size.y));
 
                     std::optional<glm::vec2> _raycasted_uvs;
                     glm::vec2 _interaction_screen_position;
@@ -697,14 +740,8 @@ namespace detail {
                     ImGui::Render();
                     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-                    framebuffer::use_default();
-
-                    //
-                    //
-                    //
-
+                    scene_framebuffer->use();
                     program& _unlit_program = _persistent_unlit_program.value();
-
                     _unlit_program.use();
                     _unlit_program.bind_attribute("vert_position", interface._viewport.value(), mesh_attribute::position);
                     _unlit_program.bind_attribute("vert_texcoord", interface._viewport.value(), mesh_attribute::texcoord);
@@ -739,5 +776,46 @@ namespace detail {
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
+    void rendering_system::draw_post_processing()
+    {
+        static bool _is_post_processing_setup = false;
+        static std::optional<mesh> _persistent_post_processing_mesh = std::nullopt;
+        static std::optional<program> _persistent_post_processing_program = std::nullopt;
+
+        if (!_is_post_processing_setup) {
+            geometry_data _geometry_data;
+
+            _geometry_data.positions = {
+                glm::vec3(-1.f, -1.f, 0.f),
+                glm::vec3(1.f, -1.f, 0.f),
+                glm::vec3(1.f, 1.f, 0.f),
+                glm::vec3(-1.f, 1.f, 0.f),
+            };
+
+            _geometry_data.indices = {
+                glm::uvec3(0, 1, 2),
+                glm::uvec3(0, 2, 3),
+            };
+
+            geometry _post_processing_geometry(std::move(_geometry_data));
+            shader _post_processing_vertex_shader(shader_data { post_processing_vertex });
+            shader _post_processing_fragment_shader(shader_data { post_processing_fragment });
+
+            _persistent_post_processing_mesh = mesh(_post_processing_geometry);
+            _persistent_post_processing_program = program(_post_processing_vertex_shader, _post_processing_fragment_shader);
+            _is_post_processing_setup = true;
+        }
+
+        mesh& _post_processing_mesh = _persistent_post_processing_mesh.value();
+        program& _post_processing_program = _persistent_post_processing_program.value();
+
+        framebuffer::use_default();
+
+        _post_processing_program.use();
+        _post_processing_program.bind_attribute("vert_position", _post_processing_mesh, mesh_attribute::position);
+        _post_processing_program.bind_uniform("uniform_color", scene_color_texture.value(), 0);
+
+        _post_processing_program.draw(false);
+    }
 }
 }

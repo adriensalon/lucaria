@@ -6,16 +6,13 @@ namespace lucaria {
 
 /// @brief Represents a runtime framebuffer on the device
 struct framebuffer {
-    framebuffer() = delete;
     framebuffer(const framebuffer& other) = delete;
     framebuffer& operator=(const framebuffer& other) = delete;
     framebuffer(framebuffer&& other);
     framebuffer& operator=(framebuffer&& other);
     ~framebuffer();
 
-    /// @brief Creates a framebuffer from size
-    /// @param size size to create from
-    framebuffer(const glm::uvec2& size);
+    framebuffer();
 
     /// @brief Uses the default framebuffer for draw calls
     static void use_default();
@@ -39,17 +36,12 @@ struct framebuffer {
     /// @param depth the renderbuffer object to bind
     void bind_depth(renderbuffer& depth);
     
-    /// @brief Returns the framebuffer pixels count
-    /// @return the pixels count along U and V
-    [[nodiscard]] glm::uvec2 get_size() const;
-    
     /// @brief Returns a handle to the underlying implementation
     /// @return the underlying implementation handle
     [[nodiscard]] glm::uint get_handle() const;
 
 private:
     bool _is_owning;
-    glm::uvec2 _size;
     glm::uint _handle;
     std::optional<glm::uint> _texture_color_id;
     std::optional<glm::uint> _texture_depth_id;

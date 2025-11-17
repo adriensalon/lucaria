@@ -17,8 +17,12 @@ struct renderbuffer {
     /// @param size size to create from
     /// @param internal_format GL internal texture format to use
     /// @param samples requested sample count
-    renderbuffer(const glm::uvec2& size, const glm::uint internal_format, const glm::uint samples = 1);
+    renderbuffer(const glm::uvec2 size, const glm::uint internal_format, const glm::uint samples = 1);
     
+    /// @brief 
+    /// @param size 
+    void resize(const glm::uvec2 size);
+
     /// @brief Returns the renderbuffer pixels count
     /// @return the pixels count along U and V
     [[nodiscard]] glm::uvec2 get_size() const;

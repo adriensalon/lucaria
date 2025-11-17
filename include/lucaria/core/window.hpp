@@ -43,7 +43,7 @@ enum struct keyboard_key {
 
 /// @brief Gets the current size of the final framebuffer
 /// @return size of the screen
-[[nodiscard]] glm::vec2 get_screen_size();
+[[nodiscard]] glm::uvec2 get_screen_size();
 
 /// @brief Gets the current mouse position
 /// @return current mouse position

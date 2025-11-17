@@ -63,6 +63,7 @@ namespace detail {
         static void draw_imgui_spatial_interfaces();
         static void draw_imgui_screen_interfaces();
         static void draw_debug_guizmos();
+        static void draw_post_processing();
     };
 
 }

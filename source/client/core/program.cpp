@@ -312,6 +312,7 @@ void program::draw(const bool use_depth) const
     if (use_depth) {
         glEnable(GL_DEPTH_TEST);
         glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LESS);
     } else {
         glDisable(GL_DEPTH_TEST);
         glDepthMask(GL_FALSE);

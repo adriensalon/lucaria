@@ -21,6 +21,10 @@ struct texture {
     /// @param size the size to create from
     texture(const glm::uvec2 size);
 
+    /// @brief 
+    /// @param size 
+    void resize(const glm::uvec2 size);
+
     /// @brief Updates the pixels buffer from image data
     /// @param from the image data to update from
     /// @param size the selected count to update

@@ -29,7 +29,7 @@ renderbuffer::~renderbuffer()
     }
 }
 
-renderbuffer::renderbuffer(const glm::uvec2& size, const glm::uint internal_format, const glm::uint samples)
+renderbuffer::renderbuffer(const glm::uvec2 size, const glm::uint internal_format, const glm::uint samples)
 {
     _size = size;
     _internal_format = internal_format;
@@ -40,9 +40,7 @@ renderbuffer::renderbuffer(const glm::uvec2& size, const glm::uint internal_form
 
     static GLint _max_samples = 1;
 #if defined(GL_MAX_SAMPLES)
-    if (_max_samples == 1) {
-        glGetIntegerv(GL_MAX_SAMPLES, &_max_samples);
-    }
+    glGetIntegerv(GL_MAX_SAMPLES, &_max_samples);
 #endif
     _samples = static_cast<glm::uint>(std::clamp<int>(_samples, 1, _max_samples));
 
@@ -64,6 +62,17 @@ renderbuffer::renderbuffer(const glm::uvec2& size, const glm::uint internal_form
             static_cast<GLsizei>(_size.y));
     }
     _is_owning = true;
+}
+
+void renderbuffer::resize(const glm::uvec2 size)
+{
+    if (_size == size) {
+        return;
+    }
+    _size = size;
+    glBindRenderbuffer(GL_RENDERBUFFER, _handle);
+    glRenderbufferStorage(GL_RENDERBUFFER, _internal_format, _size.x, _size.y);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
 
 glm::uvec2 renderbuffer::get_size() const

@@ -62,7 +62,7 @@ texture::texture(const image& from)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     const GLsizei _pixels_count = static_cast<GLsizei>(from.data.pixels.size());
     const GLubyte* _pixels_ptr = from.data.pixels.data();
-    
+
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     switch (from.data.channels) {
     case 3:
@@ -108,15 +108,14 @@ texture::texture(const glm::uvec2 size)
     // Allocate storage without data
     glTexImage2D(
         GL_TEXTURE_2D,
-        0,                 // mipmap level
-        GL_RGBA,           // internal format (choose GL_RGB if you don’t need alpha)
+        0, // mipmap level
+        GL_RGBA, // internal format (choose GL_RGB if you don’t need alpha)
         size.x,
         size.y,
-        0,                 // border (must be 0)
-        GL_RGBA,           // format
-        GL_UNSIGNED_BYTE,  // type
-        nullptr            // no data → just allocate memory
-    );
+        0, // border (must be 0)
+        GL_RGBA, // format
+        GL_UNSIGNED_BYTE, // type
+        0);
 
 #if LUCARIA_DEBUG
     std::cout << "Created EMPTY TEXTURE_2D buffer of size "
@@ -127,6 +126,14 @@ texture::texture(const glm::uvec2 size)
     _is_owning = true;
 }
 
+void texture::resize(const glm::uvec2 size)
+{
+    if (_size != size) {
+        _size = size;
+        glBindTexture(GL_TEXTURE_2D, _handle);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _size.x, _size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+    }
+}
 
 glm::uvec2 texture::get_size() const
 {

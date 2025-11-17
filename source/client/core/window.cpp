@@ -124,7 +124,7 @@ namespace {
     static std::vector<keyboard_key> keys_changed = {};
     static std::unordered_map<glm::uint, bool> buttons = {};
     static std::vector<glm::uint> buttons_changed = {};
-    static glm::vec2 screen_size = { 0.f, 0.f };
+    static glm::uvec2 screen_size = { 0.f, 0.f };
     static glm::vec2 mouse_position = { 0.f, 0.f };
     static glm::vec2 mouse_position_delta = { 0.f, 0.f };
     static glm::vec2 accumulated_mouse_position_delta = { 0.f, 0.f };
@@ -544,7 +544,7 @@ namespace {
         glfwGetFramebufferSize(glfw_window, &_screen_width, &_screen_height);
 #endif
         screen_size = { _screen_width, _screen_height };
-        if (screen_size == glm::vec2(0, 0)) {
+        if (screen_size == glm::uvec2(0)) {
             return;
         }
 
@@ -556,7 +556,7 @@ namespace {
 #if !defined(__EMSCRIPTEN__)
         ImGui_ImplGlfw_NewFrame();
 #endif
-        ImGui::GetIO().DisplaySize = ImVec2(screen_size.x, screen_size.y);
+        ImGui::GetIO().DisplaySize = ImVec2(static_cast<glm::float32>(screen_size.x), static_cast<glm::float32>(screen_size.y));
         update_mouse_lock();
         update_callback();
         keys_changed.clear();
@@ -658,7 +658,7 @@ std::unordered_map<glm::uint, bool>& get_buttons()
     return buttons;
 }
 
-glm::vec2 get_screen_size()
+glm::uvec2 get_screen_size()
 {
     return screen_size;
 }

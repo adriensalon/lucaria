@@ -27,7 +27,6 @@ framebuffer& framebuffer::operator=(framebuffer&& other)
         LUCARIA_RUNTIME_ERROR("Object already owning resources")
     }
     _is_owning = true;
-    _size = other._size;
     _handle = other._handle;
     _texture_color_id = other._texture_color_id;
     _texture_depth_id = other._texture_depth_id;
@@ -44,9 +43,8 @@ framebuffer::~framebuffer()
     }
 }
 
-framebuffer::framebuffer(const glm::uvec2& size)
-    : _size(size)
-    , _texture_color_id(std::nullopt)
+framebuffer::framebuffer()
+    : _texture_color_id(std::nullopt)
     , _texture_depth_id(std::nullopt)
     , _renderbuffer_color_id(std::nullopt)
     , _renderbuffer_depth_id(std::nullopt)
@@ -73,6 +71,10 @@ void framebuffer::use()
 
 void framebuffer::bind_color(texture& color)
 {
+    if (_texture_color_id && _texture_color_id.value() == color.get_handle()) {
+        return;
+    }
+
     glBindFramebuffer(GL_FRAMEBUFFER, _handle);
 
     const GLuint _color_id = color.get_handle();
@@ -81,8 +83,8 @@ void framebuffer::bind_color(texture& color)
 
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _color_id, 0);
 
-    const GLenum buf = GL_COLOR_ATTACHMENT0;
-    glDrawBuffers(1, &buf);
+    const GLenum _attachment = GL_COLOR_ATTACHMENT0;
+    glDrawBuffers(1, &_attachment);
     glReadBuffer(GL_COLOR_ATTACHMENT0);
 
     check_complete();
@@ -91,6 +93,10 @@ void framebuffer::bind_color(texture& color)
 
 void framebuffer::bind_color(renderbuffer& color)
 {
+    if (_renderbuffer_color_id && _renderbuffer_color_id.value() == color.get_handle()) {
+        return;
+    }
+
     glBindFramebuffer(GL_FRAMEBUFFER, _handle);
 
     const GLuint _color_id = color.get_handle();
@@ -99,8 +105,8 @@ void framebuffer::bind_color(renderbuffer& color)
 
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, _color_id);
 
-    const GLenum buf = GL_COLOR_ATTACHMENT0;
-    glDrawBuffers(1, &buf);
+    const GLenum _attachment = GL_COLOR_ATTACHMENT0;
+    glDrawBuffers(1, &_attachment);
     glReadBuffer(GL_COLOR_ATTACHMENT0);
 
     check_complete();
@@ -109,11 +115,15 @@ void framebuffer::bind_color(renderbuffer& color)
 
 void framebuffer::bind_depth(texture& depth)
 {
+    if (_texture_depth_id && _texture_depth_id.value() == depth.get_handle()) {
+        return;
+    }
+
     glBindFramebuffer(GL_FRAMEBUFFER, _handle);
 
     const GLuint _depth_id = depth.get_handle();
     _texture_depth_id = _depth_id;
-    _renderbuffer_depth_id = 0;
+    _renderbuffer_depth_id = std::nullopt;
 
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, _depth_id, 0);
 
@@ -129,11 +139,15 @@ void framebuffer::bind_depth(texture& depth)
 
 void framebuffer::bind_depth(renderbuffer& depth)
 {
+    if (_renderbuffer_depth_id && _renderbuffer_depth_id.value() == depth.get_handle()) {
+        return;
+    }
+
     glBindFramebuffer(GL_FRAMEBUFFER, _handle);
 
     const GLuint _depth_id = depth.get_handle();
     _renderbuffer_depth_id = _depth_id;
-    _texture_depth_id = 0;
+    _texture_depth_id = std::nullopt;
 
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _depth_id);
 
@@ -145,11 +159,6 @@ void framebuffer::bind_depth(renderbuffer& depth)
 
     check_complete();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-glm::uvec2 framebuffer::get_size() const
-{
-    return _size;
 }
 
 glm::uint framebuffer::get_handle() const

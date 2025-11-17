@@ -49,7 +49,7 @@ interface_component<interface_mode::spatial>& interface_component<interface_mode
     _viewport.emplace(from);
     const glm::uvec2 _computed_size = _viewport.value().get_computed_screen_size();
     _imgui_color_texture = std::make_unique<texture>(_computed_size);
-    _imgui_framebuffer = std::make_unique<framebuffer>(_computed_size);
+    _imgui_framebuffer = std::make_unique<framebuffer>();
     _imgui_framebuffer->bind_color(*(_imgui_color_texture.get()));
     return *this;
 }
@@ -59,7 +59,7 @@ interface_component<interface_mode::spatial>& interface_component<interface_mode
     _viewport.emplace(from, [this]() {
         const glm::uvec2 _computed_size = _viewport.value().get_computed_screen_size();
         _imgui_color_texture = std::make_unique<texture>(_computed_size);
-        _imgui_framebuffer = std::make_unique<framebuffer>(_computed_size);
+        _imgui_framebuffer = std::make_unique<framebuffer>();
         _imgui_framebuffer->bind_color(*(_imgui_color_texture.get()));
     });
     return *this;
