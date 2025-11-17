@@ -132,7 +132,8 @@ namespace {
     static std::function<void()> start_callback = nullptr;
     static std::function<void()> update_callback = nullptr;
 
-    static bool is_etc_supported = false;
+    static bool is_multitouch_supported = false;
+    static bool is_etc2_supported = false;
     static bool is_s3tc_supported = false;
     static bool is_audio_locked = false;
     static bool is_mouse_locked = false;
@@ -159,6 +160,19 @@ namespace {
         var canvas = document.getElementById('canvas');
         canvas.height = canvas.getBoundingClientRect().height;
         return canvas.getBoundingClientRect().height;
+    });
+
+    EM_JS(int, navigator_get_multitouch, (), {
+        if (navigator.maxTouchPoints && navigator.maxTouchPoints >= 2) {
+            return 1;
+        }
+        if (navigator.msMaxTouchPoints && navigator.msMaxTouchPoints >= 2) {
+            return 1;
+        }
+        if ("ontouchstart" in window) {
+            return 1;
+        }
+        return 0;
     });
 
     void emscripten_assert(EMSCRIPTEN_RESULT result)
@@ -391,6 +405,8 @@ namespace {
         // emscripten_assert(emscripten_set_touchend_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, touch_callback));
         emscripten_assert(emscripten_set_touchmove_callback("#canvas", nullptr, 1, touch_callback)); // EMSCRIPTEN_EVENT_TARGET_WINDOW doesnt work on safari
         // emscripten_assert(emscripten_set_touchcancel_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, touch_callback));
+
+        is_multitouch_supported = navigator_get_multitouch();
 #else
 
         glfwSetErrorCallback(glfw_error_callback);
@@ -445,7 +461,7 @@ namespace {
         }
         emscripten_assert(emscripten_webgl_make_context_current(_webgl_context));
         if (emscripten_webgl_enable_extension(_webgl_context, "WEBGL_compressed_texture_etc")) {
-            is_etc_supported = true;
+            is_etc2_supported = true;
 #if LUCARIA_DEBUG
             std::cout << "Extension WEBGL_compressed_texture_etc is supported" << std::endl;
 #endif
@@ -461,11 +477,11 @@ namespace {
         glGetIntegerv(GL_NUM_EXTENSIONS, &_found_extensions_count);
         for (glm::int32 _extension_index = 0; _extension_index < _found_extensions_count; ++_extension_index) {
             const char* _extension_name = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, _extension_index));
+            if (std::string(_extension_name) == "GL_EXT_texture_compression_etc") {
+                is_etc2_supported = true;
+            }
             if (std::string(_extension_name) == "GL_EXT_texture_compression_s3tc") {
                 is_s3tc_supported = true;
-#if LUCARIA_DEBUG
-                std::cout << "Extension GL_EXT_texture_compression_s3tc is supported" << std::endl;
-#endif
             }
         }
 #endif
@@ -678,9 +694,14 @@ glm::float64 get_time_delta()
     return time_delta_seconds;
 }
 
+bool get_is_multitouch_supported()
+{
+    return is_multitouch_supported;
+}
+
 bool get_is_etc2_supported()
 {
-    return is_etc_supported;
+    return is_etc2_supported;
 }
 
 bool get_is_s3tc_supported()

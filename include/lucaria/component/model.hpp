@@ -1,6 +1,7 @@
 #pragma once
 
 #include <lucaria/core/mesh.hpp>
+#include <lucaria/core/program.hpp>
 #include <lucaria/core/texture.hpp>
 
 namespace lucaria {

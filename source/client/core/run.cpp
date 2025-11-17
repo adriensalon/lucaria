@@ -12,21 +12,20 @@ void run(
     const std::function<void()>& on_start,
     const std::function<void()>& on_update)
 {
-#if LUCARIA_DEBUG
-    std::cout << "Running Lucaria with debug ON" << std::endl;
-#else
-    std::cout << "Running Lucaria with debug OFF" << std::endl;
-#endif
-
-#if LUCARIA_GUIZMO
-    std::cout << "Running Lucaria with guizmos ON" << std::endl;
-#else
-    std::cout << "Running Lucaria with guizmos OFF" << std::endl;
-#endif
 
     detail::set_scenes(scenes);
 
-    detail::run_game(on_start, [&]() {
+    detail::run_game(
+        [&]() {
+        on_start();
+        
+        std::cout << "Running Lucaria with debug " << (LUCARIA_DEBUG ? "ON" : "OFF") << std::endl;
+        std::cout << "Running Lucaria with guizmo " << (LUCARIA_GUIZMO ? "ON" : "OFF") << std::endl;
+        std::cout << "Running Lucaria with multitouch " << (get_is_multitouch_supported() ? "ON" : "OFF") << std::endl;
+        std::cout << "Running Lucaria with ETC2 " << (get_is_etc2_supported() ? "ON" : "OFF") << std::endl;
+        std::cout << "Running Lucaria with S3TC " << (get_is_s3tc_supported() ? "ON" : "OFF") << std::endl; },
+
+        [&]() {
         on_update();
 
         detail::motion_system::advance_controllers();
@@ -51,7 +50,6 @@ void run(
         detail::motion_system::collect_debug_guizmos();
         detail::dynamics_system::collect_debug_guizmos();
         detail::rendering_system::draw_debug_guizmos();
-        detail::rendering_system::clear_debug_guizmos();
-    });
+        detail::rendering_system::clear_debug_guizmos(); });
 }
 }

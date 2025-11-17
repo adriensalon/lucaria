@@ -17,6 +17,10 @@ enum struct keyboard_key {
 };
 // clang-format on
 
+/// @brief Gets if the implementation support at least 2 touch points on a touchscreen
+/// @return if the feature is supported
+[[nodiscard]] bool get_is_multitouch_supported();
+
 /// @brief Gets if the implementation supports ETC2 texture format
 /// @return if the feature is supported
 [[nodiscard]] bool get_is_etc2_supported();
