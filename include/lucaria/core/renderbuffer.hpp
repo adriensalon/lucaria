@@ -19,8 +19,8 @@ struct renderbuffer {
     /// @param samples requested sample count
     renderbuffer(const glm::uvec2 size, const glm::uint internal_format, const glm::uint samples = 1);
     
-    /// @brief 
-    /// @param size 
+    /// @brief Sets a new size for the renderbuffer
+    /// @param size the size to update to
     void resize(const glm::uvec2 size);
 
     /// @brief Returns the renderbuffer pixels count
