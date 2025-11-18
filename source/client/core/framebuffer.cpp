@@ -53,7 +53,6 @@ framebuffer::framebuffer()
     glBindFramebuffer(GL_FRAMEBUFFER, _handle);
     GLenum _none = GL_NONE;
     glDrawBuffers(1, &_none);
-
     glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     _is_owning = true;
@@ -75,15 +74,12 @@ void framebuffer::bind_color(texture& color)
         return;
     }
 
-    glBindFramebuffer(GL_FRAMEBUFFER, _handle);
-
+    const GLenum _attachment = GL_COLOR_ATTACHMENT0;
     const GLuint _color_id = color.get_handle();
     _texture_color_id = _color_id;
     _renderbuffer_color_id = std::nullopt;
-
+    glBindFramebuffer(GL_FRAMEBUFFER, _handle);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _color_id, 0);
-
-    const GLenum _attachment = GL_COLOR_ATTACHMENT0;
     glDrawBuffers(1, &_attachment);
     glReadBuffer(GL_COLOR_ATTACHMENT0);
 
@@ -97,15 +93,12 @@ void framebuffer::bind_color(renderbuffer& color)
         return;
     }
 
-    glBindFramebuffer(GL_FRAMEBUFFER, _handle);
-
+    const GLenum _attachment = GL_COLOR_ATTACHMENT0;
     const GLuint _color_id = color.get_handle();
     _renderbuffer_color_id = _color_id;
     _texture_color_id = std::nullopt;
-
+    glBindFramebuffer(GL_FRAMEBUFFER, _handle);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, _color_id);
-
-    const GLenum _attachment = GL_COLOR_ATTACHMENT0;
     glDrawBuffers(1, &_attachment);
     glReadBuffer(GL_COLOR_ATTACHMENT0);
 
@@ -119,12 +112,10 @@ void framebuffer::bind_depth(texture& depth)
         return;
     }
 
-    glBindFramebuffer(GL_FRAMEBUFFER, _handle);
-
     const GLuint _depth_id = depth.get_handle();
     _texture_depth_id = _depth_id;
     _renderbuffer_depth_id = std::nullopt;
-
+    glBindFramebuffer(GL_FRAMEBUFFER, _handle);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, _depth_id, 0);
 
     if (!_texture_color_id && !_renderbuffer_color_id) {
@@ -143,12 +134,10 @@ void framebuffer::bind_depth(renderbuffer& depth)
         return;
     }
 
-    glBindFramebuffer(GL_FRAMEBUFFER, _handle);
-
     const GLuint _depth_id = depth.get_handle();
     _renderbuffer_depth_id = _depth_id;
     _texture_depth_id = std::nullopt;
-
+    glBindFramebuffer(GL_FRAMEBUFFER, _handle);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _depth_id);
 
     if (!_texture_color_id && !_renderbuffer_color_id) {

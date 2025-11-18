@@ -112,7 +112,6 @@ fetched<cubemap> fetch_cubemap(
 {
     const std::vector<std::filesystem::path> _image_paths = detail::resolve_image_paths(data_paths, etc2_paths, s3tc_paths);
     std::shared_ptr<std::promise<std::array<image, 6>>> _images_promise = std::make_shared<std::promise<std::array<image, 6>>>();
-
     detail::fetch_bytes(_image_paths, [_images_promise](const std::vector<std::vector<char>>& _data_bytes) {
         std::array<image, 6> _images = {
             image(_data_bytes[0]),
@@ -122,7 +121,6 @@ fetched<cubemap> fetch_cubemap(
             image(_data_bytes[4]),
             image(_data_bytes[5])
         };
-
         _images_promise->set_value(std::move(_images));
     });
 

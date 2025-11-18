@@ -363,7 +363,6 @@ fetched<program> fetch_program(const std::filesystem::path& vertex_data_path, co
 {
     std::vector<std::filesystem::path> _shaders_paths = { vertex_data_path, fragment_data_path };
     std::shared_ptr<std::promise<std::pair<shader, shader>>> _shaders_promise = std::make_shared<std::promise<std::pair<shader, shader>>>();
-
     detail::fetch_bytes(_shaders_paths, [_shaders_promise](const std::vector<std::vector<char>>& _data_bytes) {
         std::pair<shader, shader> _shaders = {
             shader(_data_bytes[0]),

@@ -5,6 +5,7 @@
 
 namespace lucaria {
 namespace {
+
     static void load_data_from_bytes(geometry_data& data, const std::vector<char>& data_bytes)
     {
         detail::bytes_stream _stream(data_bytes);
@@ -15,6 +16,7 @@ namespace {
 #endif
         _archive(data);
     }
+    
 }
 
 geometry::geometry(geometry_data&& data)
@@ -37,7 +39,6 @@ geometry::geometry(const std::filesystem::path& data_path)
 fetched<geometry> fetch_geometry(const std::filesystem::path& data_path)
 {
     std::shared_ptr<std::promise<geometry>> _promise = std::make_shared<std::promise<geometry>>();
-    
     detail::fetch_bytes(data_path, [_promise](const std::vector<char>& _data_bytes) {
         geometry _geometry(_data_bytes);
         _promise->set_value(std::move(_geometry));

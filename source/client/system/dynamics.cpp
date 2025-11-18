@@ -206,10 +206,6 @@ namespace detail {
             scene.view<character_rigidbody_component>().each([&](character_rigidbody_component& _rigidbody) {
                 if (_rigidbody._shape.has_value()) {
                     btRigidBody* _bullet_rigidbody = _rigidbody._rigidbody.get();
-                    if (!_bullet_rigidbody) {
-                        return;
-                    }
-
                     const btTransform _bullet_transform = _bullet_rigidbody->getWorldTransform();
                     const btVector3 _bullet_origin = _bullet_transform.getOrigin();
                     const btQuaternion _bullet_rotation = _bullet_transform.getRotation();
@@ -321,15 +317,6 @@ namespace detail {
         });
 
         // dynamic
-        // detail::each_scene([&](entt::registry& scene) {
-        //     scene.view<transform_component, dynamic_rigidbody_component>().each([](transform_component& transform, dynamic_rigidbody_component& rigidbody) {
-        //         const glm::mat4 _transform = convert(rigidbody._rigidbody->getWorldTransform());
-        //         const glm::mat4 _center_to_feet = rigidbody._shape.value().get_center_to_feet();
-        //         transform._transform = _transform * _center_to_feet; // NON PROPAGE PAS AUX ENFANTS
-        //     });
-        // });
-
-        // character
         detail::each_scene([&](entt::registry& scene) {
             scene.view<transform_component, character_rigidbody_component>().each([](transform_component& transform, character_rigidbody_component& rigidbody) {
                 const glm::mat4 _transform = convert(rigidbody._rigidbody->getWorldTransform());

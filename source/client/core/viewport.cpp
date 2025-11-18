@@ -27,13 +27,11 @@ namespace {
         const glm::float32 _b = _np.x * _np.y * _a;
         const glm::vec3 _up(1.0f + _sign * _np.x * _np.x * _a, _sign * _b, -_sign * _np.x);
         const glm::vec3 _vp(_b, _sign + _np.y * _np.y * _a, -_np.y);
-
         u = glm::normalize(glm::vec3(_up.x, _up.z, _up.y));
         v = glm::normalize(glm::vec3(_vp.x, _vp.z, _vp.y));
         if (glm::dot(glm::cross(u, v), n) < 0.0f) {
             v = -v;
         }
-
         if (u.x < 0) {
             u = -u;
             v = -v;
@@ -76,7 +74,7 @@ namespace {
         }
 
         const glm::float32 _width_meters = std::max(0.0f, _max_u - _min_u);
-        const glm::float32 _height_meters = std::max(0.0f, _max_v - _min_v);        
+        const glm::float32 _height_meters = std::max(0.0f, _max_v - _min_v);
         glm::uint _width_pixels = static_cast<glm::uint>(std::lround(pixels_per_meter * _width_meters));
         glm::uint _height_pixels = static_cast<glm::uint>(std::lround(pixels_per_meter * _height_meters));
         _width_pixels = glm::clamp(_width_pixels, min_side, max_side);
@@ -196,7 +194,7 @@ viewport::viewport(viewport&& other)
 }
 
 viewport& viewport::operator=(viewport&& other)
-{    
+{
     if (_is_owning) {
         LUCARIA_RUNTIME_ERROR("Object already owning resources")
     }
@@ -227,63 +225,51 @@ viewport::~viewport()
 viewport::viewport(const geometry& from, const glm::uvec2& size_pixels)
 {
     _computed_framebuffer_size = size_pixels;
-
     _positions = from.data.positions;
     _texcoords = from.data.texcoords;
     _indices = from.data.indices;
-
     _size = 3 * static_cast<glm::uint>(from.data.indices.size());
     _array_handle = create_vertex_array();
     _elements_handle = create_elements_buffer(from.data.indices);
     _positions_handle = create_attribute_buffer(from.data.positions);
     _texcoords_handle = create_attribute_buffer(invert_texcoords(from.data.texcoords));
-
     _is_owning = true;
 }
 
 viewport::viewport(const geometry& from, const glm::float32 pixels_per_meter)
 {
-    _computed_framebuffer_size = compute_size_planar_fast(
-        from.data.positions,
-        from.data.indices,
-        pixels_per_meter);
-
+    _computed_framebuffer_size = compute_size_planar_fast(from.data.positions, from.data.indices, pixels_per_meter);
     _positions = from.data.positions;
     _texcoords = from.data.texcoords;
     _indices = from.data.indices;
-
     _size = 3 * static_cast<glm::uint>(from.data.indices.size());
     _array_handle = create_vertex_array();
     _elements_handle = create_elements_buffer(from.data.indices);
     _positions_handle = create_attribute_buffer(from.data.positions);
     _texcoords_handle = create_attribute_buffer(invert_texcoords(from.data.texcoords));
-
     _is_owning = true;
 }
 
 std::optional<glm::vec2> viewport::raycast(const glm::mat4& view)
 {
     const raycast_data _raycast = camera_center_ray(view);
-
     bool _has_hit = false;
     glm::float32 _best_distance = std::numeric_limits<glm::float32>::infinity();
     glm::vec2 _best_uv = glm::vec2(0);
 
+    // compute for each triangle
     for (const glm::uvec3& _triangle : _indices) {
         const glm::vec3& _vertex_a = _positions[_triangle.x];
         const glm::vec3& _vertex_b = _positions[_triangle.y];
         const glm::vec3& _vertex_c = _positions[_triangle.z];
-
         glm::vec3 _collision_position;
         if (!raycast_triangle(_raycast, _vertex_a, _vertex_b, _vertex_c, _collision_position)) {
             continue;
         }
-
         if (_collision_position.x < _best_distance) {
             const glm::vec2& _texcoord_a = _texcoords[_triangle.x];
             const glm::vec2& _texcoord_b = _texcoords[_triangle.y];
             const glm::vec2& _texcoord_c = _texcoords[_triangle.z];
-
             _best_distance = _collision_position.x;
             _best_uv = lerp_uv(_texcoord_a, _texcoord_b, _texcoord_c, _collision_position.y, _collision_position.z);
             _has_hit = true;
@@ -329,7 +315,6 @@ glm::uint viewport::get_texcoords_handle() const
 fetched<viewport> fetch_viewport(const std::filesystem::path& data_path, const glm::uvec2& size_pixels)
 {
     std::shared_ptr<std::promise<geometry>> _geometry_promise = std::make_shared<std::promise<geometry>>();
-
     detail::fetch_bytes(data_path, [_geometry_promise](const std::vector<char>& _data_bytes) {
         geometry _geometry(_data_bytes);
         _geometry_promise->set_value(std::move(_geometry));
@@ -344,7 +329,6 @@ fetched<viewport> fetch_viewport(const std::filesystem::path& data_path, const g
 fetched<viewport> fetch_viewport(const std::filesystem::path& data_path, const glm::float32 pixels_per_meter)
 {
     std::shared_ptr<std::promise<geometry>> _geometry_promise = std::make_shared<std::promise<geometry>>();
-
     detail::fetch_bytes(data_path, [_geometry_promise](const std::vector<char>& _data_bytes) {
         geometry _geometry(_data_bytes);
         _geometry_promise->set_value(std::move(_geometry));

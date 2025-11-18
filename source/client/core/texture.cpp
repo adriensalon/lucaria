@@ -99,28 +99,14 @@ texture::texture(const glm::uvec2 size)
     _size = size;
     glGenTextures(1, &_handle);
     glBindTexture(GL_TEXTURE_2D, _handle);
-
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    // Allocate storage without data
-    glTexImage2D(
-        GL_TEXTURE_2D,
-        0, // mipmap level
-        GL_RGBA, // internal format (choose GL_RGB if you don’t need alpha)
-        size.x,
-        size.y,
-        0, // border (must be 0)
-        GL_RGBA, // format
-        GL_UNSIGNED_BYTE, // type
-        0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
 
 #if LUCARIA_DEBUG
-    std::cout << "Created EMPTY TEXTURE_2D buffer of size "
-              << size.x << "x" << size.y
-              << " with id " << _handle << std::endl;
+    std::cout << "Created EMPTY TEXTURE_2D buffer of size " << size.x << "x" << size.y << " with id " << _handle << std::endl;
 #endif
 
     _is_owning = true;
@@ -152,7 +138,6 @@ fetched<texture> fetch_texture(
 {
     const std::filesystem::path& _image_path = detail::resolve_image_path(data_path, etc2_path, s3tc_path);
     std::shared_ptr<std::promise<image>> _image_promise = std::make_shared<std::promise<image>>();
-
     detail::fetch_bytes(_image_path, [_image_promise](const std::vector<char>& _data_bytes) {
         image _image(_data_bytes);
         _image_promise->set_value(std::move(_image));

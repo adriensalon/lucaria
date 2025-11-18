@@ -31,20 +31,16 @@ renderbuffer::~renderbuffer()
 
 renderbuffer::renderbuffer(const glm::uvec2 size, const glm::uint internal_format, const glm::uint samples)
 {
-    _size = size;
-    _internal_format = internal_format;
-    _samples = samples;
-
-    glGenRenderbuffers(1, &_handle);
-    glBindRenderbuffer(GL_RENDERBUFFER, _handle);
-
     static GLint _max_samples = 1;
 #if defined(GL_MAX_SAMPLES)
     glGetIntegerv(GL_MAX_SAMPLES, &_max_samples);
 #endif
-    _samples = static_cast<glm::uint>(std::clamp<int>(_samples, 1, _max_samples));
-
-#if defined(GL_RENDERBUFFER_SAMPLES) // desktop GL / GLES3
+    _samples = static_cast<glm::uint>(std::clamp<int>(samples, 1, _max_samples));
+    _size = size;
+    _internal_format = internal_format;
+    glGenRenderbuffers(1, &_handle);
+    glBindRenderbuffer(GL_RENDERBUFFER, _handle);
+#if defined(GL_RENDERBUFFER_SAMPLES)
     if (_samples > 1) {
         glRenderbufferStorageMultisample(
             GL_RENDERBUFFER,

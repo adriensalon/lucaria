@@ -14,6 +14,7 @@ namespace {
         data.is_compressed_etc = false;
         data.is_compressed_s3tc = false;
 
+        // S3TC compression
         if (*_data32 == 0x03525650) {
             switch (*(_data32 + 2)) {
             case 7:
@@ -37,7 +38,7 @@ namespace {
                 data.is_compressed_etc = true;
                 break;
             default:
-                assert(false);
+                LUCARIA_RUNTIME_ERROR("Invalid S3TC image data")
                 break;
             }
             const std::size_t _offset = 52 + *(_data32 + 12);
@@ -47,6 +48,7 @@ namespace {
             data.height = *(_data32 + 6);
             data.width = *(_data32 + 7);
 
+        // ETC2 compression
         } else if (*_data32 == 0x58544BAB) {
             switch (*(_data32 + 7)) {
             case 0x9274:
@@ -60,7 +62,7 @@ namespace {
                 data.is_compressed_etc = true;
                 break;
             default:
-                assert(false);
+                LUCARIA_RUNTIME_ERROR("Invalid ETC2 image data")
                 break;
             }
             const std::size_t _offset = sizeof(uint32_t) * 17 + *(_data32 + 15);
@@ -70,6 +72,7 @@ namespace {
             data.width = *(_data32 + 9);
             data.height = *(_data32 + 10);
 
+        // binary raw format
         } else {
             detail::bytes_stream _stream(data_bytes);
 #if LUCARIA_JSON
@@ -106,7 +109,6 @@ fetched<image> fetch_image(
 {
     const std::filesystem::path& _image_path = detail::resolve_image_path(data_path, etc2_path, s3tc_path);
     std::shared_ptr<std::promise<image>> _promise = std::make_shared<std::promise<image>>();
-
     detail::fetch_bytes(_image_path, [_promise](const std::vector<char>& _data_bytes) {
         image _image(_data_bytes);
         _promise->set_value(std::move(_image));

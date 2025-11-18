@@ -41,6 +41,7 @@ namespace {
         std::cout << "Loaded event track" << std::endl;
 #endif
     }
+    
 }
 
 motion_track::motion_track(const std::vector<char>& data_bytes)
@@ -107,8 +108,6 @@ fetched<motion_track> fetch_motion_track(const std::filesystem::path& data_path)
     // create motion track on worker thread is ok
     return fetched<motion_track>(_promise->get_future());
 }
-
-// event track
 
 event_track::event_track(const std::vector<char>& data_bytes)
 {

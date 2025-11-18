@@ -22,6 +22,7 @@ namespace {
         std::cout << "Loaded animation with " << handle.num_tracks() << " tracks" << std::endl;
 #endif
     }
+    
 }
 
 animation::animation(const std::vector<char>& data_bytes)
@@ -49,7 +50,6 @@ const ozz::animation::Animation& animation::get_handle() const
 fetched<animation> fetch_animation(const std::filesystem::path& data_path)
 {
     std::shared_ptr<std::promise<animation>> _promise = std::make_shared<std::promise<animation>>();
-
     detail::fetch_bytes(data_path, [_promise](const std::vector<char>& _data_bytes) {
         animation _animation(_data_bytes);
         _promise->set_value(std::move(_animation));

@@ -216,7 +216,6 @@ const std::vector<glm::mat4>& mesh::get_invposes() const
 fetched<mesh> fetch_mesh(const std::filesystem::path& data_path)
 {
     std::shared_ptr<std::promise<geometry>> _geometry_promise = std::make_shared<std::promise<geometry>>();
-
     detail::fetch_bytes(data_path, [_geometry_promise](const std::vector<char>& _data_bytes) {
         geometry _geometry(_data_bytes);
         _geometry_promise->set_value(std::move(_geometry));

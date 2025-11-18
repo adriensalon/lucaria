@@ -51,14 +51,19 @@ namespace {
 
     [[nodiscard]] glm::mat4 _compute_motion_delta(const motion_track& track, const glm::float32 time_ratio, const glm::float32 last_time_ratio, const glm::float32 computed_weight, const bool has_looped)
     {
+        // base delta
         const glm::mat4 _new_motion_transform = _sample_motion_track(track, time_ratio);
         const glm::mat4 _last_motion_transform = _sample_motion_track(track, last_time_ratio);
         glm::mat4 _delta_motion_transform = _new_motion_transform * glm::inverse(_last_motion_transform);
+
+        // loop delta
         if (has_looped) {
             const glm::mat4 _end_motion_transform = _sample_motion_track(track, 1.f);
             const glm::mat4 _begin_motion_transform = _sample_motion_track(track, 0.f);
             _delta_motion_transform = _end_motion_transform * glm::inverse(_begin_motion_transform) * _delta_motion_transform;
         }
+
+        // weight interpolation
         _delta_motion_transform = glm::interpolate(glm::mat4(1.f), _delta_motion_transform, computed_weight);
         return _delta_motion_transform;
     }
@@ -161,99 +166,86 @@ namespace detail {
     {
         // apply to transform if no dynamic rigidbody
         detail::each_scene([](entt::registry& scene) {
-            scene.view<const animator_component, transform_component>(entt::exclude<character_rigidbody_component>).each([](const animator_component& animator, transform_component& transform) {
-                for (const std::pair<const std::string, fetched_container<motion_track>>& _pair : animator._motion_tracks) {
+            scene.view<const animator_component, transform_component>(entt::exclude<character_rigidbody_component>).each([](const animator_component& _animator, transform_component& _transform) {
+                for (const std::pair<const std::string, fetched_container<motion_track>>& _pair : _animator._motion_tracks) {
                     if (_pair.second.has_value()) {
-                        const animation_controller& _controller = animator._controllers.at(_pair.first);
+                        const animation_controller& _controller = _animator._controllers.at(_pair.first);
                         if (_controller._computed_weight > 0.f) {
                             const motion_track& _track = _pair.second.value();
                             const glm::mat4 _delta_transform = _compute_motion_delta(_track, _controller._time_ratio, _controller._last_time_ratio, _controller._computed_weight, _controller._has_looped);
-                            transform.set_transform_relative(_delta_transform);
+                            _transform.set_transform_relative(_delta_transform);
                         }
                     }
                 }
             });
         });
 
-        // apply to PD targets if dynamic rigidbody
-        detail::each_scene([](entt::registry& scene) {
-            scene.view<const animator_component, transform_component, character_rigidbody_component>().each([](const animator_component& animator, transform_component& transform, character_rigidbody_component& character) {
-                if (character._shape.has_value()) {
-                    btRigidBody* _bullet_rigidbody = character._rigidbody.get();
-                    const glm::float32 _delta_time = static_cast<glm::float32>(get_time_delta());
-                    const glm::vec3 _current_position = transform.get_position();
-                    const glm::quat _current_rotation = transform.get_rotation();
-                    const glm::mat4 _transform_matrix = character._shape.value().get_feet_to_center() * transform._transform;
+        // compute and apply to PD targets if dynamic rigidbody
+        const glm::float32 _delta_time = static_cast<glm::float32>(get_time_delta());
+        detail::each_scene([_delta_time](entt::registry& scene) {
+            scene.view<const animator_component, transform_component, character_rigidbody_component>().each([_delta_time](const animator_component& animator, transform_component& transform, character_rigidbody_component& rigidbody) {
+                if (rigidbody._shape.has_value()) {
+                    btRigidBody* _bullet_rigidbody = rigidbody._rigidbody.get();
+                    const glm::mat4 _transform_matrix = rigidbody._shape.value().get_feet_to_center() * transform._transform;
+                    const glm::vec3 _current_position = glm::vec3(_transform_matrix[3]);
+                    const glm::quat _current_rotation = glm::quat_cast(_transform_matrix);
                     const btTransform _bullet_transform = convert_bullet(_transform_matrix);
                     _bullet_rigidbody->setWorldTransform(_bullet_transform);
 
                     // reset on teleporting
-                    if (character._last_position != _current_position) {
+                    if (rigidbody._last_position != transform.get_position()) {
                         _bullet_rigidbody->getMotionState()->setWorldTransform(_bullet_transform);
                         _bullet_rigidbody->setInterpolationWorldTransform(_bullet_transform);
                         _bullet_rigidbody->setLinearVelocity(btVector3(0, 0, 0));
                         _bullet_rigidbody->setAngularVelocity(btVector3(0, 0, 0));
                         _bullet_rigidbody->clearForces();
                         _bullet_rigidbody->activate(true);
-                        character._target_linear_position = _current_position;
-                        character._target_angular_position = _current_rotation;
-                        character._target_linear_velocity = glm::vec3(0);
-                        character._target_angular_velocity = glm::vec3(0);
+                        rigidbody._target_linear_position = _current_position;
+                        rigidbody._target_angular_position = _current_rotation;
+                        rigidbody._target_linear_velocity = glm::vec3(0);
+                        rigidbody._target_angular_velocity = glm::vec3(0);
                         return;
                     }
 
-                    const glm::vec3 p_now = convert(_bullet_transform.getOrigin());
-                    const btQuaternion bq = _bullet_transform.getRotation();
-                    const glm::quat q_now(bq.getW(), bq.getX(), bq.getY(), bq.getZ());
-
-                    // Accumulators if you have multiple motion tracks (blend by controller weight)
-                    glm::vec3 sum_dpos_xy(0.0f); // desired horizontal displacement this frame
-                    glm::vec3 sum_v_xy(0.0f); // desired horizontal velocity
-                    float sum_yaw_rate = 0.0f; // rad/s around up
-                    float sum_w = 0.0f;
-
+                    // compute and sum for each motion track
+                    glm::vec3 _sum_displacement_xy = glm::vec3(0);
+                    glm::vec3 _sum_velocity_xy = glm::vec3(0);
+                    glm::float32 _sum_velocity_yaw = 0.f;
+                    glm::float32 _sum_blend_size = 0.f;
                     for (const std::pair<const std::string, fetched_container<motion_track>>& _pair : animator._motion_tracks) {
                         if (_pair.second.has_value()) {
                             const motion_track& _track = _pair.second.value();
                             const animation_controller& _controller = animator._controllers.at(_pair.first);
                             if (_controller._computed_weight > 0.f) {
                                 const glm::mat4 _delta_motion_transform = _compute_motion_delta(_track, _controller._time_ratio, _controller._last_time_ratio, _controller._computed_weight, _controller._has_looped);
-
-                                // Per-frame delta in track space
-                                glm::vec3 dpos_local = glm::vec3(_delta_motion_transform[3]); // in *root bone local space*
-                                glm::quat drot_local = glm::quat_cast(_delta_motion_transform);
-                                glm::vec3 dpos_xy = project_on_plane(q_now * dpos_local, _world_up);
-                                glm::vec3 v_des_xy = dpos_xy / _delta_time;
-                                glm::quat q_world_after = q_now * drot_local;
-                                glm::quat q_delta_world = q_world_after * glm::inverse(q_now);
-                                const glm::vec3 fwd = glm::normalize(q_delta_world * _world_forward);
-                                const glm::vec3 fwd_xy = glm::normalize(project_on_plane(fwd, _world_up));
-                                const glm::vec3 right = glm::normalize(glm::cross(_world_up, fwd_xy));
-                                const glm::mat3 R = glm::mat3(right, _world_up, fwd_xy);
-                                glm::quat dq = glm::quat_cast(glm::mat4(R));
-                                if (dq.w < 0) {
-                                    dq = { -dq.w, -dq.x, -dq.y, -dq.z };
+                                const glm::vec3 _delta_position_xy = project_on_plane(_current_rotation * glm::vec3(_delta_motion_transform[3]), _world_up);
+                                const glm::vec3 _linear_velocity_xy = _delta_position_xy / _delta_time;
+                                const glm::vec3 _forward_xy = glm::normalize(project_on_plane(glm::normalize(glm::quat_cast(_delta_motion_transform) * _world_forward), _world_up));
+                                glm::quat _delta_rotation_yaw = glm::quat_cast(glm::mat3(glm::normalize(glm::cross(_world_up, _forward_xy)), _world_up, _forward_xy));
+                                if (_delta_rotation_yaw.w < 0) {
+                                    _delta_rotation_yaw = -_delta_rotation_yaw;
                                 }
-                                float angle = 2.f * std::acos(glm::clamp(dq.w, 0.f, 1.f));
-                                glm::vec3 axis = (std::abs(angle) < 1e-6f) ? _world_up : glm::normalize(glm::vec3(dq.x, dq.y, dq.z));
-                                float yaw_rate = (glm::dot(axis, _world_up)) * (angle / _delta_time);
-                                sum_dpos_xy += dpos_xy;
-                                sum_v_xy += v_des_xy;
-                                sum_yaw_rate += yaw_rate;
-                                sum_w += 1.f;
+                                const glm::float32 _angle_yaw = 2.f * std::acos(glm::clamp(_delta_rotation_yaw.w, 0.f, 1.f));
+                                const glm::vec3 _axis_yaw = (std::abs(_angle_yaw) < 1e-6f) ? _world_up : glm::normalize(glm::vec3(_delta_rotation_yaw.x, _delta_rotation_yaw.y, _delta_rotation_yaw.z));
+                                const glm::float32 _angular_velocity_yaw = (glm::dot(_axis_yaw, _world_up)) * (_angle_yaw / _delta_time);
+                                _sum_displacement_xy += _delta_position_xy;
+                                _sum_velocity_xy += _linear_velocity_xy;
+                                _sum_velocity_yaw += _angular_velocity_yaw;
+                                _sum_blend_size += 1.f;
                             }
                         }
                     }
-                    if (sum_w > 0.f) {
-                        sum_dpos_xy /= sum_w;
-                        sum_v_xy /= sum_w;
-                        sum_yaw_rate /= sum_w;
-                    }
 
-                    character._target_linear_position = p_now + sum_dpos_xy;
-                    character._target_angular_position = glm::normalize(glm::angleAxis(sum_yaw_rate * _delta_time, _world_up) * q_now);
-                    character._target_linear_velocity = sum_v_xy;
-                    character._target_angular_velocity = _world_up * sum_yaw_rate;
+                    // blend motion tracks
+                    if (_sum_blend_size > 0.f) {
+                        _sum_displacement_xy /= _sum_blend_size;
+                        _sum_velocity_xy /= _sum_blend_size;
+                        _sum_velocity_yaw /= _sum_blend_size;
+                    }
+                    rigidbody._target_linear_position = _current_position + _sum_displacement_xy;
+                    rigidbody._target_linear_velocity = _sum_velocity_xy;
+                    rigidbody._target_angular_position = glm::normalize(glm::angleAxis(_sum_velocity_yaw * _delta_time, _world_up) * _current_rotation);
+                    rigidbody._target_angular_velocity = _world_up * _sum_velocity_yaw;
                 }
             });
         });
@@ -266,89 +258,60 @@ namespace detail {
             // transform guizmos
             scene.view<transform_component>().each([](transform_component& transform) {
                 constexpr glm::float32 _line_length = .2f;
-
-                const glm::vec3 _origin = glm::vec3(transform._transform[3]);
-
+                const glm::vec3 _origin = transform.get_position();
                 const glm::vec3 _xaxis = glm::normalize(glm::vec3(transform._transform[0]));
                 const glm::vec3 _yaxis = glm::normalize(glm::vec3(transform._transform[1]));
                 const glm::vec3 _zaxis = glm::normalize(glm::vec3(transform._transform[2]));
-
                 const glm::vec3 _xendpoint = _origin + _xaxis * _line_length;
                 const glm::vec3 _yendpoint = _origin + _yaxis * _line_length;
                 const glm::vec3 _zendpoint = _origin + _zaxis * _line_length;
-
                 draw_guizmo_line(convert_bullet(_origin), convert_bullet(_xendpoint), btVector3(1, 0, 0)); // red
                 draw_guizmo_line(convert_bullet(_origin), convert_bullet(_yendpoint), btVector3(0, 1, 0)); // green
                 draw_guizmo_line(convert_bullet(_origin), convert_bullet(_zendpoint), btVector3(0, 0, 1)); // blue
             });
 
-            // animator guizmos
+            // animator guizmos without transforms
             scene.view<animator_component>(entt::exclude<transform_component>).each([](animator_component& animator) {
                 if (animator._skeleton.has_value()) {
                     const ozz::vector<ozz::math::Float4x4>& _model_transforms = animator._model_transforms;
-
                     if (!_model_transforms.empty()) {
                         const ozz::span<const std::int16_t>& _joint_parents = animator._skeleton.value().get_handle().joint_parents();
-
                         if (_model_transforms.size() != _joint_parents.size()) {
                             LUCARIA_RUNTIME_ERROR("Mismatch between model transforms and joint parents sizes")
                         }
-
                         for (std::size_t _index = 0; _index < _model_transforms.size(); ++_index) {
                             const int _parent_index = _joint_parents[_index];
-                            if (_parent_index == ozz::animation::Skeleton::kNoParent) {
-                                continue;
+                            if (_parent_index != ozz::animation::Skeleton::kNoParent) {
+                                const ozz::math::Float4x4& _current_transform = _model_transforms[_index];
+                                const ozz::math::Float4x4& _parent_transform = _model_transforms[_parent_index];
+                                const btVector3 _from(ozz::math::GetX(_parent_transform.cols[3]), ozz::math::GetY(_parent_transform.cols[3]), ozz::math::GetZ(_parent_transform.cols[3]));
+                                const btVector3 _to(ozz::math::GetX(_current_transform.cols[3]), ozz::math::GetY(_current_transform.cols[3]), ozz::math::GetZ(_current_transform.cols[3]));
+                                detail::draw_guizmo_line(_from, _to, btVector3(0, 1, 1)); // cyan
                             }
-
-                            const ozz::math::Float4x4& _current_transform = _model_transforms[_index];
-                            const ozz::math::Float4x4& _parent_transform = _model_transforms[_parent_index];
-
-                            const btVector3 _from(
-                                ozz::math::GetX(_parent_transform.cols[3]),
-                                ozz::math::GetY(_parent_transform.cols[3]),
-                                ozz::math::GetZ(_parent_transform.cols[3]));
-                            const btVector3 _to(
-                                ozz::math::GetX(_current_transform.cols[3]),
-                                ozz::math::GetY(_current_transform.cols[3]),
-                                ozz::math::GetZ(_current_transform.cols[3]));
-
-                            detail::draw_guizmo_line(_from, _to, btVector3(0, 1, 1)); // cyan
                         }
                     }
                 }
             });
 
+            // animator guizmos with transforms
             scene.view<animator_component, transform_component>().each([](animator_component& animator, transform_component& transform) {
                 if (animator._skeleton.has_value()) {
                     const ozz::vector<ozz::math::Float4x4>& _model_transforms = animator._model_transforms;
-
                     if (!_model_transforms.empty()) {
                         const ozz::span<const std::int16_t>& _joint_parents = animator._skeleton.value().get_handle().joint_parents();
-
                         if (_model_transforms.size() != _joint_parents.size()) {
                             LUCARIA_RUNTIME_ERROR("Mismatch between model transforms and joint parents sizes")
                         }
-
                         for (std::size_t _index = 0; _index < _model_transforms.size(); ++_index) {
                             const int _parent_index = _joint_parents[_index];
-                            if (_parent_index == ozz::animation::Skeleton::kNoParent) {
-                                continue;
+                            if (_parent_index != ozz::animation::Skeleton::kNoParent) {
+                                const ozz::math::Float4x4 _modifier_transform = convert_ozz(transform._transform);
+                                const ozz::math::Float4x4 _current_transform = _modifier_transform * _model_transforms[_index];
+                                const ozz::math::Float4x4 _parent_transform = _modifier_transform * _model_transforms[_parent_index];
+                                const btVector3 _from(ozz::math::GetX(_parent_transform.cols[3]), ozz::math::GetY(_parent_transform.cols[3]), ozz::math::GetZ(_parent_transform.cols[3]));
+                                const btVector3 _to(ozz::math::GetX(_current_transform.cols[3]), ozz::math::GetY(_current_transform.cols[3]), ozz::math::GetZ(_current_transform.cols[3]));
+                                detail::draw_guizmo_line(_from, _to, btVector3(0, 1, 1)); // cyan
                             }
-
-                            const ozz::math::Float4x4 _modifier_transform = convert_ozz(transform._transform);
-                            const ozz::math::Float4x4 _current_transform = _modifier_transform * _model_transforms[_index];
-                            const ozz::math::Float4x4 _parent_transform = _modifier_transform * _model_transforms[_parent_index];
-
-                            const btVector3 _from(
-                                ozz::math::GetX(_parent_transform.cols[3]),
-                                ozz::math::GetY(_parent_transform.cols[3]),
-                                ozz::math::GetZ(_parent_transform.cols[3]));
-                            const btVector3 _to(
-                                ozz::math::GetX(_current_transform.cols[3]),
-                                ozz::math::GetY(_current_transform.cols[3]),
-                                ozz::math::GetZ(_current_transform.cols[3]));
-
-                            detail::draw_guizmo_line(_from, _to, btVector3(0, 1, 1)); // cyan
                         }
                     }
                 }
