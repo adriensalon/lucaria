@@ -2,7 +2,6 @@
 
 #include <imgui.h>
 
-#include <lucaria/core/font.hpp>
 #include <lucaria/core/framebuffer.hpp>
 #include <lucaria/core/viewport.hpp>
 

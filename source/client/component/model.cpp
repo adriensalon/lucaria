@@ -2,8 +2,6 @@
 
 namespace lucaria {
 
-// blockout
-
 model_component<model_shader::blockout>& model_component<model_shader::blockout>::use_mesh(mesh& from)
 {
     _mesh.emplace(from);
@@ -15,8 +13,6 @@ model_component<model_shader::blockout>& model_component<model_shader::blockout>
     _mesh.emplace(from);
     return *this;
 }
-
-// unlit
 
 model_component<model_shader::unlit>& model_component<model_shader::unlit>::use_mesh(mesh& from)
 {
@@ -41,7 +37,5 @@ model_component<model_shader::unlit>& model_component<model_shader::unlit>::use_
     _color.emplace(from);
     return *this;
 }
-
-// todo pbr
 
 }

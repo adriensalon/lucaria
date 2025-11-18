@@ -1,12 +1,7 @@
-#include <iostream>
-#include <random>
-
-#include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_interpolation.hpp>
 #include <ozz/animation/runtime/local_to_model_job.h>
 #include <ozz/animation/runtime/track_sampling_job.h>
-#include <ozz/base/maths/simd_math.h>
-#include <ozz/base/maths/transform.h>
+// #include <ozz/base/maths/transform.h>
 
 #include <lucaria/component/animator.hpp>
 #include <lucaria/component/model.hpp>
@@ -67,12 +62,13 @@ namespace {
         _delta_motion_transform = glm::interpolate(glm::mat4(1.f), _delta_motion_transform, computed_weight);
         return _delta_motion_transform;
     }
+
 }
 
 namespace detail {
 
 #if LUCARIA_GUIZMO
-    extern void draw_guizmo_line(const btVector3& from, const btVector3& to, const btVector3& color);
+    extern void _draw_guizmo_line(const btVector3& from, const btVector3& to, const btVector3& color);
 #endif
 
     void motion_system::advance_controllers()
@@ -166,7 +162,7 @@ namespace detail {
     {
         // apply to transform if no dynamic rigidbody
         detail::each_scene([](entt::registry& scene) {
-            scene.view<const animator_component, transform_component>(entt::exclude<character_rigidbody_component>).each([](const animator_component& _animator, transform_component& _transform) {
+            scene.view<const animator_component, transform_component>(entt::exclude<dynamic_rigidbody_component>).each([](const animator_component& _animator, transform_component& _transform) {
                 for (const std::pair<const std::string, fetched_container<motion_track>>& _pair : _animator._motion_tracks) {
                     if (_pair.second.has_value()) {
                         const animation_controller& _controller = _animator._controllers.at(_pair.first);
@@ -183,7 +179,7 @@ namespace detail {
         // compute and apply to PD targets if dynamic rigidbody
         const glm::float32 _delta_time = static_cast<glm::float32>(get_time_delta());
         detail::each_scene([_delta_time](entt::registry& scene) {
-            scene.view<const animator_component, transform_component, character_rigidbody_component>().each([_delta_time](const animator_component& animator, transform_component& transform, character_rigidbody_component& rigidbody) {
+            scene.view<const animator_component, transform_component, dynamic_rigidbody_component>().each([_delta_time](const animator_component& animator, transform_component& transform, dynamic_rigidbody_component& rigidbody) {
                 if (rigidbody._shape.has_value()) {
                     btRigidBody* _bullet_rigidbody = rigidbody._rigidbody.get();
                     const glm::mat4 _transform_matrix = rigidbody._shape.value().get_feet_to_center() * transform._transform;
@@ -265,30 +261,32 @@ namespace detail {
                 const glm::vec3 _xendpoint = _origin + _xaxis * _line_length;
                 const glm::vec3 _yendpoint = _origin + _yaxis * _line_length;
                 const glm::vec3 _zendpoint = _origin + _zaxis * _line_length;
-                draw_guizmo_line(convert_bullet(_origin), convert_bullet(_xendpoint), btVector3(1, 0, 0)); // red
-                draw_guizmo_line(convert_bullet(_origin), convert_bullet(_yendpoint), btVector3(0, 1, 0)); // green
-                draw_guizmo_line(convert_bullet(_origin), convert_bullet(_zendpoint), btVector3(0, 0, 1)); // blue
+                _draw_guizmo_line(convert_bullet(_origin), convert_bullet(_xendpoint), btVector3(1, 0, 0)); // red
+                _draw_guizmo_line(convert_bullet(_origin), convert_bullet(_yendpoint), btVector3(0, 1, 0)); // green
+                _draw_guizmo_line(convert_bullet(_origin), convert_bullet(_zendpoint), btVector3(0, 0, 1)); // blue
             });
 
             // animator guizmos without transforms
             scene.view<animator_component>(entt::exclude<transform_component>).each([](animator_component& animator) {
                 if (animator._skeleton.has_value()) {
                     const ozz::vector<ozz::math::Float4x4>& _model_transforms = animator._model_transforms;
-                    if (!_model_transforms.empty()) {
-                        const ozz::span<const std::int16_t>& _joint_parents = animator._skeleton.value().get_handle().joint_parents();
-                        if (_model_transforms.size() != _joint_parents.size()) {
-                            LUCARIA_RUNTIME_ERROR("Mismatch between model transforms and joint parents sizes")
+                    if (_model_transforms.empty()) {
+                        return;
+                    }
+                    const ozz::span<const std::int16_t>& _joint_parents = animator._skeleton.value().get_handle().joint_parents();
+                    if (_model_transforms.size() != _joint_parents.size()) {
+                        LUCARIA_RUNTIME_ERROR("Mismatch between model transforms and joint parents sizes")
+                    }
+                    for (std::size_t _index = 0; _index < _model_transforms.size(); ++_index) {
+                        const int _parent_index = _joint_parents[_index];
+                        if (_parent_index == ozz::animation::Skeleton::kNoParent) {
+                            continue;
                         }
-                        for (std::size_t _index = 0; _index < _model_transforms.size(); ++_index) {
-                            const int _parent_index = _joint_parents[_index];
-                            if (_parent_index != ozz::animation::Skeleton::kNoParent) {
-                                const ozz::math::Float4x4& _current_transform = _model_transforms[_index];
-                                const ozz::math::Float4x4& _parent_transform = _model_transforms[_parent_index];
-                                const btVector3 _from(ozz::math::GetX(_parent_transform.cols[3]), ozz::math::GetY(_parent_transform.cols[3]), ozz::math::GetZ(_parent_transform.cols[3]));
-                                const btVector3 _to(ozz::math::GetX(_current_transform.cols[3]), ozz::math::GetY(_current_transform.cols[3]), ozz::math::GetZ(_current_transform.cols[3]));
-                                detail::draw_guizmo_line(_from, _to, btVector3(0, 1, 1)); // cyan
-                            }
-                        }
+                        const ozz::math::Float4x4& _current_transform = _model_transforms[_index];
+                        const ozz::math::Float4x4& _parent_transform = _model_transforms[_parent_index];
+                        const btVector3 _from(ozz::math::GetX(_parent_transform.cols[3]), ozz::math::GetY(_parent_transform.cols[3]), ozz::math::GetZ(_parent_transform.cols[3]));
+                        const btVector3 _to(ozz::math::GetX(_current_transform.cols[3]), ozz::math::GetY(_current_transform.cols[3]), ozz::math::GetZ(_current_transform.cols[3]));
+                        detail::_draw_guizmo_line(_from, _to, btVector3(0, 1, 1)); // cyan
                     }
                 }
             });
@@ -297,22 +295,24 @@ namespace detail {
             scene.view<animator_component, transform_component>().each([](animator_component& animator, transform_component& transform) {
                 if (animator._skeleton.has_value()) {
                     const ozz::vector<ozz::math::Float4x4>& _model_transforms = animator._model_transforms;
-                    if (!_model_transforms.empty()) {
-                        const ozz::span<const std::int16_t>& _joint_parents = animator._skeleton.value().get_handle().joint_parents();
-                        if (_model_transforms.size() != _joint_parents.size()) {
-                            LUCARIA_RUNTIME_ERROR("Mismatch between model transforms and joint parents sizes")
+                    if (_model_transforms.empty()) {
+                        return;
+                    }
+                    const ozz::span<const std::int16_t>& _joint_parents = animator._skeleton.value().get_handle().joint_parents();
+                    if (_model_transforms.size() != _joint_parents.size()) {
+                        LUCARIA_RUNTIME_ERROR("Mismatch between model transforms and joint parents sizes")
+                    }
+                    for (std::size_t _index = 0; _index < _model_transforms.size(); ++_index) {
+                        const int _parent_index = _joint_parents[_index];
+                        if (_parent_index == ozz::animation::Skeleton::kNoParent) {
+                            continue;
                         }
-                        for (std::size_t _index = 0; _index < _model_transforms.size(); ++_index) {
-                            const int _parent_index = _joint_parents[_index];
-                            if (_parent_index != ozz::animation::Skeleton::kNoParent) {
-                                const ozz::math::Float4x4 _modifier_transform = convert_ozz(transform._transform);
-                                const ozz::math::Float4x4 _current_transform = _modifier_transform * _model_transforms[_index];
-                                const ozz::math::Float4x4 _parent_transform = _modifier_transform * _model_transforms[_parent_index];
-                                const btVector3 _from(ozz::math::GetX(_parent_transform.cols[3]), ozz::math::GetY(_parent_transform.cols[3]), ozz::math::GetZ(_parent_transform.cols[3]));
-                                const btVector3 _to(ozz::math::GetX(_current_transform.cols[3]), ozz::math::GetY(_current_transform.cols[3]), ozz::math::GetZ(_current_transform.cols[3]));
-                                detail::draw_guizmo_line(_from, _to, btVector3(0, 1, 1)); // cyan
-                            }
-                        }
+                        const ozz::math::Float4x4 _modifier_transform = convert_ozz(transform._transform);
+                        const ozz::math::Float4x4 _current_transform = _modifier_transform * _model_transforms[_index];
+                        const ozz::math::Float4x4 _parent_transform = _modifier_transform * _model_transforms[_parent_index];
+                        const btVector3 _from(ozz::math::GetX(_parent_transform.cols[3]), ozz::math::GetY(_parent_transform.cols[3]), ozz::math::GetZ(_parent_transform.cols[3]));
+                        const btVector3 _to(ozz::math::GetX(_current_transform.cols[3]), ozz::math::GetY(_current_transform.cols[3]), ozz::math::GetZ(_current_transform.cols[3]));
+                        detail::_draw_guizmo_line(_from, _to, btVector3(0, 1, 1)); // cyan
                     }
                 }
             });

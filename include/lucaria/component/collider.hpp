@@ -19,7 +19,7 @@ struct collider_component {
     collider_component& use_shape(shape& from);
     collider_component& use_shape(fetched<shape>& from);
 
-    collider_component& set_wall();
+    collider_component& set_world();
     collider_component& set_layer(const kinematic_layer layer);
 
 private:

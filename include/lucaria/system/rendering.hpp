@@ -70,7 +70,6 @@ namespace detail {
         rendering_system& operator=(rendering_system&& other) = delete;
 
         static void clear_screen();
-        static void clear_debug_guizmos();
         static void compute_projection();
         static void compute_view_projection();
         static void draw_skybox();
@@ -78,8 +77,8 @@ namespace detail {
         static void draw_unlit_meshes();
         static void draw_imgui_spatial_interfaces();
         static void draw_imgui_screen_interfaces();
-        static void draw_debug_guizmos();
         static void draw_post_processing();
+        static void draw_debug_guizmos();
     };
 
 }

@@ -6,35 +6,30 @@
 namespace lucaria {
 namespace detail {
 
-    extern btDiscreteDynamicsWorld* dynamics_world;
+    extern btDiscreteDynamicsWorld* _dynamics_world;
 
 }
 
 collider_component::~collider_component()
 {
     if (_is_added) {
-        detail::dynamics_world->removeRigidBody(_rigidbody.get());
+        detail::_dynamics_world->removeRigidBody(_rigidbody.get());
     }
 }
 
 collider_component& collider_component::use_shape(shape& from)
 {
     _shape.emplace(from);
-
     btCollisionShape* _collision_shape = _shape.value().get_handle();
-
     if (_is_added) {
-        detail::dynamics_world->removeRigidBody(_rigidbody.get());
+        detail::_dynamics_world->removeRigidBody(_rigidbody.get());
         _rigidbody->setCollisionShape(_collision_shape);
-
     } else {
         _state = std::make_unique<btDefaultMotionState>(btTransform(btQuaternion(0, 0, 0, 1)));
         _rigidbody = std::make_unique<btRigidBody>(btRigidBody::btRigidBodyConstructionInfo(0, _state.get(), _collision_shape));
     }
-
-    detail::dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
+    detail::_dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
     _is_added = true;
-
     return *this;
 }
 
@@ -42,31 +37,27 @@ collider_component& collider_component::use_shape(fetched<shape>& from)
 {
     _shape.emplace(from, [this]() {
         btCollisionShape* _collision_shape = _shape.value().get_handle();
-
         if (_is_added) {
-            detail::dynamics_world->removeRigidBody(_rigidbody.get());
+            detail::_dynamics_world->removeRigidBody(_rigidbody.get());
             _rigidbody->setCollisionShape(_collision_shape);
-
         } else {
             _state = std::make_unique<btDefaultMotionState>(btTransform(btQuaternion(0, 0, 0, 1)));
             _rigidbody = std::make_unique<btRigidBody>(btRigidBody::btRigidBodyConstructionInfo(0, _state.get(), _collision_shape));
         }
-
-        detail::dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
+        detail::_dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
         _is_added = true;
     });
-
     return *this;
 }
 
-collider_component& collider_component::set_wall()
+collider_component& collider_component::set_world()
 {
-    if (_group != detail::bulletgroupID_collider_wall) {
-        _group = detail::bulletgroupID_collider_wall;
+    if (_group != detail::bulletgroupID_collider_world) {
+        _group = detail::bulletgroupID_collider_world;
         _mask = _mask | detail::bulletgroupID_dynamic_rigidbody;
         if (_is_added) {
-            detail::dynamics_world->removeRigidBody(_rigidbody.get());
-            detail::dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
+            detail::_dynamics_world->removeRigidBody(_rigidbody.get());
+            detail::_dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
         }
     }
     return *this;
@@ -81,8 +72,8 @@ collider_component& collider_component::set_layer(const kinematic_layer layer)
             _mask = remove_layer(_mask, detail::bulletgroupID_dynamic_rigidbody);
         }
         if (_is_added) {
-            detail::dynamics_world->removeRigidBody(_rigidbody.get());
-            detail::dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
+            detail::_dynamics_world->removeRigidBody(_rigidbody.get());
+            detail::_dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
         }
     }
     return *this;

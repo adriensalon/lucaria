@@ -20,8 +20,8 @@ struct speaker_component {
     speaker_component& use_sound(fetched<sound>& from);
 
     speaker_component& set_volume(const glm::float32 volume);
-    speaker_component& set_play(const bool play);
-    speaker_component& set_loop(const bool loop);
+    speaker_component& set_play(const bool enable);
+    speaker_component& set_loop(const bool enable);
 
 private:
     bool _is_owning = false;

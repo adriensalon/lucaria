@@ -6,7 +6,7 @@ namespace lucaria {
 namespace detail {
     constexpr std::int16_t bulletgroupID_kinematic_rigidbody = 1 << 0; // interacts with ?collider_wall, ?collider_layerX
     constexpr std::int16_t bulletgroupID_dynamic_rigidbody = 1 << 1; // interacts with ?dynamic_rigidbody, collider_wall
-    constexpr std::int16_t bulletgroupID_collider_wall = 1 << 2; // interacts with kinematic_rigidbody, dynamic_rigidbody
+    constexpr std::int16_t bulletgroupID_collider_world = 1 << 2; // interacts with kinematic_rigidbody, dynamic_rigidbody
     constexpr std::int16_t bulletgroupID_collider_layer_0 = 1 << 3; // interacts with kinematic_rigidbody, dynamic_rigidbody
     constexpr std::int16_t bulletgroupID_collider_layer_1 = 1 << 4; // interacts with kinematic_rigidbody
     constexpr std::int16_t bulletgroupID_collider_layer_2 = 1 << 5; // interacts with kinematic_rigidbody

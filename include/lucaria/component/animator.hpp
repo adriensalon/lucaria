@@ -81,12 +81,12 @@ private:
     std::unordered_map<std::string, detail::fetched_container<animation>> _animations = {};
     std::unordered_map<std::string, detail::fetched_container<motion_track>> _motion_tracks = {};
     std::unordered_map<std::string, detail::fetched_container<event_track>> _event_tracks = {};
-    ozz::vector<ozz::math::SoaTransform> _blended_local_transforms = {};
-    ozz::vector<ozz::math::Float4x4> _model_transforms = {};
     std::unordered_map<std::string, std::vector<std::reference_wrapper<transform_component>>> _children_transforms = {};
-    std::unique_ptr<ozz::animation::SamplingJob::Context> _sampling_context = nullptr;
     std::unordered_map<std::string, animation_controller> _controllers = {};
     std::unordered_map<std::string, ozz::vector<ozz::math::SoaTransform>> _local_transforms = {};
+    ozz::vector<ozz::math::SoaTransform> _blended_local_transforms = {};
+    ozz::vector<ozz::math::Float4x4> _model_transforms = {};
+    std::unique_ptr<ozz::animation::SamplingJob::Context> _sampling_context = nullptr;
     ozz::vector<ozz::animation::BlendingJob::Layer> _blend_layers = {};
     friend struct transform_component;
     friend struct detail::motion_system;

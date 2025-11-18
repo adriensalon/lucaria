@@ -3,15 +3,11 @@
 
 namespace lucaria {
 
-// screen
-
 interface_component<interface_mode::screen>& interface_component<interface_mode::screen>::set_callback(const std::function<void()>& callback)
 {
     _imgui_callback = callback;
     return *this;
 }
-
-// spatial
 
 interface_component<interface_mode::spatial>::interface_component()
 {

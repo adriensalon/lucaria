@@ -19,7 +19,7 @@
 namespace lucaria {
 namespace detail {
 
-    extern btDiscreteDynamicsWorld* dynamics_world;
+    extern btDiscreteDynamicsWorld* _dynamics_world;
 
 }
 
@@ -364,7 +364,7 @@ namespace detail {
     static guizmo_debug_draw guizmo_draw = {};
     static std::unordered_map<glm::vec3, guizmo_mesh, vec3_hash> guizmo_meshes = {};
 
-    void draw_guizmo_line(const btVector3& from, const btVector3& to, const btVector3& color)
+    void _draw_guizmo_line(const btVector3& from, const btVector3& to, const btVector3& color)
     {
         guizmo_draw.drawLine(from, to, color);
     }
@@ -445,6 +445,7 @@ namespace detail {
         const GLbitfield _bits = clear_depth ? GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT : GL_COLOR_BUFFER_BIT;
         const glm::uvec2 _screen_size = get_screen_size();
 
+        // setup screen buffers
         if (!scene_framebuffer) {
             scene_framebuffer = framebuffer();
         }
@@ -461,6 +462,7 @@ namespace detail {
             scene_depth_renderbuffer->resize(_screen_size);
         }
 
+        // clear screen
         scene_framebuffer->use();
         glViewport(0, 0, _screen_size.x, _screen_size.y);
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
@@ -579,11 +581,9 @@ namespace detail {
     {
         static bool _is_program_setup = false;
         static std::optional<program> _persistent_blockout_program = std::nullopt;
-
         if (!_is_program_setup) {
             shader _blockout_vertex_shader(shader_data { blockout_vertex });
             shader _blockout_fragment_shader(shader_data { blockout_fragment });
-
             _persistent_blockout_program = program(_blockout_vertex_shader, _blockout_fragment_shader);
             _is_program_setup = true;
         }
@@ -620,16 +620,13 @@ namespace detail {
     void rendering_system::draw_unlit_meshes()
     {
         static bool _is_program_setup = false;
-
         static std::optional<program> _persistent_unlit_skinned_program = std::nullopt;
         if (!_is_program_setup) {
             shader _unlit_vertex_shader(shader_data { unlit_vertex });
             shader _unlit_fragment_shader(shader_data { unlit_fragment });
             _persistent_unlit_program = program(_unlit_vertex_shader, _unlit_fragment_shader);
-
             shader _unlit_skinned_vertex_shader(shader_data { unlit_skinned_vertex });
             _persistent_unlit_skinned_program = program(_unlit_skinned_vertex_shader, _unlit_fragment_shader);
-
             _is_program_setup = true;
         }
 
@@ -698,61 +695,6 @@ namespace detail {
                 }
             });
         });
-    }
-
-    void rendering_system::clear_debug_guizmos()
-    {
-#if LUCARIA_GUIZMO
-        for (std::pair<const glm::vec3, std::vector<glm::vec3>>& _pair : guizmo_draw.positions) {
-            const glm::vec3 _color = _pair.first;
-            std::vector<glm::vec3>& _positions = _pair.second;
-            std::vector<glm::uvec2>& _indices = guizmo_draw.indices.at(_color);
-            _positions.clear();
-            _indices.clear();
-        }
-        detail::dynamics_world->setDebugDrawer(&guizmo_draw);
-#endif
-    }
-
-    void rendering_system::draw_debug_guizmos()
-    {
-#if LUCARIA_GUIZMO
-        if (!last_show_physics_guizmos_key && get_keys()[keyboard_key::o]) {
-            show_physics_guizmos = !show_physics_guizmos;
-        }
-        last_show_physics_guizmos_key = get_keys()[keyboard_key::o];
-
-        if (show_physics_guizmos) {
-            for (const std::pair<const glm::vec3, std::vector<glm::vec3>>& _pair : guizmo_draw.positions) {
-                const glm::vec3& _color = _pair.first;
-                const std::vector<glm::vec3>& _positions = _pair.second;
-                const std::vector<glm::uvec2>& _indices = guizmo_draw.indices.at(_color);
-                if (guizmo_meshes.find(_color) == guizmo_meshes.end()) {
-                    guizmo_meshes.emplace(_color, guizmo_mesh(_positions, _indices));
-                } else {
-                    guizmo_meshes.at(_color).update(_positions, _indices);
-                }
-            }
-            static bool _is_program_setup = false;
-            static std::optional<program> _persistent_guizmo_program = std::nullopt;
-            if (!_is_program_setup) {
-                shader _guizmo_vertex_shader(shader_data { guizmo_vertex });
-                shader _guizmo_fragment_shader(shader_data { guizmo_fragment });
-
-                _persistent_guizmo_program = program(_guizmo_vertex_shader, _guizmo_fragment_shader);
-                _is_program_setup = true;
-            }
-
-            program& _guizmo_program = _persistent_guizmo_program.value();
-            _guizmo_program.use();
-            for (const std::pair<const glm::vec3, guizmo_mesh>& _pair : guizmo_meshes) {
-                _guizmo_program.bind_guizmo("vert_position", _pair.second);
-                _guizmo_program.bind_uniform("uniform_color", _pair.first);
-                _guizmo_program.bind_uniform("uniform_mvp", camera_view_projection);
-                _guizmo_program.draw_guizmo();
-            }
-        }
-#endif
     }
 
     void rendering_system::draw_imgui_spatial_interfaces()
@@ -890,6 +832,57 @@ namespace detail {
         _post_processing_program.bind_uniform("uniform_fxaa_edge_sharpness", fxaa_edge_sharpness);
 
         _post_processing_program.draw(false);
+    }
+
+    void rendering_system::draw_debug_guizmos()
+    {
+#if LUCARIA_GUIZMO
+        detail::_dynamics_world->setDebugDrawer(&guizmo_draw);
+        detail::_dynamics_world->debugDrawWorld();
+
+        // show/hide from key
+        if (!last_show_physics_guizmos_key && get_keys()[keyboard_key::o]) {
+            show_physics_guizmos = !show_physics_guizmos;
+        }
+        last_show_physics_guizmos_key = get_keys()[keyboard_key::o];
+
+        // draw guizmos
+        if (show_physics_guizmos) {
+            for (const std::pair<const glm::vec3, std::vector<glm::vec3>>& _pair : guizmo_draw.positions) {
+                const glm::vec3& _color = _pair.first;
+                const std::vector<glm::vec3>& _positions = _pair.second;
+                const std::vector<glm::uvec2>& _indices = guizmo_draw.indices.at(_color);
+                if (guizmo_meshes.find(_color) == guizmo_meshes.end()) {
+                    guizmo_meshes.emplace(_color, guizmo_mesh(_positions, _indices));
+                } else {
+                    guizmo_meshes.at(_color).update(_positions, _indices);
+                }
+            }
+            static bool _is_program_setup = false;
+            static std::optional<program> _persistent_guizmo_program = std::nullopt;
+            if (!_is_program_setup) {
+                shader _guizmo_vertex_shader(shader_data { guizmo_vertex });
+                shader _guizmo_fragment_shader(shader_data { guizmo_fragment });
+                _persistent_guizmo_program = program(_guizmo_vertex_shader, _guizmo_fragment_shader);
+                _is_program_setup = true;
+            }
+            program& _guizmo_program = _persistent_guizmo_program.value();
+            _guizmo_program.use();
+            for (const std::pair<const glm::vec3, guizmo_mesh>& _pair : guizmo_meshes) {
+                _guizmo_program.bind_guizmo("vert_position", _pair.second);
+                _guizmo_program.bind_uniform("uniform_color", _pair.first);
+                _guizmo_program.bind_uniform("uniform_mvp", camera_view_projection);
+                _guizmo_program.draw_guizmo();
+            }
+        }
+
+        // clear guizmos
+        for (std::pair<const glm::vec3, std::vector<glm::vec3>>& _pair : guizmo_draw.positions) {
+            const glm::vec3 _color = _pair.first;
+            _pair.second.clear();
+            guizmo_draw.indices.at(_color).clear();
+        }
+#endif
     }
 }
 }
