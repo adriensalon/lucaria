@@ -21,29 +21,46 @@
 namespace lucaria {
 namespace {
 
-    glm::mat4 sample_motion_track(const motion_track& motion_track, float ratio) // on pourrait le mettre dans le motion_track jsp...
-    {
-        ozz::animation::Float3TrackSamplingJob position_sampler;
-        ozz::animation::QuaternionTrackSamplingJob rotation_sampler;
-        ozz::math::Transform _ozz_affine_transform;
+    const glm::vec3 _world_up = glm::vec3(0, 1, 0);
+    const glm::vec3 _world_forward = glm::vec3(0, 0, 1);
 
-        position_sampler.track = &motion_track.get_translation_handle();
-        position_sampler.result = &_ozz_affine_transform.translation;
-        position_sampler.ratio = ratio;
-        if (!position_sampler.Run()) {
+    [[nodiscard]] glm::mat4 _sample_motion_track(const motion_track& track, const glm::float32 ratio)
+    {
+        // position sampling
+        ozz::math::Transform _ozz_affine_transform;
+        ozz::animation::Float3TrackSamplingJob _position_sampler;
+        _position_sampler.track = &track.get_translation_handle();
+        _position_sampler.result = &_ozz_affine_transform.translation;
+        _position_sampler.ratio = ratio;
+        if (!_position_sampler.Run()) {
             LUCARIA_RUNTIME_ERROR("Failed to run vec3 track sampling job")
         }
 
-        rotation_sampler.track = &motion_track.get_rotation_handle();
-        rotation_sampler.result = &_ozz_affine_transform.rotation;
-        rotation_sampler.ratio = ratio;
-        if (!rotation_sampler.Run()) {
+        // rotation sampling
+        ozz::animation::QuaternionTrackSamplingJob _rotation_sampler;
+        _rotation_sampler.track = &track.get_rotation_handle();
+        _rotation_sampler.result = &_ozz_affine_transform.rotation;
+        _rotation_sampler.ratio = ratio;
+        if (!_rotation_sampler.Run()) {
             LUCARIA_RUNTIME_ERROR("Failed to run quat track sampling job")
         }
 
         _ozz_affine_transform.scale = ozz::math::Float3::one();
-        ozz::math::Float4x4 _ozz_transform = ozz::math::Float4x4::FromAffine(_ozz_affine_transform);
-        return detail::convert(_ozz_transform);
+        return detail::convert(ozz::math::Float4x4::FromAffine(_ozz_affine_transform));
+    }
+
+    [[nodiscard]] glm::mat4 _compute_motion_delta(const motion_track& track, const glm::float32 time_ratio, const glm::float32 last_time_ratio, const glm::float32 computed_weight, const bool has_looped)
+    {
+        const glm::mat4 _new_motion_transform = _sample_motion_track(track, time_ratio);
+        const glm::mat4 _last_motion_transform = _sample_motion_track(track, last_time_ratio);
+        glm::mat4 _delta_motion_transform = _new_motion_transform * glm::inverse(_last_motion_transform);
+        if (has_looped) {
+            const glm::mat4 _end_motion_transform = _sample_motion_track(track, 1.f);
+            const glm::mat4 _begin_motion_transform = _sample_motion_track(track, 0.f);
+            _delta_motion_transform = _end_motion_transform * glm::inverse(_begin_motion_transform) * _delta_motion_transform;
+        }
+        _delta_motion_transform = glm::interpolate(glm::mat4(1.f), _delta_motion_transform, computed_weight);
+        return _delta_motion_transform;
     }
 }
 
@@ -59,44 +76,26 @@ namespace detail {
             scene.view<animator_component>().each([](animator_component& animator) {
                 for (std::pair<const std::string, animation_controller>& _pair : animator._controllers) {
 
+                    // advance time
                     animation_controller& _controller = _pair.second;
                     if (_controller._is_playing) {
                         _controller._last_time_ratio = _controller._time_ratio;
-                        _controller._time_ratio += _controller._playback_speed * static_cast<float>(get_time_delta()); // * 0.1f; // c'est bien le temps qu'il faut multiplier par le weight des fadeins
+                        _controller._time_ratio += _controller._playback_speed * static_cast<glm::float32>(get_time_delta());
                     }
                     _controller._has_looped = _controller._time_ratio > 1.f;
                     _controller._time_ratio = glm::mod(_controller._time_ratio, 1.f);
-                    _controller._computed_weight = _controller._weight; // add fade in and fade out
+                    _controller._computed_weight = _controller._weight; // TODO account for fade in and fade out
 
-                    // if we passed an event trigger
+                    // fire events
                     if (_controller._is_playing && animator._event_tracks[_pair.first].has_value()) {
-                        const float last = _controller._last_time_ratio; // in [0,1)
-                        const float curr = _controller._time_ratio; // in [0,1)
+                        for (const event_data& _event : animator._event_tracks[_pair.first].value().data.events) {
+                            if (_controller._last_time_ratio <= _controller._time_ratio
+                                    ? (_controller._last_time_ratio < _event.time_normalized) && (_event.time_normalized <= _controller._time_ratio)
+                                    : (_controller._last_time_ratio < _event.time_normalized) || (_event.time_normalized <= _controller._time_ratio)) {
 
-                        // crossing test: open-left / closed-right interval (last, curr], with wrap
-                        auto crossed = [&](float t) -> bool {
-                            // assume t is already in [0,1]
-                            if (last <= curr) {
-                                return (last < t) && (t <= curr);
-                            } else {
-                                // wrapped: (last,1] U (0,curr]
-                                return (last < t) || (t <= curr);
-                            }
-                        };
-
-                        // get events from the controller's fetched event track
-                        const lucaria::event_track& track = animator._event_tracks[_pair.first].value(); // event_track&
-                        const std::vector<lucaria::event_data>& events = track.data.events; // std::vector<event_data>
-
-                        for (const auto& ev : events) {
-                            const float t = glm::clamp(ev.time_normalized, 0.f, 1.f);
-                            if (!crossed(t))
-                                continue;
-
-                            // call registered callback if any
-                            if (auto it = _controller._event_callbacks.find(ev.name);
-                                it != _controller._event_callbacks.end() && it->second) {
-                                it->second();
+                                if (_controller._event_callbacks.find(_event.name) != _controller._event_callbacks.end()) {
+                                    _controller._event_callbacks.find(_event.name)->second();
+                                }
                             }
                         }
                     }
@@ -111,17 +110,14 @@ namespace detail {
             scene.view<animator_component>().each([](animator_component& animator) {
                 if (animator._skeleton.has_value()) {
 
+                    // sampling
                     ozz::vector<ozz::animation::BlendingJob::Layer> _blend_layers;
                     for (std::pair<const std::string, fetched_container<animation>>& _pair : animator._animations) {
-
                         if (_pair.second.has_value()) {
-
                             const animation_controller& _controller = animator._controllers[_pair.first];
-                            ozz::animation::Animation& _animation = _pair.second.value().get_handle();
                             ozz::vector<ozz::math::SoaTransform>& _local_transforms = animator._local_transforms[_pair.first];
                             ozz::animation::SamplingJob sampling_job;
-
-                            sampling_job.animation = &_animation;
+                            sampling_job.animation = &_pair.second.value().get_handle();
                             sampling_job.context = animator._sampling_context.get();
                             sampling_job.ratio = _controller._time_ratio;
                             sampling_job.output = make_span(_local_transforms);
@@ -129,17 +125,17 @@ namespace detail {
                                 LUCARIA_RUNTIME_ERROR("Failed to run animation sampling job")
                             }
 
+                            // prepare blend layers
                             ozz::animation::BlendingJob::Layer& _blend_layer = _blend_layers.emplace_back();
                             _blend_layer.transform = make_span(_local_transforms);
                             _blend_layer.weight = _controller._computed_weight;
                         }
                     }
 
+                    // blending
                     ozz::animation::Skeleton& _skeleton = animator._skeleton.value().get_handle();
                     ozz::animation::BlendingJob _blending_job;
-                    ozz::animation::LocalToModelJob ltm_job;
-
-                    _blending_job.threshold = 0.1f; //
+                    _blending_job.threshold = 0.1f; // TODO let user set parameter
                     _blending_job.additive_layers = {};
                     _blending_job.layers = make_span(_blend_layers);
                     _blending_job.rest_pose = _skeleton.joint_rest_poses();
@@ -148,10 +144,12 @@ namespace detail {
                         LUCARIA_RUNTIME_ERROR("Failed to run blending job")
                     }
 
-                    ltm_job.skeleton = &_skeleton;
-                    ltm_job.input = make_span(animator._blended_local_transforms);
-                    ltm_job.output = make_span(animator._model_transforms);
-                    if (!ltm_job.Run()) {
+                    // local to model
+                    ozz::animation::LocalToModelJob _local_to_model_job;
+                    _local_to_model_job.skeleton = &_skeleton;
+                    _local_to_model_job.input = make_span(animator._blended_local_transforms);
+                    _local_to_model_job.output = make_span(animator._model_transforms);
+                    if (!_local_to_model_job.Run()) {
                         LUCARIA_RUNTIME_ERROR("Failed to run local to model job")
                     }
                 }
@@ -161,191 +159,102 @@ namespace detail {
 
     void motion_system::apply_motion_tracks()
     {
+        // apply to transform if no dynamic rigidbody
         detail::each_scene([](entt::registry& scene) {
             scene.view<const animator_component, transform_component>(entt::exclude<character_rigidbody_component>).each([](const animator_component& animator, transform_component& transform) {
                 for (const std::pair<const std::string, fetched_container<motion_track>>& _pair : animator._motion_tracks) {
-
                     if (_pair.second.has_value()) {
-
-                        const motion_track& _motion_track = _pair.second.value();
                         const animation_controller& _controller = animator._controllers.at(_pair.first);
-                        const glm::mat4 _new_transform = transform._transform * sample_motion_track(_motion_track, _controller._time_ratio);
-                        const glm::mat4 _last_transform = transform._transform * sample_motion_track(_motion_track, _controller._last_time_ratio);
-                        glm::mat4 _delta_transform = _new_transform * glm::inverse(_last_transform);
-
-                        if (_controller._has_looped) {
-                            const glm::mat4 _end_transform = transform._transform * sample_motion_track(_motion_track, 1.f);
-                            const glm::mat4 _begin_transform = transform._transform * sample_motion_track(_motion_track, 0.f);
-                            _delta_transform = _end_transform * glm::inverse(_begin_transform) * _delta_transform;
+                        if (_controller._computed_weight > 0.f) {
+                            const motion_track& _track = _pair.second.value();
+                            const glm::mat4 _delta_transform = _compute_motion_delta(_track, _controller._time_ratio, _controller._last_time_ratio, _controller._computed_weight, _controller._has_looped);
+                            transform.set_transform_relative(_delta_transform);
                         }
-
-                        _delta_transform = glm::interpolate(glm::mat4(1.f), _delta_transform, _controller._computed_weight);
-                        transform.set_transform_relative(_delta_transform);
                     }
                 }
             });
         });
 
+        // apply to PD targets if dynamic rigidbody
         detail::each_scene([](entt::registry& scene) {
-            // characters
             scene.view<const animator_component, transform_component, character_rigidbody_component>().each([](const animator_component& animator, transform_component& transform, character_rigidbody_component& character) {
-                btRigidBody* body = character._rigidbody.get();
-                if (!body)
-                    return;
+                if (character._shape.has_value()) {
+                    btRigidBody* _bullet_rigidbody = character._rigidbody.get();
+                    const glm::float32 _delta_time = static_cast<glm::float32>(get_time_delta());
+                    const glm::vec3 _current_position = transform.get_position();
+                    const glm::quat _current_rotation = transform.get_rotation();
+                    const glm::mat4 _transform_matrix = character._shape.value().get_feet_to_center() * transform._transform;
+                    const btTransform _bullet_transform = convert_bullet(_transform_matrix);
+                    _bullet_rigidbody->setWorldTransform(_bullet_transform);
 
-                const float dt = float(get_time_delta());
-                if (dt <= 0.f)
-                    return;
-
-                if (character._pending_teleport) {
-
-                    if (!character._shape.has_value())
+                    // reset on teleporting
+                    if (character._last_position != _current_position) {
+                        _bullet_rigidbody->getMotionState()->setWorldTransform(_bullet_transform);
+                        _bullet_rigidbody->setInterpolationWorldTransform(_bullet_transform);
+                        _bullet_rigidbody->setLinearVelocity(btVector3(0, 0, 0));
+                        _bullet_rigidbody->setAngularVelocity(btVector3(0, 0, 0));
+                        _bullet_rigidbody->clearForces();
+                        _bullet_rigidbody->activate(true);
+                        character._target_linear_position = _current_position;
+                        character._target_angular_position = _current_rotation;
+                        character._target_linear_velocity = glm::vec3(0);
+                        character._target_angular_velocity = glm::vec3(0);
                         return;
-                    character._pending_teleport = false;
-
-                    const glm::mat4 M = character._shape.value().get_feet_to_center() * transform._transform;
-                    const btTransform Tb = convert_bullet(M);
-                    body->setWorldTransform(Tb);
-                    body->getMotionState()->setWorldTransform(Tb);
-                    body->setInterpolationWorldTransform(Tb);
-
-                    body->setLinearVelocity(btVector3(0, 0, 0));
-                    body->setAngularVelocity(btVector3(0, 0, 0));
-                    body->clearForces();
-                    body->activate(true);
-
-                    // sync PD targets to avoid elastic correction
-                    character._p_d = glm::vec3(M[3]); // translation part
-                    character._q_d = glm::quat_cast(M); // orientation
-                    character._v_d = glm::vec3(0);
-                    character._w_d = glm::vec3(0);
-                    return;
-                }
-
-                const btTransform Tb = convert_bullet(character._shape.value().get_feet_to_center() * transform._transform);
-                body->setWorldTransform(Tb);
-
-                //                 btTransform Tb = body->getWorldTransform();
-
-                // // keep translation from Bullet
-                // btVector3 pos = Tb.getOrigin();
-
-                // // compute new orientation (only yaw from camera)
-                // btQuaternion qNow = Tb.getRotation();
-                // glm::quat q_now(qNow.getW(), qNow.getX(), qNow.getY(), qNow.getZ());
-
-                // // your camera yaw input
-                // glm::quat qYawDelta = glm::angleAxis(glm::radians(yaw_delta), glm::vec3(0,1,0));
-
-                // // apply only yaw override
-                // glm::quat q_new = qYawDelta * q_now;
-                // btQuaternion qNew(q_new.x, q_new.y, q_new.z, q_new.w);
-
-                // // write back
-                // Tb.setOrigin(pos);
-                // Tb.setRotation(qNew);
-                // body->setWorldTransform(Tb);
-                // body->getMotionState()->setWorldTransform(Tb);
-                // body->setInterpolationWorldTransform(Tb);
-
-                // const btTransform Tb = body->getWorldTransform();
-                const glm::vec3 p_now = { Tb.getOrigin().x(), Tb.getOrigin().y(), Tb.getOrigin().z() };
-                const btQuaternion bq = Tb.getRotation();
-                const glm::quat q_now(bq.getW(), bq.getX(), bq.getY(), bq.getZ());
-
-                const glm::vec3 up = character._up;
-
-                // Accumulators if you have multiple motion tracks (blend by controller weight)
-                glm::vec3 sum_dpos_xy(0.0f); // desired horizontal displacement this frame
-                glm::vec3 sum_v_xy(0.0f); // desired horizontal velocity
-                float sum_yaw_rate = 0.0f; // rad/s around up
-                float sum_w = 0.0f;
-
-                for (const auto& kv : animator._motion_tracks) {
-                    if (!kv.second.has_value())
-                        continue;
-
-                    const motion_track& track = kv.second.value();
-                    const auto itCtrl = animator._controllers.find(kv.first);
-                    if (itCtrl == animator._controllers.end())
-                        continue;
-                    const animation_controller& ctrl = itCtrl->second;
-                    const float w = ctrl._computed_weight; // your layer weight
-                    if (w <= 0.f)
-                        continue;
-
-                    // Sample local root-motion at t0/t1
-                    glm::mat4 T0 = sample_motion_track(track, ctrl._last_time_ratio);
-                    glm::mat4 T1 = sample_motion_track(track, ctrl._time_ratio);
-
-                    // Handle wrapping of the clip (preserve the authored end->start delta)
-                    if (ctrl._has_looped) {
-                        glm::mat4 Tend = sample_motion_track(track, 1.f);
-                        glm::mat4 Tbeg = sample_motion_track(track, 0.f);
-                        T1 = Tend * glm::inverse(Tbeg) * T1;
                     }
 
-                    // Per-frame delta in track space
-                    glm::mat4 D = T1 * glm::inverse(T0);
-                    glm::vec3 dpos_local = glm::vec3(D[3]); // in *root bone local space*
-                    glm::quat drot_local = glm::quat_cast(D);
+                    const glm::vec3 p_now = convert(_bullet_transform.getOrigin());
+                    const btQuaternion bq = _bullet_transform.getRotation();
+                    const glm::quat q_now(bq.getW(), bq.getX(), bq.getY(), bq.getZ());
 
-                    // Rotate displacement into world using current physics orientation
-                    glm::vec3 dpos_world = q_now * dpos_local;
+                    // Accumulators if you have multiple motion tracks (blend by controller weight)
+                    glm::vec3 sum_dpos_xy(0.0f); // desired horizontal displacement this frame
+                    glm::vec3 sum_v_xy(0.0f); // desired horizontal velocity
+                    float sum_yaw_rate = 0.0f; // rad/s around up
+                    float sum_w = 0.0f;
 
-                    // Project to ground
-                    auto projOnPlane = [&](const glm::vec3& v) { return v - up * glm::dot(up, v); };
-                    glm::vec3 dpos_xy = projOnPlane(dpos_world);
-                    glm::vec3 v_des_xy = dpos_xy / dt;
+                    for (const std::pair<const std::string, fetched_container<motion_track>>& _pair : animator._motion_tracks) {
+                        if (_pair.second.has_value()) {
+                            const motion_track& _track = _pair.second.value();
+                            const animation_controller& _controller = animator._controllers.at(_pair.first);
+                            if (_controller._computed_weight > 0.f) {
+                                const glm::mat4 _delta_motion_transform = _compute_motion_delta(_track, _controller._time_ratio, _controller._last_time_ratio, _controller._computed_weight, _controller._has_looped);
 
-                    // Rotate into world by composing with current orientation
-                    glm::quat q_world_after = q_now * drot_local;
-                    glm::quat q_delta_world = q_world_after * glm::inverse(q_now);
+                                // Per-frame delta in track space
+                                glm::vec3 dpos_local = glm::vec3(_delta_motion_transform[3]); // in *root bone local space*
+                                glm::quat drot_local = glm::quat_cast(_delta_motion_transform);
+                                glm::vec3 dpos_xy = project_on_plane(q_now * dpos_local, _world_up);
+                                glm::vec3 v_des_xy = dpos_xy / _delta_time;
+                                glm::quat q_world_after = q_now * drot_local;
+                                glm::quat q_delta_world = q_world_after * glm::inverse(q_now);
+                                const glm::vec3 fwd = glm::normalize(q_delta_world * _world_forward);
+                                const glm::vec3 fwd_xy = glm::normalize(project_on_plane(fwd, _world_up));
+                                const glm::vec3 right = glm::normalize(glm::cross(_world_up, fwd_xy));
+                                const glm::mat3 R = glm::mat3(right, _world_up, fwd_xy);
+                                glm::quat dq = glm::quat_cast(glm::mat4(R));
+                                if (dq.w < 0) {
+                                    dq = { -dq.w, -dq.x, -dq.y, -dq.z };
+                                }
+                                float angle = 2.f * std::acos(glm::clamp(dq.w, 0.f, 1.f));
+                                glm::vec3 axis = (std::abs(angle) < 1e-6f) ? _world_up : glm::normalize(glm::vec3(dq.x, dq.y, dq.z));
+                                float yaw_rate = (glm::dot(axis, _world_up)) * (angle / _delta_time);
+                                sum_dpos_xy += dpos_xy;
+                                sum_v_xy += v_des_xy;
+                                sum_yaw_rate += yaw_rate;
+                                sum_w += 1.f;
+                            }
+                        }
+                    }
+                    if (sum_w > 0.f) {
+                        sum_dpos_xy /= sum_w;
+                        sum_v_xy /= sum_w;
+                        sum_yaw_rate /= sum_w;
+                    }
 
-                    auto yawOnly = [&](const glm::quat& q) {
-                        const glm::vec3 fwd = glm::normalize(q * glm::vec3(0, 0, 1));
-                        const glm::vec3 fwd_xy = glm::normalize(projOnPlane(fwd));
-                        const glm::vec3 right = glm::normalize(glm::cross(up, fwd_xy));
-                        const glm::mat3 R { right, up, fwd_xy }; // columns
-                        return glm::quat_cast(glm::mat4(R));
-                    };
-
-                    glm::quat drot_yaw = yawOnly(q_delta_world);
-
-                    // Turn yaw delta into angular speed around up
-                    glm::quat dq = drot_yaw;
-                    if (dq.w < 0)
-                        dq = { -dq.w, -dq.x, -dq.y, -dq.z };
-
-                    float angle = 2.f * std::acos(glm::clamp(dq.w, 0.f, 1.f));
-                    glm::vec3 axis = (std::abs(angle) < 1e-6f) ? up : glm::normalize(glm::vec3(dq.x, dq.y, dq.z));
-                    float yaw_rate = (glm::dot(axis, up)) * (angle / dt);
-
-                    // Accumulate weighted contributions
-                    sum_dpos_xy += w * dpos_xy;
-                    sum_v_xy += w * v_des_xy;
-                    sum_yaw_rate += w * yaw_rate;
-                    sum_w += w;
+                    character._target_linear_position = p_now + sum_dpos_xy;
+                    character._target_angular_position = glm::normalize(glm::angleAxis(sum_yaw_rate * _delta_time, _world_up) * q_now);
+                    character._target_linear_velocity = sum_v_xy;
+                    character._target_angular_velocity = _world_up * sum_yaw_rate;
                 }
-
-                // Normalize by total weight if you blended multiple tracks
-                if (sum_w > 0.f) {
-                    sum_dpos_xy /= sum_w;
-                    sum_v_xy /= sum_w;
-                    sum_yaw_rate /= sum_w;
-                }
-
-                // --- Build absolute PD targets relative to current physics pose ---
-                character._p_d = p_now + sum_dpos_xy; // where to be at end of this frame
-                // rotate around 'up' by (rate * dt) from current orient:
-                auto angleAxis = [&](float ang, const glm::vec3& ax) {
-                    return glm::angleAxis(ang, glm::normalize(ax));
-                };
-                glm::quat q_target = glm::normalize(angleAxis(sum_yaw_rate * dt, up) * q_now);
-                character._q_d = q_target;
-
-                character._v_d = sum_v_xy; // desired horizontal velocity
-                character._w_d = up * sum_yaw_rate; // desired angular velocity about up
             });
         });
     }

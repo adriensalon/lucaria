@@ -60,11 +60,26 @@ namespace detail {
         return btVector3(vector.x, vector.y, vector.z);
     }
 
+    btQuaternion convert_bullet(const glm::quat& vector)
+    {
+        return btQuaternion(vector.x, vector.y, vector.z, vector.w);
+    }
+
     btTransform convert_bullet(const glm::mat4& matrix)
     {
         btTransform _result;
         _result.setFromOpenGLMatrix(glm::value_ptr(matrix));
         return _result;
+    }
+
+    glm::vec3 project_on_plane(const glm::vec3& vector, const glm::vec3& normal)
+    {
+        return vector - normal * glm::dot(normal, vector);
+    }
+
+    btVector3 project_on_plane_bullet(const btVector3& vector, const btVector3& up)
+    {
+        return vector - up * vector.dot(up);
     }
 
 }

@@ -91,6 +91,11 @@ glm::vec3 transform_component::get_position() const
     return _transform[3];
 }
 
+glm::quat transform_component::get_rotation() const
+{
+    return glm::quat_cast(_transform);
+}
+
 glm::vec3 transform_component::get_right() const
 {
     return glm::normalize(glm::vec3(_transform[0]));

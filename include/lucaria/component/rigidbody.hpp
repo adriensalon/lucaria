@@ -14,7 +14,6 @@ namespace detail {
 
 enum struct rigidbody_kind {
     kinematic,
-    dynamic,
     character,
 };
 
@@ -58,33 +57,6 @@ private:
 };
 
 template <>
-struct rigidbody_component<rigidbody_kind::dynamic> {
-    rigidbody_component() = default;
-    rigidbody_component(const rigidbody_component& other) = delete;
-    rigidbody_component& operator=(const rigidbody_component& other) = delete;
-    rigidbody_component(rigidbody_component&& other) = default;
-    rigidbody_component& operator=(rigidbody_component&& other) = default;
-
-    rigidbody_component& use_shape(shape& from);
-    rigidbody_component& use_shape(fetched<shape>& from);
-
-    rigidbody_component& set_mass(const glm::float32 kilograms);
-    rigidbody_component& set_collide_dynamics(const bool enabled = true);
-    rigidbody_component& set_add_force(const glm::vec3& force);
-    rigidbody_component& set_add_impulsion(const glm::vec3& force);
-
-private:
-    bool _is_added = false;
-    detail::fetched_container<shape> _shape = {};
-    std::unique_ptr<btDefaultMotionState> _state = nullptr;
-    std::unique_ptr<btRigidBody> _rigidbody = nullptr;
-    glm::float32 _mass = 0.f;
-    std::int16_t _group = detail::bulletgroupID_dynamic_rigidbody;
-    std::int16_t _mask = detail::bulletgroupID_collider_wall;
-    friend struct detail::dynamics_system;
-};
-
-template <>
 struct rigidbody_component<rigidbody_kind::character> {
     rigidbody_component() = default;
     rigidbody_component(const rigidbody_component&) = delete;
@@ -95,56 +67,60 @@ struct rigidbody_component<rigidbody_kind::character> {
     rigidbody_component& use_shape(shape& from);
     rigidbody_component& use_shape(fetched<shape>& from);
 
-    rigidbody_component& set_teleporting();
-    rigidbody_component& set_mass(const glm::float32 kilograms);
-    rigidbody_component& set_gravity(const glm::float32 newtons);
-    // rigidbody_component& set_enable_ccd(const bool on = true);
-    rigidbody_component& set_friction(const glm::float32 mu);
-    rigidbody_component& set_lock_angular(const bool xlock, const bool ylock, const bool zlock);
-    rigidbody_component& set_pd_xy(glm::float32 Kp, glm::float32 Kd, glm::float32 Fmax);
-    rigidbody_component& set_pd_rot(glm::float32 Kp, glm::float32 Kd, glm::float32 Tmax);
+    rigidbody_component& set_mass(const glm::float32 mass);
+    rigidbody_component& set_friction(const glm::float32 friction);
+    rigidbody_component& set_lock_angular(const glm::bvec3 lock);
+    rigidbody_component& set_linear_pd(const glm::float32 kp, const glm::float32 kd, const glm::float32 max_force);
+    rigidbody_component& set_angular_pd(const glm::float32 kp, const glm::float32 kd, const glm::float32 max_force);
+
+    rigidbody_component& add_linear_force(const glm::vec3& force);
+    rigidbody_component& add_angular_force(const glm::vec3& force);
+    rigidbody_component& add_linear_impulse(const glm::vec3& impulse);
+    rigidbody_component& add_angular_impulse(const glm::vec3& impulse);
 
     [[nodiscard]] glm::vec3 get_translation_speed();
     [[nodiscard]] glm::vec3 get_rotation_speed();
 
 private:
-    // bullet
     bool _is_added = false;
-    bool _pending_teleport = true;
     detail::fetched_container<shape> _shape = {};
     std::unique_ptr<btDefaultMotionState> _state = nullptr;
     std::unique_ptr<btRigidBody> _rigidbody = nullptr;
     std::int16_t _group = detail::bulletgroupID_dynamic_rigidbody;
     std::int16_t _mask = detail::bulletgroupID_collider_wall;
-    glm::vec3 _translation_speed = {};
-    glm::vec3 _rotation_speed = {};
+    glm::vec3 _last_position = glm::vec3(0);
+    glm::float32 _mass = 70.f;
+    glm::float32 _friction = 1.f;
+    glm::vec3 _angular_factor = glm::vec3(0, 1, 0);
+    glm::vec3 _translation_speed = glm::vec3(0);
+    glm::vec3 _rotation_speed = glm::vec3(0);
 
-    // tuning
-    float _mass = 70.f;
-    float _mu = 1.f;
-    glm::vec3 _up = { 0, 1, 0 };
-    glm::vec3 _angular_factor = { 0, 1, 0 };
-    bool _use_ccd = false;
-    // float _g = 9.81f;
-    float _g = 0.f;
+    // PD parameters
+    glm::float32 _linear_kp = 1800.f;
+    glm::float32 _linear_kd = 0.f;
+    glm::float32 _linear_max_force = 6000.f;
+    glm::float32 _angular_kp = 400.f;
+    glm::float32 _angular_kd = 0.f;
+    glm::float32 _angular_max_force = 1200.f;
+    glm::float32 _angular_airborne_scale = 0.35f;
 
-    // PD params
-    float _Kp_xy = 1800.f, _Kd_xy = 0.f, _Fmax_xy = 6000.f;
-    float _Kp_rot = 400.f, _Kd_rot = 0.f, _Tmax_rot = 1200.f;
-    float _air_rot_scale = 0.35f;
+    // PD targets set from root motion
+    glm::vec3 _target_linear_position = glm::vec3(0);
+    glm::quat _target_angular_position = glm::quat(1, 0, 0, 0);
+    glm::vec3 _target_linear_velocity = glm::vec3(0);
+    glm::vec3 _target_angular_velocity = glm::vec3(0);
 
-    // targets (from animation sampling each tick)
-    glm::vec3 _p_d { 0 };
-    glm::quat _q_d { 1, 0, 0, 0 };
-    glm::vec3 _v_d { 0 };
-    glm::vec3 _w_d { 0 };
+    // Forces
+    glm::vec3 _linear_forces = glm::vec3(0);
+    glm::vec3 _angular_forces = glm::vec3(0);
+    glm::vec3 _linear_impulses = glm::vec3(0);
+    glm::vec3 _angular_impulses = glm::vec3(0);
 
     friend struct detail::motion_system;
     friend struct detail::dynamics_system;
 };
 
 using kinematic_rigidbody_component = rigidbody_component<rigidbody_kind::kinematic>;
-using dynamic_rigidbody_component = rigidbody_component<rigidbody_kind::dynamic>;
 using character_rigidbody_component = rigidbody_component<rigidbody_kind::character>;
 
 }
