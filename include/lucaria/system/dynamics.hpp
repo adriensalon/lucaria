@@ -19,7 +19,7 @@ struct raycast_collision {
 
 /// @brief Sets the global gravity
 /// @param newtons global gravity along -Y axis
-void set_world_gravity(const glm::vec3& newtons);
+void set_world_gravity(const glm::float32 newtons);
 
 namespace detail {
 

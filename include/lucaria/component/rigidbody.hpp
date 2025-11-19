@@ -13,6 +13,7 @@ namespace detail {
 }
 
 enum struct rigidbody_kind {
+    passive,
     kinematic,
     dynamic,
 };
@@ -20,10 +21,29 @@ enum struct rigidbody_kind {
 template <rigidbody_kind kind_t>
 struct rigidbody_component;
 
-struct kinematic_collision {
-    glm::float32 distance;
-    glm::vec3 position;
-    glm::vec3 normal;
+template <>
+struct rigidbody_component<rigidbody_kind::passive> {
+    rigidbody_component() = default;
+    rigidbody_component(const rigidbody_component& other) = delete;
+    rigidbody_component& operator=(const rigidbody_component& other) = delete;
+    rigidbody_component(rigidbody_component&& other) = default;
+    rigidbody_component& operator=(rigidbody_component&& other) = default;
+    ~rigidbody_component();
+
+    rigidbody_component& use_shape(shape& from);
+    rigidbody_component& use_shape(fetched<shape>& from);
+
+    rigidbody_component& set_group_layer(const collision_layer layer, const bool enable = true);
+    rigidbody_component& set_mask_layer(const collision_layer layer, const bool enable = true);
+
+private:
+    bool _is_added = false;
+    detail::fetched_container<shape> _shape = {};
+    std::unique_ptr<btDefaultMotionState> _state = nullptr;
+    std::unique_ptr<btRigidBody> _rigidbody = nullptr;
+    std::int16_t _group = 0;
+    std::int16_t _mask = 0;
+    friend struct detail::dynamics_system;
 };
 
 template <>
@@ -40,8 +60,7 @@ struct rigidbody_component<rigidbody_kind::kinematic> {
     rigidbody_component& set_group_layer(const collision_layer layer, const bool enable = true);
     rigidbody_component& set_mask_layer(const collision_layer layer, const bool enable = true);
 
-    [[nodiscard]] const std::vector<kinematic_collision>& get_world_collisions() const;
-    [[nodiscard]] const std::vector<kinematic_collision>& get_layer_collisions(const collision_layer layer) const;
+    [[nodiscard]] const std::vector<kinematic_collision>& get_collisions() const;
     [[nodiscard]] glm::vec3 get_linear_speed();
     [[nodiscard]] glm::vec3 get_angular_speed();
 
@@ -51,8 +70,7 @@ private:
     std::unique_ptr<btPairCachingGhostObject> _ghost = nullptr;
     std::int16_t _group = 0;
     std::int16_t _mask = 0;
-    std::vector<kinematic_collision> _world_collisions = {};
-    std::unordered_map<collision_layer, std::vector<kinematic_collision>> _layer_collisions = {};
+    std::vector<kinematic_collision> _collisions = {};
     glm::vec3 _translation_speed = glm::vec3(0);
     glm::vec3 _rotation_speed = glm::vec3(0);
     friend struct detail::dynamics_system;
@@ -117,6 +135,7 @@ private:
     friend struct detail::dynamics_system;
 };
 
+using passive_rigidbody_component = rigidbody_component<rigidbody_kind::passive>;
 using kinematic_rigidbody_component = rigidbody_component<rigidbody_kind::kinematic>;
 using dynamic_rigidbody_component = rigidbody_component<rigidbody_kind::dynamic>;
 

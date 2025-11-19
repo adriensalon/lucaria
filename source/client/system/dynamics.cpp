@@ -1,6 +1,5 @@
 #include <btBulletDynamicsCommon.h>
 
-#include <lucaria/component/collider.hpp>
 #include <lucaria/component/rigidbody.hpp>
 #include <lucaria/component/transform.hpp>
 #include <lucaria/core/math.hpp>
@@ -46,31 +45,6 @@ namespace {
     {
         *manifold = array[index];
         if (*manifold) {
-            return true;
-        }
-        return false;
-    }
-
-    static bool _get_other_object(btCollisionObject** other_object, const btPersistentManifold* manifold, const btPairCachingGhostObject* ghost)
-    {
-        btCollisionObject* _obj_A = const_cast<btCollisionObject*>(manifold->getBody0());
-        btCollisionObject* _obj_B = const_cast<btCollisionObject*>(manifold->getBody1());
-        if (_obj_A == ghost) {
-            *other_object = _obj_B;
-            return true;
-        } else if (_obj_B == ghost) {
-            *other_object = _obj_A;
-            return true;
-        }
-        return false;
-    }
-
-    static bool _get_other_group(std::int16_t& other_group, std::int16_t& other_mask, const btCollisionObject* other_object)
-    {
-        const btBroadphaseProxy* _proxy = other_object->getBroadphaseHandle();
-        if (_proxy) {
-            other_group = _proxy->m_collisionFilterGroup;
-            other_mask = _proxy->m_collisionFilterMask;
             return true;
         }
         return false;
@@ -143,9 +117,9 @@ std::optional<raycast_collision> raycast(const glm::vec3& from, const glm::vec3&
     return std::nullopt;
 }
 
-void set_world_gravity(const glm::vec3& newtons)
+void set_world_gravity(const glm::float32 newtons)
 {
-    detail::_dynamics_world->setGravity(btVector3(newtons.x, newtons.y, newtons.z));
+    detail::_dynamics_world->setGravity(detail::convert_bullet(-_world_up * newtons));
 }
 
 namespace detail {
@@ -154,10 +128,10 @@ namespace detail {
     {
         // update collider transforms
         detail::each_scene([&](entt::registry& scene) {
-            scene.view<collider_component>(entt::exclude<transform_component>).each([](collider_component& collider) {
+            scene.view<passive_rigidbody_component>(entt::exclude<transform_component>).each([](passive_rigidbody_component& collider) {
                 collider._shape.has_value(); // colliders can have no transform
             });
-            scene.view<collider_component, transform_component>().each([](collider_component& collider, transform_component& transform) {
+            scene.view<passive_rigidbody_component, transform_component>().each([](passive_rigidbody_component& collider, transform_component& transform) {
                 if (!collider._shape.has_value()) {
                     return;
                 }
@@ -239,8 +213,7 @@ namespace detail {
         btManifoldArray _manifold_array;
         detail::each_scene([&](entt::registry& scene) {
             scene.view<transform_component, kinematic_rigidbody_component>().each([&](transform_component& transform, kinematic_rigidbody_component& rigidbody) {
-                rigidbody._world_collisions.clear();
-                rigidbody._layer_collisions.clear();
+                rigidbody._collisions.clear();
                 btBroadphasePairArray& _pair_array = rigidbody._ghost->getOverlappingPairCache()->getOverlappingPairArray();
                 for (int _pair_index = 0; _pair_index < _pair_array.size(); _pair_index++) {
                     _manifold_array.clear();
@@ -254,24 +227,11 @@ namespace detail {
                     }
                     _collision_algorithm->getAllContactManifolds(_manifold_array);
                     for (int _manifold_index = 0; _manifold_index < _manifold_array.size(); _manifold_index++) {
-                        std::int16_t _other_group;
-                        std::int16_t _other_mask;
                         btPersistentManifold* _manifold;
-                        btCollisionObject* _other_object;
                         if (!_get_manifold(&_manifold, _manifold_array, _manifold_index)) {
                             continue;
                         }
-                        if (!_get_other_object(&_other_object, _manifold, rigidbody._ghost.get())) {
-                            continue;
-                        }
-                        if (!_get_other_group(_other_group, _other_mask, _other_object)) {
-                            continue;
-                        }
-                        if ((rigidbody._group & _other_mask) && (_other_group & rigidbody._mask)) {
-                            // rigidbody._world_collisions = _get_collisions(_manifold, rigidbody._ghost.get());
-                        } else {
-                            // rigidbody._layer_collisions[static_cast<collision_layer>(_other_group)] = _get_collisions(_manifold, rigidbody._ghost.get());
-                        }
+                        rigidbody._collisions = _get_collisions(_manifold, rigidbody._ghost.get());
                     }
                 }
                 rigidbody._translation_speed = convert(rigidbody._ghost->getInterpolationLinearVelocity());
@@ -297,7 +257,7 @@ namespace detail {
 #if LUCARIA_GUIZMO
         detail::each_scene([&](entt::registry& scene) {
             scene.view<transform_component, kinematic_rigidbody_component>().each([&](transform_component& transform, kinematic_rigidbody_component& rigidbody) {
-                for (const lucaria::kinematic_collision& _collision : rigidbody._world_collisions) {
+                for (const lucaria::kinematic_collision& _collision : rigidbody._collisions) {
                     const glm::vec3 _from = _collision.position;
                     const glm::vec3 _to = _collision.position + 0.2f * glm::normalize(_collision.normal);
                     _draw_guizmo_line(convert_bullet(_from), convert_bullet(_to), btVector3(1, 0, 1)); // purple

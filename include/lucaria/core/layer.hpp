@@ -2,9 +2,11 @@
 
 #include <cstdint>
 
+#include <glm/glm.hpp>
+
 namespace lucaria {
 
-/// @brief 
+/// @brief
 enum struct collision_layer : std::int16_t {
     layer_0 = 1 << 0,
     layer_1 = 1 << 1,
@@ -20,8 +22,13 @@ enum struct collision_layer : std::int16_t {
     layer_11 = 1 << 11,
     layer_12 = 1 << 12,
     layer_13 = 1 << 13,
-    layer_14 = 1 << 14,
-    // layer_15 = 1 << 15,
+    layer_14 = 1 << 14
+};
+
+struct kinematic_collision {
+    glm::float32 distance;
+    glm::vec3 position;
+    glm::vec3 normal;
 };
 
 }

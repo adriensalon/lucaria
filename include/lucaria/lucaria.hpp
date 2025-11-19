@@ -28,7 +28,6 @@
 #include <lucaria/core/world.hpp>
 
 #include <lucaria/component/animator.hpp>
-#include <lucaria/component/collider.hpp>
 #include <lucaria/component/interface.hpp>
 #include <lucaria/component/model.hpp>
 #include <lucaria/component/rigidbody.hpp>

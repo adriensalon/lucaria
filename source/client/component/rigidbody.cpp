@@ -11,6 +11,78 @@ namespace detail {
 
 }
 
+rigidbody_component<rigidbody_kind::passive>::~rigidbody_component<rigidbody_kind::passive>()
+{
+    if (_is_added) {
+        detail::_dynamics_world->removeRigidBody(_rigidbody.get());
+    }
+}
+
+rigidbody_component<rigidbody_kind::passive>& rigidbody_component<rigidbody_kind::passive>::use_shape(shape& from)
+{
+    _shape.emplace(from);
+    btCollisionShape* _collision_shape = _shape.value().get_handle();
+    if (_is_added) {
+        detail::_dynamics_world->removeRigidBody(_rigidbody.get());
+        _rigidbody->setCollisionShape(_collision_shape);
+    } else {
+        _state = std::make_unique<btDefaultMotionState>(btTransform(btQuaternion(0, 0, 0, 1)));
+        _rigidbody = std::make_unique<btRigidBody>(btRigidBody::btRigidBodyConstructionInfo(0, _state.get(), _collision_shape));
+        _rigidbody->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
+    }
+    detail::_dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
+    _is_added = true;
+    return *this;
+}
+
+rigidbody_component<rigidbody_kind::passive>& rigidbody_component<rigidbody_kind::passive>::use_shape(fetched<shape>& from)
+{
+    _shape.emplace(from, [this]() {
+        btCollisionShape* _collision_shape = _shape.value().get_handle();
+        if (_is_added) {
+            detail::_dynamics_world->removeRigidBody(_rigidbody.get());
+            _rigidbody->setCollisionShape(_collision_shape);
+        } else {
+            _state = std::make_unique<btDefaultMotionState>(btTransform(btQuaternion(0, 0, 0, 1)));
+            _rigidbody = std::make_unique<btRigidBody>(btRigidBody::btRigidBodyConstructionInfo(0, _state.get(), _collision_shape));
+            _rigidbody->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
+        }
+        detail::_dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
+        _is_added = true;
+    });
+    return *this;
+}
+
+rigidbody_component<rigidbody_kind::passive>& rigidbody_component<rigidbody_kind::passive>::set_group_layer(const collision_layer layer, const bool enable)
+{
+    const std::int16_t _layer_bitfield = static_cast<std::int16_t>(layer);
+    if (enable) {
+        _group |= _layer_bitfield;
+    } else {
+        _group &= ~_layer_bitfield;
+    }
+    if (_is_added) {
+        detail::_dynamics_world->removeRigidBody(_rigidbody.get());
+        detail::_dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
+    }
+    return *this;
+}
+
+rigidbody_component<rigidbody_kind::passive>& rigidbody_component<rigidbody_kind::passive>::set_mask_layer(const collision_layer layer, const bool enable)
+{
+    const std::int16_t _layer_bitfield = static_cast<std::int16_t>(layer);
+    if (enable) {
+        _mask |= _layer_bitfield;
+    } else {
+        _mask &= ~_layer_bitfield;
+    }
+    if (_is_added) {
+        detail::_dynamics_world->removeRigidBody(_rigidbody.get());
+        detail::_dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
+    }
+    return *this;
+}
+
 rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_kind::kinematic>::use_shape(shape& from)
 {
     _shape.emplace(from);
@@ -76,14 +148,9 @@ rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_ki
     return *this;
 }
 
-const std::vector<kinematic_collision>& rigidbody_component<rigidbody_kind::kinematic>::get_world_collisions() const
+const std::vector<kinematic_collision>& rigidbody_component<rigidbody_kind::kinematic>::get_collisions() const
 {
-    return _world_collisions;
-}
-
-const std::vector<kinematic_collision>& rigidbody_component<rigidbody_kind::kinematic>::get_layer_collisions(const collision_layer layer) const
-{
-    return _layer_collisions.at(layer);
+    return _collisions;
 }
 
 rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind::dynamic>::use_shape(shape& from)
