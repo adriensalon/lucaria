@@ -19,7 +19,7 @@ add_subdirectory(${LUCARIA_EXTERNAL_DIR}/woff ${CMAKE_CURRENT_BINARY_DIR}/extern
 file(GLOB_RECURSE lucaria_client_sources "*.cpp")
 add_library(lucaria_client STATIC ${lucaria_client_sources})
 set_target_properties(lucaria_client PROPERTIES CXX_STANDARD 17)
-target_compile_definitions(lucaria_client PUBLIC BT_NO_SIMD_OPERATOR_OVERLOADS)
+target_compile_definitions(lucaria_client PUBLIC BT_NO_SIMD_OPERATOR_OVERLOADS) # ozz implements them already
 
 if(NOT EMSCRIPTEN)
     # target_link_libraries(lucaria_client PUBLIC lucaria_external_alsoft)

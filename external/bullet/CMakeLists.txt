@@ -13,8 +13,13 @@ set(bullet_sources
 
 add_library(lucaria_external_bullet STATIC EXCLUDE_FROM_ALL ${bullet_sources})
 set_target_properties(lucaria_external_bullet PROPERTIES CXX_STANDARD 17)
-# target_compile_definitions(lucaria_external_bullet PRIVATE BT_NO_SIMD_OPERATOR_OVERLOADS)
+target_include_directories(lucaria_external_bullet PUBLIC "added/bullet/src")
+target_include_directories(lucaria_external_bullet PUBLIC "added/bullet/src/LinearMath")
 target_include_directories(lucaria_external_bullet PUBLIC "upstream/bullet/src")
+
+if(EMSCRIPTEN)
+    target_compile_options(lucaria_external_bullet PUBLIC -msimd128 -msse2)
+endif()
 
 if(MSVC)
     target_compile_options(lucaria_external_bullet PRIVATE /wd4018)

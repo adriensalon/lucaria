@@ -13,8 +13,11 @@ set(lucaria_external_ozz_sources
 add_library(lucaria_external_ozz STATIC EXCLUDE_FROM_ALL ${lucaria_external_ozz_sources})
 set_target_properties(lucaria_external_ozz PROPERTIES CXX_STANDARD 17)
 target_include_directories(lucaria_external_ozz PRIVATE "upstream/ozz/src")
-
 target_include_directories(lucaria_external_ozz PUBLIC "upstream/ozz/include")
+
+if(EMSCRIPTEN)
+    target_compile_options(lucaria_external_ozz PRIVATE -msimd128 -msse2)
+endif()
 
 if(MSVC)
     target_compile_options(lucaria_external_ozz PRIVATE /wd4996)
