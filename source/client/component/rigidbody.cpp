@@ -11,14 +11,14 @@ namespace detail {
 
 }
 
-rigidbody_component<rigidbody_kind::passive>::~rigidbody_component<rigidbody_kind::passive>()
+rigidbody_component<rigidbody_type::passive>::~rigidbody_component<rigidbody_type::passive>()
 {
     if (_is_added) {
         detail::_dynamics_world->removeRigidBody(_rigidbody.get());
     }
 }
 
-rigidbody_component<rigidbody_kind::passive>& rigidbody_component<rigidbody_kind::passive>::use_shape(shape& from)
+rigidbody_component<rigidbody_type::passive>& rigidbody_component<rigidbody_type::passive>::use_shape(shape& from)
 {
     _shape.emplace(from);
     btCollisionShape* _collision_shape = _shape.value().get_handle();
@@ -35,7 +35,7 @@ rigidbody_component<rigidbody_kind::passive>& rigidbody_component<rigidbody_kind
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::passive>& rigidbody_component<rigidbody_kind::passive>::use_shape(fetched<shape>& from)
+rigidbody_component<rigidbody_type::passive>& rigidbody_component<rigidbody_type::passive>::use_shape(fetched<shape>& from)
 {
     _shape.emplace(from, [this]() {
         btCollisionShape* _collision_shape = _shape.value().get_handle();
@@ -53,7 +53,7 @@ rigidbody_component<rigidbody_kind::passive>& rigidbody_component<rigidbody_kind
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::passive>& rigidbody_component<rigidbody_kind::passive>::set_group_layer(const collision_layer layer, const bool enable)
+rigidbody_component<rigidbody_type::passive>& rigidbody_component<rigidbody_type::passive>::set_group_layer(const collision_layer layer, const bool enable)
 {
     const std::int16_t _layer_bitfield = static_cast<std::int16_t>(layer);
     if (enable) {
@@ -68,7 +68,7 @@ rigidbody_component<rigidbody_kind::passive>& rigidbody_component<rigidbody_kind
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::passive>& rigidbody_component<rigidbody_kind::passive>::set_mask_layer(const collision_layer layer, const bool enable)
+rigidbody_component<rigidbody_type::passive>& rigidbody_component<rigidbody_type::passive>::set_mask_layer(const collision_layer layer, const bool enable)
 {
     const std::int16_t _layer_bitfield = static_cast<std::int16_t>(layer);
     if (enable) {
@@ -83,7 +83,7 @@ rigidbody_component<rigidbody_kind::passive>& rigidbody_component<rigidbody_kind
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_kind::kinematic>::use_shape(shape& from)
+rigidbody_component<rigidbody_type::kinematic>& rigidbody_component<rigidbody_type::kinematic>::use_shape(shape& from)
 {
     _shape.emplace(from);
     btCollisionShape* _collision_shape = _shape.value().get_handle();
@@ -100,7 +100,7 @@ rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_ki
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_kind::kinematic>::use_shape(fetched<shape>& from)
+rigidbody_component<rigidbody_type::kinematic>& rigidbody_component<rigidbody_type::kinematic>::use_shape(fetched<shape>& from)
 {
     _shape.emplace(from, [this]() {
         btCollisionShape* _collision_shape = _shape.value().get_handle();
@@ -118,7 +118,7 @@ rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_ki
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_kind::kinematic>::set_group_layer(const collision_layer layer, const bool enable)
+rigidbody_component<rigidbody_type::kinematic>& rigidbody_component<rigidbody_type::kinematic>::set_group_layer(const collision_layer layer, const bool enable)
 {
     const std::int16_t _layer_bitfield = static_cast<std::int16_t>(layer);
     if (enable) {
@@ -133,7 +133,7 @@ rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_ki
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_kind::kinematic>::set_mask_layer(const collision_layer layer, const bool enable)
+rigidbody_component<rigidbody_type::kinematic>& rigidbody_component<rigidbody_type::kinematic>::set_mask_layer(const collision_layer layer, const bool enable)
 {
     const std::int16_t _layer_bitfield = static_cast<std::int16_t>(layer);
     if (enable) {
@@ -148,12 +148,12 @@ rigidbody_component<rigidbody_kind::kinematic>& rigidbody_component<rigidbody_ki
     return *this;
 }
 
-const std::vector<kinematic_collision>& rigidbody_component<rigidbody_kind::kinematic>::get_collisions() const
+const std::vector<kinematic_collision>& rigidbody_component<rigidbody_type::kinematic>::get_collisions() const
 {
     return _collisions;
 }
 
-rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind::dynamic>::use_shape(shape& from)
+rigidbody_component<rigidbody_type::dynamic>& rigidbody_component<rigidbody_type::dynamic>::use_shape(shape& from)
 {
     _shape.emplace(from);
     btCollisionShape* _collision_shape = _shape.value().get_handle();
@@ -175,7 +175,7 @@ rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind::dynamic>::use_shape(fetched<shape>& from)
+rigidbody_component<rigidbody_type::dynamic>& rigidbody_component<rigidbody_type::dynamic>::use_shape(fetched<shape>& from)
 {
     _shape.emplace(from, [this]() {
         btCollisionShape* _collision_shape = _shape.value().get_handle();
@@ -198,7 +198,7 @@ rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind::dynamic>::set_group_layer(const collision_layer layer, const bool enable)
+rigidbody_component<rigidbody_type::dynamic>& rigidbody_component<rigidbody_type::dynamic>::set_group_layer(const collision_layer layer, const bool enable)
 {
     const std::int16_t _layer_bitfield = static_cast<std::int16_t>(layer);
     if (enable) {
@@ -213,7 +213,7 @@ rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind::dynamic>::set_mask_layer(const collision_layer layer, const bool enable)
+rigidbody_component<rigidbody_type::dynamic>& rigidbody_component<rigidbody_type::dynamic>::set_mask_layer(const collision_layer layer, const bool enable)
 {
     const std::int16_t _layer_bitfield = static_cast<std::int16_t>(layer);
     if (enable) {
@@ -228,7 +228,7 @@ rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind::dynamic>::set_mass(const glm::float32 mass)
+rigidbody_component<rigidbody_type::dynamic>& rigidbody_component<rigidbody_type::dynamic>::set_mass(const glm::float32 mass)
 {
     _mass = mass;
     if (_is_added) {
@@ -237,7 +237,7 @@ rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind::dynamic>::set_friction(const glm::float32 friction)
+rigidbody_component<rigidbody_type::dynamic>& rigidbody_component<rigidbody_type::dynamic>::set_friction(const glm::float32 friction)
 {
     _friction = friction;
     if (_is_added) {
@@ -247,7 +247,7 @@ rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind::dynamic>::set_lock_angular(const glm::bvec3 lock)
+rigidbody_component<rigidbody_type::dynamic>& rigidbody_component<rigidbody_type::dynamic>::set_lock_angular(const glm::bvec3 lock)
 {
     _angular_factor = glm::vec3(lock);
     if (_is_added) {
@@ -257,7 +257,7 @@ rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind::dynamic>::set_linear_pd(const glm::float32 kp, const glm::float32 kd, const glm::float32 max_force)
+rigidbody_component<rigidbody_type::dynamic>& rigidbody_component<rigidbody_type::dynamic>::set_linear_pd(const glm::float32 kp, const glm::float32 kd, const glm::float32 max_force)
 {
     _linear_kp = kp;
     _linear_kd = kd;
@@ -265,7 +265,7 @@ rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind::dynamic>::set_angular_pd(const glm::float32 kp, const glm::float32 kd, const glm::float32 max_force)
+rigidbody_component<rigidbody_type::dynamic>& rigidbody_component<rigidbody_type::dynamic>::set_angular_pd(const glm::float32 kp, const glm::float32 kd, const glm::float32 max_force)
 {
     _angular_kp = kp;
     _angular_kd = kd;
@@ -273,36 +273,36 @@ rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind::dynamic>::add_linear_force(const glm::vec3& force)
+rigidbody_component<rigidbody_type::dynamic>& rigidbody_component<rigidbody_type::dynamic>::add_linear_force(const glm::vec3& force)
 {
     _linear_forces += force;
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind::dynamic>::add_angular_force(const glm::vec3& force)
+rigidbody_component<rigidbody_type::dynamic>& rigidbody_component<rigidbody_type::dynamic>::add_angular_force(const glm::vec3& force)
 {
     _angular_forces += force;
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind::dynamic>::add_linear_impulse(const glm::vec3& impulse)
+rigidbody_component<rigidbody_type::dynamic>& rigidbody_component<rigidbody_type::dynamic>::add_linear_impulse(const glm::vec3& impulse)
 {
     _linear_impulses += impulse;
     return *this;
 }
 
-rigidbody_component<rigidbody_kind::dynamic>& rigidbody_component<rigidbody_kind::dynamic>::add_angular_impulse(const glm::vec3& impulse)
+rigidbody_component<rigidbody_type::dynamic>& rigidbody_component<rigidbody_type::dynamic>::add_angular_impulse(const glm::vec3& impulse)
 {
     _angular_impulses += impulse;
     return *this;
 }
 
-glm::vec3 rigidbody_component<rigidbody_kind::dynamic>::get_linear_speed()
+glm::vec3 rigidbody_component<rigidbody_type::dynamic>::get_linear_speed()
 {
     return _translation_speed;
 }
 
-glm::vec3 rigidbody_component<rigidbody_kind::dynamic>::get_angular_speed()
+glm::vec3 rigidbody_component<rigidbody_type::dynamic>::get_angular_speed()
 {
     return _rotation_speed;
 }

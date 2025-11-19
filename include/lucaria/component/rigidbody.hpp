@@ -12,17 +12,20 @@ namespace detail {
     struct dynamics_system;
 }
 
-enum struct rigidbody_kind {
+/// @brief 
+enum struct rigidbody_type {
     passive,
     kinematic,
-    dynamic,
+    dynamic
 };
 
-template <rigidbody_kind kind_t>
+/// @brief 
+/// @tparam Type 
+template <rigidbody_type Type>
 struct rigidbody_component;
 
 template <>
-struct rigidbody_component<rigidbody_kind::passive> {
+struct rigidbody_component<rigidbody_type::passive> {
     rigidbody_component() = default;
     rigidbody_component(const rigidbody_component& other) = delete;
     rigidbody_component& operator=(const rigidbody_component& other) = delete;
@@ -47,7 +50,7 @@ private:
 };
 
 template <>
-struct rigidbody_component<rigidbody_kind::kinematic> {
+struct rigidbody_component<rigidbody_type::kinematic> {
     rigidbody_component() = default;
     rigidbody_component(const rigidbody_component& other) = delete;
     rigidbody_component& operator=(const rigidbody_component& other) = delete;
@@ -77,7 +80,7 @@ private:
 };
 
 template <>
-struct rigidbody_component<rigidbody_kind::dynamic> {
+struct rigidbody_component<rigidbody_type::dynamic> {
     rigidbody_component() = default;
     rigidbody_component(const rigidbody_component&) = delete;
     rigidbody_component& operator=(const rigidbody_component&) = delete;
@@ -135,8 +138,8 @@ private:
     friend struct detail::dynamics_system;
 };
 
-using passive_rigidbody_component = rigidbody_component<rigidbody_kind::passive>;
-using kinematic_rigidbody_component = rigidbody_component<rigidbody_kind::kinematic>;
-using dynamic_rigidbody_component = rigidbody_component<rigidbody_kind::dynamic>;
+using passive_rigidbody_component = rigidbody_component<rigidbody_type::passive>;
+using kinematic_rigidbody_component = rigidbody_component<rigidbody_type::kinematic>;
+using dynamic_rigidbody_component = rigidbody_component<rigidbody_type::dynamic>;
 
 }

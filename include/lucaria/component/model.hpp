@@ -10,18 +10,18 @@ namespace detail {
     struct rendering_system;
 }
 
-enum struct model_shader {
+enum struct model_type {
     blockout,
     unlit,
     // pbr,
     // custom
 };
 
-template <model_shader shader_t>
+template <model_type Type>
 struct model_component;
 
 template <>
-struct model_component<model_shader::blockout> {
+struct model_component<model_type::blockout> {
     model_component() = default;
     model_component(const model_component& other) = delete;
     model_component& operator=(const model_component& other) = delete;
@@ -38,7 +38,7 @@ private:
 };
 
 template <>
-struct model_component<model_shader::unlit> {
+struct model_component<model_type::unlit> {
     model_component() = default;
     model_component(const model_component& other) = delete;
     model_component& operator=(const model_component& other) = delete;
@@ -64,7 +64,7 @@ private:
 // constexpr std::size_t pbr_metallic_channels = 1;
 
 // template <>
-// struct model_component<model_shader::pbr> {
+// struct model_component<model_type::pbr> {
 //     model_component() = default;
 //     model_component(const model_component& other) = delete;
 //     model_component& operator=(const model_component& other) = delete;
@@ -94,7 +94,7 @@ private:
 // };
 
 // template <>
-// struct model_component<model_shader::custom> {
+// struct model_component<model_type::custom> {
 //     model_component() = default;
 //     model_component(const model_component& other) = delete;
 //     model_component& operator=(const model_component& other) = delete;
@@ -116,9 +116,9 @@ private:
 //     friend struct detail::rendering_system;
 // };
 
-using blockout_model_component = model_component<model_shader::blockout>;
-using unlit_model_component = model_component<model_shader::unlit>;
+using blockout_model_component = model_component<model_type::blockout>;
+using unlit_model_component = model_component<model_type::unlit>;
 // using pbr_model_component = model_component<model_shader::pbr>;
-// using custom_model_component = model_component<model_shader::custom>;
+// using custom_model_component = model_component<model_type::custom>;
 
 }

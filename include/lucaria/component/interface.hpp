@@ -19,18 +19,18 @@ namespace detail {
 }
 
 /// @brief Represents a specialization for interface components
-enum struct interface_mode {
+enum struct interface_type {
     screen,
     spatial
 };
 
 /// @brief Represents an interface component for drawing complex UIs on the screen or inside a viewport
-/// @tparam mode_t specialization of interface components
-template <interface_mode mode_t>
+/// @tparam Type specialization of interface components
+template <interface_type Type>
 struct interface_component;
 
 template <>
-struct interface_component<interface_mode::screen> {
+struct interface_component<interface_type::screen> {
     interface_component() = default;
     interface_component(const interface_component& other) = delete;
     interface_component& operator=(const interface_component& other) = delete;
@@ -55,7 +55,7 @@ enum struct spatial_refresh_mode {
 };
 
 template <>
-struct interface_component<interface_mode::spatial> {
+struct interface_component<interface_type::spatial> {
     interface_component();
     interface_component(const interface_component& other) = delete;
     interface_component& operator=(const interface_component& other) = delete;
@@ -91,9 +91,9 @@ private:
 };
 
 /// @brief Specialization for screen interface components
-using screen_interface_component = interface_component<interface_mode::screen>;
+using screen_interface_component = interface_component<interface_type::screen>;
 
 /// @brief Specialization for spatial interface components
-using spatial_interface_component = interface_component<interface_mode::spatial>;
+using spatial_interface_component = interface_component<interface_type::spatial>;
 
 }

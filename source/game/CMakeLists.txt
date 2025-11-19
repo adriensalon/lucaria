@@ -36,7 +36,14 @@ if(EMSCRIPTEN)
         target_link_options(${LUCARIA_TARGET} PRIVATE -O3)
         target_link_options(${LUCARIA_TARGET} PRIVATE -sGL_DEBUG=0)
     endif()
+endif()
 
+# win32 options
+if(WIN32 AND LUCARIA_HIDE_CONSOLE)
+    target_compile_definitions(${LUCARIA_TARGET} PRIVATE -DLUCARIA_HIDE_CONSOLE=1)
+    set_target_properties(${LUCARIA_TARGET} PROPERTIES WIN32_EXECUTABLE TRUE)
+else()
+    target_compile_definitions(${LUCARIA_TARGET} PRIVATE -DLUCARIA_HIDE_CONSOLE=0)
 endif()
 
 # lto optimization

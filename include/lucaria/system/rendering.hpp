@@ -1,6 +1,7 @@
 #pragma once
 
 #include <lucaria/core/cubemap.hpp>
+#include <lucaria/component/animator.hpp>
 #include <lucaria/component/transform.hpp>
 
 namespace lucaria {

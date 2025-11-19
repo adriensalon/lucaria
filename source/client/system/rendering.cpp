@@ -589,7 +589,7 @@ namespace detail {
 
         program& _blockout_program = _persistent_blockout_program.value();
         detail::each_scene([&](entt::registry& scene) {
-            scene.view<model_component<model_shader::blockout>, transform_component>().each([&](model_component<model_shader::blockout>& _model, transform_component& _transform) {
+            scene.view<model_component<model_type::blockout>, transform_component>().each([&](model_component<model_type::blockout>& _model, transform_component& _transform) {
                 if (_model._mesh.has_value()) {
                     const glm::mat4 _model_view_projection = camera_view_projection * _transform._transform;
                     const mesh& _mesh = _model._mesh.value();
@@ -601,7 +601,7 @@ namespace detail {
                 }
             });
 
-            scene.view<model_component<model_shader::blockout>>(entt::exclude<transform_component>).each([&](model_component<model_shader::blockout>& _model) {
+            scene.view<model_component<model_type::blockout>>(entt::exclude<transform_component>).each([&](model_component<model_type::blockout>& _model) {
                 if (_model._mesh.has_value()) {
                     const mesh& _mesh = _model._mesh.value();
                     _blockout_program.use();
@@ -632,7 +632,7 @@ namespace detail {
         program& _unlit_program = _persistent_unlit_program.value();
         program& _unlit_skinned_program = _persistent_unlit_skinned_program.value();
         detail::each_scene([&](entt::registry& scene) {
-            scene.view<model_component<model_shader::unlit>, transform_component, animator_component>().each([&](model_component<model_shader::unlit>& _model, transform_component& _transform, animator_component& animator) {
+            scene.view<model_component<model_type::unlit>, transform_component, animator_component>().each([&](model_component<model_type::unlit>& _model, transform_component& _transform, animator_component& animator) {
                 if (_model._mesh.has_value() && _model._color.has_value() && animator._skeleton.has_value()) {
                     const glm::mat4 _model_view_projection = camera_view_projection * _transform._transform;
                     const mesh& _mesh = _model._mesh.value();
@@ -650,7 +650,7 @@ namespace detail {
                 }
             });
 
-            scene.view<model_component<model_shader::unlit>, transform_component>(entt::exclude<animator_component>).each([&](model_component<model_shader::unlit>& _model, transform_component& _transform) {
+            scene.view<model_component<model_type::unlit>, transform_component>(entt::exclude<animator_component>).each([&](model_component<model_type::unlit>& _model, transform_component& _transform) {
                 if (_model._mesh.has_value() && _model._color.has_value()) {
                     const glm::mat4 _model_view_projection = camera_view_projection * _transform._transform;
                     const mesh& _mesh = _model._mesh.value();
@@ -664,7 +664,7 @@ namespace detail {
                 }
             });
 
-            scene.view<model_component<model_shader::unlit>, animator_component>(entt::exclude<transform_component>).each([&](model_component<model_shader::unlit>& _model, animator_component& animator) {
+            scene.view<model_component<model_type::unlit>, animator_component>(entt::exclude<transform_component>).each([&](model_component<model_type::unlit>& _model, animator_component& animator) {
                 if (_model._mesh.has_value() && _model._color.has_value() && animator._skeleton.has_value()) {
                     const mesh& _mesh = _model._mesh.value();
                     const texture& _color = _model._color.value();
@@ -681,7 +681,7 @@ namespace detail {
                 }
             });
 
-            scene.view<model_component<model_shader::unlit>>(entt::exclude<transform_component, animator_component>).each([&](model_component<model_shader::unlit>& _model) {
+            scene.view<model_component<model_type::unlit>>(entt::exclude<transform_component, animator_component>).each([&](model_component<model_type::unlit>& _model) {
                 if (_model._mesh.has_value() && _model._color.has_value()) {
                     const mesh& _mesh = _model._mesh.value();
                     const texture& _color = _model._color.value();

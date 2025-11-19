@@ -8,6 +8,7 @@ namespace detail {
     struct mixer_system;
 }
 
+/// @brief
 struct speaker_component {
     speaker_component();
     speaker_component(const speaker_component& other) = delete;
@@ -15,7 +16,7 @@ struct speaker_component {
     speaker_component(speaker_component&& other);
     speaker_component& operator=(speaker_component&& other);
     ~speaker_component();
-
+    
     speaker_component& use_sound(sound& from);
     speaker_component& use_sound(fetched<sound>& from);
 

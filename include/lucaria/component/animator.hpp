@@ -28,37 +28,37 @@ struct animation_controller {
     animation_controller& operator=(animation_controller&& other) = default;
 
     /// @brief 
-    /// @return 
+    /// @return this instance for chaining methods
     animation_controller& set_play();
 
     /// @brief 
-    /// @return 
+    /// @return this instance for chaining methods
     animation_controller& set_pause();
 
     /// @brief 
-    /// @return 
+    /// @return this instance for chaining methods
     animation_controller& set_stop();
 
     /// @brief 
-    /// @return 
+    /// @return this instance for chaining methods
     animation_controller& set_time(const glm::float32 ratio);
 
     /// @brief 
-    /// @return 
+    /// @return this instance for chaining methods
     animation_controller& set_loop(const bool enable = true);
 
     /// @brief 
-    /// @return 
+    /// @return this instance for chaining methods
     animation_controller& set_speed(const glm::float32 ratio);
 
     /// @brief 
-    /// @return 
+    /// @return this instance for chaining methods
     animation_controller& set_weight(const glm::float32 ratio);
 
     /// @brief 
     /// @param name 
     /// @param callback 
-    /// @return 
+    /// @return this instance for chaining methods
     animation_controller& set_event_callback(const std::string& name, const std::function<void()>& callback);
 
 private:
@@ -85,47 +85,47 @@ struct animator_component {
     /// @brief 
     /// @param name 
     /// @param from 
-    /// @return 
+    /// @return this instance for chaining methods
     animator_component& use_animation(const std::string name, animation& from);
 
     /// @brief 
     /// @param name 
     /// @param from 
-    /// @return 
+    /// @return this instance for chaining methods
     animator_component& use_animation(const std::string name, fetched<animation>& from);
 
     /// @brief 
     /// @param name 
     /// @param from 
-    /// @return 
+    /// @return this instance for chaining methods
     animator_component& use_motion_track(const std::string name, motion_track& from);
 
     /// @brief 
     /// @param name 
     /// @param from 
-    /// @return 
+    /// @return this instance for chaining methods
     animator_component& use_motion_track(const std::string name, fetched<motion_track>& from);
 
     /// @brief 
     /// @param name 
     /// @param from 
-    /// @return 
+    /// @return this instance for chaining methods
     animator_component& use_event_track(const std::string name, event_track& from);
 
     /// @brief 
     /// @param name 
     /// @param from 
-    /// @return 
+    /// @return this instance for chaining methods
     animator_component& use_event_track(const std::string name, fetched<event_track>& from);
 
     /// @brief 
     /// @param from 
-    /// @return 
+    /// @return this instance for chaining methods
     animator_component& use_skeleton(skeleton& from);
 
     /// @brief 
     /// @param from 
-    /// @return 
+    /// @return this instance for chaining methods
     animator_component& use_skeleton(fetched<skeleton>& from);
 
     // animator_component& use_inverse_kinematics_chain(const std::string name, const std::string& start, const std::string& end);
