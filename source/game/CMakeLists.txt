@@ -11,11 +11,12 @@ target_include_directories(${LUCARIA_TARGET} PRIVATE ${LUCARIA_TARGET_INCLUDES})
 target_compile_definitions(${LUCARIA_TARGET} PRIVATE ${LUCARIA_TARGET_DEFINES})
 target_compile_options(${LUCARIA_TARGET} PRIVATE ${LUCARIA_TARGET_BUILD_ARGS})
 
+# emscripten options
 if(EMSCRIPTEN)
     if(NOT LUCARIA_HTML_SHELL)
         set(LUCARIA_HTML_SHELL "${CMAKE_CURRENT_LIST_DIR}/shell.html")
     endif()
-    
+
     set_target_properties(${LUCARIA_TARGET} PROPERTIES SUFFIX ".html")
     target_link_options(${LUCARIA_TARGET} PRIVATE --shell-file ${LUCARIA_HTML_SHELL})
     target_link_options(${LUCARIA_TARGET} PRIVATE -sLLD_REPORT_UNDEFINED)
@@ -38,6 +39,7 @@ if(EMSCRIPTEN)
 
 endif()
 
+# lto optimization
 function(enable_ipo_recursive TARGET)
     if(NOT TARGET ${TARGET})
         return()
