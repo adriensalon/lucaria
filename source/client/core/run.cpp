@@ -33,14 +33,15 @@ void run(
             detail::motion_system::advance_controllers();
             detail::motion_system::apply_animations();
             detail::motion_system::apply_motion_tracks();
-            detail::motion_system::collect_debug_guizmos();
 
             detail::dynamics_system::step_simulation();
             detail::dynamics_system::compute_collisions();
-            detail::dynamics_system::collect_debug_guizmos();
 
             detail::mixer_system::apply_speaker_transforms();
             detail::mixer_system::apply_listener_transform();
+            
+            detail::motion_system::collect_debug_guizmos();
+            detail::dynamics_system::collect_debug_guizmos();
 
             detail::rendering_system::clear_screen();
             detail::rendering_system::compute_projection();

@@ -26,28 +26,22 @@ struct animation_controller {
     animation_controller(animation_controller&& other) = default;
     animation_controller& operator=(animation_controller&& other) = default;
 
-    animation_controller& play();
-    animation_controller& pause();
-    animation_controller& stop();
-    animation_controller& time(const float ratio);
-    animation_controller& loop(const bool enabled = true);
-    animation_controller& speed(const float ratio);
-    animation_controller& fade_in(const float duration = 0.1f); // trigger once then disappear
-    animation_controller& fade_out(const float duration = 0.1f); // trigger once then disappear
-    animation_controller& weight(const float ratio);
-
-    animation_controller& set_on_event(const std::string& name, const std::function<void()>& callback);
+    animation_controller& set_play();
+    animation_controller& set_pause();
+    animation_controller& set_stop();
+    animation_controller& set_time(const glm::float32 ratio);
+    animation_controller& set_loop(const bool enable = true);
+    animation_controller& set_speed(const glm::float32 ratio);
+    animation_controller& set_weight(const glm::float32 ratio);
+    animation_controller& set_event_callback(const std::string& name, const std::function<void()>& callback);
 
 private:
     bool _is_playing = false;
     bool _is_looping = true;
-    float _playback_speed = 1.f;
-    float _weight = 1.f;
-    float _computed_weight = 1.f;
-    float _time_ratio = 0.f;
-    std::optional<std::pair<float, float>> _fade_in_time_and_duration = std::nullopt;
-    std::optional<std::pair<float, float>> _fade_out_time_and_duration = std::nullopt;
-    float _last_time_ratio = 0.f;
+    glm::float32 _playback_speed = 1.f;
+    glm::float32 _weight = 1.f;
+    glm::float32 _time_ratio = 0.f;
+    glm::float32 _last_time_ratio = 0.f;
     bool _has_looped = false;
     std::unordered_map<std::string, std::function<void()>> _event_callbacks = {};
     friend struct detail::motion_system;
@@ -74,8 +68,6 @@ struct animator_component {
 
     [[nodiscard]] animation_controller& get_controller(const std::string& name);
     [[nodiscard]] glm::mat4 get_bone_transform(const std::string& bone);
-    [[nodiscard]] glm::vec3 get_translation_speed(const std::string& name);
-
 private:
     detail::fetched_container<skeleton> _skeleton = {};
     std::unordered_map<std::string, detail::fetched_container<animation>> _animations = {};

@@ -39,15 +39,14 @@ struct transform_component {
     [[nodiscard]] glm::vec3 get_forward() const;
 
 private:
-    glm::mat4 _transform = glm::mat4(1.0f);
+    glm::mat4 _transform = glm::mat4(1);
     std::vector<std::reference_wrapper<transform_component>> _children = {};
+    void _apply_delta_to_children(const glm::mat4& delta);
     friend struct detail::dynamics_system;
     friend struct detail::interface_system;
     friend struct detail::motion_system;
     friend struct detail::mixer_system;
     friend struct detail::rendering_system;
-
-    void apply_delta_to_children(const glm::mat4& delta);
 };
 
 }

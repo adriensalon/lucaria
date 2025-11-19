@@ -16,8 +16,8 @@
 namespace lucaria {
 namespace {
 
-    const glm::vec3 _world_up = glm::vec3(0, 1, 0);
-    const glm::vec3 _world_forward = glm::vec3(0, 0, 1);
+    static const glm::vec3 _world_up = glm::vec3(0, 1, 0);
+    static const glm::vec3 _world_forward = glm::vec3(0, 0, 1);
 
     [[nodiscard]] glm::mat4 _sample_motion_track(const motion_track& track, const glm::float32 ratio)
     {
@@ -44,7 +44,7 @@ namespace {
         return detail::convert(ozz::math::Float4x4::FromAffine(_ozz_affine_transform));
     }
 
-    [[nodiscard]] glm::mat4 _compute_motion_delta(const motion_track& track, const glm::float32 time_ratio, const glm::float32 last_time_ratio, const glm::float32 computed_weight, const bool has_looped)
+    [[nodiscard]] glm::mat4 _compute_motion_delta(const motion_track& track, const glm::float32 time_ratio, const glm::float32 last_time_ratio, const glm::float32 weight, const bool has_looped)
     {
         // base delta
         const glm::mat4 _new_motion_transform = _sample_motion_track(track, time_ratio);
@@ -59,7 +59,7 @@ namespace {
         }
 
         // weight interpolation
-        _delta_motion_transform = glm::interpolate(glm::mat4(1.f), _delta_motion_transform, computed_weight);
+        _delta_motion_transform = glm::interpolate(glm::mat4(1.f), _delta_motion_transform, weight);
         return _delta_motion_transform;
     }
 
@@ -79,13 +79,12 @@ namespace detail {
 
                     // advance time
                     animation_controller& _controller = _pair.second;
+                    _controller._last_time_ratio = _controller._time_ratio;
                     if (_controller._is_playing) {
-                        _controller._last_time_ratio = _controller._time_ratio;
                         _controller._time_ratio += _controller._playback_speed * static_cast<glm::float32>(get_time_delta());
                     }
                     _controller._has_looped = _controller._time_ratio > 1.f;
                     _controller._time_ratio = glm::mod(_controller._time_ratio, 1.f);
-                    _controller._computed_weight = _controller._weight; // TODO account for fade in and fade out
 
                     // fire events
                     if (_controller._is_playing && animator._event_tracks[_pair.first].has_value()) {
@@ -129,7 +128,7 @@ namespace detail {
                             // prepare blend layers
                             ozz::animation::BlendingJob::Layer& _blend_layer = _blend_layers.emplace_back();
                             _blend_layer.transform = make_span(_local_transforms);
-                            _blend_layer.weight = _controller._computed_weight;
+                            _blend_layer.weight = _controller._weight;
                         }
                     }
 
@@ -166,9 +165,9 @@ namespace detail {
                 for (const std::pair<const std::string, fetched_container<motion_track>>& _pair : _animator._motion_tracks) {
                     if (_pair.second.has_value()) {
                         const animation_controller& _controller = _animator._controllers.at(_pair.first);
-                        if (_controller._computed_weight > 0.f) {
+                        if (_controller._weight > 0.f) {
                             const motion_track& _track = _pair.second.value();
-                            const glm::mat4 _delta_transform = _compute_motion_delta(_track, _controller._time_ratio, _controller._last_time_ratio, _controller._computed_weight, _controller._has_looped);
+                            const glm::mat4 _delta_transform = _compute_motion_delta(_track, _controller._time_ratio, _controller._last_time_ratio, _controller._weight, _controller._has_looped);
                             _transform.set_transform_relative(_delta_transform);
                         }
                     }
@@ -212,8 +211,8 @@ namespace detail {
                         if (_pair.second.has_value()) {
                             const motion_track& _track = _pair.second.value();
                             const animation_controller& _controller = animator._controllers.at(_pair.first);
-                            if (_controller._computed_weight > 0.f) {
-                                const glm::mat4 _delta_motion_transform = _compute_motion_delta(_track, _controller._time_ratio, _controller._last_time_ratio, _controller._computed_weight, _controller._has_looped);
+                            if (_controller._weight > 0.f) {
+                                const glm::mat4 _delta_motion_transform = _compute_motion_delta(_track, _controller._time_ratio, _controller._last_time_ratio, _controller._weight, _controller._has_looped);
                                 const glm::vec3 _delta_position_xy = project_on_plane(_current_rotation * glm::vec3(_delta_motion_transform[3]), _world_up);
                                 const glm::vec3 _linear_velocity_xy = _delta_position_xy / _delta_time;
                                 const glm::vec3 _forward_xy = glm::normalize(project_on_plane(glm::normalize(glm::quat_cast(_delta_motion_transform) * _world_forward), _world_up));

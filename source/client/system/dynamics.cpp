@@ -21,12 +21,14 @@ namespace detail {
 
 namespace {
 
+    static const glm::vec3 _world_up = glm::vec3(0, 1, 0);
+    static const glm::vec3 _world_forward = glm::vec3(0, 0, 1);
     static btDefaultCollisionConfiguration* _collision_configuration = nullptr;
     static btCollisionDispatcher* _collision_dispatcher = nullptr;
     static btBroadphaseInterface* _overlapping_pair_cache = nullptr;
     static btSequentialImpulseConstraintSolver* _constraint_solver = nullptr;
 
-    static bool setup_bullet_worlds()
+    static bool _setup_bullet_worlds()
     {
         _collision_configuration = new btDefaultCollisionConfiguration();
         _collision_dispatcher = new btCollisionDispatcher(_collision_configuration);
@@ -38,9 +40,9 @@ namespace {
         return true;
     }
 
-    static bool is_bullet_worlds_setup = setup_bullet_worlds();
+    static bool _is_bullet_worlds_setup = _setup_bullet_worlds();
 
-    static bool get_manifold(btPersistentManifold** manifold, const btManifoldArray& array, const int index)
+    static bool _get_manifold(btPersistentManifold** manifold, const btManifoldArray& array, const int index)
     {
         *manifold = array[index];
         if (*manifold) {
@@ -49,7 +51,7 @@ namespace {
         return false;
     }
 
-    static bool get_other_object(btCollisionObject** other_object, const btPersistentManifold* manifold, const btPairCachingGhostObject* ghost)
+    static bool _get_other_object(btCollisionObject** other_object, const btPersistentManifold* manifold, const btPairCachingGhostObject* ghost)
     {
         btCollisionObject* _obj_A = const_cast<btCollisionObject*>(manifold->getBody0());
         btCollisionObject* _obj_B = const_cast<btCollisionObject*>(manifold->getBody1());
@@ -63,7 +65,7 @@ namespace {
         return false;
     }
 
-    static bool get_other_group(std::int16_t& other_group, const btCollisionObject* other_object)
+    static bool _get_other_group(std::int16_t& other_group, const btCollisionObject* other_object)
     {
         const btBroadphaseProxy* _proxy = other_object->getBroadphaseHandle();
         if (_proxy) {
@@ -73,7 +75,7 @@ namespace {
         return false;
     }
 
-    static std::vector<kinematic_collision> get_collisions(const btPersistentManifold* manifold, btGhostObject* ghost)
+    static std::vector<kinematic_collision> _get_collisions(const btPersistentManifold* manifold, btGhostObject* ghost)
     {
         std::vector<kinematic_collision> _collisions;
         for (int _contact_index = 0; _contact_index < manifold->getNumContacts(); ++_contact_index) {
@@ -93,25 +95,30 @@ namespace {
         return _collisions;
     }
 
-    static bool is_grounded(btRigidBody* rigidbody, const btVector3& up,
-        btScalar cosMaxSlope = btCos(btRadians(160.0f)),
-        btScalar maxDist = btScalar(0.5))
+    static glm::vec3 _forward_xy(const glm::quat& rotation)
+    {
+        const glm::vec3 _force = detail::project_on_plane(rotation * _world_forward, _world_up);
+        const glm::float32 _force_length = glm::length(_force);
+        return (_force_length > 0.f) ? (_force * (1.f / _force_length)) : _world_forward;
+    };
+
+    static bool _is_grounded(btRigidBody* rigidbody, const btScalar maximum_slope = btCos(btRadians(160.0f)), const btScalar maximum_distance = btScalar(0.5))
     {
         const btTransform _transform = rigidbody->getWorldTransform();
-        const btVector3 _origin = _transform.getOrigin();
-        const btVector3 _from = _origin;
-        const btVector3 _to = _origin - up.normalized() * (maxDist + 1.f);
+        const btVector3 _from = _transform.getOrigin();
+        const btVector3 _to = _from - detail::convert_bullet(_world_up) * (maximum_distance + 1.f);
         btCollisionWorld::ClosestRayResultCallback _raycast_callback(_from, _to);
         _raycast_callback.m_collisionFilterMask = detail::bulletgroupID_collider_world;
         detail::_dynamics_world->rayTest(_from, _to, _raycast_callback);
         if (_raycast_callback.hasHit()) {
             const btVector3 _hit_normal = _raycast_callback.m_hitNormalWorld.normalized();
-            if (_hit_normal.dot(up) > cosMaxSlope) {
+            if (_hit_normal.dot(detail::convert_bullet(_world_up)) > maximum_slope) {
                 return true;
             }
         }
         return false;
     }
+
 }
 
 std::optional<raycast_collision> raycast(const glm::vec3& from, const glm::vec3& to)
@@ -124,12 +131,13 @@ std::optional<raycast_collision> raycast(const glm::vec3& from, const glm::vec3&
     detail::_draw_guizmo_line(_from, _to, btVector3(1, 0, 1)); // purple
 #endif
     if (_raycallback.hasHit()) {
-        btVector3 _hitpoint = _raycallback.m_hitPointWorld;
-        btVector3 _hitnormal = _raycallback.m_hitNormalWorld.normalized();
+        raycast_collision _collision;
+        _collision.position = detail::convert(_raycallback.m_hitPointWorld);
+        _collision.normal = glm::normalize(detail::convert(_raycallback.m_hitNormalWorld));
 #if LUCARIA_GUIZMO
-        detail::_draw_guizmo_line(_hitpoint, _hitpoint + _hitnormal * 0.2f, btVector3(1, 1, 1)); // white
+        detail::_draw_guizmo_line(_raycallback.m_hitPointWorld, _raycallback.m_hitPointWorld + _raycallback.m_hitNormalWorld * 0.2f, btVector3(1, 1, 1)); // white
 #endif
-        return raycast_collision { detail::convert(_hitpoint), detail::convert(_hitnormal) };
+        return _collision;
     }
     return std::nullopt;
 }
@@ -145,102 +153,88 @@ namespace detail {
     {
         // update collider transforms
         detail::each_scene([&](entt::registry& scene) {
-            scene.view<collider_component>(entt::exclude<transform_component>).each([](collider_component& _collider) {
-                _collider._shape.has_value(); // colliders can have no transform
+            scene.view<collider_component>(entt::exclude<transform_component>).each([](collider_component& collider) {
+                collider._shape.has_value(); // colliders can have no transform
             });
-            scene.view<collider_component, transform_component>().each([](collider_component& _collider, transform_component& _transform) {
-                if (!_collider._shape.has_value()) {
+            scene.view<collider_component, transform_component>().each([](collider_component& collider, transform_component& transform) {
+                if (!collider._shape.has_value()) {
                     return;
                 }
-                const btTransform _bullet_transform = convert_bullet(_transform._transform);
-                _collider._rigidbody->setWorldTransform(_bullet_transform);
+                collider._rigidbody->setWorldTransform(convert_bullet(transform._transform));
             });
         });
 
         // update kinematic rigidbody transforms
         detail::each_scene([&](entt::registry& scene) {
-            scene.view<kinematic_rigidbody_component, transform_component>().each([](kinematic_rigidbody_component& _rigidbody, transform_component& _transform) {
-                if (!_rigidbody._shape.has_value()) {
+            scene.view<kinematic_rigidbody_component, transform_component>().each([](kinematic_rigidbody_component& rigidbody, transform_component& transform) {
+                if (!rigidbody._shape.has_value()) {
                     return;
                 }
-                const btTransform _bullet_transform = convert_bullet(_transform._transform);
-                _rigidbody._ghost->setWorldTransform(_bullet_transform);
+                rigidbody._ghost->setWorldTransform(convert_bullet(transform._transform));
             });
         });
 
         // apply dynamic rigidbody forces
+        const glm::float32 _delta_time = static_cast<glm::float32>(get_time_delta());
         detail::each_scene([&](entt::registry& scene) {
-            scene.view<dynamic_rigidbody_component>().each([&](dynamic_rigidbody_component& _rigidbody) {
-                if (!_rigidbody._shape.has_value()) {
+            scene.view<dynamic_rigidbody_component>().each([&](dynamic_rigidbody_component& rigidbody) {
+                if (!rigidbody._shape.has_value()) {
                     return;
                 }
-                btRigidBody* _bullet_rigidbody = _rigidbody._rigidbody.get();
-                const btTransform _bullet_transform = _bullet_rigidbody->getWorldTransform();
-                const btVector3 _bullet_origin = _bullet_transform.getOrigin();
-                const btQuaternion _bullet_rotation = _bullet_transform.getRotation();
-                const btVector3 _bullet_linear_velocity = _bullet_rigidbody->getLinearVelocity();
-                const btVector3 _bullet_angular_velocity = _bullet_rigidbody->getAngularVelocity();
-                const btVector3 _bullet_up = btVector3(0, 1, 0);
-                const btVector3 v_d = detail::convert_bullet(_rigidbody._target_linear_velocity);
-                const btVector3 p_d = detail::convert_bullet(_rigidbody._target_linear_position);
-                const btQuaternion q_d = detail::convert_bullet(_rigidbody._target_angular_position);
-                const btVector3 w_d = detail::convert_bullet(_rigidbody._target_angular_velocity);
+                btRigidBody* _bullet_rigidbody = rigidbody._rigidbody.get();
+                const glm::mat4 _bullet_transform = convert(_bullet_rigidbody->getWorldTransform());
+                const glm::vec3 _bullet_linear_position = glm::vec3(_bullet_transform[3]);
+                const glm::vec3 _bullet_linear_velocity = convert(_bullet_rigidbody->getLinearVelocity());
+                const glm::quat _bullet_angular_position = glm::quat_cast(_bullet_transform);
+                const glm::vec3 _bullet_angular_velocity = convert(_bullet_rigidbody->getAngularVelocity());
 
-                // linear PD
-                const btVector3 e_p_xy = project_on_plane_bullet(p_d - _bullet_origin, _bullet_up);
-                const btVector3 e_v_xy = project_on_plane_bullet(v_d - _bullet_linear_velocity, _bullet_up);
-                btVector3 F = btScalar(_rigidbody._linear_kp) * e_p_xy + btScalar(_rigidbody._linear_kd) * e_v_xy;
-                const btScalar Fmax = btScalar(_rigidbody._linear_max_force);
-                const btScalar Flen2 = F.length2();
-                if (Flen2 > Fmax * Fmax) {
-                    F *= Fmax / btSqrt(Flen2);
+                // append linear PD forces
+                const glm::vec3 _error_position_xy = project_on_plane(rigidbody._target_linear_position - _bullet_linear_position, _world_up);
+                const glm::vec3 _error_velocity_xy = project_on_plane(rigidbody._target_linear_velocity - _bullet_linear_velocity, _world_up);
+                glm::vec3 _force_xy = rigidbody._linear_kp * _error_position_xy + rigidbody._linear_kd * _error_velocity_xy;
+                const glm::float32 _force_length_xy = glm::length(_force_xy);
+                if (_force_length_xy > glm::pow(rigidbody._linear_max_force, 2.f)) {
+                    _force_xy *= rigidbody._linear_max_force / glm::sqrt(_force_length_xy);
                 }
-                _rigidbody._linear_forces += convert(F);
+                rigidbody._linear_forces += _force_xy;
 
-                // angular PD
-                auto forwardXY = [&](const btQuaternion& qq) {
-                    btVector3 f = quatRotate(qq, btVector3(0, 0, 1));
-                    f = project_on_plane_bullet(f, _bullet_up);
-                    btScalar L = f.length();
-                    return (L > 0.f) ? (f * (1.f / L)) : btVector3(0, 0, 1);
-                };
-                const btVector3 f_now = forwardXY(_bullet_rotation);
-                const btVector3 f_des = forwardXY(q_d);
-                const btScalar cosang = btClamped(f_now.dot(f_des), btScalar(-1), btScalar(1));
-                const btScalar sinang = (f_now.cross(f_des)).dot(_bullet_up);
-                const btScalar yaw_err = btAtan2(sinang, cosang); // radians
-                const btScalar yaw_rate_d = w_d.dot(_bullet_up);
-                const btScalar yaw_rate = _bullet_angular_velocity.dot(_bullet_up);
-                const bool grounded = is_grounded(_bullet_rigidbody, _bullet_up);
-                const btScalar KpR = btScalar(_rigidbody._angular_kp) * (grounded ? btScalar(1) : btScalar(_rigidbody._angular_airborne_scale));
-                const btScalar KdR = btScalar(_rigidbody._angular_kd) * (grounded ? btScalar(1) : btScalar(_rigidbody._angular_airborne_scale));
-                btVector3 Tau = _bullet_up * (KpR * yaw_err + KdR * (yaw_rate_d - yaw_rate));
-                const btScalar Tmax = btScalar(_rigidbody._angular_max_force);
-                const btScalar Tlen = Tau.length();
-                if (Tlen > Tmax && Tlen > 0.f) {
-                    Tau *= Tmax / Tlen;
+                // append angular PD forces
+                const glm::vec3 _forward_now = _forward_xy(_bullet_angular_position);
+                const glm::vec3 _forward_destination = _forward_xy(rigidbody._target_angular_position);
+                const glm::float32 _cos_error_position_yaw = glm::clamp(glm::dot(_forward_now, _forward_destination), -1.f, 1.f);
+                const glm::float32 _sin_error_position_yaw = glm::dot(glm::cross(_forward_now, _forward_destination), _world_up);
+                const glm::float32 _error_position_yaw = std::atan2(_sin_error_position_yaw, _cos_error_position_yaw);
+                const glm::float32 _error_velocity_yaw = glm::dot(rigidbody._target_angular_velocity, _world_up) - glm::dot(_bullet_angular_velocity, _world_up);
+                const bool grounded = _is_grounded(_bullet_rigidbody);
+                const glm::float32 _angular_kp = rigidbody._angular_kp * (grounded ? 1.f : rigidbody._angular_airborne_scale);
+                const glm::float32 _angular_kd = rigidbody._angular_kd * (grounded ? 1.f : rigidbody._angular_airborne_scale);
+                glm::vec3 _torque_yaw = _world_up * (_angular_kp * _error_position_yaw + _angular_kd * _error_velocity_yaw);
+                const glm::float32 _torque_yaw_length = glm::length(_torque_yaw);
+                if (_torque_yaw_length > rigidbody._angular_max_force && _torque_yaw_length > 0.f) {
+                    _torque_yaw *= rigidbody._angular_max_force / _torque_yaw_length;
                 }
-                _rigidbody._angular_forces += convert(Tau);
+                rigidbody._angular_forces += _torque_yaw;
 
-                // apply
-                _bullet_rigidbody->applyCentralForce(convert_bullet(_rigidbody._linear_forces));
-                _bullet_rigidbody->applyTorque(convert_bullet(_rigidbody._angular_forces));
-                _bullet_rigidbody->applyCentralImpulse(convert_bullet(_rigidbody._linear_impulses));
-                _bullet_rigidbody->applyTorqueImpulse(convert_bullet(_rigidbody._angular_impulses));
+                // submit all forces
+                _bullet_rigidbody->applyCentralForce(convert_bullet(rigidbody._linear_forces));
+                _bullet_rigidbody->applyTorque(convert_bullet(rigidbody._angular_forces));
+                _bullet_rigidbody->applyCentralImpulse(convert_bullet(rigidbody._linear_impulses));
+                _bullet_rigidbody->applyTorqueImpulse(convert_bullet(rigidbody._angular_impulses));
                 _bullet_rigidbody->activate(true);
-                _rigidbody._linear_forces = glm::vec3(0);
-                _rigidbody._angular_forces = glm::vec3(0);
-                _rigidbody._linear_impulses = glm::vec3(0);
-                _rigidbody._angular_impulses = glm::vec3(0);
+                rigidbody._linear_forces = glm::vec3(0);
+                rigidbody._angular_forces = glm::vec3(0);
+                rigidbody._linear_impulses = glm::vec3(0);
+                rigidbody._angular_impulses = glm::vec3(0);
             });
         });
 
-        detail::_dynamics_world->stepSimulation(static_cast<float>(get_time_delta()), 10);
+        // step once each frame no substep no interpolation
+        detail::_dynamics_world->stepSimulation(_delta_time, 0);
     }
 
     void dynamics_system::compute_collisions()
     {
-        // kinematic
+        // collect collisions from kinematic rigidbodies
         btManifoldArray _manifold_array;
         detail::each_scene([&](entt::registry& scene) {
             scene.view<transform_component, kinematic_rigidbody_component>().each([&](transform_component& transform, kinematic_rigidbody_component& rigidbody) {
@@ -262,19 +256,19 @@ namespace detail {
                         std::int16_t _other_group;
                         btPersistentManifold* _manifold;
                         btCollisionObject* _other_object;
-                        if (!get_manifold(&_manifold, _manifold_array, _manifold_index)) {
+                        if (!_get_manifold(&_manifold, _manifold_array, _manifold_index)) {
                             continue;
                         }
-                        if (!get_other_object(&_other_object, _manifold, rigidbody._ghost.get())) {
+                        if (!_get_other_object(&_other_object, _manifold, rigidbody._ghost.get())) {
                             continue;
                         }
-                        if (!get_other_group(_other_group, _other_object)) {
+                        if (!_get_other_group(_other_group, _other_object)) {
                             continue;
                         }
                         if (_other_group == bulletgroupID_collider_world) {
-                            rigidbody._world_collisions = get_collisions(_manifold, rigidbody._ghost.get());
+                            rigidbody._world_collisions = _get_collisions(_manifold, rigidbody._ghost.get());
                         } else {
-                            rigidbody._layer_collisions[static_cast<kinematic_layer>(_other_group)] = get_collisions(_manifold, rigidbody._ghost.get());
+                            rigidbody._layer_collisions[static_cast<kinematic_layer>(_other_group)] = _get_collisions(_manifold, rigidbody._ghost.get());
                         }
                     }
                 }
@@ -283,7 +277,7 @@ namespace detail {
             });
         });
 
-        // dynamic
+        // set transform from dynamic rigidbodies
         detail::each_scene([&](entt::registry& scene) {
             scene.view<transform_component, dynamic_rigidbody_component>().each([](transform_component& transform, dynamic_rigidbody_component& rigidbody) {
                 const glm::mat4 _transform = convert(rigidbody._rigidbody->getWorldTransform());

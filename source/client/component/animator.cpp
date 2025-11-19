@@ -1,78 +1,60 @@
-#include <string>
-
 #include <lucaria/component/animator.hpp>
 #include <lucaria/core/error.hpp>
 
 namespace lucaria {
-namespace {
 
-    void PrintBoneNames(const ozz::animation::Skeleton& skeleton)
-    {
-        const int num_joints = skeleton.num_joints();
-        for (int i = 0; i < num_joints; ++i) {
-            const char* joint_name = skeleton.joint_names()[i];
-            printf("Bone %d: %s\n", i, joint_name);
-        }
-    }
-
-}
-
-// controller
-
-animation_controller& animation_controller::play()
+animation_controller& animation_controller::set_play()
 {
     _is_playing = true;
     return *this;
 }
 
-animation_controller& animation_controller::pause()
+animation_controller& animation_controller::set_pause()
 {
     _is_playing = false;
-    _last_time_ratio = _time_ratio;
     return *this;
 }
 
-animation_controller& animation_controller::stop()
+animation_controller& animation_controller::set_stop()
 {
     _is_playing = false;
-    _last_time_ratio = _time_ratio;
+    _time_ratio = 0.f;
     return *this;
 }
 
-animation_controller& animation_controller::time(const float ratio)
+animation_controller& animation_controller::set_time(const float ratio)
 {
     _time_ratio = ratio;
     return *this;
 }
 
-animation_controller& animation_controller::loop(const bool enabled)
+animation_controller& animation_controller::set_loop(const bool enable)
 {
-    _is_looping = enabled;
+    _is_looping = enable;
     return *this;
 }
 
-animation_controller& animation_controller::speed(const float ratio)
+animation_controller& animation_controller::set_speed(const float ratio)
 {
     _playback_speed = ratio;
     return *this;
 }
 
-// animation_controller& fade_in(const float duration = 0.1f); // trigger once then disappear
-// animation_controller& fade_out(const float duration = 0.1f); // trigger once then disappear
-// animation_controller& weight(const float ratio);
+animation_controller& animation_controller::set_weight(const float ratio)
+{
+    _weight = ratio;
+    return *this;
+}
 
-animation_controller& animation_controller::set_on_event(const std::string& name, const std::function<void()>& callback)
+animation_controller& animation_controller::set_event_callback(const std::string& name, const std::function<void()>& callback)
 {
     _event_callbacks[name] = callback;
     return *this;
 }
 
-// animator
-
 animator_component& animator_component::use_animation(const std::string name, animation& from)
 {
     _animations[name].emplace(from);
-
     if (_skeleton.has_value()) {
 #if LUCARIA_DEBUG
         const int _animation_tracks = _animations[name].value().get_handle().num_tracks();
@@ -83,7 +65,6 @@ animator_component& animator_component::use_animation(const std::string name, an
 #endif
         _local_transforms[name].resize(_skeleton.value().get_handle().num_soa_joints());
     }
-
     _controllers[name] = animation_controller();
     return *this;
 }
@@ -102,7 +83,6 @@ animator_component& animator_component::use_animation(const std::string name, fe
             _local_transforms[name].resize(_skeleton.value().get_handle().num_soa_joints());
         }
     });
-
     _controllers[name] = animation_controller();
     return *this;
 }
@@ -112,7 +92,6 @@ animator_component& animator_component::use_motion_track(const std::string name,
     if (_animations.find(name) == _animations.end()) {
         LUCARIA_RUNTIME_ERROR("Impossible to emplace motion track because animation does not exist with this name")
     }
-
     _motion_tracks[name].emplace(from);
     return *this;
 }
@@ -122,7 +101,6 @@ animator_component& animator_component::use_motion_track(const std::string name,
     if (_animations.find(name) == _animations.end()) {
         LUCARIA_RUNTIME_ERROR("Impossible to emplace motion track because animation does not exist with this name")
     }
-
     _motion_tracks[name].emplace(from);
     return *this;
 }
@@ -132,7 +110,6 @@ animator_component& animator_component::use_event_track(const std::string name, 
     if (_animations.find(name) == _animations.end()) {
         LUCARIA_RUNTIME_ERROR("Impossible to emplace event track because animation does not exist with this name")
     }
-
     _event_tracks[name].emplace(from);
     return *this;
 }
@@ -142,7 +119,6 @@ animator_component& animator_component::use_event_track(const std::string name, 
     if (_animations.find(name) == _animations.end()) {
         LUCARIA_RUNTIME_ERROR("Impossible to emplace event track because animation does not exist with this name")
     }
-
     _event_tracks[name].emplace(from);
     return *this;
 }
@@ -150,7 +126,6 @@ animator_component& animator_component::use_event_track(const std::string name, 
 animator_component& animator_component::use_skeleton(skeleton& from)
 {
     _skeleton.emplace(from);
-
     for (const std::pair<const std::string, detail::fetched_container<animation>>& _pair : _animations) {
         if (_pair.second.has_value()) {
 #if LUCARIA_DEBUG
@@ -163,7 +138,6 @@ animator_component& animator_component::use_skeleton(skeleton& from)
             _local_transforms[_pair.first].resize(_skeleton.value().get_handle().num_soa_joints());
         }
     }
-
     const int _num_joints = _skeleton.value().get_handle().num_joints();
     _sampling_context = std::make_unique<ozz::animation::SamplingJob::Context>();
     _sampling_context->Resize(_num_joints);
@@ -187,7 +161,6 @@ animator_component& animator_component::use_skeleton(fetched<skeleton>& from)
                 _local_transforms[_pair.first].resize(_skeleton.value().get_handle().num_soa_joints());
             }
         }
-
         const int _num_joints = _skeleton.value().get_handle().num_joints();
         _sampling_context = std::make_unique<ozz::animation::SamplingJob::Context>();
         _sampling_context->Resize(_num_joints);
@@ -206,25 +179,14 @@ animation_controller& animator_component::get_controller(const std::string& name
 glm::mat4 animator_component::get_bone_transform(const std::string& bone)
 {
     if (_skeleton.has_value()) {
-
-        const int num_joints = _skeleton.value().get_handle().num_joints();
-        for (int i = 0; i < num_joints; ++i) {
-            if (std::string(_skeleton.value().get_handle().joint_names()[i]) == bone) {
-                return detail::convert(_model_transforms[i]);
+        const int _num_joints = _skeleton.value().get_handle().num_joints();
+        for (int _joint_index = 0; _joint_index < _num_joints; ++_joint_index) {
+            if (std::string(_skeleton.value().get_handle().joint_names()[_joint_index]) == bone) {
+                return detail::convert(_model_transforms[_joint_index]);
             }
         }
     }
-
-    return glm::mat4(1.f);
+    return glm::mat4(1);
 }
-
-// glm::vec3 animator_component::get_translation_speed(const std::string& name)
-// {
-//     if (_animations[name].has_value() && _motion_tracks[name].has_value()) {
-//         const glm::float32 _duration = _animations[name].value().get_handle().duration() / _controllers[name]._playback_speed;
-//         return _motion_tracks[name].value().get_total_translation() / _duration;
-//     }
-//     return glm::vec3(777);
-// }
 
 }
