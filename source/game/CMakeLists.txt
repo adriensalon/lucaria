@@ -40,30 +40,27 @@ if(EMSCRIPTEN)
 
 endif()
 
-function(enable_ipo_recursive target)
-    if(NOT TARGET ${target})
+function(enable_ipo_recursive TARGET)
+    if(NOT TARGET ${TARGET})
         return()
     endif()
-
-    # Avoid redoing work / infinite recursion
-    get_property(already_set TARGET ${target} PROPERTY _IPO_MARKER SET)
+    get_property(already_set TARGET ${TARGET} PROPERTY _IPO_MARKER SET)
     if(already_set)
         return()
     endif()
-    set_property(TARGET ${target} PROPERTY _IPO_MARKER TRUE)
-
-    # Turn on IPO/LTO for this target
-    set_property(TARGET ${target} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
-
-    # Get directly linked libraries (can include non-targets)
-    get_target_property(link_libs ${target} LINK_LIBRARIES)
+    set_property(TARGET ${TARGET} PROPERTY _IPO_MARKER TRUE)
+    set_property(TARGET ${TARGET} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+    get_target_property(link_libs ${TARGET} LINK_LIBRARIES)
     if(NOT link_libs)
         return()
     endif()
-
     foreach(lib IN LISTS link_libs)
         if(TARGET ${lib})
             enable_ipo_recursive(${lib})
         endif()
     endforeach()
 endfunction()
+
+if(NOT LUCARIA_DEBUG)
+    enable_ipo_recursive(${LUCARIA_TARGET})
+endif()
