@@ -79,8 +79,8 @@ namespace {
 
     static bool _is_grounded(btRigidBody* rigidbody, const std::int16_t mask, const btScalar maximum_slope = btCos(btRadians(160.0f)), const btScalar maximum_distance = btScalar(0.5))
     {
-        const btTransform _transform = rigidbody->getInterpolationWorldTransform();
-        // const btTransform _transform = rigidbody->getWorldTransform();
+        // const btTransform _transform = rigidbody->getInterpolationWorldTransform();
+        const btTransform _transform = rigidbody->getWorldTransform();
         const btVector3 _from = _transform.getOrigin();
         const btVector3 _to = _from - detail::convert_bullet(_world_up) * (maximum_distance + 1.f);
         btCollisionWorld::ClosestRayResultCallback _raycast_callback(_from, _to);
@@ -136,8 +136,8 @@ namespace detail {
                 if (!collider._shape.has_value()) {
                     return;
                 }
+                // collider._rigidbody->setInterpolationWorldTransform(convert_bullet(transform._transform));
                 collider._rigidbody->setWorldTransform(convert_bullet(transform._transform));
-                collider._rigidbody->setInterpolationWorldTransform(convert_bullet(transform._transform));
             });
         });
 
@@ -147,8 +147,8 @@ namespace detail {
                 if (!rigidbody._shape.has_value()) {
                     return;
                 }
+                // rigidbody._ghost->setInterpolationWorldTransform(convert_bullet(transform._transform));
                 rigidbody._ghost->setWorldTransform(convert_bullet(transform._transform));
-                rigidbody._ghost->setInterpolationWorldTransform(convert_bullet(transform._transform));
             });
         });
 
@@ -160,11 +160,13 @@ namespace detail {
                     return;
                 }
                 btRigidBody* _bullet_rigidbody = rigidbody._rigidbody.get();
-                const glm::mat4 _bullet_transform = convert(_bullet_rigidbody->getInterpolationWorldTransform());
-                // const glm::mat4 _bullet_transform = convert(_bullet_rigidbody->getWorldTransform());
+                // const glm::mat4 _bullet_transform = convert(_bullet_rigidbody->getInterpolationWorldTransform());
+                const glm::mat4 _bullet_transform = convert(_bullet_rigidbody->getWorldTransform());
                 const glm::vec3 _bullet_linear_position = glm::vec3(_bullet_transform[3]);
+                // const glm::vec3 _bullet_linear_velocity = convert(_bullet_rigidbody->getInterpolationLinearVelocity());
                 const glm::vec3 _bullet_linear_velocity = convert(_bullet_rigidbody->getLinearVelocity());
                 const glm::quat _bullet_angular_position = glm::quat_cast(_bullet_transform);
+                // const glm::vec3 _bullet_angular_velocity = convert(_bullet_rigidbody->getInterpolationAngularVelocity());
                 const glm::vec3 _bullet_angular_velocity = convert(_bullet_rigidbody->getAngularVelocity());
 
                 // append linear PD forces
@@ -208,7 +210,7 @@ namespace detail {
         });
 
         // step once each frame no substep no interpolation
-        detail::_dynamics_world->stepSimulation(_delta_time, 1);
+        detail::_dynamics_world->stepSimulation(_delta_time, 0);
     }
 
     void dynamics_system::compute_collisions()
@@ -238,20 +240,24 @@ namespace detail {
                         rigidbody._collisions = _get_collisions(_manifold, rigidbody._ghost.get());
                     }
                 }
-                rigidbody._translation_speed = convert(rigidbody._ghost->getInterpolationLinearVelocity());
-                rigidbody._rotation_speed = convert(rigidbody._ghost->getInterpolationAngularVelocity());
+                // rigidbody._translation_speed = convert(rigidbody._ghost->getInterpolationLinearVelocity());
+                // rigidbody._translation_speed = convert(rigidbody._ghost->getLinearVelocity());
+                // rigidbody._rotation_speed = convert(rigidbody._ghost->getInterpolationAngularVelocity());
+                // rigidbody._rotation_speed = convert(rigidbody._ghost->getAngularVelocity());
             });
         });
 
         // set transform from dynamic rigidbodies
         detail::each_scene([&](entt::registry& scene) {
             scene.view<transform_component, dynamic_rigidbody_component>().each([](transform_component& transform, dynamic_rigidbody_component& rigidbody) {
-                const glm::mat4 _transform = convert(rigidbody._rigidbody->getInterpolationWorldTransform());
-                // const glm::mat4 _transform = convert(rigidbody._rigidbody->getWorldTransform());
+                // const glm::mat4 _transform = convert(rigidbody._rigidbody->getInterpolationWorldTransform());
+                const glm::mat4 _transform = convert(rigidbody._rigidbody->getWorldTransform());
                 const glm::mat4 _center_to_feet = rigidbody._shape.value().get_center_to_feet();
                 transform.set_transform_warp(_transform * _center_to_feet);
                 rigidbody._last_position = transform.get_position();
+                // rigidbody._translation_speed = convert(rigidbody._rigidbody->getInterpolationLinearVelocity());
                 rigidbody._translation_speed = convert(rigidbody._rigidbody->getLinearVelocity());
+                // rigidbody._rotation_speed = convert(rigidbody._rigidbody->getInterpolationAngularVelocity());
                 rigidbody._rotation_speed = convert(rigidbody._rigidbody->getAngularVelocity());
             });
         });
