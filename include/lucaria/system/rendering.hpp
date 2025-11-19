@@ -52,14 +52,6 @@ void set_fxaa_parameters(
     const glm::float32 relative_threshold = 0.125f,
     const glm::float32 edge_sharpness = 1.5f);
 
-/// @brief Returns the current camera projection matrix
-/// @return the projection matrix
-[[nodiscard]] glm::mat4 get_projection();
-
-/// @brief Returns the current camera view matrix
-/// @return the view matrix
-[[nodiscard]] glm::mat4 get_view();
-
 namespace detail {
 
     struct rendering_system {

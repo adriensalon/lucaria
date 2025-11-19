@@ -19,8 +19,8 @@ struct collider_component {
     collider_component& use_shape(shape& from);
     collider_component& use_shape(fetched<shape>& from);
 
-    collider_component& set_world();
-    collider_component& set_layer(const kinematic_layer layer);
+    collider_component& set_group_layer(const collision_layer layer, const bool enable = true);
+    collider_component& set_mask_layer(const collision_layer layer, const bool enable = true);
 
 private:
     bool _is_added = false;
@@ -28,7 +28,7 @@ private:
     std::unique_ptr<btDefaultMotionState> _state = nullptr;
     std::unique_ptr<btRigidBody> _rigidbody = nullptr;
     std::int16_t _group = 0;
-    std::int16_t _mask = detail::bulletgroupID_kinematic_rigidbody;
+    std::int16_t _mask = 0;
     friend struct detail::dynamics_system;
 };
 

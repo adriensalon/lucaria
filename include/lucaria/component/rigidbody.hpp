@@ -37,11 +37,11 @@ struct rigidbody_component<rigidbody_kind::kinematic> {
     rigidbody_component& use_shape(shape& from);
     rigidbody_component& use_shape(fetched<shape>& from);
 
-    rigidbody_component& set_collide_world(const bool enable = true);
-    rigidbody_component& set_collide_layer(const kinematic_layer layer, const bool enable = true);
+    rigidbody_component& set_group_layer(const collision_layer layer, const bool enable = true);
+    rigidbody_component& set_mask_layer(const collision_layer layer, const bool enable = true);
 
     [[nodiscard]] const std::vector<kinematic_collision>& get_world_collisions() const;
-    [[nodiscard]] const std::vector<kinematic_collision>& get_layer_collisions(const kinematic_layer layer) const;
+    [[nodiscard]] const std::vector<kinematic_collision>& get_layer_collisions(const collision_layer layer) const;
     [[nodiscard]] glm::vec3 get_linear_speed();
     [[nodiscard]] glm::vec3 get_angular_speed();
 
@@ -49,10 +49,10 @@ private:
     bool _is_added = false;
     detail::fetched_container<shape> _shape = {};
     std::unique_ptr<btPairCachingGhostObject> _ghost = nullptr;
-    std::int16_t _group = detail::bulletgroupID_kinematic_rigidbody;
+    std::int16_t _group = 0;
     std::int16_t _mask = 0;
     std::vector<kinematic_collision> _world_collisions = {};
-    std::unordered_map<kinematic_layer, std::vector<kinematic_collision>> _layer_collisions = {};
+    std::unordered_map<collision_layer, std::vector<kinematic_collision>> _layer_collisions = {};
     glm::vec3 _translation_speed = glm::vec3(0);
     glm::vec3 _rotation_speed = glm::vec3(0);
     friend struct detail::dynamics_system;
@@ -69,6 +69,8 @@ struct rigidbody_component<rigidbody_kind::dynamic> {
     rigidbody_component& use_shape(shape& from);
     rigidbody_component& use_shape(fetched<shape>& from);
 
+    rigidbody_component& set_group_layer(const collision_layer layer, const bool enable = true);
+    rigidbody_component& set_mask_layer(const collision_layer layer, const bool enable = true);
     rigidbody_component& set_mass(const glm::float32 mass);
     rigidbody_component& set_friction(const glm::float32 friction);
     rigidbody_component& set_lock_angular(const glm::bvec3 lock);
@@ -88,8 +90,8 @@ private:
     detail::fetched_container<shape> _shape = {};
     std::unique_ptr<btDefaultMotionState> _state = nullptr;
     std::unique_ptr<btRigidBody> _rigidbody = nullptr;
-    std::int16_t _group = detail::bulletgroupID_dynamic_rigidbody;
-    std::int16_t _mask = detail::bulletgroupID_collider_world;
+    std::int16_t _group = 0;
+    std::int16_t _mask = 0;
     glm::float32 _mass = 70.f;
     glm::float32 _friction = 1.f;
     glm::float32 _linear_kp = 1800.f;

@@ -27,6 +27,7 @@ collider_component& collider_component::use_shape(shape& from)
     } else {
         _state = std::make_unique<btDefaultMotionState>(btTransform(btQuaternion(0, 0, 0, 1)));
         _rigidbody = std::make_unique<btRigidBody>(btRigidBody::btRigidBodyConstructionInfo(0, _state.get(), _collision_shape));
+        _rigidbody->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
     }
     detail::_dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
     _is_added = true;
@@ -43,6 +44,7 @@ collider_component& collider_component::use_shape(fetched<shape>& from)
         } else {
             _state = std::make_unique<btDefaultMotionState>(btTransform(btQuaternion(0, 0, 0, 1)));
             _rigidbody = std::make_unique<btRigidBody>(btRigidBody::btRigidBodyConstructionInfo(0, _state.get(), _collision_shape));
+            _rigidbody->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
         }
         detail::_dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
         _is_added = true;
@@ -50,31 +52,32 @@ collider_component& collider_component::use_shape(fetched<shape>& from)
     return *this;
 }
 
-collider_component& collider_component::set_world()
+collider_component& collider_component::set_group_layer(const collision_layer layer, const bool enable)
 {
-    if (_group != detail::bulletgroupID_collider_world) {
-        _group = detail::bulletgroupID_collider_world;
-        _mask = _mask | detail::bulletgroupID_dynamic_rigidbody;
-        if (_is_added) {
-            detail::_dynamics_world->removeRigidBody(_rigidbody.get());
-            detail::_dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
-        }
+    const std::int16_t _layer_bitfield = static_cast<std::int16_t>(layer);
+    if (enable) {
+        _group |= _layer_bitfield;
+    } else {
+        _group &= ~_layer_bitfield;
+    }
+    if (_is_added) {
+        detail::_dynamics_world->removeRigidBody(_rigidbody.get());
+        detail::_dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
     }
     return *this;
 }
 
-collider_component& collider_component::set_layer(const kinematic_layer layer)
+collider_component& collider_component::set_mask_layer(const collision_layer layer, const bool enable)
 {
-    const std::int16_t _layer = static_cast<std::int16_t>(layer);
-    if (_group != _layer) {
-        _group = _layer;
-        if (contains_layer(_mask, detail::bulletgroupID_dynamic_rigidbody)) {
-            _mask = remove_layer(_mask, detail::bulletgroupID_dynamic_rigidbody);
-        }
-        if (_is_added) {
-            detail::_dynamics_world->removeRigidBody(_rigidbody.get());
-            detail::_dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
-        }
+    const std::int16_t _layer_bitfield = static_cast<std::int16_t>(layer);
+    if (enable) {
+        _mask |= _layer_bitfield;
+    } else {
+        _mask &= ~_layer_bitfield;
+    }
+    if (_is_added) {
+        detail::_dynamics_world->removeRigidBody(_rigidbody.get());
+        detail::_dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
     }
     return *this;
 }

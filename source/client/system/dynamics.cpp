@@ -65,11 +65,12 @@ namespace {
         return false;
     }
 
-    static bool _get_other_group(std::int16_t& other_group, const btCollisionObject* other_object)
+    static bool _get_other_group(std::int16_t& other_group, std::int16_t& other_mask, const btCollisionObject* other_object)
     {
         const btBroadphaseProxy* _proxy = other_object->getBroadphaseHandle();
         if (_proxy) {
             other_group = _proxy->m_collisionFilterGroup;
+            other_mask = _proxy->m_collisionFilterMask;
             return true;
         }
         return false;
@@ -102,13 +103,13 @@ namespace {
         return (_force_length > 0.f) ? (_force * (1.f / _force_length)) : _world_forward;
     };
 
-    static bool _is_grounded(btRigidBody* rigidbody, const btScalar maximum_slope = btCos(btRadians(160.0f)), const btScalar maximum_distance = btScalar(0.5))
+    static bool _is_grounded(btRigidBody* rigidbody, const std::int16_t mask, const btScalar maximum_slope = btCos(btRadians(160.0f)), const btScalar maximum_distance = btScalar(0.5))
     {
         const btTransform _transform = rigidbody->getWorldTransform();
         const btVector3 _from = _transform.getOrigin();
         const btVector3 _to = _from - detail::convert_bullet(_world_up) * (maximum_distance + 1.f);
         btCollisionWorld::ClosestRayResultCallback _raycast_callback(_from, _to);
-        _raycast_callback.m_collisionFilterMask = detail::bulletgroupID_collider_world;
+        _raycast_callback.m_collisionFilterMask = mask;
         detail::_dynamics_world->rayTest(_from, _to, _raycast_callback);
         if (_raycast_callback.hasHit()) {
             const btVector3 _hit_normal = _raycast_callback.m_hitNormalWorld.normalized();
@@ -205,9 +206,9 @@ namespace detail {
                 const glm::float32 _sin_error_position_yaw = glm::dot(glm::cross(_forward_now, _forward_destination), _world_up);
                 const glm::float32 _error_position_yaw = std::atan2(_sin_error_position_yaw, _cos_error_position_yaw);
                 const glm::float32 _error_velocity_yaw = glm::dot(rigidbody._target_angular_velocity, _world_up) - glm::dot(_bullet_angular_velocity, _world_up);
-                const bool grounded = _is_grounded(_bullet_rigidbody);
-                const glm::float32 _angular_kp = rigidbody._angular_kp * (grounded ? 1.f : rigidbody._angular_airborne_scale);
-                const glm::float32 _angular_kd = rigidbody._angular_kd * (grounded ? 1.f : rigidbody._angular_airborne_scale);
+                const bool _grounded = _is_grounded(_bullet_rigidbody, rigidbody._mask);
+                const glm::float32 _angular_kp = rigidbody._angular_kp * (_grounded ? 1.f : rigidbody._angular_airborne_scale);
+                const glm::float32 _angular_kd = rigidbody._angular_kd * (_grounded ? 1.f : rigidbody._angular_airborne_scale);
                 glm::vec3 _torque_yaw = _world_up * (_angular_kp * _error_position_yaw + _angular_kd * _error_velocity_yaw);
                 const glm::float32 _torque_yaw_length = glm::length(_torque_yaw);
                 if (_torque_yaw_length > rigidbody._angular_max_force && _torque_yaw_length > 0.f) {
@@ -254,6 +255,7 @@ namespace detail {
                     _collision_algorithm->getAllContactManifolds(_manifold_array);
                     for (int _manifold_index = 0; _manifold_index < _manifold_array.size(); _manifold_index++) {
                         std::int16_t _other_group;
+                        std::int16_t _other_mask;
                         btPersistentManifold* _manifold;
                         btCollisionObject* _other_object;
                         if (!_get_manifold(&_manifold, _manifold_array, _manifold_index)) {
@@ -262,13 +264,13 @@ namespace detail {
                         if (!_get_other_object(&_other_object, _manifold, rigidbody._ghost.get())) {
                             continue;
                         }
-                        if (!_get_other_group(_other_group, _other_object)) {
+                        if (!_get_other_group(_other_group, _other_mask, _other_object)) {
                             continue;
                         }
-                        if (_other_group == bulletgroupID_collider_world) {
-                            rigidbody._world_collisions = _get_collisions(_manifold, rigidbody._ghost.get());
+                        if ((rigidbody._group & _other_mask) && (_other_group & rigidbody._mask)) {
+                            // rigidbody._world_collisions = _get_collisions(_manifold, rigidbody._ghost.get());
                         } else {
-                            rigidbody._layer_collisions[static_cast<kinematic_layer>(_other_group)] = _get_collisions(_manifold, rigidbody._ghost.get());
+                            // rigidbody._layer_collisions[static_cast<collision_layer>(_other_group)] = _get_collisions(_manifold, rigidbody._ghost.get());
                         }
                     }
                 }
