@@ -37,7 +37,7 @@ function(lucaria_build_game
 
     add_custom_target(${TARGET}_${PLATFORM}
         ALL
-        COMMAND "${CMAKE_COMMAND}" -S "${game_source_dir}" -B "${game_output_dir}" -G "${GENERATOR}" ${game_toolchain} ${game_forward} ${ARGS} -DLUCARIA_DEBUG=$<IF:$<CONFIG:Debug>,ON,OFF>
+        COMMAND "${CMAKE_COMMAND}" -S "${game_source_dir}" -B "${game_output_dir}" -G "${GENERATOR}" ${game_toolchain} ${game_forward} ${ARGS} -DLUCARIA_CONFIG=$<CONFIG> -DLUCARIA_DEBUG=$<IF:$<CONFIG:Debug>,ON,OFF>
         COMMAND "${CMAKE_COMMAND}" --build "${game_output_dir}" --config $<CONFIG> 
         WORKING_DIRECTORY "${game_output_dir}"
         COMMENT "Building ${TARGET} for ${PLATFORM}..."

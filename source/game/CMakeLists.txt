@@ -28,14 +28,42 @@ if(EMSCRIPTEN)
     target_link_options(${LUCARIA_TARGET} PRIVATE -lopenal)
     
     if(LUCARIA_DEBUG)
-        message("-- Configuring emscripten build options for Debug")
+        message("-- Configuring game link options for Debug")
         target_link_options(${LUCARIA_TARGET} PRIVATE -g)
         target_link_options(${LUCARIA_TARGET} PRIVATE -sGL_DEBUG=1)
         target_link_options(${LUCARIA_TARGET} PRIVATE -sNO_DISABLE_EXCEPTION_CATCHING)
     else()
-        message("-- Configuring emscripten build options for Release")
+        message("-- Configuring game link options for Release")
         target_link_options(${LUCARIA_TARGET} PRIVATE -O3)
         target_link_options(${LUCARIA_TARGET} PRIVATE -sGL_DEBUG=0)
     endif()
 
 endif()
+
+function(enable_ipo_recursive target)
+    if(NOT TARGET ${target})
+        return()
+    endif()
+
+    # Avoid redoing work / infinite recursion
+    get_property(already_set TARGET ${target} PROPERTY _IPO_MARKER SET)
+    if(already_set)
+        return()
+    endif()
+    set_property(TARGET ${target} PROPERTY _IPO_MARKER TRUE)
+
+    # Turn on IPO/LTO for this target
+    set_property(TARGET ${target} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+
+    # Get directly linked libraries (can include non-targets)
+    get_target_property(link_libs ${target} LINK_LIBRARIES)
+    if(NOT link_libs)
+        return()
+    endif()
+
+    foreach(lib IN LISTS link_libs)
+        if(TARGET ${lib})
+            enable_ipo_recursive(${lib})
+        endif()
+    endforeach()
+endfunction()
