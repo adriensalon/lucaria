@@ -17,8 +17,15 @@ target_include_directories(lucaria_external_bullet PUBLIC "added/bullet/src")
 target_include_directories(lucaria_external_bullet PUBLIC "added/bullet/src/LinearMath")
 target_include_directories(lucaria_external_bullet PUBLIC "upstream/bullet/src")
 
+# simd config
 if(EMSCRIPTEN)
     target_compile_options(lucaria_external_bullet PUBLIC -msimd128 -msse2)
+else()
+    if(MSVC)
+        target_compile_definitions(lucaria_external_bullet PUBLIC __SSE4_1__=1)
+    else()
+        target_compile_options(lucaria_external_bullet PUBLIC -msse4.1)
+    endif()
 endif()
 
 if(MSVC)

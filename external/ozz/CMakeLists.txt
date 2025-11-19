@@ -15,8 +15,15 @@ set_target_properties(lucaria_external_ozz PROPERTIES CXX_STANDARD 17)
 target_include_directories(lucaria_external_ozz PRIVATE "upstream/ozz/src")
 target_include_directories(lucaria_external_ozz PUBLIC "upstream/ozz/include")
 
+# simd config
 if(EMSCRIPTEN)
-    target_compile_options(lucaria_external_ozz PRIVATE -msimd128 -msse2)
+    target_compile_options(lucaria_external_ozz PUBLIC -msimd128 -msse2)
+else()
+    if(MSVC)
+        target_compile_definitions(lucaria_external_ozz PUBLIC __SSE4_1__=1)
+    else()
+        target_compile_options(lucaria_external_ozz PUBLIC -msse4.1)
+    endif()
 endif()
 
 if(MSVC)
