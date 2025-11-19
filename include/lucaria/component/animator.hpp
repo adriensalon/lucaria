@@ -19,6 +19,7 @@ namespace detail {
     struct rendering_system;
 }
 
+/// @brief 
 struct animation_controller {
     animation_controller() = default;
     animation_controller(const animation_controller& other) = delete;
@@ -26,13 +27,38 @@ struct animation_controller {
     animation_controller(animation_controller&& other) = default;
     animation_controller& operator=(animation_controller&& other) = default;
 
+    /// @brief 
+    /// @return 
     animation_controller& set_play();
+
+    /// @brief 
+    /// @return 
     animation_controller& set_pause();
+
+    /// @brief 
+    /// @return 
     animation_controller& set_stop();
+
+    /// @brief 
+    /// @return 
     animation_controller& set_time(const glm::float32 ratio);
+
+    /// @brief 
+    /// @return 
     animation_controller& set_loop(const bool enable = true);
+
+    /// @brief 
+    /// @return 
     animation_controller& set_speed(const glm::float32 ratio);
+
+    /// @brief 
+    /// @return 
     animation_controller& set_weight(const glm::float32 ratio);
+
+    /// @brief 
+    /// @param name 
+    /// @param callback 
+    /// @return 
     animation_controller& set_event_callback(const std::string& name, const std::function<void()>& callback);
 
 private:
@@ -48,6 +74,7 @@ private:
     friend struct animator_component;
 };
 
+/// @brief 
 struct animator_component {
     animator_component() = default;
     animator_component(const animator_component& other) = delete;
@@ -55,19 +82,65 @@ struct animator_component {
     animator_component(animator_component&& other) = default;
     animator_component& operator=(animator_component&& other) = default;
 
+    /// @brief 
+    /// @param name 
+    /// @param from 
+    /// @return 
     animator_component& use_animation(const std::string name, animation& from);
+
+    /// @brief 
+    /// @param name 
+    /// @param from 
+    /// @return 
     animator_component& use_animation(const std::string name, fetched<animation>& from);
+
+    /// @brief 
+    /// @param name 
+    /// @param from 
+    /// @return 
     animator_component& use_motion_track(const std::string name, motion_track& from);
+
+    /// @brief 
+    /// @param name 
+    /// @param from 
+    /// @return 
     animator_component& use_motion_track(const std::string name, fetched<motion_track>& from);
+
+    /// @brief 
+    /// @param name 
+    /// @param from 
+    /// @return 
     animator_component& use_event_track(const std::string name, event_track& from);
+
+    /// @brief 
+    /// @param name 
+    /// @param from 
+    /// @return 
     animator_component& use_event_track(const std::string name, fetched<event_track>& from);
+
+    /// @brief 
+    /// @param from 
+    /// @return 
     animator_component& use_skeleton(skeleton& from);
+
+    /// @brief 
+    /// @param from 
+    /// @return 
     animator_component& use_skeleton(fetched<skeleton>& from);
+
     // animator_component& use_inverse_kinematics_chain(const std::string name, const std::string& start, const std::string& end);
     // animator_component& use_inverse_kinematics_snap(const std::string name, const glm::vec3& end_position);
 
+    /// @brief 
+    /// @param name 
+    /// @return 
     [[nodiscard]] animation_controller& get_controller(const std::string& name);
+
+    /// @brief 
+    /// @param bone 
+    /// @return 
     [[nodiscard]] glm::mat4 get_bone_transform(const std::string& bone);
+    
 private:
     detail::fetched_container<skeleton> _skeleton = {};
     std::unordered_map<std::string, detail::fetched_container<animation>> _animations = {};

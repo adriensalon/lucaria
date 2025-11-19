@@ -25,7 +25,7 @@ enum struct interface_mode {
 };
 
 /// @brief Represents an interface component for drawing complex UIs on the screen or inside a viewport
-/// @tparam mode_t interface_mode value for specialization of interface components
+/// @tparam mode_t specialization of interface components
 template <interface_mode mode_t>
 struct interface_component;
 

@@ -13,8 +13,8 @@ namespace detail {
 enum struct model_shader {
     blockout,
     unlit,
-    pbr,
-    custom
+    // pbr,
+    // custom
 };
 
 template <model_shader shader_t>
@@ -93,32 +93,32 @@ private:
 //     friend struct rendering_system;
 // };
 
-template <>
-struct model_component<model_shader::custom> {
-    model_component() = default;
-    model_component(const model_component& other) = delete;
-    model_component& operator=(const model_component& other) = delete;
-    model_component(model_component&& other) = default;
-    model_component& operator=(model_component&& other) = default;
+// template <>
+// struct model_component<model_shader::custom> {
+//     model_component() = default;
+//     model_component(const model_component& other) = delete;
+//     model_component& operator=(const model_component& other) = delete;
+//     model_component(model_component&& other) = default;
+//     model_component& operator=(model_component&& other) = default;
 
-    model_component& use_program(program& from);
-    model_component& use_program(fetched<program>& from);
-    model_component& use_mesh(const std::vector<std::pair<std::string, mesh_attribute>>& named_attributes, mesh& from);
-    model_component& use_mesh(const std::vector<std::pair<std::string, mesh_attribute>>& named_attributes, fetched<mesh>& from);
-    model_component& use_cubemap(const std::string& name, cubemap& from, const glm::uint slot);
-    model_component& use_cubemap(const std::string& name, fetched<cubemap>& from, const glm::uint slot);
-    model_component& use_texture(const std::string& name, texture& from, const glm::uint slot);
-    model_component& use_texture(const std::string& name, fetched<texture>& from, const glm::uint slot);
+//     model_component& use_program(program& from);
+//     model_component& use_program(fetched<program>& from);
+//     model_component& use_mesh(const std::vector<std::pair<std::string, mesh_attribute>>& named_attributes, mesh& from);
+//     model_component& use_mesh(const std::vector<std::pair<std::string, mesh_attribute>>& named_attributes, fetched<mesh>& from);
+//     model_component& use_cubemap(const std::string& name, cubemap& from, const glm::uint slot);
+//     model_component& use_cubemap(const std::string& name, fetched<cubemap>& from, const glm::uint slot);
+//     model_component& use_texture(const std::string& name, texture& from, const glm::uint slot);
+//     model_component& use_texture(const std::string& name, fetched<texture>& from, const glm::uint slot);
 
-private:
-    // TODO
-    friend struct detail::motion_system;
-    friend struct detail::rendering_system;
-};
+// private:
+//     // TODO
+//     friend struct detail::motion_system;
+//     friend struct detail::rendering_system;
+// };
 
 using blockout_model_component = model_component<model_shader::blockout>;
 using unlit_model_component = model_component<model_shader::unlit>;
 // using pbr_model_component = model_component<model_shader::pbr>;
-using custom_model_component = model_component<model_shader::custom>;
+// using custom_model_component = model_component<model_shader::custom>;
 
 }

@@ -186,11 +186,10 @@ namespace detail {
                     const glm::quat _current_rotation = glm::quat_cast(_transform_matrix);
                     const btTransform _bullet_transform = convert_bullet(_transform_matrix);
                     _bullet_rigidbody->setWorldTransform(_bullet_transform);
+                    _bullet_rigidbody->setInterpolationWorldTransform(_bullet_transform);
 
                     // reset on teleporting
                     if (rigidbody._last_position != transform.get_position()) {
-                        _bullet_rigidbody->getMotionState()->setWorldTransform(_bullet_transform);
-                        _bullet_rigidbody->setInterpolationWorldTransform(_bullet_transform);
                         _bullet_rigidbody->setLinearVelocity(btVector3(0, 0, 0));
                         _bullet_rigidbody->setAngularVelocity(btVector3(0, 0, 0));
                         _bullet_rigidbody->clearForces();
