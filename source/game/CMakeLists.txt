@@ -16,36 +16,26 @@ if(NOT LUCARIA_HTML_SHELL)
 endif()
 
 if(EMSCRIPTEN)
-    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+    set_target_properties(${LUCARIA_TARGET} PROPERTIES SUFFIX ".html")
+    target_link_options(${LUCARIA_TARGET} PRIVATE --shell-file ${LUCARIA_HTML_SHELL})
+    target_link_options(${LUCARIA_TARGET} PRIVATE -sLLD_REPORT_UNDEFINED)
+    target_link_options(${LUCARIA_TARGET} PRIVATE -sALLOW_MEMORY_GROWTH=1)
+    target_link_options(${LUCARIA_TARGET} PRIVATE -sINITIAL_MEMORY=671088640)
+    target_link_options(${LUCARIA_TARGET} PRIVATE -sMALLOC=emmalloc)
+    target_link_options(${LUCARIA_TARGET} PRIVATE -sMAX_WEBGL_VERSION=2)
+    target_link_options(${LUCARIA_TARGET} PRIVATE -sUSE_WEBGL2=1)
+    target_link_options(${LUCARIA_TARGET} PRIVATE -sFETCH)
+    target_link_options(${LUCARIA_TARGET} PRIVATE -lopenal)
     
     if(LUCARIA_DEBUG)
         message("-- Configuring emscripten build options for Debug")
-        set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} "\
-            -g \
-            --shell-file ${LUCARIA_HTML_SHELL} \
-            -s LLD_REPORT_UNDEFINED \
-            -s ALLOW_MEMORY_GROWTH=1\
-            -s INITIAL_MEMORY=671088640 \
-            -s MALLOC=emmalloc\
-            -s MAX_WEBGL_VERSION=2 \
-            -s USE_WEBGL2=1 \
-            -s GL_DEBUG=1 \
-            -s FETCH \
-            -s NO_DISABLE_EXCEPTION_CATCHING \
-            -l openal")
+        target_link_options(${LUCARIA_TARGET} PRIVATE -g)
+        target_link_options(${LUCARIA_TARGET} PRIVATE -sGL_DEBUG=1)
+        target_link_options(${LUCARIA_TARGET} PRIVATE -sNO_DISABLE_EXCEPTION_CATCHING)
     else()
         message("-- Configuring emscripten build options for Release")
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
-        	-O3 \
-            --shell-file ${LUCARIA_HTML_SHELL} \
-        	-s LLD_REPORT_UNDEFINED \
-        	-s ALLOW_MEMORY_GROWTH=1 \
-            -s INITIAL_MEMORY=671088640 \
-            -s MALLOC=emmalloc\
-        	-s MAX_WEBGL_VERSION=2 \
-        	-s USE_WEBGL2=1 \
-            -s GL_DEBUG=0 \
-        	-s FETCH \
-        	-l openal")
+        target_link_options(${LUCARIA_TARGET} PRIVATE -O3)
+        target_link_options(${LUCARIA_TARGET} PRIVATE -sGL_DEBUG=0)
     endif()
+
 endif()
