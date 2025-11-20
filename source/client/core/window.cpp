@@ -398,16 +398,6 @@ namespace {
 
         case APP_CMD_INPUT_CHANGED:
             std::cout << "APP_CMD_INPUT_CHANGED, inputQueue = " << app->inputQueue << "\n";
-            // if (app->inputQueue) {
-            //     AInputQueue_attachLooper(app->inputQueue,
-            //         app->looper,
-            //         LOOPER_ID_INPUT,
-            //         nullptr,
-            //         app);
-            // } else {
-            //     // On some devices you get this when input is removed
-            //     // If you stored the old queue, you can detach it here.
-            // }
             break;
 
         case APP_CMD_DESTROY:
@@ -888,6 +878,7 @@ int main()
     std::cout << "Built engine with simd: " << _TO_STRING(LUCARIA_SIMD) << std::endl;
     std::cout << "Built engine with exceptions: " << (LUCARIA_DEBUG ? "ON (Select config other than Debug to disable)" : "OFF (Select Debug config to enable)") << std::endl;
     std::cout << "Built engine with guizmos: " << (LUCARIA_GUIZMO ? "ON (Select config other than Debug to disable)" : "OFF (Select Debug config to enable)") << std::endl;
+    std::cout << "Built engine with assets packaging: " << (LUCARIA_ASSETS_PACKAGE ? "ON" : "OFF (Set ASSETS_DIR on add_lucaria_game_android or add_lucaria_game_web to enable)") << std::endl;
 
 #if defined(__ANDROID__)
     app_dummy();

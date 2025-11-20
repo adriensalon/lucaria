@@ -29,42 +29,54 @@ namespace {
         std::function<void(std::vector<char>)> callback,
         bool persist)
     {
+        _fetches_waiting++;
         std::filesystem::path _fetch_file_path = file_path;
-#if !defined(__ANDROID__) // AND EMSCRIPTEN WITH PACKAGED ASSET DIR
+
+#if !LUCARIA_ASSETS_PACKAGE
         _fetch_file_path = _fetch_path ? (_fetch_path.value() / file_path) : file_path;
 #endif
 
-        _fetches_waiting++;
-#if defined(__EMSCRIPTEN__)
-        emscripten_fetch_attr_t attr;
-        emscripten_fetch_attr_init(&attr);
-        std::strcpy(attr.requestMethod, "GET");
-        attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
-        if (persist)
-            attr.attributes |= EMSCRIPTEN_FETCH_PERSIST_FILE;
-
-        auto* cb_heap = new std::function<void(std::vector<char>)>(std::move(callback));
-        attr.userData = cb_heap;
-
-        attr.onsuccess = [](emscripten_fetch_t* fetch) {
-            std::vector<char> buf(fetch->data, fetch->data + fetch->numBytes); // one copy from fetch->data
-            auto* cbp = static_cast<std::function<void(std::vector<char>)>*>(fetch->userData);
-            (*cbp)(std::move(buf)); // move into user continuation
-            delete cbp;
+#if defined(__EMSCRIPTEN__) && !LUCARIA_ASSETS_PACKAGE
+        emscripten_fetch_attr_t _emscripten_fetch_attr;
+        emscripten_fetch_attr_init(&_emscripten_fetch_attr);
+        std::strcpy(_emscripten_fetch_attr.requestMethod, "GET");
+        _emscripten_fetch_attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+        if (persist) {
+            _emscripten_fetch_attr.attributes |= EMSCRIPTEN_FETCH_PERSIST_FILE;
+        }
+        using _callback_type = std::function<void(std::vector<char>)>;
+        _emscripten_fetch_attr.userData = new _callback_type(std::move(callback));
+        _emscripten_fetch_attr.onsuccess = [](emscripten_fetch_t* fetch) {
+            std::vector<char> _buffer(fetch->data, fetch->data + fetch->numBytes); // one copy from fetch->data
+            _callback_type* _callback_ptr = static_cast<_callback_type*>(fetch->userData);
+            (*_callback_ptr)(std::move(_buffer));
+            delete _callback_ptr;
             _fetches_waiting--;
             emscripten_fetch_close(fetch);
         };
-        attr.onerror = [](emscripten_fetch_t* fetch) {
-            auto* cbp = static_cast<std::function<void(std::vector<char>)>*>(fetch->userData);
-            // TODO: optional error callback; for now log
+        _emscripten_fetch_attr.onerror = [](emscripten_fetch_t* fetch) {
+            _callback_type* _callback_ptr = static_cast<_callback_type*>(fetch->userData);
             std::fprintf(stderr, "fetch_bytes error: %s (%d)\n", fetch->statusText, fetch->status);
-            delete cbp;
+            delete _callback_ptr;
             emscripten_fetch_close(fetch);
             std::terminate();
         };
+        emscripten_fetch(&_emscripten_fetch_attr, _fetch_file_path.c_str());
+#endif
 
-        emscripten_fetch(&attr, _fetch_file_path.c_str());
-#else
+#if defined(__EMSCRIPTEN__) && LUCARIA_ASSETS_PACKAGE
+        struct _async_context {
+            std::filesystem::path context_path;
+            std::function<void(const std::vector<char>&)> context_callback;
+        };
+        _async_context* _context = new _async_context { _fetch_file_path, callback };
+        emscripten_async_call(+[](void* user_data) {
+                std::unique_ptr<_async_context> _context_inner(static_cast<_async_context*>(user_data));
+                detail::load_bytes(_context_inner->context_path, _context_inner->context_callback);
+                _fetches_waiting--; }, _context, 0);
+#endif
+
+#if defined(_WIN32) || defined(ANDROID)
         std::thread([_fetch_file_path, callback]() {
             detail::load_bytes(_fetch_file_path, callback);
             _fetches_waiting--;

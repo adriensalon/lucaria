@@ -45,7 +45,7 @@ function(add_lucaria_game_android TARGET)
         message(WARNING "Android NDK not found. lucaria_android will not be built")
         return()
     endif()
-    set(ANDROID_TOOLCHAIN "${ANDROID_NDK}/build/cmake/android.toolchain.cmake")
+    set(ANDROID_TOOLCHAIN "${ANDROID_NDK}/build/cmake/android.toolchain.cmake" CACHE PATH "Android NDK toolchain file")
     message(STATUS "Found Android NDK at ${ANDROID_NDK}")
     message(STATUS "Found Android toolchain file at ${ANDROID_TOOLCHAIN}")
 
@@ -58,10 +58,11 @@ function(add_lucaria_game_android TARGET)
 
     # default parameters
     if(NOT LBG_ASSETS_DIR)
+        set(LUCARIA_ASSETS_PACKAGE OFF)
         set(ANDROID_ASSETS_DIR_ARG "")
         message(STATUS "No assets provided for Android APK package")
     else()        
-        set(LUCARIA_ASSETS_DIR "${LBG_ASSETS_DIR}")
+        set(LUCARIA_ASSETS_PACKAGE ON)
         set(ANDROID_ASSETS_DIR_ARG "-PassetsDir=${LBG_ASSETS_DIR}")
         message(STATUS "Found Android APK assets at ${LBG_ASSETS_DIR}")
     endif()
@@ -89,7 +90,7 @@ function(add_lucaria_game_android TARGET)
         "${LBG_INCLUDES}"
         "${LBG_DEFINES}"
         "${LBG_BUILD_ARGS}"
-        "-DLUCARIA_ASSETS_DIR=${LUCARIA_ASSETS_DIR};-DANDROID_ABI=${LBG_ANDROID_ABI};-DANDROID_PLATFORM=${LBG_ANDROID_PLATFORM}")
+        "-DLUCARIA_ASSETS_PACKAGE=${LUCARIA_ASSETS_PACKAGE};-DANDROID_ABI=${LBG_ANDROID_ABI};-DANDROID_PLATFORM=${LBG_ANDROID_PLATFORM}")
 
     add_custom_command(
         TARGET ${TARGET}_android
