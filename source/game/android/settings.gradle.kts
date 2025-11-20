@@ -19,6 +19,9 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Lucaria"
+val targetName = settings.startParameter.projectProperties["targetName"] ?: "Lucaria"
+
+
+rootProject.name = targetName
 include(":app")
  

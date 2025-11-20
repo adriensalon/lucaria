@@ -3,13 +3,18 @@ project(${LUCARIA_TARGET})
 
 add_subdirectory("${LUCARIA_SOURCE_DIR}/client" "${LUCARIA_BINARY_DIR}/client/${LUCARIA_TARGET_PLATFORM}")
 
-add_executable(${LUCARIA_TARGET} ${LUCARIA_TARGET_SOURCES})
+if(ANDROID)
+    add_library(${LUCARIA_TARGET} SHARED ${LUCARIA_TARGET_SOURCES})
+else()
+    add_executable(${LUCARIA_TARGET} ${LUCARIA_TARGET_SOURCES})
+endif()
+
 set_target_properties(${LUCARIA_TARGET} PROPERTIES CXX_STANDARD 17)
 target_link_libraries(${LUCARIA_TARGET} PRIVATE lucaria_client)
-
 target_include_directories(${LUCARIA_TARGET} PRIVATE ${LUCARIA_TARGET_INCLUDES})
 target_compile_definitions(${LUCARIA_TARGET} PRIVATE ${LUCARIA_TARGET_DEFINES})
 target_compile_options(${LUCARIA_TARGET} PRIVATE ${LUCARIA_TARGET_BUILD_ARGS})
+
 
 # emscripten options
 if(EMSCRIPTEN)

@@ -1,4 +1,5 @@
 
+#include <chrono>
 #include <iostream>
 #include <optional>
 
@@ -10,9 +11,10 @@
 #if defined(__EMSCRIPTEN__)
 #include <emscripten.h>
 #include <emscripten/html5.h>
+#elif defined(__ANDROID__)
+#include <backends/imgui_impl_android.h>
 #else
 #include <backends/imgui_impl_glfw.h>
-#include <chrono>
 #endif
 
 #include <lucaria/core/animation.hpp>
@@ -59,7 +61,7 @@ namespace {
     static bool setup_platform();
     static bool setup_opengl();
     static bool setup_openal();
-#if defined(__EMSCRIPTEN__)
+#if defined(__EMSCRIPTEN__) || defined(__ANDROID__)
     static std::unordered_map<std::string, keyboard_key> emscripten_keyboard_mappings = {
         { "a", keyboard_key::a },
         { "z", keyboard_key::z },
@@ -289,6 +291,7 @@ namespace {
         return EM_TRUE; // we use preventDefault() for touch callbacks (see Safari on iPad)
     }
 
+#elif defined(__ANDROID__)
 #else
 
     static void glfw_window_focus_callback(GLFWwindow* window, int focused)
@@ -407,6 +410,7 @@ namespace {
         // emscripten_assert(emscripten_set_touchcancel_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, touch_callback));
 
         is_multitouch_supported = navigator_get_multitouch();
+#elif defined(__ANDROID__)
 #else
 
         glfwSetErrorCallback(glfw_error_callback);
@@ -556,7 +560,7 @@ namespace {
 #if defined(__EMSCRIPTEN__)
         _screen_width = canvas_get_width();
         _screen_height = canvas_get_height();
-#else
+#elif !defined(__ANDROID__)
         glfwGetFramebufferSize(glfw_window, &_screen_width, &_screen_height);
 #endif
         screen_size = { _screen_width, _screen_height };
@@ -569,8 +573,10 @@ namespace {
         _last_accum_pos_delta = accumulated_mouse_position_delta;
         _last_render_time = _render_time;
 
-#if !defined(__EMSCRIPTEN__)
+#if defined(_WIN32)
         ImGui_ImplGlfw_NewFrame();
+#elif defined(__ANDROID__)
+        ImGui_ImplAndroid_NewFrame();
 #endif
         ImGui::GetIO().DisplaySize = ImVec2(static_cast<glm::float32>(screen_size.x), static_cast<glm::float32>(screen_size.y));
         update_mouse_lock();
@@ -583,7 +589,7 @@ namespace {
             LUCARIA_RUNTIME_OPENAL_ASSERT
         }
 
-#if !defined(__EMSCRIPTEN__)
+#if !defined(__EMSCRIPTEN__) && !defined(__ANDROID__)
         glfwSwapBuffers(glfw_window);
         glfwPollEvents();
 #endif
@@ -602,6 +608,7 @@ namespace detail {
         start();
         emscripten_set_main_loop(update_loop, 0, EM_TRUE);
         emscripten_set_main_loop_timing(EM_TIMING_RAF, 1);
+#elif defined(__ANDROID__)
 #else
         is_audio_locked = setup_openal();
         start();
@@ -620,7 +627,7 @@ namespace detail {
     {
         ImGuiContext* _context = ImGui::CreateContext(global_imgui_shared_font_atlas.get());
         ImGui::SetCurrentContext(_context);
-#if !defined(__EMSCRIPTEN__)
+#if !defined(__EMSCRIPTEN__) && !defined(__ANDROID__)
         static bool _must_install_callbacks = true;
         if (_must_install_callbacks) {
             ImGui_ImplGlfw_InitForOpenGL(glfw_window, true);
