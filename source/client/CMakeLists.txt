@@ -85,3 +85,7 @@ else()
         target_compile_definitions(lucaria_client PUBLIC -DLUCARIA_ASSETS_FETCH=1)
     endif()
 endif()
+
+if(ANDROID)
+    target_compile_options(lucaria_client PRIVATE -Wno-deprecated-declarations)
+endif()

@@ -28,6 +28,9 @@ endif()
 
 if(MSVC)
     target_compile_options(lucaria_external_ozz PRIVATE /wd4996)
+else()
+    target_compile_options(lucaria_external_ozz PRIVATE "-Wno-#pragma-messages")
+    
 endif()
 
 ##
