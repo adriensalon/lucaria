@@ -61,7 +61,9 @@ function(add_lucaria_game_android TARGET)
         set(ANDROID_ASSETS_DIR_ARG "")
         message(STATUS "No assets provided for Android APK package")
     else()        
+        set(LUCARIA_ASSETS_DIR "${LBG_ASSETS_DIR}")
         set(ANDROID_ASSETS_DIR_ARG "-PassetsDir=${LBG_ASSETS_DIR}")
+        message(STATUS "Found Android APK assets at ${LBG_ASSETS_DIR}")
     endif()
     if(NOT LBG_ANDROID_ABI)
         set(LBG_ANDROID_ABI "arm64-v8a")
@@ -87,7 +89,7 @@ function(add_lucaria_game_android TARGET)
         "${LBG_INCLUDES}"
         "${LBG_DEFINES}"
         "${LBG_BUILD_ARGS}"
-        "-DANDROID_ABI=${LBG_ANDROID_ABI};-DANDROID_PLATFORM=${LBG_ANDROID_PLATFORM}")
+        "-DLUCARIA_ASSETS_DIR=${LUCARIA_ASSETS_DIR};-DANDROID_ABI=${LBG_ANDROID_ABI};-DANDROID_PLATFORM=${LBG_ANDROID_PLATFORM}")
 
     add_custom_command(
         TARGET ${TARGET}_android

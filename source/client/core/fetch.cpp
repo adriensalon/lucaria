@@ -21,12 +21,19 @@ extern android_app* g_app; // declared in your window.cpp / main.cpp
 namespace lucaria {
 namespace {
 
+    static std::optional<std::filesystem::path> _fetch_path = std::nullopt;
+
     static std::atomic<std::size_t> _fetches_waiting = 0;
 
     static void fetch_bytes_impl(const std::filesystem::path& file_path,
         std::function<void(std::vector<char>)> callback,
         bool persist)
     {
+        std::filesystem::path _fetch_file_path = file_path;
+#if !defined(__ANDROID__) // AND EMSCRIPTEN WITH PACKAGED ASSET DIR
+        _fetch_file_path = _fetch_path ? (_fetch_path.value() / file_path) : file_path;
+#endif
+
         _fetches_waiting++;
 #if defined(__EMSCRIPTEN__)
         emscripten_fetch_attr_t attr;
@@ -56,14 +63,19 @@ namespace {
             std::terminate();
         };
 
-        emscripten_fetch(&attr, file_path.c_str());
+        emscripten_fetch(&attr, _fetch_file_path.c_str());
 #else
-        std::thread([file_path, callback]() {
-            detail::load_bytes(file_path, callback);
+        std::thread([_fetch_file_path, callback]() {
+            detail::load_bytes(_fetch_file_path, callback);
             _fetches_waiting--;
         }).detach();
 #endif
     }
+}
+
+void set_fetch_path(const std::filesystem::path& fetch_path)
+{
+    _fetch_path = fetch_path;
 }
 
 std::size_t get_fetches_waiting()
@@ -154,10 +166,6 @@ namespace detail {
         std::string _path_str = file_path.string();
 
 #if defined(__ANDROID__)
-        const std::string prefix = "assets/";
-        if (_path_str.rfind(prefix, 0) == 0) {
-            _path_str.erase(0, prefix.size());
-        }
         AAssetManager* mgr = lucaria::g_app->activity->assetManager;
         AAsset* asset = AAssetManager_open(mgr, _path_str.c_str(), AASSET_MODE_STREAMING);
         if (!asset) {

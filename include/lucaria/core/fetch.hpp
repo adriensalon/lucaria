@@ -112,6 +112,10 @@ private:
     mutable std::optional<T> _cache;
 };
 
+/// @brief 
+/// @param fetch_path 
+void set_fetch_path(const std::filesystem::path& fetch_path);
+
 /// @brief Gets the current count of fetched objects that still have a std::future waiting
 /// @return the current count
 [[nodiscard]] std::size_t get_fetches_waiting();

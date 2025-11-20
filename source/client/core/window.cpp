@@ -12,8 +12,10 @@
 #include <emscripten.h>
 #include <emscripten/html5.h>
 #elif defined(__ANDROID__)
+#include <android/log.h>
 #include <android_native_app_glue.h>
 #include <backends/imgui_impl_android.h>
+#include <unistd.h>
 #else
 #include <backends/imgui_impl_glfw.h>
 #endif
@@ -302,10 +304,77 @@ namespace {
     static bool g_has_window = false;
     static bool g_engine_initialized = false;
 
+    void redirect_stdio_to_log()
+    {
+        int pfd[2];
+        pipe(pfd);
+
+        dup2(pfd[1], STDOUT_FILENO);
+        dup2(pfd[1], STDERR_FILENO);
+
+        // Background thread sending pipe -> logcat
+        std::thread([=]() {
+            char buf[256];
+            ssize_t r;
+            while ((r = read(pfd[0], buf, sizeof(buf) - 1)) > 0) {
+                buf[r] = 0;
+                __android_log_write(ANDROID_LOG_INFO, "lucaria", buf);
+            }
+        }).detach();
+    }
+
+    int32_t handle_motion_event(AInputEvent* event)
+    {
+        int32_t action = AMotionEvent_getAction(event);
+        int32_t actionMasked = action & AMOTION_EVENT_ACTION_MASK;
+
+        float x = AMotionEvent_getX(event, 0);
+        float y = AMotionEvent_getY(event, 0);
+
+        switch (actionMasked) {
+        case AMOTION_EVENT_ACTION_DOWN:
+            // first finger touches screen
+
+            keys[keyboard_key::a] = true;
+            keys_changed.emplace_back(keyboard_key::a);
+            break;
+
+        case AMOTION_EVENT_ACTION_UP:
+            // last finger lifted
+            break;
+
+        case AMOTION_EVENT_ACTION_MOVE:
+            // touch moved
+            break;
+
+        case AMOTION_EVENT_ACTION_POINTER_DOWN:
+        case AMOTION_EVENT_ACTION_POINTER_UP:
+            // additional finger touched/lifted
+            break;
+        }
+
+        return 1;
+    }
+
     static int32_t android_on_input(android_app* app, AInputEvent* event)
     {
         // TODO: map touch / key events into your input system
         // You can start super simple and just ignore input for now:
+
+        std::cout << "Event^^ \n";
+        is_mouse_locked = true;
+
+        int32_t type = AInputEvent_getType(event);
+        switch (type) {
+        case AINPUT_EVENT_TYPE_KEY:
+            // return handle_key_event(event);
+
+        case AINPUT_EVENT_TYPE_MOTION:
+            return handle_motion_event(event);
+
+        default:
+            return 0; // Not handled
+        }
         return 0;
     }
 
@@ -325,6 +394,20 @@ namespace {
             ImGui_ImplAndroid_Shutdown();
             destroy_opengl();
             destroy_openal();
+            break;
+
+        case APP_CMD_INPUT_CHANGED:
+            std::cout << "APP_CMD_INPUT_CHANGED, inputQueue = " << app->inputQueue << "\n";
+            // if (app->inputQueue) {
+            //     AInputQueue_attachLooper(app->inputQueue,
+            //         app->looper,
+            //         LOOPER_ID_INPUT,
+            //         nullptr,
+            //         app);
+            // } else {
+            //     // On some devices you get this when input is removed
+            //     // If you stored the old queue, you can detach it here.
+            // }
             break;
 
         case APP_CMD_DESTROY:
@@ -650,6 +733,7 @@ namespace detail {
             android_poll_source* source = nullptr;
             while ((ident = ALooper_pollOnce(g_has_window ? 0 : -1, nullptr, &events, (void**)&source)) >= 0) {
                 if (source) {
+                    std::cout << "poll ident=" << ident << " source=" << (void*)source << "\n";
                     source->process(g_app, source);
                 }
                 if (g_app->destroyRequested) {
@@ -807,6 +891,7 @@ int main()
 
 #if defined(__ANDROID__)
     app_dummy();
+    lucaria::redirect_stdio_to_log();
     lucaria::g_app = app;
     lucaria::g_app->onAppCmd = lucaria::android_on_app_cmd;
     lucaria::g_app->onInputEvent = lucaria::android_on_input;
