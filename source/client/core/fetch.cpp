@@ -32,11 +32,11 @@ namespace {
         _fetches_waiting++;
         std::filesystem::path _fetch_file_path = file_path;
 
-#if !LUCARIA_ASSETS_PACKAGE
+#if LUCARIA_ASSETS_FETCH
         _fetch_file_path = _fetch_path ? (_fetch_path.value() / file_path) : file_path;
 #endif
 
-#if defined(__EMSCRIPTEN__) && !LUCARIA_ASSETS_PACKAGE
+#if defined(__EMSCRIPTEN__) && LUCARIA_ASSETS_FETCH
         emscripten_fetch_attr_t _emscripten_fetch_attr;
         emscripten_fetch_attr_init(&_emscripten_fetch_attr);
         std::strcpy(_emscripten_fetch_attr.requestMethod, "GET");
@@ -76,7 +76,7 @@ namespace {
                 _fetches_waiting--; }, _context, 0);
 #endif
 
-#if defined(_WIN32) || defined(ANDROID)
+#if defined(_WIN32) || defined(__ANDROID__)
         std::thread([_fetch_file_path, callback]() {
             detail::load_bytes(_fetch_file_path, callback);
             _fetches_waiting--;
@@ -178,20 +178,19 @@ namespace detail {
         std::string _path_str = file_path.string();
 
 #if defined(__ANDROID__)
-        AAssetManager* mgr = lucaria::g_app->activity->assetManager;
-        AAsset* asset = AAssetManager_open(mgr, _path_str.c_str(), AASSET_MODE_STREAMING);
-        if (!asset) {
+        AAssetManager* _asset_manager = lucaria::g_app->activity->assetManager;
+        AAsset* _asset = AAssetManager_open(_asset_manager, _path_str.c_str(), AASSET_MODE_STREAMING);
+        if (!_asset) {
             LUCARIA_RUNTIME_ERROR("open failed: " + _path_str)
         }
-        const off_t len = AAsset_getLength(asset);
-        std::vector<char> buffer(static_cast<size_t>(len));
-        const int64_t read = AAsset_read(asset, buffer.data(), len);
-        AAsset_close(asset);
-        if (read != len) {
+        const off_t _length = AAsset_getLength(_asset);
+        std::vector<char> buffer(static_cast<size_t>(_length));
+        const int64_t _read = AAsset_read(_asset, buffer.data(), _length);
+        AAsset_close(_asset);
+        if (_read != _length) {
             LUCARIA_RUNTIME_ERROR("read failed: " + _path_str)
         }
         callback(buffer);
-
 #else
         std::ifstream _fstream(file_path, std::ios::binary);
         if (!_fstream) {
@@ -227,7 +226,6 @@ namespace detail {
         bool persist)
     {
         const std::size_t _size = file_paths.size();
-
         if (_size == 0) {
             static const std::vector<std::vector<char>> _empty;
             callback(_empty);
@@ -236,9 +234,7 @@ namespace detail {
 
         std::shared_ptr<std::vector<std::vector<char>>> _shared_slots = std::make_shared<std::vector<std::vector<char>>>(_size);
         std::shared_ptr<std::atomic<std::size_t>> _shared_pending = std::make_shared<std::atomic<std::size_t>>(_size);
-
         for (std::size_t _index = 0; _index < _size; ++_index) {
-
             fetch_bytes_impl(
                 file_paths[_index],
                 [_index, _shared_slots, _shared_pending, callback](std::vector<char> bytes) {

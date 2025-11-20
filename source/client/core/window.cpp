@@ -526,8 +526,9 @@ namespace {
         if (emscripten_webgl_enable_extension(_webgl_context, "WEBGL_compressed_texture_s3tc")) {
             is_s3tc_supported = true;
         }
+#endif
 
-#elif defined(__ANDROID__)
+#if defined(__ANDROID__)
         const EGLint config_attribs[] = {
             EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
             EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
@@ -555,18 +556,17 @@ namespace {
         g_context = eglCreateContext(g_display, config, EGL_NO_CONTEXT, context_attribs);
         eglMakeCurrent(g_display, g_surface, g_surface, g_context);
         g_has_window = true;
+#endif
 
-#elif defined(_WIN32)
+#if defined(_WIN32)
         glm::int32 _found_extensions_count = 0;
         glGetIntegerv(GL_NUM_EXTENSIONS, &_found_extensions_count);
         for (glm::int32 _extension_index = 0; _extension_index < _found_extensions_count; ++_extension_index) {
             const char* _extension_name = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, _extension_index));
-            if (std::string(_extension_name) == "GL_EXT_texture_compression_etc") {
-                is_etc2_supported = true;
-            }
             if (std::string(_extension_name) == "GL_EXT_texture_compression_s3tc") {
                 is_s3tc_supported = true;
             }
+            std::cout << _extension_name << std::endl;
         }
 #endif
     }
@@ -723,7 +723,7 @@ namespace detail {
             android_poll_source* source = nullptr;
             while ((ident = ALooper_pollOnce(g_has_window ? 0 : -1, nullptr, &events, (void**)&source)) >= 0) {
                 if (source) {
-                    std::cout << "poll ident=" << ident << " source=" << (void*)source << "\n";
+                    // std::cout << "poll ident=" << ident << " source=" << (void*)source << "\n";
                     source->process(g_app, source);
                 }
                 if (g_app->destroyRequested) {
@@ -872,23 +872,31 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 int main()
 #endif
 {
+#if defined(__ANDROID__)
+    app_dummy();
+    lucaria::redirect_stdio_to_log();
+#endif
+
     std::cout << "Built engine with generator: " << _TO_STRING(LUCARIA_GENERATOR) << std::endl;
     std::cout << "Built engine with compiler: " << _TO_STRING(LUCARIA_COMPILER) << std::endl;
     std::cout << "Built engine with config: " << _TO_STRING(LUCARIA_CONFIG) << std::endl;
     std::cout << "Built engine with simd: " << _TO_STRING(LUCARIA_SIMD) << std::endl;
-    std::cout << "Built engine with exceptions: " << (LUCARIA_DEBUG ? "ON (Select config other than Debug to disable)" : "OFF (Select Debug config to enable)") << std::endl;
-    std::cout << "Built engine with guizmos: " << (LUCARIA_GUIZMO ? "ON (Select config other than Debug to disable)" : "OFF (Select Debug config to enable)") << std::endl;
-    std::cout << "Built engine with assets packaging: " << (LUCARIA_ASSETS_PACKAGE ? "ON" : "OFF (Set ASSETS_DIR on add_lucaria_game_android or add_lucaria_game_web to enable)") << std::endl;
+    std::cout << "Built engine with exceptions: " << (LUCARIA_DEBUG ? "ON" : "OFF") << std::endl;
+    std::cout << "Built engine with guizmos: " << (LUCARIA_GUIZMO ? "ON" : "OFF") << std::endl;
+    std::cout << "Built engine with assets packaging: " << (LUCARIA_ASSETS_PACKAGE ? "ON" : "OFF") << std::endl;
+#if !LUCARIA_ASSETS_PACKAGE
+    std::cout << "Built engine with assets fetch: " << (LUCARIA_ASSETS_FETCH ? "ON" : "OFF") << std::endl;
+#endif
 
 #if defined(__ANDROID__)
-    app_dummy();
-    lucaria::redirect_stdio_to_log();
     lucaria::g_app = app;
     lucaria::g_app->onAppCmd = lucaria::android_on_app_cmd;
     lucaria::g_app->onInputEvent = lucaria::android_on_input;
     lucaria::is_multitouch_supported = true;
+    lucaria::is_etc2_supported = true;
+#endif
 
-#elif defined(__EMSCRIPTEN__)
+#if defined(__EMSCRIPTEN__)
     lucaria::emscripten_assert(emscripten_set_keypress_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::key_callback));
     lucaria::emscripten_assert(emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::key_callback));
     lucaria::emscripten_assert(emscripten_set_keyup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::key_callback));
@@ -909,8 +917,9 @@ int main()
     lucaria::setup_imgui();
     lucaria::is_audio_locked = lucaria::setup_openal();
     lucaria::is_multitouch_supported = lucaria::navigator_get_multitouch();
+#endif
 
-#elif defined(_WIN32)
+#if defined(_WIN32)
     glfwSetErrorCallback(lucaria::glfw_error_callback);
     if (!glfwInit()) {
         exit(EXIT_FAILURE);
@@ -937,7 +946,8 @@ int main()
 #endif
 
     std::cout << "Running engine with multitouch: " << (lucaria::is_multitouch_supported ? "ON" : "OFF") << std::endl;
-    std::cout << "Running engine with compression: " << (lucaria::is_etc2_supported ? "ETC2" : (lucaria::is_s3tc_supported ? "S3TC" : "NONE")) << std::endl;
+    std::cout << "Running engine with compression: " << (lucaria::is_etc2_supported ? "ETC2" : (lucaria::is_s3tc_supported ? "S3TC" : "OFF")) << std::endl;
+    // audio float32
 
     lucaria_main();
 }
