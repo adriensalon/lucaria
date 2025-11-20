@@ -13,7 +13,6 @@ namespace lucaria {
 /// @param on_update callback to fire on evey frame
 void run(
     std::vector<entt::registry>& scenes,
-    const std::function<void()>& on_start,
     const std::function<void()>& on_update);
 
 }

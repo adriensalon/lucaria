@@ -9,7 +9,5 @@ set(LUCARIA_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}" CACHE PATH "Lucaria binary 
 include("cmake/build_assets.cmake")
 include("cmake/build_game.cmake")
 include("cmake/build_game_android.cmake")
-include("cmake/build_game_linux.cmake")
-include("cmake/build_game_macos.cmake")
 include("cmake/build_game_web.cmake")
 include("cmake/build_game_win32.cmake")

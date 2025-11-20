@@ -67,7 +67,7 @@ namespace detail {
     inline ImGuiContext* global_imgui_screen_context = nullptr;
     inline glm::uint global_imgui_shared_font_texture = 0;
 
-    void run_game(const std::function<void()>& start, const std::function<void()>& update);
+    void run_game(const std::function<void()>& update);
     ImGuiContext* create_shared_context();
     void reupload_shared_font_texture_RGBA32();
 

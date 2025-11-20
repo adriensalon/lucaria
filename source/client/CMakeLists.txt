@@ -22,7 +22,10 @@ set_target_properties(lucaria_client PROPERTIES CXX_STANDARD 17)
 target_compile_definitions(lucaria_client PUBLIC BT_NO_SIMD_OPERATOR_OVERLOADS) # ozz implements them already
 
 if(ANDROID)
-    target_link_libraries(lucaria_client PUBLIC GLESv3 EGL android log)
+    set(NATIVE_APP_GLUE_DIR ${ANDROID_NDK}/sources/android/native_app_glue)
+    add_library(android_native_app_glue STATIC ${NATIVE_APP_GLUE_DIR}/android_native_app_glue.c)
+    target_include_directories(android_native_app_glue PUBLIC ${NATIVE_APP_GLUE_DIR})
+    target_link_libraries(lucaria_client PUBLIC GLESv3 EGL android log android_native_app_glue)
 endif()
 if(ANDROID OR WIN32)
     # target_link_libraries(lucaria_client PUBLIC lucaria_external_alsoft)

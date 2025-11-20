@@ -6,34 +6,13 @@
 #include <lucaria/system/motion.hpp>
 #include <lucaria/system/rendering.hpp>
 
-#define _STRINGIFY(x) #x
-#define _TO_STRING(x) _STRINGIFY(x)
-
 namespace lucaria {
 void run(
     std::vector<entt::registry>& scenes,
-    const std::function<void()>& on_start,
     const std::function<void()>& on_update)
 {
     detail::set_scenes(scenes);
-    detail::run_game(
-
-        // start callback
-        [&]() {
-            on_start();
-
-            std::cout << "Built engine with generator: " << _TO_STRING(LUCARIA_GENERATOR) << std::endl;
-            std::cout << "Built engine with compiler: " << _TO_STRING(LUCARIA_COMPILER) << std::endl;
-            std::cout << "Built engine with config: " << _TO_STRING(LUCARIA_CONFIG) << std::endl;
-            std::cout << "Built engine with simd: " << _TO_STRING(LUCARIA_SIMD) << std::endl;
-            std::cout << "Built engine with exceptions: " << (LUCARIA_DEBUG ? "ON (Select config other than Debug to disable)" : "OFF (Select Debug config to enable)") << std::endl;
-            std::cout << "Built engine with guizmos: " << (LUCARIA_GUIZMO ? "ON (Select config other than Debug to disable)" : "OFF (Select Debug config to enable)") << std::endl;
-            std::cout << "Running engine with multitouch: " << (get_is_multitouch_supported() ? "ON" : "OFF") << std::endl;
-            std::cout << "Running engine with compression: " << (get_is_etc2_supported() ? "ETC2" : (get_is_s3tc_supported() ? "S3TC" : "NONE")) << std::endl;
-        },
-
-        // update callback
-        [&]() {
+    detail::run_game([&]() {
             on_update();
 
             detail::motion_system::advance_controllers();
