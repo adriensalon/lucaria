@@ -15,6 +15,13 @@ target_include_directories(${LUCARIA_TARGET} PRIVATE ${LUCARIA_TARGET_INCLUDES})
 target_compile_definitions(${LUCARIA_TARGET} PRIVATE ${LUCARIA_TARGET_DEFINES})
 target_compile_options(${LUCARIA_TARGET} PRIVATE ${LUCARIA_TARGET_BUILD_ARGS})
 
+# android options
+if(ANDROID)
+    if(LUCARIA_ASSETS_DIR)
+    
+    endif()
+endif()
+
 # emscripten options
 if(EMSCRIPTEN)
     if(NOT LUCARIA_HTML_SHELL)

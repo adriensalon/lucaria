@@ -2,7 +2,9 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
-val targetName = (project.findProperty("targetName") as String?) ?: "Lucaria"
+val assetsDir = project.findProperty("assetsDir") as String?
+val targetName = project.findProperty("targetName") as String? 
+    ?: error("Gradle property 'targetName' must be provided (e.g. -PtargetName=mygame)")
 val gamePackage = "com.lucaria.lib$targetName"
 
 android {
@@ -16,6 +18,12 @@ android {
         versionCode = 1
         versionName = "1.0"
         manifestPlaceholders["NATIVE_TARGET_NAME"] = targetName
+    }
+
+    sourceSets["main"].assets {
+        if (assetsDir != null) {
+            srcDir(assetsDir)
+        }
     }
 
     buildTypes {

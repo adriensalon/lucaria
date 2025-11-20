@@ -63,9 +63,12 @@ struct ImGui_ImplOpenGL3_Data {
 namespace {
 
     static void setup_opengl();
-    static void destroy_opengl();
     static bool setup_openal();
     static void setup_imgui();
+
+    static void destroy_opengl();
+    static void destroy_openal();
+    static void destroy_imgui();
 
 #if defined(__EMSCRIPTEN__) || defined(__ANDROID__)
     static std::unordered_map<std::string, keyboard_key> emscripten_keyboard_mappings = {
@@ -656,7 +659,7 @@ namespace detail {
                 update_loop();
             }
         }
-        
+
 #elif defined(_WIN32)
         while (!glfwWindowShouldClose(glfw_window)) {
             update_loop();
@@ -800,6 +803,7 @@ int main()
     std::cout << "Built engine with guizmos: " << (LUCARIA_GUIZMO ? "ON (Select config other than Debug to disable)" : "OFF (Select Debug config to enable)") << std::endl;
 
 #if defined(__ANDROID__)
+    app_dummy();
     lucaria::g_app = app;
     lucaria::g_app->onAppCmd = lucaria::android_on_app_cmd;
     lucaria::g_app->onInputEvent = lucaria::android_on_input;

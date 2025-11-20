@@ -3,7 +3,7 @@
 
 function(add_lucaria_game_android TARGET)
     set(options)
-    set(one_value_args INSTALL_DIR ANDROID_ABI ANDROID_PLATFORM)
+    set(one_value_args INSTALL_DIR ASSETS_DIR ANDROID_ABI ANDROID_PLATFORM)
     set(multi_value_args SOURCES INCLUDES DEFINES BUILD_ARGS)
     cmake_parse_arguments(PARSE_ARGV 0 LBG "${options}" "${one_value_args}" "${multi_value_args}")
 
@@ -57,6 +57,12 @@ function(add_lucaria_game_android TARGET)
     endif()
 
     # default parameters
+    if(NOT LBG_ASSETS_DIR)
+        set(ANDROID_ASSETS_DIR_ARG "")
+        message(STATUS "No assets provided for Android APK package")
+    else()        
+        set(ANDROID_ASSETS_DIR_ARG "-PassetsDir=${LBG_ASSETS_DIR}")
+    endif()
     if(NOT LBG_ANDROID_ABI)
         set(LBG_ANDROID_ABI "arm64-v8a")
     endif()
@@ -92,7 +98,7 @@ function(add_lucaria_game_android TARGET)
         COMMAND ${CMAKE_COMMAND} -E copy ${GAME_ANDROID_SO} ${ANDROID_JNILIBS_SO}
 
         # pack with gradle
-        COMMAND ${CMAKE_COMMAND} -E chdir ${LUCARIA_SOURCE_DIR}/game/android ${ANDROID_GRADLEW} assembleDebug -PtargetName=${TARGET}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${LUCARIA_SOURCE_DIR}/game/android ${ANDROID_GRADLEW} assembleDebug ${ANDROID_ASSETS_DIR_ARG} -PtargetName=${TARGET}
 
         # copy to build directory
         COMMAND ${CMAKE_COMMAND} -E copy ${ANDROID_APK_DIR}/${ANDROID_APK} ${GAME_ANDROID_OUTPUT_DIR}/${ANDROID_APK}
