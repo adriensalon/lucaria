@@ -62,11 +62,11 @@ struct ImGui_ImplOpenGL3_Data {
 
 namespace {
 
-    static bool setup_platform();
-    static void setup_gles3();
-    static void destroy_gles3();
+    static void setup_opengl();
+    static void destroy_opengl();
     static bool setup_openal();
     static void setup_imgui();
+
 #if defined(__EMSCRIPTEN__) || defined(__ANDROID__)
     static std::unordered_map<std::string, keyboard_key> emscripten_keyboard_mappings = {
         { "a", keyboard_key::a },
@@ -227,13 +227,6 @@ namespace {
     {
         if (!is_audio_locked) {
             is_audio_locked = setup_openal();
-            // if (is_audio_locked) {
-            // TODO execute callbacks
-            // for (const auto& _callback : on_audio_locked_callbacks) {
-            //     _callback();
-            // }
-            // on_audio_locked_callbacks.clear();
-            // }
         }
         if (!is_mouse_locked) {
             emscripten_assert(emscripten_request_pointerlock("#canvas", 1));
@@ -310,35 +303,27 @@ namespace {
         return 0;
     }
 
-
     static void android_on_app_cmd(android_app* app, int32_t cmd)
     {
         switch (cmd) {
         case APP_CMD_INIT_WINDOW:
             if (app->window != nullptr) {
-                android_init_egl(app->window);
-
-                lucaria::setup_gles3();
-
-                // init ImGui Android backend once we have a window
-                ImGui_ImplAndroid_Init(app->window);
-
-                // Only now it's safe to query extensions etc.
-                if (!g_engine_initialized) {
-                    lucaria::setup_imgui();
-                    lucaria::is_audio_locked = lucaria::setup_openal();
-                    g_engine_initialized = true;
-                }
+                lucaria::setup_opengl();
+                lucaria::setup_imgui();
+                lucaria::is_audio_locked = lucaria::setup_openal();
+                g_engine_initialized = true;
             }
             break;
 
         case APP_CMD_TERM_WINDOW:
             ImGui_ImplAndroid_Shutdown();
-            destroy_gles3();
+            destroy_opengl();
+            destroy_openal();
             break;
 
         case APP_CMD_DESTROY:
-            destroy_gles3();
+            destroy_opengl();
+            destroy_openal();
             break;
         }
     }
@@ -440,7 +425,7 @@ namespace {
 #endif
     }
 
-    static void setup_gles3()
+    static void setup_opengl()
     {
 #if defined(__EMSCRIPTEN__)
         EmscriptenWebGLContextAttributes _webgl_attributes;
@@ -486,8 +471,8 @@ namespace {
         eglChooseConfig(g_display, config_attribs, &config, 1, &num_config);
         EGLint format;
         eglGetConfigAttrib(g_display, config, EGL_NATIVE_VISUAL_ID, &format);
-        ANativeWindow_setBuffersGeometry(window, 0, 0, format);
-        g_surface = eglCreateWindowSurface(g_display, config, window, nullptr);
+        ANativeWindow_setBuffersGeometry(g_app->window, 0, 0, format);
+        g_surface = eglCreateWindowSurface(g_display, config, g_app->window, nullptr);
         g_context = eglCreateContext(g_display, config, EGL_NO_CONTEXT, context_attribs);
         eglMakeCurrent(g_display, g_surface, g_surface, g_context);
         g_has_window = true;
@@ -507,7 +492,7 @@ namespace {
 #endif
     }
 
-    static void destroy_gles3()
+    static void destroy_opengl()
     {
 #if defined(__ANDROID__)
         if (g_display != EGL_NO_DISPLAY) {
@@ -578,6 +563,7 @@ namespace {
 
     void update_loop()
     {
+        // get time delta
 #if defined(__EMSCRIPTEN__)
         static glm::float64 _last_render_time = 0;
         const glm::float64 _render_time = emscripten_get_now();
@@ -588,43 +574,55 @@ namespace {
         time_delta_seconds = std::chrono::duration<glm::float64>(_render_time - _last_render_time).count();
 #endif
 
-        int _screen_width, _screen_height;
-#if defined(__EMSCRIPTEN__)
+        // get screen size
+        glm::int32 _screen_width, _screen_height;
+#if defined(__ANDROID__)
+        eglQuerySurface(g_display, g_surface, EGL_WIDTH, &_screen_width);
+        eglQuerySurface(g_display, g_surface, EGL_HEIGHT, &_screen_height);
+#elif defined(__EMSCRIPTEN__)
         _screen_width = canvas_get_width();
         _screen_height = canvas_get_height();
-#elif !defined(__ANDROID__)
+#elif defined(_WIN32)
         glfwGetFramebufferSize(glfw_window, &_screen_width, &_screen_height);
 #endif
-        screen_size = { _screen_width, _screen_height };
+        screen_size = glm::uvec2(_screen_width, _screen_height);
         if (screen_size == glm::uvec2(0)) {
             return;
         }
 
+        // get mouse delta
         static glm::vec2 _last_accum_pos_delta = glm::vec2(0, 0);
         mouse_position_delta = accumulated_mouse_position_delta - _last_accum_pos_delta;
         _last_accum_pos_delta = accumulated_mouse_position_delta;
         _last_render_time = _render_time;
 
-#if defined(_WIN32)
-        ImGui_ImplGlfw_NewFrame();
-#elif defined(__ANDROID__)
+        // imgui platform backend new frame
+#if defined(__ANDROID__)
         ImGui_ImplAndroid_NewFrame();
+#elif defined(_WIN32)
+        ImGui_ImplGlfw_NewFrame();
 #endif
+
+        // update
         ImGui::GetIO().DisplaySize = ImVec2(static_cast<glm::float32>(screen_size.x), static_cast<glm::float32>(screen_size.y));
         update_mouse_lock();
         update_callback();
         keys_changed.clear();
         buttons_changed.clear();
 
+        // swap buffers
+#if defined(__ANDROID__)
+        eglSwapBuffers(g_display, g_surface);
+#elif defined(_WIN32)
+        glfwSwapBuffers(glfw_window);
+        glfwPollEvents();
+#endif
+
+        // assert
         LUCARIA_RUNTIME_OPENGL_ASSERT
         if (is_audio_locked) {
             LUCARIA_RUNTIME_OPENAL_ASSERT
         }
-
-#if !defined(__EMSCRIPTEN__) && !defined(__ANDROID__)
-        glfwSwapBuffers(glfw_window);
-        glfwPollEvents();
-#endif
     }
 
 }
@@ -634,6 +632,7 @@ namespace detail {
     void run_game(const std::function<void()>& update)
     {
         update_callback = update;
+
 #if defined(__EMSCRIPTEN__)
         emscripten_set_main_loop(update_loop, 0, EM_TRUE);
         emscripten_set_main_loop_timing(EM_TIMING_RAF, 1);
@@ -648,15 +647,16 @@ namespace detail {
                     source->process(g_app, source);
                 }
                 if (g_app->destroyRequested) {
-                    android_terminate_egl();
+                    destroy_opengl();
+                    destroy_openal();
                     return;
                 }
             }
-            if (g_has_window && g_surface != EGL_NO_SURFACE) {
+            if (g_engine_initialized && g_has_window && g_surface != EGL_NO_SURFACE) {
                 update_loop();
-                eglSwapBuffers(g_display, g_surface);
             }
         }
+        
 #elif defined(_WIN32)
         while (!glfwWindowShouldClose(glfw_window)) {
             update_loop();
@@ -676,7 +676,7 @@ namespace detail {
 #if defined(__ANDROID__)
         static bool _must_install_callbacks = true;
         if (_must_install_callbacks) {
-            ImGui_ImplAndroid_Init(app->window);
+            ImGui_ImplAndroid_Init(g_app->window);
             _must_install_callbacks = false;
         }
 
@@ -806,26 +806,26 @@ int main()
     lucaria::is_multitouch_supported = true;
 
 #elif defined(__EMSCRIPTEN__)
-    emscripten_assert(emscripten_set_keypress_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::key_callback));
-    emscripten_assert(emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::key_callback));
-    emscripten_assert(emscripten_set_keyup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::key_callback));
-    emscripten_assert(emscripten_set_click_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
-    emscripten_assert(emscripten_set_mousedown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
-    emscripten_assert(emscripten_set_mouseup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
-    emscripten_assert(emscripten_set_dblclick_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
-    emscripten_assert(emscripten_set_mousemove_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
-    emscripten_assert(emscripten_set_mouseenter_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
-    emscripten_assert(emscripten_set_mouseleave_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
-    emscripten_assert(emscripten_set_mouseover_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
-    emscripten_assert(emscripten_set_mouseout_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
-    emscripten_assert(emscripten_set_touchstart_callback("#canvas", 0, 1, lucaria::touch_callback));
-    emscripten_assert(emscripten_set_touchend_callback("#canvas", 0, 1, lucaria::touch_callback));
-    emscripten_assert(emscripten_set_touchmove_callback("#canvas", 0, 1, lucaria::touch_callback));
-    emscripten_assert(emscripten_set_touchcancel_callback("#canvas", 0, 1, lucaria::touch_callback)); // EMSCRIPTEN_EVENT_TARGET_WINDOW doesnt seem to work on safari
-    lucaria::setup_gles3();
+    lucaria::emscripten_assert(emscripten_set_keypress_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::key_callback));
+    lucaria::emscripten_assert(emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::key_callback));
+    lucaria::emscripten_assert(emscripten_set_keyup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::key_callback));
+    lucaria::emscripten_assert(emscripten_set_click_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
+    lucaria::emscripten_assert(emscripten_set_mousedown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
+    lucaria::emscripten_assert(emscripten_set_mouseup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
+    lucaria::emscripten_assert(emscripten_set_dblclick_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
+    lucaria::emscripten_assert(emscripten_set_mousemove_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
+    lucaria::emscripten_assert(emscripten_set_mouseenter_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
+    lucaria::emscripten_assert(emscripten_set_mouseleave_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
+    lucaria::emscripten_assert(emscripten_set_mouseover_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
+    lucaria::emscripten_assert(emscripten_set_mouseout_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
+    lucaria::emscripten_assert(emscripten_set_touchstart_callback("#canvas", 0, 1, lucaria::touch_callback));
+    lucaria::emscripten_assert(emscripten_set_touchend_callback("#canvas", 0, 1, lucaria::touch_callback));
+    lucaria::emscripten_assert(emscripten_set_touchmove_callback("#canvas", 0, 1, lucaria::touch_callback));
+    lucaria::emscripten_assert(emscripten_set_touchcancel_callback("#canvas", 0, 1, lucaria::touch_callback)); // EMSCRIPTEN_EVENT_TARGET_WINDOW doesnt seem to work on safari
+    lucaria::setup_opengl();
     lucaria::setup_imgui();
     lucaria::is_audio_locked = lucaria::setup_openal();
-    lucaria::is_multitouch_supported = navigator_get_multitouch();
+    lucaria::is_multitouch_supported = lucaria::navigator_get_multitouch();
 
 #elif defined(_WIN32)
     glfwSetErrorCallback(lucaria::glfw_error_callback);
@@ -847,7 +847,7 @@ int main()
     glfwSetWindowFocusCallback(lucaria::glfw_window, lucaria::glfw_window_focus_callback);
     gladLoadGL(glfwGetProcAddress);
     glfwSwapInterval(1);
-    lucaria::setup_gles3();
+    lucaria::setup_opengl();
     lucaria::setup_imgui();
     lucaria::is_audio_locked = lucaria::setup_openal();
     lucaria::is_multitouch_supported = false;
