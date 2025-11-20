@@ -14,7 +14,7 @@ target_compile_options(${LUCARIA_TARGET} PRIVATE ${LUCARIA_TARGET_BUILD_ARGS})
 # emscripten options
 if(EMSCRIPTEN)
     if(NOT LUCARIA_HTML_SHELL)
-        set(LUCARIA_HTML_SHELL "${CMAKE_CURRENT_LIST_DIR}/shell.html")
+        set(LUCARIA_HTML_SHELL "${CMAKE_CURRENT_LIST_DIR}/web/shell.html")
     endif()
 
     set_target_properties(${LUCARIA_TARGET} PROPERTIES SUFFIX ".html")
