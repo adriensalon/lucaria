@@ -77,8 +77,10 @@ function(add_lucaria_game_android TARGET)
     set(GAME_ANDROID_SO "${GAME_ANDROID_OUTPUT_DIR}/lib${TARGET}.so")
     set(ANDROID_JNILIBS_DIR "${LUCARIA_SOURCE_DIR}/game/android/src/main/jniLibs/${LBG_ANDROID_ABI}")
     set(ANDROID_JNILIBS_SO "${ANDROID_JNILIBS_DIR}/lib${TARGET}.so")
-    set(ANDROID_APK "${TARGET}-debug.apk")
-    set(ANDROID_APK_DIR "${LUCARIA_SOURCE_DIR}/game/android/build/outputs/apk/debug")
+    set(ANDROID_APK_SUFFIX "$<IF:$<CONFIG:Debug>,debug,release>")
+    set(ANDROID_APK_BASENAME "$<IF:$<CONFIG:Debug>,debug,release-unsigned>")
+    set(ANDROID_APK_DIR "${LUCARIA_SOURCE_DIR}/game/android/build/outputs/apk/${ANDROID_APK_SUFFIX}")
+    set(ANDROID_APK "${TARGET}-${ANDROID_APK_BASENAME}.apk")
 
     lucaria_build_game(
         "android"
@@ -101,7 +103,7 @@ function(add_lucaria_game_android TARGET)
         COMMAND ${CMAKE_COMMAND} -E copy ${GAME_ANDROID_SO} ${ANDROID_JNILIBS_SO}
 
         # pack with gradle
-        COMMAND ${CMAKE_COMMAND} -E chdir ${LUCARIA_SOURCE_DIR}/game/android ${ANDROID_GRADLEW} assembleDebug ${ANDROID_ASSETS_DIR_ARG} -PtargetName=${TARGET}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${LUCARIA_SOURCE_DIR}/game/android ${ANDROID_GRADLEW} assemble$<IF:$<CONFIG:Debug>,Debug,Release> ${ANDROID_ASSETS_DIR_ARG} -PtargetName=${TARGET}
 
         # copy to build directory
         COMMAND ${CMAKE_COMMAND} -E copy ${ANDROID_APK_DIR}/${ANDROID_APK} ${GAME_ANDROID_OUTPUT_DIR}/${ANDROID_APK}

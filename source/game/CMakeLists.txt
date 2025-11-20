@@ -55,6 +55,7 @@ else()
 endif()
 
 # lto optimization
+cmake_policy(SET CMP0069 NEW)
 function(enable_ipo_recursive TARGET)
     if(NOT TARGET ${TARGET})
         return()
