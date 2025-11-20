@@ -6,6 +6,12 @@
 #include <functional>
 #include <unordered_map>
 
+/// @brief 
+/// @param argc 
+/// @param argv 
+/// @return 
+int lucaria_main(int argc = 0, char** argv = nullptr);
+
 namespace lucaria {
 
 // clang-format off

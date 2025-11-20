@@ -861,7 +861,7 @@ bool get_is_mouse_locked()
 }
 }
 
-extern int lucaria_main();
+extern int lucaria_main(int argc, char** argv);
 
 #if defined(__ANDROID__)
 extern "C" void android_main(struct android_app* app)
@@ -869,7 +869,7 @@ extern "C" void android_main(struct android_app* app)
 #include <windows.h>
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 #else
-int main()
+int main(int argc, char** argv)
 #endif
 {
 #if defined(__ANDROID__)
@@ -949,5 +949,11 @@ int main()
     std::cout << "Running engine with compression: " << (lucaria::is_etc2_supported ? "ETC2" : (lucaria::is_s3tc_supported ? "S3TC" : "OFF")) << std::endl;
     // audio float32
 
-    lucaria_main();
+#if defined(__ANDROID__)
+    lucaria_main(0, nullptr);
+#elif defined(_WIN32)
+    lucaria_main(__argc, __argv);
+#else
+    lucaria_main(argc, argv);
+#endif
 }
