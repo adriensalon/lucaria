@@ -9,6 +9,15 @@
 
 #include <lucaria/core/fetch.hpp>
 
+#if defined(__ANDROID__)
+#include <android/asset_manager.h>
+#include <android_native_app_glue.h>
+
+namespace lucaria {
+extern android_app* g_app; // declared in your window.cpp / main.cpp
+}
+#endif
+
 namespace lucaria {
 namespace {
 
@@ -142,22 +151,45 @@ namespace detail {
         const std::filesystem::path& file_path,
         const std::function<void(const std::vector<char>&)>& callback)
     {
+        std::string _path_str = file_path.string();
+
+#if defined(__ANDROID__)
+        const std::string prefix = "assets/";
+        if (_path_str.rfind(prefix, 0) == 0) {
+            _path_str.erase(0, prefix.size());
+        }
+        AAssetManager* mgr = lucaria::g_app->activity->assetManager;
+        AAsset* asset = AAssetManager_open(mgr, _path_str.c_str(), AASSET_MODE_STREAMING);
+        if (!asset) {
+            LUCARIA_RUNTIME_ERROR("open failed: " + _path_str)
+        }
+        const off_t len = AAsset_getLength(asset);
+        std::vector<char> buffer(static_cast<size_t>(len));
+        const int64_t read = AAsset_read(asset, buffer.data(), len);
+        AAsset_close(asset);
+        if (read != len) {
+            LUCARIA_RUNTIME_ERROR("read failed: " + _path_str)
+        }
+        callback(buffer);
+
+#else
         std::ifstream _fstream(file_path, std::ios::binary);
         if (!_fstream) {
-            LUCARIA_RUNTIME_ERROR("open failed: " + file_path.string())
+            LUCARIA_RUNTIME_ERROR("open failed: " + _path_str)
         }
         _fstream.seekg(0, std::ios::end);
         const std::streamoff _size = _fstream.tellg();
         if (_size < 0) {
-            LUCARIA_RUNTIME_ERROR("tellg failed: " + file_path.string())
+            LUCARIA_RUNTIME_ERROR("tellg failed: " + _path_str)
         }
         std::vector<char> _bytes(static_cast<std::size_t>(_size));
         _fstream.seekg(0, std::ios::beg);
         _fstream.read(_bytes.data(), _bytes.size());
         if (!_fstream) {
-            LUCARIA_RUNTIME_ERROR("read failed: " + file_path.string())
+            LUCARIA_RUNTIME_ERROR("read failed: " + _path_str)
         }
         callback(std::move(_bytes));
+#endif
     }
 
     void fetch_bytes(const std::filesystem::path& file_path,

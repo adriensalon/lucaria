@@ -60,6 +60,10 @@ struct ImGui_ImplOpenGL3_Data {
     ImGui_ImplOpenGL3_Data() { memset((void*)this, 0, sizeof(*this)); }
 };
 
+#if defined(__ANDROID__)
+android_app* g_app = nullptr;
+#endif
+
 namespace {
 
     static void setup_opengl();
@@ -292,7 +296,6 @@ namespace {
 #endif
 
 #if defined(__ANDROID__)
-    static android_app* g_app = nullptr;
     static EGLDisplay g_display = EGL_NO_DISPLAY;
     static EGLSurface g_surface = EGL_NO_SURFACE;
     static EGLContext g_context = EGL_NO_CONTEXT;
