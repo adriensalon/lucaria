@@ -32,11 +32,11 @@ namespace {
         _fetches_waiting++;
         std::filesystem::path _fetch_file_path = file_path;
 
-#if LUCARIA_ASSETS_FETCH
+#if !LUCARIA_ASSETS_PACKAGE
         _fetch_file_path = _fetch_path ? (_fetch_path.value() / file_path) : file_path;
 #endif
 
-#if defined(__EMSCRIPTEN__) && LUCARIA_ASSETS_FETCH
+#if defined(__EMSCRIPTEN__) && !LUCARIA_ASSETS_PACKAGE
         emscripten_fetch_attr_t _emscripten_fetch_attr;
         emscripten_fetch_attr_init(&_emscripten_fetch_attr);
         std::strcpy(_emscripten_fetch_attr.requestMethod, "GET");
