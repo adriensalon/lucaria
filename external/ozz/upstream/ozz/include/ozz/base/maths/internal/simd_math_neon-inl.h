@@ -155,7 +155,7 @@ OZZ_INLINE SimdFloat4 Load3PtrU(const float* _f) {
 }
 
 OZZ_INLINE SimdFloat4 FromInt(_SimdInt4 _i) {
-  return vreinterpretq_f32_s32(_i);
+  return vcvtq_f32_s32(_i);
 }
 
 }  // namespace simd_float4
