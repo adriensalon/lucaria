@@ -884,9 +884,6 @@ int main(int argc, char** argv)
     std::cout << "Built engine with exceptions: " << (LUCARIA_DEBUG ? "ON" : "OFF") << std::endl;
     std::cout << "Built engine with guizmos: " << (LUCARIA_GUIZMO ? "ON" : "OFF") << std::endl;
     std::cout << "Built engine with assets packaging: " << (LUCARIA_ASSETS_PACKAGE ? "ON" : "OFF") << std::endl;
-#if !LUCARIA_ASSETS_PACKAGE
-    std::cout << "Built engine with assets fetch: " << (LUCARIA_ASSETS_FETCH ? "ON" : "OFF") << std::endl;
-#endif
 
 #if defined(__ANDROID__)
     lucaria::g_app = app;
