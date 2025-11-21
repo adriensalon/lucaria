@@ -1288,6 +1288,8 @@ OZZ_INLINE SimdFloat4 HalfToFloat(_SimdInt4 _h);
 
 #if defined(OZZ_SIMD_SSEx)
 #include "ozz/base/maths/internal/simd_math_sse-inl.h"
+#elif defined(OZZ_SIMD_ARM_NEON)
+#include "ozz/base/maths/internal/simd_math_neon-inl.h"
 #elif defined(OZZ_SIMD_REF)
 #include "ozz/base/maths/internal/simd_math_ref-inl.h"
 #else

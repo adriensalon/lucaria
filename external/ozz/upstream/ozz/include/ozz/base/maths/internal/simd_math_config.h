@@ -111,6 +111,27 @@ typedef __m128i SimdInt4;
 
 // Argument type for Int4.
 typedef const __m128i _SimdInt4;
+
+}  // namespace math
+}  // namespace ozz
+
+#elif defined(OZZ_SIMD_ARM_NEON)
+
+namespace ozz {
+namespace math {
+
+// Vector of four floating point values.
+typedef float32x4_t SimdFloat4;
+
+// Argument type for Float4.
+typedef const float32x4_t _SimdFloat4;
+
+// Vector of four integer values.
+typedef int32x4_t SimdInt4;
+
+// Argument type for Int4.
+typedef const int32x4_t _SimdInt4;
+
 }  // namespace math
 }  // namespace ozz
 

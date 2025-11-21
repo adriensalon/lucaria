@@ -18,6 +18,8 @@ target_include_directories(lucaria_external_ozz PUBLIC "upstream/ozz/include")
 # simd config
 if(EMSCRIPTEN)
     target_compile_options(lucaria_external_ozz PUBLIC -msimd128 -msse2)
+elseif(ANDROID)
+    target_compile_definitions(lucaria_external_ozz PUBLIC __ARM_NEON)
 elseif(WIN32)
     if(MSVC)
         target_compile_definitions(lucaria_external_ozz PUBLIC __SSE4_1__=1)
@@ -29,7 +31,7 @@ endif()
 if(MSVC)
     target_compile_options(lucaria_external_ozz PRIVATE /wd4996)
 else()
-    target_compile_options(lucaria_external_ozz PRIVATE "-Wno-#pragma-messages")
+    # target_compile_options(lucaria_external_ozz PRIVATE "-Wno-#pragma-messages")
     
 endif()
 
