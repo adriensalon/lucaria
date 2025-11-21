@@ -29,6 +29,7 @@
 
 #include <lucaria/component/animator.hpp>
 #include <lucaria/component/interface.hpp>
+#include <lucaria/component/material.hpp>
 #include <lucaria/component/model.hpp>
 #include <lucaria/component/rigidbody.hpp>
 #include <lucaria/component/speaker.hpp>

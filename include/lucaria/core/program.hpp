@@ -33,6 +33,12 @@ struct program {
     
     /// @brief Uses a mesh attribute for draw calls
     /// @param name source name of the attribute
+    /// @param from fetched mesh to bind from 
+    /// @param attribute attribute type to bind
+    void bind_attribute(const std::string& name, const fetched<mesh>& from, const mesh_attribute attribute);
+    
+    /// @brief Uses a mesh attribute for draw calls
+    /// @param name source name of the attribute
     /// @param from viewport to bind from 
     /// @param attribute attribute type to bind
     void bind_attribute(const std::string& name, const viewport& from, const mesh_attribute attribute);

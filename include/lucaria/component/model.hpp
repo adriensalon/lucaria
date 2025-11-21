@@ -57,6 +57,65 @@ private:
     friend struct detail::rendering_system;
 };
 
+///
+/// NEXT
+///
+
+void set_lod_scale(const glm::float32 scale);
+
+// struct model_component {
+//     model_component() = default;
+//     model_component(const model_component& other) = delete;
+//     model_component& operator=(const model_component& other) = delete;
+//     model_component(model_component&& other) = default;
+//     model_component& operator=(model_component&& other) = default;
+
+//     model_component& use_mesh(mesh& from);
+//     model_component& use_mesh(fetched<mesh>& from);
+    
+// private:
+//     detail::fetched_container<mesh> _mesh = {};
+//     friend struct detail::motion_system;
+//     friend struct detail::rendering_system;
+// };
+
+struct lod_model_component {
+    lod_model_component() = default;
+    lod_model_component(const lod_model_component& other) = delete;
+    lod_model_component& operator=(const lod_model_component& other) = delete;
+    lod_model_component(lod_model_component&& other) = default;
+    lod_model_component& operator=(lod_model_component&& other) = default;
+
+    lod_model_component& use_mesh(mesh& from, const glm::float32 minimum_distance, const glm::float32 crossfade_distance);
+    lod_model_component& use_mesh(fetched<mesh>& from, const glm::float32 minimum_distance, const glm::float32 crossfade_distance);
+
+private:
+    std::vector<detail::fetched_container<mesh>> _meshes = {};
+    std::vector<glm::float32> _minimum_distances = {};
+    std::vector<glm::float32> _crossfade_distances = {};
+    friend struct detail::motion_system;
+    friend struct detail::rendering_system;
+};
+
+struct instanced_model_component {
+    instanced_model_component() = default;
+    instanced_model_component(const instanced_model_component& other) = delete;
+    instanced_model_component& operator=(const instanced_model_component& other) = delete;
+    instanced_model_component(instanced_model_component&& other) = default;
+    instanced_model_component& operator=(instanced_model_component&& other) = default;
+
+    instanced_model_component& use_mesh(mesh& from);
+    instanced_model_component& use_mesh(fetched<mesh>& from);
+
+    instanced_model_component& set_relative_transforms(std::vector<glm::mat4>&& from);
+
+private:
+    detail::fetched_container<mesh> _meshe = {};
+    std::vector<glm::mat4> _relative_transforms = {};
+    friend struct detail::motion_system;
+    friend struct detail::rendering_system;
+};
+
 // constexpr std::size_t pbr_color_channels = 4;
 // constexpr std::size_t pbr_normal_channels = 3;
 // constexpr std::size_t pbr_occlusion_channels = 1;
@@ -91,29 +150,6 @@ private:
 //     std::optional<std::reference_wrapper<mesh>> _mesh = std::nullopt;
 //     friend struct motion_system;
 //     friend struct rendering_system;
-// };
-
-// template <>
-// struct model_component<model_type::custom> {
-//     model_component() = default;
-//     model_component(const model_component& other) = delete;
-//     model_component& operator=(const model_component& other) = delete;
-//     model_component(model_component&& other) = default;
-//     model_component& operator=(model_component&& other) = default;
-
-//     model_component& use_program(program& from);
-//     model_component& use_program(fetched<program>& from);
-//     model_component& use_mesh(const std::vector<std::pair<std::string, mesh_attribute>>& named_attributes, mesh& from);
-//     model_component& use_mesh(const std::vector<std::pair<std::string, mesh_attribute>>& named_attributes, fetched<mesh>& from);
-//     model_component& use_cubemap(const std::string& name, cubemap& from, const glm::uint slot);
-//     model_component& use_cubemap(const std::string& name, fetched<cubemap>& from, const glm::uint slot);
-//     model_component& use_texture(const std::string& name, texture& from, const glm::uint slot);
-//     model_component& use_texture(const std::string& name, fetched<texture>& from, const glm::uint slot);
-
-// private:
-//     // TODO
-//     friend struct detail::motion_system;
-//     friend struct detail::rendering_system;
 // };
 
 using blockout_model_component = model_component<model_type::blockout>;
