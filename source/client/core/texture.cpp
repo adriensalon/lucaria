@@ -2,11 +2,26 @@
 #include <cereal/archives/portable_binary.hpp>
 
 #include <lucaria/core/error.hpp>
-#include <lucaria/core/opengl.hpp>
 #include <lucaria/core/texture.hpp>
-#include <lucaria/core/window.hpp>
+
+#if LUCARIA_PLATFORM_ANDROID
+#include <EGL/egl.h>
+#include <GLES3/gl3.h>
+#elif LUCARIA_PLATFORM_WEB
+#include <GLES3/gl3.h>
+#elif LUCARIA_PLATFORM_WIN32
+#include <glad/gl.h>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+#endif
 
 namespace lucaria {
+
+extern bool _is_etc2_supported;
+extern bool _is_s3tc_supported;
+extern const std::filesystem::path& _resolve_image_path(const std::filesystem::path& data_path, const std::optional<std::filesystem::path>& etc2_path, const std::optional<std::filesystem::path>& s3tc_path);
+extern void _fetch_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback, bool persist);
+
 namespace {
 
     // constexpr static GLenum COMPRESSED_R11_EAC = 0x9270;
@@ -66,18 +81,18 @@ texture::texture(const image& from)
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     switch (from.data.channels) {
     case 3:
-        if (from.data.is_compressed_etc && get_is_etc2_supported()) {
+        if (from.data.is_compressed_etc && _is_s3tc_supported) {
             glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB8_ETC2, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
-        } else if (from.data.is_compressed_s3tc && get_is_s3tc_supported()) {
+        } else if (from.data.is_compressed_s3tc && _is_s3tc_supported) {
             glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
         } else {
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, from.data.width, from.data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
         }
         break;
     case 4:
-        if (from.data.is_compressed_etc && get_is_etc2_supported()) {
+        if (from.data.is_compressed_etc && _is_s3tc_supported) {
             glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA8_ETC2_EAC, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
-        } else if (from.data.is_compressed_s3tc && get_is_s3tc_supported()) {
+        } else if (from.data.is_compressed_s3tc && _is_s3tc_supported) {
             glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
         } else {
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, from.data.width, from.data.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);
@@ -88,7 +103,7 @@ texture::texture(const image& from)
         break;
     }
     LUCARIA_RUNTIME_OPENGL_ASSERT
-#if LUCARIA_DEBUG
+#if LUCARIA_CONFIG_DEBUG
     std::cout << "Created TEXTURE_2D buffer of size " << from.data.width << "x" << from.data.height << " with id " << _handle << std::endl;
 #endif
     _is_owning = true;
@@ -105,7 +120,7 @@ texture::texture(const glm::uvec2 size)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
 
-#if LUCARIA_DEBUG
+#if LUCARIA_CONFIG_DEBUG
     std::cout << "Created EMPTY TEXTURE_2D buffer of size " << size.x << "x" << size.y << " with id " << _handle << std::endl;
 #endif
 
@@ -136,12 +151,12 @@ fetched<texture> fetch_texture(
     const std::optional<std::filesystem::path>& etc2_path,
     const std::optional<std::filesystem::path>& s3tc_path)
 {
-    const std::filesystem::path& _image_path = detail::resolve_image_path(data_path, etc2_path, s3tc_path);
+    const std::filesystem::path& _image_path = _resolve_image_path(data_path, etc2_path, s3tc_path);
     std::shared_ptr<std::promise<image>> _image_promise = std::make_shared<std::promise<image>>();
-    detail::fetch_bytes(_image_path, [_image_promise](const std::vector<char>& _data_bytes) {
+    _fetch_bytes(_image_path, [_image_promise](const std::vector<char>& _data_bytes) {
         image _image(_data_bytes);
         _image_promise->set_value(std::move(_image));
-    });
+    }, true);
 
     // create texture on main thread
     return fetched<texture>(_image_promise->get_future(), [](const image& _from) {

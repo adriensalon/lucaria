@@ -58,11 +58,11 @@ function(add_lucaria_game_android TARGET)
 
     # default parameters
     if(NOT LBG_ASSETS_DIR)
-        set(LUCARIA_ASSETS_PACKAGE OFF)
+        set(LUCARIA_PACKAGE OFF)
         set(ANDROID_ASSETS_DIR_ARG "")
         message(STATUS "No assets provided for Android APK package")
     else()        
-        set(LUCARIA_ASSETS_PACKAGE ON)
+        set(LUCARIA_PACKAGE ON)
         set(ANDROID_ASSETS_DIR_ARG "-PassetsDir=${LBG_ASSETS_DIR}")
         message(STATUS "Found Android APK assets at ${LBG_ASSETS_DIR}")
     endif()
@@ -92,7 +92,7 @@ function(add_lucaria_game_android TARGET)
         "${LBG_INCLUDES}"
         "${LBG_DEFINES}"
         "${LBG_BUILD_ARGS}"
-        "-DLUCARIA_ASSETS_PACKAGE=${LUCARIA_ASSETS_PACKAGE};-DANDROID_ABI=${LBG_ANDROID_ABI};-DANDROID_PLATFORM=${LBG_ANDROID_PLATFORM}")
+        "-DLUCARIA_PACKAGE=${LUCARIA_PACKAGE};-DANDROID_ABI=${LBG_ANDROID_ABI};-DANDROID_PLATFORM=${LBG_ANDROID_PLATFORM}")
 
     add_custom_command(
         TARGET ${TARGET}_android

@@ -2,8 +2,8 @@
 
 #include <memory>
 
-#include <glm/glm.hpp>
 #include <btBulletDynamicsCommon.h>
+#include <glm/glm.hpp>
 
 #include <lucaria/core/geometry.hpp>
 
@@ -18,7 +18,7 @@ enum struct shape_algorithm {
 
 /// @brief Represents runtime geometry meant for collision detection on the device
 struct shape {
-    LUCARIA_DELETE_DEFAULT_SEMANTICS(shape)
+    LUCARIA_DELETE_DEFAULT(shape)
     shape(const shape& other) = delete;
     shape& operator=(const shape& other) = delete;
     shape(shape&& other) = default;
@@ -37,18 +37,36 @@ struct shape {
     /// @brief Returns a handle to the underlying implementation
     /// @return the underlying implementation handle
     [[nodiscard]] btCollisionShape* get_handle();
-    
+
     /// @brief Returns a handle to the underlying implementation
     /// @return the underlying implementation handle
     [[nodiscard]] const btCollisionShape* get_handle() const;
-    
+
     /// @brief Returns a matrix that translates +Y half extent
     /// @return the translation matrix
     [[nodiscard]] glm::mat4 get_feet_to_center() const;
-    
+
     /// @brief Returns a matrix that translates -Y half extent
     /// @return the translation matrix
     [[nodiscard]] glm::mat4 get_center_to_feet() const;
+    
+    /// @brief Creates a simple shape from box half extents
+    /// @param half_extents half of the shape size in every dimension
+    [[nodiscard]] static shape create_box(const glm::vec3& half_extents);
+
+    /// @brief Creates a simple shape from sphere radius
+    /// @param radius radius of the shape size in every dimension
+    [[nodiscard]] static shape create_sphere(const glm::float32 radius);
+
+    /// @brief Creates a simple shape from capsule radius and height
+    /// @param radius radius of the shape size in X and Z dimensions
+    /// @param height height of the shape in Y dimension
+    [[nodiscard]] static shape create_capsule(const glm::float32 radius, const glm::float32 height);
+
+    /// @brief Creates a simple shape from cone radius and height
+    /// @param radius radius of the shape base in X and Z dimensions
+    /// @param height height of the shape in Y dimension
+    [[nodiscard]] static shape create_cone(const glm::float32 radius, const glm::float32 height);
 
 private:
     std::unique_ptr<btCollisionShape> _handle;
@@ -57,24 +75,6 @@ private:
     glm::mat4 _center_to_feet;
     glm::float32 _zdistance;
 };
-
-/// @brief Creates a simple shape from box half extents
-/// @param half_extents half of the shape size in every dimension
-[[nodiscard]] shape create_box_shape(const glm::vec3& half_extents);
-
-/// @brief Creates a simple shape from sphere radius
-/// @param radius radius of the shape size in every dimension
-[[nodiscard]] shape create_sphere_shape(const glm::float32 radius);
-
-/// @brief Creates a simple shape from capsule radius and height
-/// @param radius radius of the shape size in X and Z dimensions
-/// @param height height of the shape in Y dimension
-[[nodiscard]] shape create_capsule_shape(const glm::float32 radius, const glm::float32 height);
-
-/// @brief Creates a simple shape from cone radius and height
-/// @param radius radius of the shape base in X and Z dimensions
-/// @param height height of the shape in Y dimension
-[[nodiscard]] shape create_cone_shape(const glm::float32 radius, const glm::float32 height);
 
 /// @brief Loads geometry from a file asynchronously and uploads directly to the device
 /// @param data_path path to load from

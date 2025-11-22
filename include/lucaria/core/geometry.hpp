@@ -2,13 +2,13 @@
 
 #include <lucaria/common/geometry_data.hpp>
 #include <lucaria/core/fetch.hpp>
-#include <lucaria/core/semantics.hpp>
+#include <lucaria/core/platform.hpp>
 
 namespace lucaria {
 
 /// @brief Represents any geometry on the host
 struct geometry {
-    LUCARIA_DELETE_DEFAULT_SEMANTICS(geometry)
+    LUCARIA_DELETE_DEFAULT(geometry)
     geometry(const geometry& other) = delete;
     geometry& operator=(const geometry& other) = delete;
     geometry(geometry&& other) = default;

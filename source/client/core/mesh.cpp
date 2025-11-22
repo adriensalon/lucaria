@@ -4,9 +4,23 @@
 #include <cereal/archives/portable_binary.hpp>
 
 #include <lucaria/core/mesh.hpp>
-#include <lucaria/core/opengl.hpp>
+
+#if LUCARIA_PLATFORM_ANDROID
+#include <EGL/egl.h>
+#include <GLES3/gl3.h>
+#elif LUCARIA_PLATFORM_WEB
+#include <GLES3/gl3.h>
+#elif LUCARIA_PLATFORM_WIN32
+#include <glad/gl.h>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+#endif
 
 namespace lucaria {
+
+extern void _load_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback);
+extern void _fetch_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback, bool persist);
+
 namespace {
 
     [[nodiscard]] static glm::uint create_vertex_array()
@@ -24,7 +38,7 @@ namespace {
         glGenBuffers(1, &_attribute_id);
         glBindBuffer(GL_ARRAY_BUFFER, _attribute_id);
         glBufferData(GL_ARRAY_BUFFER, 2 * sizeof(glm::float32) * attribute.size(), _attribute_ptr, GL_STATIC_DRAW);
-#if LUCARIA_DEBUG
+#if LUCARIA_CONFIG_DEBUG
         std::cout << "Created VEC2 ARRAY_BUFFER buffer of size " << attribute.size()
                   << " with id " << _attribute_id << std::endl;
 #endif
@@ -38,7 +52,7 @@ namespace {
         glGenBuffers(1, &_attribute_id);
         glBindBuffer(GL_ARRAY_BUFFER, _attribute_id);
         glBufferData(GL_ARRAY_BUFFER, 3 * sizeof(glm::float32) * attribute.size(), _attribute_ptr, GL_STATIC_DRAW);
-#if LUCARIA_DEBUG
+#if LUCARIA_CONFIG_DEBUG
         std::cout << "Created VEC3 ARRAY_BUFFER buffer of size " << attribute.size()
                   << " with id " << _attribute_id << std::endl;
 #endif
@@ -52,7 +66,7 @@ namespace {
         glGenBuffers(1, &_attribute_id);
         glBindBuffer(GL_ARRAY_BUFFER, _attribute_id);
         glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(glm::float32) * attribute.size(), _attribute_ptr, GL_STATIC_DRAW);
-#if LUCARIA_DEBUG
+#if LUCARIA_CONFIG_DEBUG
         std::cout << "Created VEC4 ARRAY_BUFFER buffer of size " << attribute.size()
                   << " with id " << _attribute_id << std::endl;
 #endif
@@ -66,7 +80,7 @@ namespace {
         glGenBuffers(1, &_attribute_id);
         glBindBuffer(GL_ARRAY_BUFFER, _attribute_id);
         glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(glm::uint) * attribute.size(), _attribute_ptr, GL_STATIC_DRAW);
-#if LUCARIA_DEBUG
+#if LUCARIA_CONFIG_DEBUG
         std::cout << "Created UVEC4 ARRAY_BUFFER buffer of size " << attribute.size()
                   << " with id " << _attribute_id << std::endl;
 #endif
@@ -80,7 +94,7 @@ namespace {
         glGenBuffers(1, &_attribute_id);
         glBindBuffer(GL_ARRAY_BUFFER, _attribute_id);
         glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(glm::int32) * attribute.size(), _attribute_ptr, GL_STATIC_DRAW);
-#if LUCARIA_DEBUG
+#if LUCARIA_CONFIG_DEBUG
         std::cout << "Created IVEC4 ARRAY_BUFFER buffer of size " << attribute.size()
                   << " with id " << _attribute_id << std::endl;
 #endif
@@ -216,10 +230,10 @@ const std::vector<glm::mat4>& mesh::get_invposes() const
 fetched<mesh> fetch_mesh(const std::filesystem::path& data_path)
 {
     std::shared_ptr<std::promise<geometry>> _geometry_promise = std::make_shared<std::promise<geometry>>();
-    detail::fetch_bytes(data_path, [_geometry_promise](const std::vector<char>& _data_bytes) {
+    _fetch_bytes(data_path, [_geometry_promise](const std::vector<char>& _data_bytes) {
         geometry _geometry(_data_bytes);
         _geometry_promise->set_value(std::move(_geometry));
-    });
+    }, true);
 
     // create mesh on main thread
     return fetched<mesh>(_geometry_promise->get_future(), [](const geometry& _from) {
@@ -227,9 +241,9 @@ fetched<mesh> fetch_mesh(const std::filesystem::path& data_path)
     });
 }
 
-namespace detail {
+namespace _detail {
 
-#if LUCARIA_GUIZMO
+#if LUCARIA_CONFIG_DEBUG
     guizmo_mesh::guizmo_mesh(guizmo_mesh&& other)
     {
         *this = std::move(other);

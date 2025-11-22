@@ -25,7 +25,8 @@ enum struct collision_layer : std::int16_t {
     layer_14 = 1 << 14
 };
 
-struct kinematic_collision {
+/// @brief 
+struct collision {
     glm::float32 distance;
     glm::vec3 position;
     glm::vec3 normal;

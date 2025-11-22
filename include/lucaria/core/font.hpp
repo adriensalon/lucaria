@@ -4,13 +4,13 @@
 #include <imgui.h>
 
 #include <lucaria/core/fetch.hpp>
-#include <lucaria/core/semantics.hpp>
+#include <lucaria/core/platform.hpp>
 
 namespace lucaria {
 
 /// @brief Represents a runtime font on the device
 struct font {
-    LUCARIA_DELETE_DEFAULT_SEMANTICS(font)
+    LUCARIA_DELETE_DEFAULT(font)
     font(const font& other) = delete;
     font& operator=(const font& other) = delete;
     font(font&& other) = default;

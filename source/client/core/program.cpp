@@ -4,12 +4,35 @@
 #include <ozz/base/maths/simd_math.h>
 
 #include <lucaria/core/error.hpp>
-#include <lucaria/core/opengl.hpp>
 #include <lucaria/core/program.hpp>
-#include <lucaria/core/window.hpp>
+
+#if LUCARIA_PLATFORM_ANDROID
+#include <EGL/egl.h>
+#include <GLES3/gl3.h>
+#elif LUCARIA_PLATFORM_WEB
+#include <GLES3/gl3.h>
+#elif LUCARIA_PLATFORM_WIN32
+#include <glad/gl.h>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+#endif
 
 namespace lucaria {
+
+void _fetch_bytes(const std::vector<std::filesystem::path>& file_paths, const std::function<void(const std::vector<std::vector<char>>&)>& callback, bool persist);
+
 namespace {
+
+    static const std::unordered_map<mesh_attribute, glm::uint> mesh_attribute_sizes = {
+        { mesh_attribute::position, 3 },
+        { mesh_attribute::color, 3 },
+        { mesh_attribute::normal, 3 },
+        { mesh_attribute::tangent, 3 },
+        { mesh_attribute::bitangent, 3 },
+        { mesh_attribute::texcoord, 2 },
+        { mesh_attribute::bones, 4 },
+        { mesh_attribute::weights, 4 },
+    };
 
     [[nodiscard]] static glm::uint create_shader(const GLenum type, const std::string& text)
     {
@@ -21,7 +44,7 @@ namespace {
         glCompileShader(_shader_id);
         glGetShaderiv(_shader_id, GL_COMPILE_STATUS, &_result);
         glGetShaderiv(_shader_id, GL_INFO_LOG_LENGTH, &_log_length);
-#if LUCARIA_DEBUG
+#if LUCARIA_CONFIG_DEBUG
         if (!_result || _log_length > 0) {
             std::vector<GLchar> _result_error_msg(_log_length + 1);
             glGetShaderInfoLog(_shader_id, _log_length, NULL, &_result_error_msg[0]);
@@ -48,7 +71,7 @@ namespace {
             _name[_length] = '\0';
             glm::int32 _location = glGetAttribLocation(program_id, _name);
             _attributes[_name] = _location;
-#if LUCARIA_DEBUG
+#if LUCARIA_CONFIG_DEBUG
             std::cout << "Program has attribute '" << _name << "' at location " << _location << std::endl;
 #endif
         }
@@ -69,7 +92,7 @@ namespace {
             _name[_length] = '\0';
             glm::int32 _location = glGetUniformLocation(program_id, _name);
             _uniforms[_name] = _location;
-#if LUCARIA_DEBUG
+#if LUCARIA_CONFIG_DEBUG
             std::cout << "Program has uniform '" << _name << "' at location " << _location << std::endl;
 #endif
         }
@@ -118,7 +141,7 @@ program::program(const shader& vertex, const shader& fragment)
     glLinkProgram(_handle);
     glGetProgramiv(_handle, GL_LINK_STATUS, &_result);
     glGetProgramiv(_handle, GL_INFO_LOG_LENGTH, &_log_length);
-#if LUCARIA_DEBUG
+#if LUCARIA_CONFIG_DEBUG
     if (_log_length > 0) {
         std::vector<GLchar> _result_error_msg(_log_length + 1);
         glGetProgramInfoLog(_handle, _log_length, NULL, &_result_error_msg[0]);
@@ -153,7 +176,7 @@ void program::bind_attribute(const std::string& name, const mesh& from, const me
         LUCARIA_RUNTIME_ERROR("Name " + name + " not found in shader")
     }
     glm::int32 _location = _attributes.at(name);
-    glm::uint _size = detail::mesh_attribute_sizes.at(attribute);
+    glm::uint _size = mesh_attribute_sizes.at(attribute);
     glBindVertexArray(_bound_array_id);
     if (_attribute_handles.find(attribute) == _attribute_handles.end()) {
         LUCARIA_RUNTIME_ERROR("Attribute " + std::to_string(static_cast<int>(attribute)) + " is not in mesh")
@@ -167,31 +190,31 @@ void program::bind_attribute(const std::string& name, const mesh& from, const me
     glEnableVertexAttribArray(_location);
 }
 
-void program::bind_attribute(const std::string& name, const viewport& from, const mesh_attribute attribute)
-{
-    if (attribute != mesh_attribute::position && attribute != mesh_attribute::texcoord) {
-        LUCARIA_RUNTIME_ERROR("Failed to bind viewport attribute because only position or texcoord is expected")
-    }
-    _bound_indices_count = from.get_size();
-    _bound_array_id = from.get_array_handle();
-    const std::unordered_map<mesh_attribute, glm::uint> _attribute_handles = {
-        { mesh_attribute::position, from.get_positions_handle() },
-        { mesh_attribute::texcoord, from.get_texcoords_handle() }
-    };
-    if (_attributes.find(name) == _attributes.end()) {
-        LUCARIA_RUNTIME_ERROR("Name " + name + " not found in shader")
-    }
-    glm::int32 _location = _attributes.at(name);
-    glm::uint _size = detail::mesh_attribute_sizes.at(attribute);
-    glBindVertexArray(_bound_array_id);
-    glBindBuffer(GL_ARRAY_BUFFER, _attribute_handles.at(attribute));
-    if (attribute == mesh_attribute::bones) {
-        glVertexAttribIPointer(_location, _size, GL_INT, _size * sizeof(glm::int32), (void*)0);
-    } else {
-        glVertexAttribPointer(_location, _size, GL_FLOAT, GL_FALSE, _size * sizeof(glm::float32), (void*)0);
-    }
-    glEnableVertexAttribArray(_location);
-}
+// void program::bind_attribute(const std::string& name, const viewport& from, const mesh_attribute attribute)
+// {
+//     if (attribute != mesh_attribute::position && attribute != mesh_attribute::texcoord) {
+//         LUCARIA_RUNTIME_ERROR("Failed to bind viewport attribute because only position or texcoord is expected")
+//     }
+//     _bound_indices_count = from.get_size();
+//     _bound_array_id = from.get_array_handle();
+//     const std::unordered_map<mesh_attribute, glm::uint> _attribute_handles = {
+//         { mesh_attribute::position, from.get_positions_handle() },
+//         { mesh_attribute::texcoord, from.get_texcoords_handle() }
+//     };
+//     if (_attributes.find(name) == _attributes.end()) {
+//         LUCARIA_RUNTIME_ERROR("Name " + name + " not found in shader")
+//     }
+//     glm::int32 _location = _attributes.at(name);
+//     glm::uint _size = detail::mesh_attribute_sizes.at(attribute);
+//     glBindVertexArray(_bound_array_id);
+//     glBindBuffer(GL_ARRAY_BUFFER, _attribute_handles.at(attribute));
+//     if (attribute == mesh_attribute::bones) {
+//         glVertexAttribIPointer(_location, _size, GL_INT, _size * sizeof(glm::int32), (void*)0);
+//     } else {
+//         glVertexAttribPointer(_location, _size, GL_FLOAT, GL_FALSE, _size * sizeof(glm::float32), (void*)0);
+//     }
+//     glEnableVertexAttribArray(_location);
+// }
 
 void program::bind_uniform(const std::string& name, const cubemap& from, const glm::uint slot) const
 {
@@ -321,8 +344,8 @@ void program::draw(const bool use_depth) const
     glDrawElements(GL_TRIANGLES, _bound_indices_count, GL_UNSIGNED_INT, 0);
 }
 
-#if LUCARIA_GUIZMO
-void program::bind_guizmo(const std::string& name, const detail::guizmo_mesh& from)
+#if LUCARIA_CONFIG_DEBUG
+void program::bind_guizmo(const std::string& name, const _detail::guizmo_mesh& from)
 {
     _bound_indices_count = from.get_size();
     _bound_array_id = from.get_array_handle();
@@ -363,13 +386,12 @@ fetched<program> fetch_program(const std::filesystem::path& vertex_data_path, co
 {
     std::vector<std::filesystem::path> _shaders_paths = { vertex_data_path, fragment_data_path };
     std::shared_ptr<std::promise<std::pair<shader, shader>>> _shaders_promise = std::make_shared<std::promise<std::pair<shader, shader>>>();
-    detail::fetch_bytes(_shaders_paths, [_shaders_promise](const std::vector<std::vector<char>>& _data_bytes) {
+    _fetch_bytes(_shaders_paths, [_shaders_promise](const std::vector<std::vector<char>>& _data_bytes) {
         std::pair<shader, shader> _shaders = {
             shader(_data_bytes[0]),
             shader(_data_bytes[1])
         };
-        _shaders_promise->set_value(std::move(_shaders));
-    });
+        _shaders_promise->set_value(std::move(_shaders)); }, true);
 
     return fetched<program>(_shaders_promise->get_future(), [](const std::pair<shader, shader>& _from) {
         return program(_from.first, _from.second);

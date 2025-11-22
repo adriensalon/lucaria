@@ -1,27 +1,25 @@
 #include <btBulletDynamicsCommon.h>
 
-#include <lucaria/component/rigidbody.hpp>
-#include <lucaria/component/transform.hpp>
 #include <lucaria/core/math.hpp>
-#include <lucaria/core/window.hpp>
-#include <lucaria/core/world.hpp>
-#include <lucaria/system/dynamics.hpp>
+#include <lucaria/core/run.hpp>
+#include <lucaria/ecs/dynamics.hpp>
+#include <lucaria/ecs/rigidbody.hpp>
+#include <lucaria/ecs/transform.hpp>
 
 namespace lucaria {
-namespace detail {
 
-    btDiscreteDynamicsWorld* _dynamics_world = nullptr;
+btDiscreteDynamicsWorld* _dynamics_world = nullptr;
+void _system_compute_dynamics();
+void _system_guizmos_dynamics();
 
-#if LUCARIA_GUIZMO
-    extern void _draw_guizmo_line(const btVector3& from, const btVector3& to, const btVector3& color);
+#if LUCARIA_CONFIG_DEBUG
+extern void _draw_guizmo_line(const btVector3& from, const btVector3& to, const btVector3& color);
 #endif
-
-}
 
 namespace {
 
     static const glm::vec3 _world_up = glm::vec3(0, 1, 0);
-    static const glm::vec3 _world_forward = glm::vec3(0, 0, 1);
+    static const glm::vec3 _world_forward = glm::vec3(0, 0, -1);
     static btDefaultCollisionConfiguration* _collision_configuration = nullptr;
     static btCollisionDispatcher* _collision_dispatcher = nullptr;
     static btBroadphaseInterface* _overlapping_pair_cache = nullptr;
@@ -34,8 +32,8 @@ namespace {
         _overlapping_pair_cache = new btDbvtBroadphase();
         _overlapping_pair_cache->getOverlappingPairCache()->setInternalGhostPairCallback(new btGhostPairCallback());
         _constraint_solver = new btSequentialImpulseConstraintSolver();
-        detail::_dynamics_world = new btDiscreteDynamicsWorld(_collision_dispatcher, _overlapping_pair_cache, _constraint_solver, _collision_configuration);
-        detail::_dynamics_world->setGravity(btVector3(0.f, -9.81f, 0.f));
+        _dynamics_world = new btDiscreteDynamicsWorld(_collision_dispatcher, _overlapping_pair_cache, _constraint_solver, _collision_configuration);
+        _dynamics_world->setGravity(btVector3(0.f, -9.81f, 0.f));
         return true;
     }
 
@@ -50,9 +48,9 @@ namespace {
         return false;
     }
 
-    static std::vector<kinematic_collision> _get_collisions(const btPersistentManifold* manifold, btGhostObject* ghost)
+    static std::vector<collision> _get_collisions(const btPersistentManifold* manifold, btGhostObject* ghost)
     {
-        std::vector<kinematic_collision> _collisions;
+        std::vector<collision> _collisions;
         for (int _contact_index = 0; _contact_index < manifold->getNumContacts(); ++_contact_index) {
             const btManifoldPoint& _contact_point = manifold->getContactPoint(_contact_index);
             if (_contact_point.getDistance() > 0.f) {
@@ -62,17 +60,17 @@ namespace {
             const btVector3 _position_other = _ghost_is_first ? _contact_point.getPositionWorldOnB() : _contact_point.getPositionWorldOnA();
             const btVector3 _normal_second = _contact_point.m_normalWorldOnB.normalized();
             const btVector3 _normal_other = _ghost_is_first ? -_normal_second : _normal_second;
-            kinematic_collision& _collision = _collisions.emplace_back();
+            collision& _collision = _collisions.emplace_back();
             _collision.distance = _contact_point.getDistance();
-            _collision.position = detail::convert(_position_other);
-            _collision.normal = detail::convert(_normal_other);
+            _collision.position = convert(_position_other);
+            _collision.normal = convert(_normal_other);
         }
         return _collisions;
     }
 
     static glm::vec3 _forward_xy(const glm::quat& rotation)
     {
-        const glm::vec3 _force = detail::project_on_plane(rotation * _world_forward, _world_up);
+        const glm::vec3 _force = project_on_plane(rotation * _world_forward, _world_up);
         const glm::float32 _force_length = glm::length(_force);
         return (_force_length > 0.f) ? (_force * (1.f / _force_length)) : _world_forward;
     };
@@ -82,13 +80,13 @@ namespace {
         // const btTransform _transform = rigidbody->getInterpolationWorldTransform();
         const btTransform _transform = rigidbody->getWorldTransform();
         const btVector3 _from = _transform.getOrigin();
-        const btVector3 _to = _from - detail::convert_bullet(_world_up) * (maximum_distance + 1.f);
+        const btVector3 _to = _from - convert_bullet(_world_up) * (maximum_distance + 1.f);
         btCollisionWorld::ClosestRayResultCallback _raycast_callback(_from, _to);
         _raycast_callback.m_collisionFilterMask = mask;
-        detail::_dynamics_world->rayTest(_from, _to, _raycast_callback);
+        _dynamics_world->rayTest(_from, _to, _raycast_callback);
         if (_raycast_callback.hasHit()) {
             const btVector3 _hit_normal = _raycast_callback.m_hitNormalWorld.normalized();
-            if (_hit_normal.dot(detail::convert_bullet(_world_up)) > maximum_slope) {
+            if (_hit_normal.dot(convert_bullet(_world_up)) > maximum_slope) {
                 return true;
             }
         }
@@ -97,21 +95,22 @@ namespace {
 
 }
 
-std::optional<raycast_collision> raycast(const glm::vec3& from, const glm::vec3& to)
+std::optional<collision> raycast(const glm::vec3& from, const glm::vec3& to)
 {
-    const btVector3 _from = detail::convert_bullet(from);
-    const btVector3 _to = detail::convert_bullet(to);
+    const btVector3 _from = convert_bullet(from);
+    const btVector3 _to = convert_bullet(to);
     btCollisionWorld::ClosestRayResultCallback _raycallback(_from, _to);
-    detail::_dynamics_world->rayTest(_from, _to, _raycallback);
-#if LUCARIA_GUIZMO
-    detail::_draw_guizmo_line(_from, _to, btVector3(1, 0, 1)); // purple
+    _dynamics_world->rayTest(_from, _to, _raycallback);
+#if LUCARIA_CONFIG_DEBUG
+    _draw_guizmo_line(_from, _to, btVector3(1, 0, 1)); // purple
 #endif
     if (_raycallback.hasHit()) {
-        raycast_collision _collision;
-        _collision.position = detail::convert(_raycallback.m_hitPointWorld);
-        _collision.normal = glm::normalize(detail::convert(_raycallback.m_hitNormalWorld));
-#if LUCARIA_GUIZMO
-        detail::_draw_guizmo_line(_raycallback.m_hitPointWorld, _raycallback.m_hitPointWorld + _raycallback.m_hitNormalWorld * 0.2f, btVector3(1, 1, 1)); // white
+        collision _collision;
+        _collision.position = convert(_raycallback.m_hitPointWorld);
+        _collision.normal = glm::normalize(convert(_raycallback.m_hitNormalWorld));
+        _collision.distance = glm::distance(from, _collision.position);
+#if LUCARIA_CONFIG_DEBUG
+        _draw_guizmo_line(_raycallback.m_hitPointWorld, _raycallback.m_hitPointWorld + _raycallback.m_hitNormalWorld * 0.2f, btVector3(1, 1, 1)); // white
 #endif
         return _collision;
     }
@@ -120,17 +119,18 @@ std::optional<raycast_collision> raycast(const glm::vec3& from, const glm::vec3&
 
 void set_world_gravity(const glm::float32 newtons)
 {
-    detail::_dynamics_world->setGravity(detail::convert_bullet(-_world_up * newtons));
+    _dynamics_world->setGravity(convert_bullet(-_world_up * newtons));
 }
 
-namespace detail {
+struct dynamics_system {
 
-    void dynamics_system::step_simulation()
+    static void step_simulation()
     {
         // update collider transforms
-        detail::each_scene([&](entt::registry& scene) {
+        each_scene([&](entt::registry& scene) {
             scene.view<passive_rigidbody_component>(entt::exclude<transform_component>).each([](passive_rigidbody_component& collider) {
-                collider._shape.has_value(); // colliders can have no transform
+                const bool _collected = collider._shape.has_value(); // colliders can have no transform
+                (void)_collected;
             });
             scene.view<passive_rigidbody_component, transform_component>().each([](passive_rigidbody_component& collider, transform_component& transform) {
                 if (!collider._shape.has_value()) {
@@ -142,7 +142,7 @@ namespace detail {
         });
 
         // update kinematic rigidbody transforms
-        detail::each_scene([&](entt::registry& scene) {
+        each_scene([&](entt::registry& scene) {
             scene.view<kinematic_rigidbody_component, transform_component>().each([](kinematic_rigidbody_component& rigidbody, transform_component& transform) {
                 if (!rigidbody._shape.has_value()) {
                     return;
@@ -154,7 +154,7 @@ namespace detail {
 
         // apply dynamic rigidbody forces
         const glm::float32 _delta_time = static_cast<glm::float32>(get_time_delta());
-        detail::each_scene([&](entt::registry& scene) {
+        each_scene([&](entt::registry& scene) {
             scene.view<dynamic_rigidbody_component>().each([&](dynamic_rigidbody_component& rigidbody) {
                 if (!rigidbody._shape.has_value()) {
                     return;
@@ -210,20 +210,20 @@ namespace detail {
         });
 
         // step once each frame no substep no interpolation
-        detail::_dynamics_world->stepSimulation(_delta_time, 0);
+        _dynamics_world->stepSimulation(_delta_time, 0);
     }
 
-    void dynamics_system::compute_collisions()
+    static void compute_collisions()
     {
         // collect collisions from kinematic rigidbodies
         btManifoldArray _manifold_array;
-        detail::each_scene([&](entt::registry& scene) {
+        each_scene([&](entt::registry& scene) {
             scene.view<transform_component, kinematic_rigidbody_component>().each([&](transform_component& transform, kinematic_rigidbody_component& rigidbody) {
                 rigidbody._collisions.clear();
                 btBroadphasePairArray& _pair_array = rigidbody._ghost->getOverlappingPairCache()->getOverlappingPairArray();
                 for (int _pair_index = 0; _pair_index < _pair_array.size(); _pair_index++) {
                     _manifold_array.clear();
-                    btBroadphasePair* _collision_pair = detail::_dynamics_world->getPairCache()->findPair(_pair_array[_pair_index].m_pProxy0, _pair_array[_pair_index].m_pProxy1);
+                    btBroadphasePair* _collision_pair = _dynamics_world->getPairCache()->findPair(_pair_array[_pair_index].m_pProxy0, _pair_array[_pair_index].m_pProxy1);
                     if (!_collision_pair) {
                         continue;
                     }
@@ -248,7 +248,7 @@ namespace detail {
         });
 
         // set transform from dynamic rigidbodies
-        detail::each_scene([&](entt::registry& scene) {
+        each_scene([&](entt::registry& scene) {
             scene.view<transform_component, dynamic_rigidbody_component>().each([](transform_component& transform, dynamic_rigidbody_component& rigidbody) {
                 // const glm::mat4 _transform = convert(rigidbody._rigidbody->getInterpolationWorldTransform());
                 const glm::mat4 _transform = convert(rigidbody._rigidbody->getWorldTransform());
@@ -263,12 +263,12 @@ namespace detail {
         });
     }
 
-    void dynamics_system::collect_debug_guizmos()
+    static void collect_debug_guizmos()
     {
-#if LUCARIA_GUIZMO
-        detail::each_scene([&](entt::registry& scene) {
+#if LUCARIA_CONFIG_DEBUG
+        each_scene([&](entt::registry& scene) {
             scene.view<transform_component, kinematic_rigidbody_component>().each([&](transform_component& transform, kinematic_rigidbody_component& rigidbody) {
-                for (const lucaria::kinematic_collision& _collision : rigidbody._collisions) {
+                for (const lucaria::collision& _collision : rigidbody._collisions) {
                     const glm::vec3 _from = _collision.position;
                     const glm::vec3 _to = _collision.position + 0.2f * glm::normalize(_collision.normal);
                     _draw_guizmo_line(convert_bullet(_from), convert_bullet(_to), btVector3(1, 0, 1)); // purple
@@ -277,5 +277,17 @@ namespace detail {
         });
 #endif
     }
+};
+
+void _system_compute_dynamics()
+{
+    dynamics_system::step_simulation();
+    dynamics_system::compute_collisions();
 }
+
+void _system_guizmos_dynamics()
+{
+    dynamics_system::collect_debug_guizmos();
+}
+
 }

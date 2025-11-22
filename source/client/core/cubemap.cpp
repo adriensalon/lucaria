@@ -3,11 +3,26 @@
 
 #include <lucaria/core/cubemap.hpp>
 #include <lucaria/core/error.hpp>
-#include <lucaria/core/opengl.hpp>
-#include <lucaria/core/window.hpp>
 
+#if LUCARIA_PLATFORM_ANDROID
+#include <EGL/egl.h>
+#include <GLES3/gl3.h>
+#elif LUCARIA_PLATFORM_WEB
+#include <GLES3/gl3.h>
+#elif LUCARIA_PLATFORM_WIN32
+#include <glad/gl.h>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+#endif
 
 namespace lucaria {
+
+extern bool _is_etc2_supported;
+extern bool _is_s3tc_supported;
+extern const std::filesystem::path& _resolve_image_path(const std::filesystem::path& data_path, const std::optional<std::filesystem::path>& etc2_path, const std::optional<std::filesystem::path>& s3tc_path);
+extern std::vector<std::filesystem::path> _resolve_image_paths(const std::array<std::filesystem::path, 6>& data_paths, const std::optional<std::array<std::filesystem::path, 6>>& etc2_paths, const std::optional<std::array<std::filesystem::path, 6>>& s3tc_paths);
+extern void _fetch_bytes(const std::vector<std::filesystem::path>& file_paths, const std::function<void(const std::vector<std::vector<char>>&)>& callback, bool persist);
+
 namespace {
 
     // constexpr static GLenum COMPRESSED_R11_EAC = 0x9270;
@@ -76,18 +91,18 @@ cubemap::cubemap(const std::array<image, 6>& images)
         const GLenum _side_enum = cubemap_enums[_index];
         switch (_image.data.channels) {
         case 3:
-            if (_image.data.is_compressed_etc && get_is_etc2_supported()) {
+            if (_image.data.is_compressed_etc && _is_etc2_supported) {
                 glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGB8_ETC2, _image.data.width, _image.data.height, 0, _pixels_count, _pixels_ptr);
-            } else if (_image.data.is_compressed_s3tc && get_is_s3tc_supported()) {
+            } else if (_image.data.is_compressed_s3tc && _is_s3tc_supported) {
                 glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, _image.data.width, _image.data.height, 0, _pixels_count, _pixels_ptr);
             } else {
                 glTexImage2D(_side_enum, 0, GL_RGB, _image.data.width, _image.data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
             }
             break;
         case 4:
-            if (_image.data.is_compressed_etc && get_is_etc2_supported()) {
+            if (_image.data.is_compressed_etc && _is_etc2_supported) {
                 glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGBA8_ETC2_EAC, _image.data.width, _image.data.height, 0, _pixels_count, _pixels_ptr);
-            } else if (_image.data.is_compressed_s3tc && get_is_s3tc_supported()) {
+            } else if (_image.data.is_compressed_s3tc && _is_s3tc_supported) {
                 glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, _image.data.width, _image.data.height, 0, _pixels_count, _pixels_ptr);
             } else {
                 glTexImage2D(_side_enum, 0, GL_RGBA, _image.data.width, _image.data.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);
@@ -110,9 +125,9 @@ fetched<cubemap> fetch_cubemap(
     const std::optional<std::array<std::filesystem::path, 6>>& etc2_paths,
     const std::optional<std::array<std::filesystem::path, 6>>& s3tc_paths)
 {
-    const std::vector<std::filesystem::path> _image_paths = detail::resolve_image_paths(data_paths, etc2_paths, s3tc_paths);
+    const std::vector<std::filesystem::path> _image_paths = _resolve_image_paths(data_paths, etc2_paths, s3tc_paths);
     std::shared_ptr<std::promise<std::array<image, 6>>> _images_promise = std::make_shared<std::promise<std::array<image, 6>>>();
-    detail::fetch_bytes(_image_paths, [_images_promise](const std::vector<std::vector<char>>& _data_bytes) {
+    _fetch_bytes(_image_paths, [_images_promise](const std::vector<std::vector<char>>& _data_bytes) {
         std::array<image, 6> _images = {
             image(_data_bytes[0]),
             image(_data_bytes[1]),
@@ -121,8 +136,7 @@ fetched<cubemap> fetch_cubemap(
             image(_data_bytes[4]),
             image(_data_bytes[5])
         };
-        _images_promise->set_value(std::move(_images));
-    });
+        _images_promise->set_value(std::move(_images)); }, true);
 
     // create cubemap on main thread
     return fetched<cubemap>(_images_promise->get_future(), [](const std::array<image, 6>& _from) {

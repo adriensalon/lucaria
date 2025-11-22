@@ -6,7 +6,7 @@ namespace lucaria {
 
 /// @brief Represents a runtime cubemap texture on the device
 struct cubemap {
-    LUCARIA_DELETE_DEFAULT_SEMANTICS(cubemap)
+    LUCARIA_DELETE_DEFAULT(cubemap)
     cubemap(const cubemap& other) = delete;
     cubemap& operator=(const cubemap& other) = delete;
     cubemap(cubemap&& other);

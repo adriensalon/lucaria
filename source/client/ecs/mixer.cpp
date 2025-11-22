@@ -1,10 +1,14 @@
-#include <lucaria/component/speaker.hpp>
-#include <lucaria/core/openal.hpp>
-#include <lucaria/core/window.hpp>
-#include <lucaria/core/world.hpp>
-#include <lucaria/system/mixer.hpp>
+#include <AL/al.h>
+#include <AL/alc.h>
+
+#include <lucaria/core/run.hpp>
+#include <lucaria/ecs/mixer.hpp>
+#include <lucaria/ecs/speaker.hpp>
 
 namespace lucaria {
+
+void _system_compute_mixer();
+
 namespace {
 
     std::optional<std::reference_wrapper<transform_component>> listener_transform = std::nullopt;
@@ -16,12 +20,12 @@ void use_listener_transform(transform_component& transform)
     listener_transform = transform;
 }
 
-namespace detail {
+struct mixer_system {
 
-    void mixer_system::apply_speaker_transforms()
+    static void apply_speaker_transforms()
     {
         if (listener_transform.has_value()) {
-            detail::each_scene([&](entt::registry& scene) {
+            each_scene([&](entt::registry& scene) {
                 scene.view<speaker_component>().each([](speaker_component& _speaker) {
                     if (_speaker._sound.has_value() && _speaker._want_playing != _speaker._is_playing) {
 
@@ -53,7 +57,7 @@ namespace detail {
         }
     }
 
-    void mixer_system::apply_listener_transform()
+    static void apply_listener_transform()
     {
         if (listener_transform.has_value()) {
             const transform_component& _transform = listener_transform->get();
@@ -70,6 +74,12 @@ namespace detail {
             alListenerfv(AL_ORIENTATION, _orientation);
         }
     }
+};
 
+void _system_compute_mixer()
+{
+    mixer_system::apply_speaker_transforms();
+    mixer_system::apply_listener_transform();
 }
+
 }

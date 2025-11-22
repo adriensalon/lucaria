@@ -2,9 +2,21 @@
 #include <iostream>
 #include <string>
 
+#include <AL/al.h>
+#include <AL/alc.h>
+
 #include <lucaria/core/error.hpp>
-#include <lucaria/core/openal.hpp>
-#include <lucaria/core/opengl.hpp>
+
+#if LUCARIA_PLATFORM_ANDROID
+#include <EGL/egl.h>
+#include <GLES3/gl3.h>
+#elif LUCARIA_PLATFORM_WEB
+#include <GLES3/gl3.h>
+#elif LUCARIA_PLATFORM_WIN32
+#include <glad/gl.h>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+#endif
 
 namespace lucaria {
 
@@ -21,7 +33,6 @@ void runtime_error(std::string_view file, const int line, const std::string& mes
     throw std::runtime_error(_text);
 #endif
 }
-
 
 void runtime_openal_assert(std::string_view file, const int line)
 {
@@ -76,6 +87,5 @@ void runtime_opengl_assert(std::string_view file, const int line)
         runtime_error(file, line, "Failed OpenGL operation with result '" + _brief + "' (" + _description + ")");
     }
 }
-
 
 }

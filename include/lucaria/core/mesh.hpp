@@ -20,7 +20,7 @@ enum struct mesh_attribute {
 
 /// @brief Represents runtime geometry on the device
 struct mesh {
-    LUCARIA_DELETE_DEFAULT_SEMANTICS(mesh)
+    LUCARIA_DELETE_DEFAULT(mesh)
     mesh(const mesh& other) = delete;
     mesh& operator=(const mesh& other) = delete;
     mesh(mesh&& other);
@@ -77,22 +77,13 @@ private:
 /// @param data_path path to load from
 [[nodiscard]] fetched<mesh> fetch_mesh(const std::filesystem::path& data_path);
 
-namespace detail {
+// Internal definitions
+namespace _detail {
 
-    inline const std::unordered_map<mesh_attribute, glm::uint> mesh_attribute_sizes = {
-        { mesh_attribute::position, 3 },
-        { mesh_attribute::color, 3 },
-        { mesh_attribute::normal, 3 },
-        { mesh_attribute::tangent, 3 },
-        { mesh_attribute::bitangent, 3 },
-        { mesh_attribute::texcoord, 2 },
-        { mesh_attribute::bones, 4 },
-        { mesh_attribute::weights, 4 },
-    };
+#if LUCARIA_CONFIG_DEBUG
 
-#if LUCARIA_GUIZMO
     struct guizmo_mesh {
-        LUCARIA_DELETE_DEFAULT_SEMANTICS(guizmo_mesh)
+        LUCARIA_DELETE_DEFAULT(guizmo_mesh)
         guizmo_mesh(const guizmo_mesh& other) = delete;
         guizmo_mesh& operator=(const guizmo_mesh& other) = delete;
         guizmo_mesh(guizmo_mesh&& other);
@@ -116,6 +107,8 @@ namespace detail {
         glm::uint _elements_handle;
         glm::uint _positions_handle;
     };
+
 #endif
+
 }
 }

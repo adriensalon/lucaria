@@ -6,7 +6,7 @@ namespace lucaria {
 
 /// @brief Represents a runtime texture on the device
 struct texture {
-    LUCARIA_DELETE_DEFAULT_SEMANTICS(texture)
+    LUCARIA_DELETE_DEFAULT(texture)
     texture(const texture& other) = delete;
     texture& operator=(const texture& other) = delete;
     texture(texture&& other);

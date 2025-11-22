@@ -7,7 +7,7 @@ namespace lucaria {
 
 /// @brief Represents an uploaded viewport on the device
 struct viewport {
-    LUCARIA_DELETE_DEFAULT_SEMANTICS(viewport)
+    LUCARIA_DELETE_DEFAULT(viewport)
     viewport(const viewport& other) = delete;
     viewport& operator=(const viewport& other) = delete;
     viewport(viewport&& other);

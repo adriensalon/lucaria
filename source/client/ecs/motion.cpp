@@ -1,25 +1,30 @@
 #include <glm/gtx/matrix_interpolation.hpp>
 #include <ozz/animation/runtime/local_to_model_job.h>
 #include <ozz/animation/runtime/track_sampling_job.h>
-// #include <ozz/base/maths/transform.h>
 
-#include <lucaria/component/animator.hpp>
-#include <lucaria/component/model.hpp>
-#include <lucaria/component/rigidbody.hpp>
-#include <lucaria/component/transform.hpp>
 #include <lucaria/core/error.hpp>
 #include <lucaria/core/math.hpp>
-#include <lucaria/core/window.hpp>
-#include <lucaria/core/world.hpp>
-#include <lucaria/system/motion.hpp>
+#include <lucaria/core/run.hpp>
+#include <lucaria/ecs/animator.hpp>
+#include <lucaria/ecs/model.hpp>
+#include <lucaria/ecs/rigidbody.hpp>
+#include <lucaria/ecs/transform.hpp>
 
 namespace lucaria {
+
+void _system_compute_motion();
+void _system_guizmos_motion();
+
+#if LUCARIA_CONFIG_DEBUG
+extern void _draw_guizmo_line(const btVector3& from, const btVector3& to, const btVector3& color);
+#endif
+
 namespace {
 
     static const glm::vec3 _world_up = glm::vec3(0, 1, 0);
-    static const glm::vec3 _world_forward = glm::vec3(0, 0, 1);
+    static const glm::vec3 _world_forward = glm::vec3(0, 0, -1);
 
-    [[nodiscard]] glm::mat4 _sample_motion_track(const motion_track& track, const glm::float32 ratio)
+    [[nodiscard]] glm::mat4 _sample_motion_track(const animation_motion_track& track, const glm::float32 ratio)
     {
         // position sampling
         ozz::math::Transform _ozz_affine_transform;
@@ -41,10 +46,10 @@ namespace {
         }
 
         _ozz_affine_transform.scale = ozz::math::Float3::one();
-        return detail::convert(ozz::math::Float4x4::FromAffine(_ozz_affine_transform));
+        return convert(ozz::math::Float4x4::FromAffine(_ozz_affine_transform));
     }
 
-    [[nodiscard]] glm::mat4 _compute_motion_delta(const motion_track& track, const glm::float32 time_ratio, const glm::float32 last_time_ratio, const glm::float32 weight, const bool has_looped)
+    [[nodiscard]] glm::mat4 _compute_motion_delta(const animation_motion_track& track, const glm::float32 time_ratio, const glm::float32 last_time_ratio, const glm::float32 weight, const bool has_looped)
     {
         // base delta
         const glm::mat4 _new_motion_transform = _sample_motion_track(track, time_ratio);
@@ -65,15 +70,11 @@ namespace {
 
 }
 
-namespace detail {
+struct motion_system {
 
-#if LUCARIA_GUIZMO
-    extern void _draw_guizmo_line(const btVector3& from, const btVector3& to, const btVector3& color);
-#endif
-
-    void motion_system::advance_controllers()
+    static void advance_controllers()
     {
-        detail::each_scene([](entt::registry& scene) {
+        each_scene([](entt::registry& scene) {
             scene.view<animator_component>().each([](animator_component& animator) {
                 for (std::pair<const std::string, animation_controller>& _pair : animator._controllers) {
 
@@ -104,15 +105,15 @@ namespace detail {
         });
     }
 
-    void motion_system::apply_animations()
+    static void apply_animations()
     {
-        detail::each_scene([](entt::registry& scene) {
+        each_scene([](entt::registry& scene) {
             scene.view<animator_component>().each([](animator_component& animator) {
                 if (animator._skeleton.has_value()) {
 
                     // sampling
                     ozz::vector<ozz::animation::BlendingJob::Layer> _blend_layers;
-                    for (std::pair<const std::string, fetched_container<animation>>& _pair : animator._animations) {
+                    for (std::pair<const std::string, _detail::fetched_container<animation>>& _pair : animator._animations) {
                         if (_pair.second.has_value()) {
                             const animation_controller& _controller = animator._controllers[_pair.first];
                             ozz::vector<ozz::math::SoaTransform>& _local_transforms = animator._local_transforms[_pair.first];
@@ -157,16 +158,16 @@ namespace detail {
         });
     }
 
-    void motion_system::apply_motion_tracks()
+    static void apply_motion_tracks()
     {
         // apply to transform if no dynamic rigidbody
-        detail::each_scene([](entt::registry& scene) {
+        each_scene([](entt::registry& scene) {
             scene.view<const animator_component, transform_component>(entt::exclude<dynamic_rigidbody_component>).each([](const animator_component& _animator, transform_component& _transform) {
-                for (const std::pair<const std::string, fetched_container<motion_track>>& _pair : _animator._motion_tracks) {
+                for (const std::pair<const std::string, _detail::fetched_container<animation_motion_track>>& _pair : _animator._motion_tracks) {
                     if (_pair.second.has_value()) {
                         const animation_controller& _controller = _animator._controllers.at(_pair.first);
                         if (_controller._weight > 0.f) {
-                            const motion_track& _track = _pair.second.value();
+                            const animation_motion_track& _track = _pair.second.value();
                             const glm::mat4 _delta_transform = _compute_motion_delta(_track, _controller._time_ratio, _controller._last_time_ratio, _controller._weight, _controller._has_looped);
                             _transform.set_transform_relative(_delta_transform);
                         }
@@ -177,7 +178,7 @@ namespace detail {
 
         // compute and apply to PD targets if dynamic rigidbody
         const glm::float32 _delta_time = static_cast<glm::float32>(get_time_delta());
-        detail::each_scene([_delta_time](entt::registry& scene) {
+        each_scene([_delta_time](entt::registry& scene) {
             scene.view<const animator_component, transform_component, dynamic_rigidbody_component>().each([_delta_time](const animator_component& animator, transform_component& transform, dynamic_rigidbody_component& rigidbody) {
                 if (rigidbody._shape.has_value()) {
                     btRigidBody* _bullet_rigidbody = rigidbody._rigidbody.get();
@@ -208,9 +209,9 @@ namespace detail {
                     glm::vec3 _sum_velocity_xy = glm::vec3(0);
                     glm::float32 _sum_velocity_yaw = 0.f;
                     glm::float32 _sum_blend_size = 0.f;
-                    for (const std::pair<const std::string, fetched_container<motion_track>>& _pair : animator._motion_tracks) {
+                    for (const std::pair<const std::string, _detail::fetched_container<animation_motion_track>>& _pair : animator._motion_tracks) {
                         if (_pair.second.has_value()) {
-                            const motion_track& _track = _pair.second.value();
+                            const animation_motion_track& _track = _pair.second.value();
                             const animation_controller& _controller = animator._controllers.at(_pair.first);
                             if (_controller._weight > 0.f) {
                                 const glm::mat4 _delta_motion_transform = _compute_motion_delta(_track, _controller._time_ratio, _controller._last_time_ratio, _controller._weight, _controller._has_looped);
@@ -247,13 +248,13 @@ namespace detail {
         });
     }
 
-    void motion_system::collect_debug_guizmos()
+    static void collect_debug_guizmos()
     {
-#if LUCARIA_GUIZMO
-        detail::each_scene([](entt::registry& scene) {
+#if LUCARIA_CONFIG_DEBUG
+        each_scene([](entt::registry& scene) {
             // transform guizmos
             scene.view<transform_component>().each([](transform_component& transform) {
-                constexpr glm::float32 _line_length = .2f;
+                constexpr glm::float32 _line_length = 1.2f;
                 const glm::vec3 _origin = transform.get_position();
                 const glm::vec3 _xaxis = glm::normalize(glm::vec3(transform._transform[0]));
                 const glm::vec3 _yaxis = glm::normalize(glm::vec3(transform._transform[1]));
@@ -286,7 +287,7 @@ namespace detail {
                         const ozz::math::Float4x4& _parent_transform = _model_transforms[_parent_index];
                         const btVector3 _from(ozz::math::GetX(_parent_transform.cols[3]), ozz::math::GetY(_parent_transform.cols[3]), ozz::math::GetZ(_parent_transform.cols[3]));
                         const btVector3 _to(ozz::math::GetX(_current_transform.cols[3]), ozz::math::GetY(_current_transform.cols[3]), ozz::math::GetZ(_current_transform.cols[3]));
-                        detail::_draw_guizmo_line(_from, _to, btVector3(0, 1, 1)); // cyan
+                        _draw_guizmo_line(_from, _to, btVector3(0, 1, 1)); // cyan
                     }
                 }
             });
@@ -312,12 +313,25 @@ namespace detail {
                         const ozz::math::Float4x4 _parent_transform = _modifier_transform * _model_transforms[_parent_index];
                         const btVector3 _from(ozz::math::GetX(_parent_transform.cols[3]), ozz::math::GetY(_parent_transform.cols[3]), ozz::math::GetZ(_parent_transform.cols[3]));
                         const btVector3 _to(ozz::math::GetX(_current_transform.cols[3]), ozz::math::GetY(_current_transform.cols[3]), ozz::math::GetZ(_current_transform.cols[3]));
-                        detail::_draw_guizmo_line(_from, _to, btVector3(0, 1, 1)); // cyan
+                        _draw_guizmo_line(_from, _to, btVector3(0, 1, 1)); // cyan
                     }
                 }
             });
         });
 #endif
     }
+};
+
+void _system_compute_motion()
+{
+    motion_system::advance_controllers();
+    motion_system::apply_animations();
+    motion_system::apply_motion_tracks();
 }
+
+void _system_guizmos_motion()
+{
+    motion_system::collect_debug_guizmos();
+}
+
 }

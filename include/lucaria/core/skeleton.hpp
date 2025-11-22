@@ -3,13 +3,13 @@
 #include <ozz/animation/runtime/skeleton.h>
 
 #include <lucaria/core/fetch.hpp>
-#include <lucaria/core/semantics.hpp>
+#include <lucaria/core/platform.hpp>
 
 namespace lucaria {
 
 /// @brief Represents a runtime skeleton
 struct skeleton {
-    LUCARIA_DELETE_DEFAULT_SEMANTICS(skeleton)
+    LUCARIA_DELETE_DEFAULT(skeleton)
     skeleton(const skeleton& other) = delete;
     skeleton& operator=(const skeleton& other) = delete;
     skeleton(skeleton&& other) = default;

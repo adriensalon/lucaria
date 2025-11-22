@@ -1,5 +1,5 @@
-#include <lucaria/component/animator.hpp>
 #include <lucaria/core/error.hpp>
+#include <lucaria/ecs/animator.hpp>
 
 namespace lucaria {
 
@@ -56,7 +56,7 @@ animator_component& animator_component::use_animation(const std::string name, an
 {
     _animations[name].emplace(from);
     if (_skeleton.has_value()) {
-#if LUCARIA_DEBUG
+#if LUCARIA_CONFIG_DEBUG
         const int _animation_tracks = _animations[name].value().get_handle().num_tracks();
         const int _skeleton_joints = _skeleton.value().get_handle().num_joints();
         if (_animation_tracks != _skeleton_joints) {
@@ -73,7 +73,7 @@ animator_component& animator_component::use_animation(const std::string name, fe
 {
     _animations[name].emplace(from, [this, name]() {
         if (_skeleton.has_value()) {
-#if LUCARIA_DEBUG
+#if LUCARIA_CONFIG_DEBUG
             const int _animation_tracks = _animations[name].value().get_handle().num_tracks();
             const int _skeleton_joints = _skeleton.value().get_handle().num_joints();
             if (_animation_tracks != _skeleton_joints) {
@@ -87,7 +87,7 @@ animator_component& animator_component::use_animation(const std::string name, fe
     return *this;
 }
 
-animator_component& animator_component::use_motion_track(const std::string name, motion_track& from)
+animator_component& animator_component::use_motion_track(const std::string name, animation_motion_track& from)
 {
     if (_animations.find(name) == _animations.end()) {
         LUCARIA_RUNTIME_ERROR("Impossible to emplace motion track because animation does not exist with this name")
@@ -96,7 +96,7 @@ animator_component& animator_component::use_motion_track(const std::string name,
     return *this;
 }
 
-animator_component& animator_component::use_motion_track(const std::string name, fetched<motion_track>& from)
+animator_component& animator_component::use_motion_track(const std::string name, fetched<animation_motion_track>& from)
 {
     if (_animations.find(name) == _animations.end()) {
         LUCARIA_RUNTIME_ERROR("Impossible to emplace motion track because animation does not exist with this name")
@@ -105,7 +105,7 @@ animator_component& animator_component::use_motion_track(const std::string name,
     return *this;
 }
 
-animator_component& animator_component::use_event_track(const std::string name, event_track& from)
+animator_component& animator_component::use_event_track(const std::string name, animation_event_track& from)
 {
     if (_animations.find(name) == _animations.end()) {
         LUCARIA_RUNTIME_ERROR("Impossible to emplace event track because animation does not exist with this name")
@@ -114,7 +114,7 @@ animator_component& animator_component::use_event_track(const std::string name, 
     return *this;
 }
 
-animator_component& animator_component::use_event_track(const std::string name, fetched<event_track>& from)
+animator_component& animator_component::use_event_track(const std::string name, fetched<animation_event_track>& from)
 {
     if (_animations.find(name) == _animations.end()) {
         LUCARIA_RUNTIME_ERROR("Impossible to emplace event track because animation does not exist with this name")
@@ -126,9 +126,9 @@ animator_component& animator_component::use_event_track(const std::string name, 
 animator_component& animator_component::use_skeleton(skeleton& from)
 {
     _skeleton.emplace(from);
-    for (const std::pair<const std::string, detail::fetched_container<animation>>& _pair : _animations) {
+    for (const std::pair<const std::string, _detail::fetched_container<animation>>& _pair : _animations) {
         if (_pair.second.has_value()) {
-#if LUCARIA_DEBUG
+#if LUCARIA_CONFIG_DEBUG
             const int _animation_tracks = _pair.second.value().get_handle().num_tracks();
             const int _skeleton_joints = _skeleton.value().get_handle().num_joints();
             if (_animation_tracks != _skeleton_joints) {
@@ -149,9 +149,9 @@ animator_component& animator_component::use_skeleton(skeleton& from)
 animator_component& animator_component::use_skeleton(fetched<skeleton>& from)
 {
     _skeleton.emplace(from, [this]() {
-        for (const std::pair<const std::string, detail::fetched_container<animation>>& _pair : _animations) {
+        for (const std::pair<const std::string, _detail::fetched_container<animation>>& _pair : _animations) {
             if (_pair.second.has_value()) {
-#if LUCARIA_DEBUG
+#if LUCARIA_CONFIG_DEBUG
                 const int _animation_tracks = _pair.second.value().get_handle().num_tracks();
                 const int _skeleton_joints = _skeleton.value().get_handle().num_joints();
                 if (_animation_tracks != _skeleton_joints) {
@@ -182,7 +182,7 @@ glm::mat4 animator_component::get_bone_transform(const std::string& bone)
         const int _num_joints = _skeleton.value().get_handle().num_joints();
         for (int _joint_index = 0; _joint_index < _num_joints; ++_joint_index) {
             if (std::string(_skeleton.value().get_handle().joint_names()[_joint_index]) == bone) {
-                return detail::convert(_model_transforms[_joint_index]);
+                return convert(_model_transforms[_joint_index]);
             }
         }
     }

@@ -5,17 +5,17 @@
 namespace lucaria {
 
 /// @brief Represents a runtime sound
-struct sound {
-    LUCARIA_DELETE_DEFAULT_SEMANTICS(sound)
-    sound(const sound& other) = delete;
-    sound& operator=(const sound& other) = delete;
-    sound(sound&& other);
-    sound& operator=(sound&& other);
-    ~sound();
+struct sound_track {
+    LUCARIA_DELETE_DEFAULT(sound_track)
+    sound_track(const sound_track& other) = delete;
+    sound_track& operator=(const sound_track& other) = delete;
+    sound_track(sound_track&& other);
+    sound_track& operator=(sound_track&& other);
+    ~sound_track();
 
     /// @brief Creates a sound from audio data
     /// @param from the audio data to create from
-    sound(const audio& from);    
+    sound_track(const audio& from);    
     
     /// @brief Returns a handle to the underlying implementation
     /// @return the underlying implementation handle
@@ -28,6 +28,6 @@ private:
 
 /// @brief Loads a sound from a file asynchronously
 /// @param data_path path to load from
-[[nodiscard]] fetched<sound> fetch_sound(const std::filesystem::path& data_path);
+[[nodiscard]] fetched<sound_track> fetch_sound(const std::filesystem::path& data_path);
 
 }

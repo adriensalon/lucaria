@@ -2,13 +2,13 @@
 
 #include <lucaria/common/audio_data.hpp>
 #include <lucaria/core/fetch.hpp>
-#include <lucaria/core/semantics.hpp>
+#include <lucaria/core/platform.hpp>
 
 namespace lucaria {
 
 /// @brief Represents runtime audio on the host
 struct audio {
-    LUCARIA_DELETE_DEFAULT_SEMANTICS(audio)
+    LUCARIA_DELETE_DEFAULT(audio)
     audio(const audio& other) = delete;
     audio& operator=(const audio& other) = delete;
     audio(audio&& other) = default;

@@ -14,74 +14,68 @@
 namespace lucaria {
 
 /// @brief Represents a fetched value
-/// @tparam T type being fetched
-template <typename T>
+/// @tparam FetchedType type being fetched
+template <typename FetchedType>
 struct fetched {
 
-    /// @brief Creates a fetched object from an existing std::future<T>
+    /// @brief Creates a fetched object from an existing std::future<FetchedType>
     /// @param future the future to create from
-    fetched(std::future<T>&& future)
+    fetched(std::future<FetchedType>&& future)
     {
-        std::shared_ptr<std::future<T>> _shared_future = std::make_shared<std::future<T>>(std::move(future));
-
+        std::shared_ptr<std::future<FetchedType>> _shared_future = std::make_shared<std::future<FetchedType>>(std::move(future));
         _poll = [_shared_future]() -> bool {
             if (!_shared_future->valid()) {
                 return false;
             }
             return _shared_future->wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
         };
-
-        _get = [_shared_future]() -> T {
+        _get = [_shared_future]() -> FetchedType {
             return _shared_future->get();
         };
     }
 
-    /// @brief Creates a fetched object from an existing std::future<U> and a continuation from U to T
-    /// @tparam U intermediate type to continuate
-    /// @tparam Then function type for the continuation
+    /// @brief Creates a fetched object from an existing std::future<OriginFetchedType> and a continuation from OriginFetchedType to FetchedType
+    /// @tparam OriginFetchedType intermediate type to continuate
+    /// @tparam ThenCallback function type for the continuation
     /// @param future the future to create from
     /// @param then the continuation
-    template <typename U, typename Then, typename = std::enable_if_t<std::is_invocable_r_v<T, const Then&, const U&>>>
-    fetched(std::future<U>&& future, const Then& then)
+    template <typename OriginFetchedType, typename ThenCallback, typename = std::enable_if_t<std::is_invocable_r_v<FetchedType, const ThenCallback&, const OriginFetchedType&>>>
+    fetched(std::future<OriginFetchedType>&& future, const ThenCallback& then)
     {
-        std::shared_ptr<std::future<U>> _shared_intermediate_future = std::make_shared<std::future<U>>(std::move(future));
-        std::shared_ptr<std::decay_t<Then>> _shared_decayed_then = std::make_shared<std::decay_t<Then>>(then);
-
+        std::shared_ptr<std::future<OriginFetchedType>> _shared_intermediate_future = std::make_shared<std::future<OriginFetchedType>>(std::move(future));
+        std::shared_ptr<std::decay_t<ThenCallback>> _shared_decayed_then = std::make_shared<std::decay_t<ThenCallback>>(then);
         _poll = [_shared_intermediate_future]() -> bool {
             if (!_shared_intermediate_future->valid()) {
                 return false;
             }
             return _shared_intermediate_future->wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
         };
-
-        _get = [_shared_intermediate_future, _shared_decayed_then]() -> T {
-            const U _intermediate_value = _shared_intermediate_future->get();
+        _get = [_shared_intermediate_future, _shared_decayed_then]() -> FetchedType {
+            const OriginFetchedType _intermediate_value = _shared_intermediate_future->get();
             return std::invoke(*_shared_decayed_then, _intermediate_value);
         };
     }
 
-    /// @brief Checks if the underlying std::future<T> has yet a value or is still computing
+    /// @brief Checks if the underlying std::future<FetchedType> has yet a value or is still computing
     /// @return true if the value is available
     [[nodiscard]] bool has_value() const
     {
         if (_cache) {
             return true;
         }
-
         if (_poll && _poll()) {
             _cache = std::move(_get());
             _poll = nullptr;
             _get = nullptr;
             return true;
         }
-
         return false;
     }
 
-    /// @brief Gets the available value held by the underlying std::future<T>.
+    /// @brief Gets the available value held by the underlying std::future<FetchedType>.
     /// @throws throws a lucaria::runtime_error if the std::future result is not available yet
     /// @return the available value
-    [[nodiscard]] T& value()
+    [[nodiscard]] FetchedType& value()
     {
         if (!has_value()) {
             LUCARIA_RUNTIME_ERROR("Failed to get fetched value&, please check has_value() before trying to access it")
@@ -89,10 +83,10 @@ struct fetched {
         return _cache.value();
     }
 
-    /// @brief Gets the available value held by the underlying std::future<T>.
+    /// @brief Gets the available value held by the underlying std::future<FetchedType>.
     /// @throws throws a lucaria::runtime_error if the std::future result is not available yet
     /// @return the available value
-    [[nodiscard]] const T& value() const
+    [[nodiscard]] const FetchedType& value() const
     {
         if (!has_value()) {
             LUCARIA_RUNTIME_ERROR("Failed to get fetched const value&, please check has_value() before trying to access it")
@@ -108,19 +102,20 @@ struct fetched {
 
 private:
     mutable std::function<bool()> _poll;
-    mutable std::function<T()> _get;
-    mutable std::optional<T> _cache;
+    mutable std::function<FetchedType()> _get;
+    mutable std::optional<FetchedType> _cache;
 };
 
-/// @brief 
-/// @param fetch_path 
+/// @brief
+/// @param fetch_path
 void set_fetch_path(const std::filesystem::path& fetch_path);
 
 /// @brief Gets the current count of fetched objects that still have a std::future waiting
 /// @return the current count
 [[nodiscard]] std::size_t get_fetches_waiting();
 
-namespace detail {
+// Internal definitions
+namespace _detail {
 
     struct bytes_streambuf : public std::streambuf {
         bytes_streambuf(const std::vector<char>& data);
@@ -149,21 +144,21 @@ namespace detail {
         std::size_t _position;
     };
 
-    template <typename T>
+    template <typename FetchedType>
     struct fetched_container {
 
-        void emplace(T& obj)
+        void emplace(FetchedType& obj)
         {
             _ptr = &obj;
         }
 
-        void emplace(fetched<T>& fut, const std::function<void()>& callback = nullptr)
+        void emplace(fetched<FetchedType>& fut, const std::function<void()>& callback = nullptr)
         {
             _fut = &fut;
             _callback = callback;
         }
 
-        bool has_value() const
+        [[nodiscard]] bool has_value() const
         {
             if (_ptr) {
                 return true;
@@ -179,38 +174,24 @@ namespace detail {
             return false;
         }
 
-        T& value()
+        [[nodiscard]] FetchedType& value()
         {
             return _ptr ? *_ptr : _fut->value();
         }
 
-        const T& value() const
+        [[nodiscard]] const FetchedType& value() const
         {
             return _ptr ? *_ptr : _fut->value();
         }
 
-        explicit operator bool() const { return has_value(); }
+        [[nodiscard]] explicit operator bool() const { return has_value(); }
 
     private:
-        T* _ptr = nullptr;
-        fetched<T>* _fut = nullptr;
+        FetchedType* _ptr = nullptr;
+        fetched<FetchedType>* _fut = nullptr;
         mutable std::function<void()> _callback = nullptr;
         mutable bool _is_callback_invoked = false;
     };
-
-    void load_bytes(
-        const std::filesystem::path& file_path,
-        const std::function<void(const std::vector<char>&)>& callback);
-
-    void fetch_bytes(
-        const std::filesystem::path& file_path,
-        const std::function<void(const std::vector<char>&)>& callback,
-        const bool persist = true);
-
-    void fetch_bytes(
-        const std::vector<std::filesystem::path>& file_paths,
-        const std::function<void(const std::vector<std::vector<char>>&)>& callback,
-        const bool persist = true);
 
 }
 }

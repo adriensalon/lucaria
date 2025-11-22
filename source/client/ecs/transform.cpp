@@ -1,8 +1,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-#include <lucaria/component/animator.hpp>
-#include <lucaria/component/transform.hpp>
+#include <lucaria/ecs/animator.hpp>
+#include <lucaria/ecs/transform.hpp>
 
 namespace lucaria {
 
@@ -48,9 +48,9 @@ transform_component& transform_component::set_position_warp(const glm::vec3& val
 transform_component& transform_component::set_rotation_relative(const glm::vec3& value)
 {
     const glm::mat4 _old_transform = _transform;
-    _transform = glm::rotate(_transform, value.x, glm::vec3(1.0f, 0.0f, 0.0f));
-    _transform = glm::rotate(_transform, value.y, glm::vec3(0.0f, 1.0f, 0.0f));
-    _transform = glm::rotate(_transform, value.z, glm::vec3(0.0f, 0.0f, 1.0f));
+    _transform = glm::rotate(_transform, value.x, glm::vec3(1, 0, 0));
+    _transform = glm::rotate(_transform, value.y, glm::vec3(0, 1, 0));
+    _transform = glm::rotate(_transform, value.z, glm::vec3(0, 0, 1));
     const glm::mat4 _delta_transform = _transform * glm::inverse(_old_transform);
     _apply_delta_to_children(_delta_transform);
     return *this;
@@ -60,11 +60,11 @@ transform_component& transform_component::set_rotation_warp(const glm::vec3& val
 {
     const glm::mat4 _old_transform = _transform;
     const glm::vec4 _position = _transform[3];
-    _transform = glm::mat4(1.0f); // reset to identity
+    _transform = glm::mat4(1);
     _transform[3] = _position;
-    _transform = glm::rotate(_transform, value.x, glm::vec3(1.0f, 0.0f, 0.0f));
-    _transform = glm::rotate(_transform, value.y, glm::vec3(0.0f, 1.0f, 0.0f));
-    _transform = glm::rotate(_transform, value.z, glm::vec3(0.0f, 0.0f, 1.0f));
+    _transform = glm::rotate(_transform, value.x, glm::vec3(1, 0, 0));
+    _transform = glm::rotate(_transform, value.y, glm::vec3(0, 1, 0));
+    _transform = glm::rotate(_transform, value.z, glm::vec3(0, 0, 1));
     const glm::mat4 _delta_transform = _transform * glm::inverse(_old_transform);
     _apply_delta_to_children(_delta_transform);
     return *this;

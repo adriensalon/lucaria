@@ -1,12 +1,22 @@
 #include <lucaria/core/framebuffer.hpp>
-#include <lucaria/core/opengl.hpp>
+
+#if LUCARIA_PLATFORM_ANDROID
+#include <EGL/egl.h>
+#include <GLES3/gl3.h>
+#elif LUCARIA_PLATFORM_WEB
+#include <GLES3/gl3.h>
+#elif LUCARIA_PLATFORM_WIN32
+#include <glad/gl.h>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+#endif
 
 namespace lucaria {
 namespace {
 
     static void check_complete()
     {
-#if LUCARIA_DEBUG
+#if LUCARIA_CONFIG_DEBUG
         GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
         if (status != GL_FRAMEBUFFER_COMPLETE) {
             LUCARIA_RUNTIME_ERROR("Framebuffer incomplete")

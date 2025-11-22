@@ -36,10 +36,10 @@ function(add_lucaria_game_web TARGET)
 
     # default parameters
     if(NOT LBG_ASSETS_DIR)
-        set(LUCARIA_ASSETS_PACKAGE OFF)
+        set(LUCARIA_PACKAGE OFF)
         message(STATUS "Emscripten will rely on same origin fetch for assets")
     else()        
-        set(LUCARIA_ASSETS_PACKAGE ON)
+        set(LUCARIA_PACKAGE ON)
         message(STATUS "Found Emscripten assets at ${LBG_ASSETS_DIR}")
     endif()
 
@@ -53,7 +53,7 @@ function(add_lucaria_game_web TARGET)
         "${LBG_INCLUDES}"
         "${LBG_DEFINES}"
         "${LBG_BUILD_ARGS}"
-        "-DLUCARIA_ASSETS_PACKAGE=${LUCARIA_ASSETS_PACKAGE};-DLUCARIA_HTML_SHELL=${LBG_HTML_SHELL}")
+        "-DLUCARIA_PACKAGE=${LUCARIA_PACKAGE};-DLUCARIA_HTML_SHELL=${LBG_HTML_SHELL}")
     
     if(LBG_INSTALL_DIR)
         add_custom_command(

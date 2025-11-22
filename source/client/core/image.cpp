@@ -2,9 +2,17 @@
 #include <cereal/archives/portable_binary.hpp>
 
 #include <lucaria/core/image.hpp>
-#include <lucaria/core/window.hpp>
 
 namespace lucaria {
+
+const std::filesystem::path& _resolve_image_path(const std::filesystem::path& data_path, const std::optional<std::filesystem::path>& etc2_path, const std::optional<std::filesystem::path>& s3tc_path);
+std::vector<std::filesystem::path> _resolve_image_paths(const std::array<std::filesystem::path, 6>& data_paths, const std::optional<std::array<std::filesystem::path, 6>>& etc2_paths, const std::optional<std::array<std::filesystem::path, 6>>& s3tc_paths);
+
+extern bool _is_etc2_supported;
+extern bool _is_s3tc_supported;
+extern void _load_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback);
+extern void _fetch_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback, bool persist);
+
 namespace {
 
     static void load_data_from_bytes(image_data& data, const std::vector<char>& data_bytes)
@@ -48,7 +56,7 @@ namespace {
             data.height = *(_data32 + 6);
             data.width = *(_data32 + 7);
 
-        // ETC2 compression
+            // ETC2 compression
         } else if (*_data32 == 0x58544BAB) {
             switch (*(_data32 + 7)) {
             case 0x9274:
@@ -72,9 +80,9 @@ namespace {
             data.width = *(_data32 + 9);
             data.height = *(_data32 + 10);
 
-        // binary raw format
+            // binary raw format
         } else {
-            detail::bytes_stream _stream(data_bytes);
+            _detail::bytes_stream _stream(data_bytes);
 #if LUCARIA_JSON
             cereal::JSONInputArchive _archive(_stream);
 #else
@@ -86,6 +94,33 @@ namespace {
 
 }
 
+const std::filesystem::path& _resolve_image_path(
+    const std::filesystem::path& data_path,
+    const std::optional<std::filesystem::path>& etc2_path,
+    const std::optional<std::filesystem::path>& s3tc_path)
+{
+    if (_is_etc2_supported && etc2_path.has_value()) {
+        return etc2_path.value();
+    } else if (_is_s3tc_supported && s3tc_path.has_value()) {
+        return s3tc_path.value();
+    } else {
+        return data_path;
+    }
+}
+
+std::vector<std::filesystem::path> _resolve_image_paths(
+    const std::array<std::filesystem::path, 6>& data_paths,
+    const std::optional<std::array<std::filesystem::path, 6>>& etc2_paths,
+    const std::optional<std::array<std::filesystem::path, 6>>& s3tc_paths)
+{
+    if (_is_etc2_supported && etc2_paths.has_value()) {
+        return std::vector<std::filesystem::path>(etc2_paths.value().begin(), etc2_paths.value().end());
+    } else if (_is_s3tc_supported && s3tc_paths.has_value()) {
+        return std::vector<std::filesystem::path>(s3tc_paths.value().begin(), s3tc_paths.value().end());
+    } else {
+        return std::vector<std::filesystem::path>(data_paths.begin(), data_paths.end());
+    }
+}
 image::image(const std::vector<char>& data_bytes)
 {
     load_data_from_bytes(data, data_bytes);
@@ -96,8 +131,8 @@ image::image(
     const std::optional<std::filesystem::path>& etc2_path,
     const std::optional<std::filesystem::path>& s3tc_path)
 {
-    const std::filesystem::path& _image_path = detail::resolve_image_path(data_path, etc2_path, s3tc_path);
-    detail::load_bytes(_image_path, [this](const std::vector<char>& _data_bytes) {
+    const std::filesystem::path& _image_path = _resolve_image_path(data_path, etc2_path, s3tc_path);
+    _load_bytes(_image_path, [this](const std::vector<char>& _data_bytes) {
         load_data_from_bytes(data, _data_bytes);
     });
 }
@@ -107,45 +142,13 @@ fetched<image> fetch_image(
     const std::optional<std::filesystem::path>& etc2_path,
     const std::optional<std::filesystem::path>& s3tc_path)
 {
-    const std::filesystem::path& _image_path = detail::resolve_image_path(data_path, etc2_path, s3tc_path);
+    const std::filesystem::path& _image_path = _resolve_image_path(data_path, etc2_path, s3tc_path);
     std::shared_ptr<std::promise<image>> _promise = std::make_shared<std::promise<image>>();
-    detail::fetch_bytes(_image_path, [_promise](const std::vector<char>& _data_bytes) {
+    _fetch_bytes(_image_path, [_promise](const std::vector<char>& _data_bytes) {
         image _image(_data_bytes);
-        _promise->set_value(std::move(_image));
-    });
+        _promise->set_value(std::move(_image)); }, true);
 
     return fetched<image>(_promise->get_future());
-}
-
-namespace detail {
-
-    const std::filesystem::path& resolve_image_path(
-        const std::filesystem::path& data_path,
-        const std::optional<std::filesystem::path>& etc2_path,
-        const std::optional<std::filesystem::path>& s3tc_path)
-    {
-        if (get_is_etc2_supported() && etc2_path.has_value()) {
-            return etc2_path.value();
-        } else if (get_is_s3tc_supported() && s3tc_path.has_value()) {
-            return s3tc_path.value();
-        } else {
-            return data_path;
-        }
-    }
-
-    std::vector<std::filesystem::path> resolve_image_paths(
-        const std::array<std::filesystem::path, 6>& data_paths,
-        const std::optional<std::array<std::filesystem::path, 6>>& etc2_paths,
-        const std::optional<std::array<std::filesystem::path, 6>>& s3tc_paths)
-    {
-        if (get_is_etc2_supported() && etc2_paths.has_value()) {
-            return std::vector<std::filesystem::path>(etc2_paths.value().begin(), etc2_paths.value().end());
-        } else if (get_is_s3tc_supported() && s3tc_paths.has_value()) {
-            return std::vector<std::filesystem::path>(s3tc_paths.value().begin(), s3tc_paths.value().end());
-        } else {
-            return std::vector<std::filesystem::path>(data_paths.begin(), data_paths.end());
-        }
-    }
 }
 
 }

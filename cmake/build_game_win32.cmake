@@ -17,7 +17,7 @@ function(add_lucaria_game_win32 TARGET)
             "${LBG_INCLUDES}"
             "${LBG_DEFINES}"
             "${LBG_BUILD_ARGS}"
-            "-DLUCARIA_ASSETS_PACKAGE=OFF;-DLUCARIA_HIDE_CONSOLE=${LBG_HIDE_CONSOLE}")
+            "-DLUCARIA_PACKAGE=OFF;-DLUCARIA_HIDE_CONSOLE=${LBG_HIDE_CONSOLE}")
 
         if(LBG_INSTALL_DIR)
             add_custom_command(

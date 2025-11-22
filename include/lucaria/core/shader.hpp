@@ -2,12 +2,12 @@
 
 #include <lucaria/common/shader_data.hpp>
 #include <lucaria/core/fetch.hpp>
-#include <lucaria/core/semantics.hpp>
+#include <lucaria/core/platform.hpp>
 
 namespace lucaria {
 
 struct shader {
-    LUCARIA_DELETE_DEFAULT_SEMANTICS(shader)
+    LUCARIA_DELETE_DEFAULT(shader)
     shader(const shader& other) = delete;
     shader& operator=(const shader& other) = delete;
     shader(shader&& other) = default;

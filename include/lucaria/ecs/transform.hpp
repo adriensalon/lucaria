@@ -2,16 +2,9 @@
 
 #include <vector>
 
-#include <glm/glm.hpp>
+#include <lucaria/core/math.hpp>
 
 namespace lucaria {
-namespace detail {
-    struct dynamics_system;
-    struct interface_system;
-    struct motion_system;
-    struct mixer_system;
-    struct rendering_system;
-}
 
 /// @brief 
 struct transform_component {
@@ -66,11 +59,11 @@ private:
     glm::mat4 _transform = glm::mat4(1);
     std::vector<std::reference_wrapper<transform_component>> _children = {};
     void _apply_delta_to_children(const glm::mat4& delta);
-    friend struct detail::dynamics_system;
-    friend struct detail::interface_system;
-    friend struct detail::motion_system;
-    friend struct detail::mixer_system;
-    friend struct detail::rendering_system;
+    friend struct dynamics_system;
+    friend struct interface_system;
+    friend struct motion_system;
+    friend struct mixer_system;
+    friend struct rendering_system;
 };
 
 }

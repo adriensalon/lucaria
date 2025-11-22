@@ -1,6 +1,8 @@
-#include <lucaria/component/speaker.hpp>
+#include <AL/al.h>
+#include <AL/alc.h>
+
 #include <lucaria/core/error.hpp>
-#include <lucaria/core/openal.hpp>
+#include <lucaria/ecs/speaker.hpp>
 
 namespace lucaria {
 
@@ -33,7 +35,7 @@ speaker_component::~speaker_component()
     }
 }
 
-speaker_component& speaker_component::use_sound(sound& from)
+speaker_component& speaker_component::use_sound(sound_track& from)
 {
     _sound.emplace(from);
     _is_playing = false;
@@ -42,7 +44,7 @@ speaker_component& speaker_component::use_sound(sound& from)
     return *this;
 }
 
-speaker_component& speaker_component::use_sound(fetched<sound>& from)
+speaker_component& speaker_component::use_sound(fetched<sound_track>& from)
 {
     _sound.emplace(from, [this]() {
         _is_playing = false;
