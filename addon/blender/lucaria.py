@@ -1,10 +1,10 @@
 bl_info = {
-    "name": "Lucaria: Export Action Markers to Event Track (.evtt)",
+    "name": "Lucaria",
     "author": "LucariaCorp",
     "version": (1, 0, 0),
     "blender": (4, 0, 0),
     "location": "File > Export",
-    "description": "Export the active Action's (Dope Sheet Action) markers to a JSON .evtt",
+    "description": "Export blender data to the Lucaria engine asset compiler",
     "category": "Import-Export",
 }
 

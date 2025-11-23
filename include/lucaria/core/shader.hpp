@@ -25,6 +25,16 @@ struct shader {
     /// @param data_path path to load from
     shader(const std::filesystem::path& data_path);
 
+    /// @brief $name
+    /// @param name 
+    /// @param value 
+    void configure_field(const std::string& name, const std::string& value);
+
+    /// @brief name< ... >name
+    /// @param name 
+    /// @param enable 
+    void configure_section(const std::string& name, const bool enable = true);
+
     shader_data data;
 };
 
