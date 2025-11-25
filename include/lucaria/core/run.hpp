@@ -20,10 +20,13 @@ int lucaria_main(int argc = 0, char** argv = nullptr);
 
 namespace lucaria {
 
-/// @brief Runs a Lucaria application from user owned registries
-/// @param scenes user owned registries holding the components
+/// @brief TODO REMOVE SCENES GO SCENES API
 /// @param on_update callback to fire on evey frame
-void run(std::vector<entt::registry>& scenes, const std::function<void()>& on_update);
+void set_update_callback(std::vector<entt::registry>& scenes, const std::function<void()>& on_update);
+
+/// @brief 
+/// @param on_teardown 
+void set_teardown_callback(const std::function<void()>& on_teardown);
 
 /// @brief Gets if the implementation supports ETC2 texture format
 /// @return if the feature is supported
@@ -49,7 +52,7 @@ void run(std::vector<entt::registry>& scenes, const std::function<void()>& on_up
 /// @return if the mouse is locked
 [[nodiscard]] bool get_is_game_locked();
 
-/// @brief
+/// @brief TODO GO SCENES API
 /// @param callback
 void each_scene(const std::function<void(entt::registry&)>& callback);
 

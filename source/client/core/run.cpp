@@ -81,6 +81,7 @@ namespace {
     static glm::uvec2 screen_size = { 0.f, 0.f };
     static glm::float64 time_delta_seconds = 0.f;
     static std::function<void()> update_callback = nullptr;
+    static std::function<void()> teardown_callback = nullptr;
 
     static bool is_audio_locked = false;
     static bool is_mouse_locked = false;
@@ -752,45 +753,17 @@ void _reupload_shared_font_texture()
     _shared_font_atlas->SetTexID((ImTextureID)(intptr_t)_shared_font_texture);
 }
 
-void run(
+void set_update_callback(
     std::vector<entt::registry>& scenes,
     const std::function<void()>& on_update)
 {
     global_scenes = &scenes;
     update_callback = on_update;
+}
 
-#if LUCARIA_PLATFORM_WEB
-    emscripten_set_main_loop(update_loop, 0, EM_TRUE);
-    emscripten_set_main_loop_timing(EM_TIMING_RAF, 1);
-
-#elif LUCARIA_PLATFORM_ANDROID
-    while (true) {
-        int ident;
-        int events;
-        android_poll_source* source = nullptr;
-        while ((ident = ALooper_pollOnce(g_has_window ? 0 : -1, nullptr, &events, (void**)&source)) >= 0) {
-            if (source) {
-                // std::cout << "poll ident=" << ident << " source=" << (void*)source << "\n";
-                source->process(g_app, source);
-            }
-            if (g_app->destroyRequested) {
-                destroy_opengl();
-                destroy_openal();
-                return;
-            }
-        }
-        if (g_engine_initialized && g_has_window && g_surface != EGL_NO_SURFACE) {
-            update_loop();
-        }
-    }
-
-#elif LUCARIA_PLATFORM_WIN32
-    while (!glfwWindowShouldClose(glfw_window)) {
-        update_loop();
-    }
-    glfwDestroyWindow(glfw_window);
-    glfwTerminate();
-#endif
+void set_teardown_callback(const std::function<void()>& on_teardown)
+{
+    teardown_callback = on_teardown;
 }
 
 glm::uvec2 get_screen_size()
@@ -919,6 +892,7 @@ int main(int argc, char** argv)
     std::cout << "Running engine with compression: " << (lucaria::_is_etc2_supported ? "ETC2" : (lucaria::_is_s3tc_supported ? "S3TC" : "OFF")) << std::endl;
     // audio float32
 
+    // register game code
 #if LUCARIA_PLATFORM_ANDROID
     lucaria_main(0, nullptr);
 #elif LUCARIA_PLATFORM_WIN32
@@ -926,4 +900,40 @@ int main(int argc, char** argv)
 #else
     lucaria_main(argc, argv);
 #endif
+
+#if LUCARIA_PLATFORM_WEB
+    emscripten_set_main_loop(lucaria::update_loop, 0, EM_TRUE);
+    emscripten_set_main_loop_timing(EM_TIMING_RAF, 1);
+
+#elif LUCARIA_PLATFORM_ANDROID
+    while (true) {
+        int ident;
+        int events;
+        android_poll_source* source = nullptr;
+        while ((ident = ALooper_pollOnce(g_has_window ? 0 : -1, nullptr, &events, (void**)&source)) >= 0) {
+            if (source) {
+                source->process(g_app, source);
+            }
+            if (g_app->destroyRequested) {
+                lucaria::destroy_opengl();
+                lucaria::destroy_openal();
+                return;
+            }
+        }
+        if (lucaria::g_engine_initialized && lucaria::g_has_window && lucaria::g_surface != EGL_NO_SURFACE) {
+            lucaria::update_loop();
+        }
+    }
+
+#elif LUCARIA_PLATFORM_WIN32
+    while (!glfwWindowShouldClose(lucaria::glfw_window)) {
+        lucaria::update_loop();
+    }
+    glfwDestroyWindow(lucaria::glfw_window);
+    glfwTerminate();
+#endif
+
+    if (lucaria::teardown_callback) {
+        lucaria::teardown_callback();
+    }
 }
