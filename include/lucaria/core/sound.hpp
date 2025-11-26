@@ -20,10 +20,16 @@ struct sound_track {
     /// @brief Returns a handle to the underlying implementation
     /// @return the underlying implementation handle
     [[nodiscard]] glm::uint get_handle() const;
+    
+    [[nodiscard]] glm::uint get_sample_rate() const;
+    
+    [[nodiscard]] glm::uint get_count() const;
 
 private:
     bool _is_owning;
     glm::uint _handle;
+    glm::uint _sample_rate;
+    glm::uint _count;
 };
 
 /// @brief Loads a sound from a file asynchronously

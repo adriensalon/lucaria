@@ -72,4 +72,22 @@ speaker_component& speaker_component::set_loop(const bool loop)
     return *this;
 }
 
+
+std::optional<glm::uint> speaker_component::get_sample_rate() const
+{
+    if (!_sound.has_value()) {
+        return std::nullopt;
+    }
+    return _sound.value().get_sample_rate();
+}
+
+std::optional<glm::uint> speaker_component::get_count() const
+{
+    if (!_sound.has_value()) {
+        return std::nullopt;
+    }
+    return _sound.value().get_count();
+}
+
+
 }

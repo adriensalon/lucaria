@@ -20,6 +20,8 @@ sound_track& sound_track::operator=(sound_track&& other)
     }
     _is_owning = true;
     _handle = other._handle;
+    _sample_rate = other._sample_rate;
+    _count = other._count;
     other._is_owning = false;
     return *this;
 }
@@ -34,6 +36,8 @@ sound_track::~sound_track()
 sound_track::sound_track(const audio& from)
 {
     _handle = 0;
+    _sample_rate = from.data.sample_rate;
+    _count = static_cast<glm::uint>(from.data.samples.size());
     alGenBuffers(1, &_handle);
 #if LUCARIA_CONFIG_DEBUG
     if (_handle == 0) {
@@ -50,6 +54,16 @@ sound_track::sound_track(const audio& from)
 glm::uint sound_track::get_handle() const
 {
     return _handle;
+}
+    
+glm::uint sound_track::get_sample_rate() const
+{
+    return _sample_rate;
+}
+
+glm::uint sound_track::get_count() const
+{
+    return _count;
 }
 
 fetched<sound_track> fetch_sound(const std::filesystem::path& data_path)

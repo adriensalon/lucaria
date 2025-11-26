@@ -14,9 +14,11 @@ void use_skybox_cubemap(cubemap& from);
 /// @param from the cubemap object
 void use_skybox_cubemap(fetched<cubemap>& from);
 
+void set_skybox_rotation(const glm::float32 rotation);
+
 /// @brief Uses a transform component as the camera
-/// @param from the transform component to use
-void use_camera_transform(transform_component& camera);
+/// @param transform the transform component to use
+void use_camera_transform(transform_component& transform);
 
 /// @brief Uses an animator component and a bone name as a relative offset for the camera
 /// @param from the animator component to use

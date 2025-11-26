@@ -20,6 +20,9 @@ struct speaker_component {
     speaker_component& set_volume(const glm::float32 volume);
     speaker_component& set_play(const bool enable);
     speaker_component& set_loop(const bool enable);
+    
+    [[nodiscard]] std::optional<glm::uint> get_sample_rate() const;
+    [[nodiscard]] std::optional<glm::uint> get_count() const;
 
 private:
     bool _is_owning = false;

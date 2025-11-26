@@ -114,6 +114,7 @@ namespace {
     static glm::mat4x4 camera_view;
     static glm::mat4x4 camera_view_projection;
     static _detail::fetched_container<cubemap> skybox_cubemap = {};
+    static glm::float32 _skybox_rotation = 0.f;
     static bool show_free_camera = false;
 
     // post processing
@@ -475,6 +476,11 @@ void use_skybox_cubemap(fetched<cubemap>& from)
     skybox_cubemap.emplace(from);
 }
 
+void set_skybox_rotation(const glm::float32 rotation)
+{
+    _skybox_rotation = rotation;
+}
+
 void use_camera_transform(transform_component& camera)
 {
     _follow = &camera;
@@ -661,7 +667,8 @@ struct rendering_system {
             mesh& _skybox_mesh = _persistent_skybox_mesh.value();
             program& _skybox_program = _persistent_skybox_program.value();
             cubemap& _skybox_cubemap = skybox_cubemap.value();
-            const glm::mat4 _no_translation_view_projection = camera_projection * glm::mat4(glm::mat3(camera_view));
+            const glm::mat4 _skybox_rotation_matrix = glm::rotate(glm::identity<glm::mat4>(), glm::radians(_skybox_rotation), glm::vec3(0, 1, 0));
+            const glm::mat4 _no_translation_view_projection = camera_projection * glm::mat4(glm::mat3(camera_view)) * _skybox_rotation_matrix;
             _skybox_program.use();
             _skybox_program.bind_attribute("vert_position", _skybox_mesh, mesh_attribute::position);
             _skybox_program.bind_uniform("uniform_color", _skybox_cubemap, 0);
