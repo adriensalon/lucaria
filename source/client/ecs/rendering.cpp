@@ -110,6 +110,8 @@ namespace {
     static glm::float32 camera_fov = 60.f;
     static glm::float32 camera_near = 0.1f;
     static glm::float32 camera_far = 1000.f;
+    static glm::float32 _camera_yaw = 0.f;
+    static glm::float32 _camera_pitch = 0.f;
     static glm::mat4x4 camera_projection;
     static glm::mat4x4 camera_view;
     static glm::mat4x4 camera_view_projection;
@@ -492,14 +494,23 @@ void use_camera_bone(animator_component& animator, const std::string& bone)
     _follow_bone_name = bone;
 }
 
-void set_camera_projection(
-    const glm::float32 fov,
-    const glm::float32 near,
-    const glm::float32 far)
+void set_camera_fov(const glm::float32 fov)
 {
     camera_fov = fov;
+}
+void set_camera_near(const glm::float32 near)
+{
     camera_near = near;
+}
+void set_camera_far(const glm::float32 far)
+{
     camera_far = far;
+}
+
+void set_camera_rotation(const glm::float32 yaw, const glm::float32 pitch)
+{
+    _camera_yaw += yaw;
+    _camera_pitch += pitch;
 }
 
 void set_clear_color(const glm::vec4& color)
@@ -583,12 +594,14 @@ struct rendering_system {
     {
         if (get_is_game_locked() && _follow && _follow_animator && !_follow_bone_name.empty()) {
 
-            const glm::vec2 _mouse_delta = get_mouse_position_delta();
+            const glm::vec2 _mouse_delta = glm::vec2(_camera_yaw, _camera_pitch);
 
             // ---- INPUT: use delta yaw to rotate the MODEL; accumulate only pitch for camera
             const float _yaw_delta_degrees = -_mouse_delta.x * mouse_sensitivity; // flip if you prefer
             player_pitch -= _mouse_delta.y * mouse_sensitivity;
             player_pitch = glm::clamp(player_pitch, -89.f, 89.f);
+            _camera_yaw = 0.f;
+            _camera_pitch = 0.f;
 
             // ---- EXTRACT CURRENT WORLD ROTATION (handles external rotations)
             const glm::mat4 followW0 = _follow->_transform;
@@ -801,7 +814,7 @@ struct rendering_system {
     {
         each_scene([](entt::registry& scene) {
             scene.view<spatial_interface_component>().each([](spatial_interface_component& interface) {
-                if (interface._viewport_geometry.has_value() 
+                if (interface._viewport_geometry.has_value()
                     && interface._viewport_mesh
                     && interface._imgui_callback
                     && (!interface._refresh_mode

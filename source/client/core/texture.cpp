@@ -102,7 +102,6 @@ texture::texture(const image& from)
         LUCARIA_RUNTIME_ERROR("Invalid texture channels count, must be 3 or 4")
         break;
     }
-    LUCARIA_RUNTIME_OPENGL_ASSERT
 #if LUCARIA_CONFIG_DEBUG
     std::cout << "Created TEXTURE_2D buffer of size " << from.data.width << "x" << from.data.height << " with id " << _handle << std::endl;
 #endif

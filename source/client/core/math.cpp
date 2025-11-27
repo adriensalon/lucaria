@@ -71,4 +71,9 @@ btTransform convert_bullet(const glm::mat4& matrix)
     return _result;
 }
 
+[[nodiscard]] ImVec2 convert_imgui(const glm::vec2& vector)
+{
+    return ImVec2(vector.x, vector.y);
+}
+
 }

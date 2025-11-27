@@ -37,6 +37,8 @@ void set_camera_near(const glm::float32 near);
 /// @param far the maximum distance from camera to draw (default is 100.f)
 void set_camera_far(const glm::float32 far);
 
+void set_camera_rotation(const glm::float32 yaw, const glm::float32 pitch);
+
 /// @brief Sets the RGBA clear color for all clear calls
 /// @param color the color to use
 void set_clear_color(const glm::vec4& color);

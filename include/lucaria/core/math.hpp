@@ -1,5 +1,6 @@
 #pragma once
 
+#include <imgui.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <ozz/base/maths/simd_math.h>
@@ -46,5 +47,7 @@ namespace lucaria {
 [[nodiscard]] btVector3 convert_bullet(const glm::vec3& vector);
 [[nodiscard]] btQuaternion convert_bullet(const glm::quat& vector);
 [[nodiscard]] btTransform convert_bullet(const glm::mat4& matrix);
+
+[[nodiscard]] ImVec2 convert_imgui(const glm::vec2& vector);
 
 }

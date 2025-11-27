@@ -84,7 +84,7 @@ namespace {
     static std::function<void()> teardown_callback = nullptr;
 
     static bool is_audio_locked = false;
-    static bool is_mouse_locked = false;
+    static bool _is_mouse_locked = false;
     static bool is_fullscreen = false;
 
 #if LUCARIA_PLATFORM_WEB || LUCARIA_PLATFORM_ANDROID
@@ -156,29 +156,28 @@ namespace {
         return sr;
     });
 
+    EM_JS(float, window_get_dpr, (), {
+        return window.devicePixelRatio || 1.0;
+    });
+
     EM_JS(int, canvas_get_width, (), {
-        var canvas = document.getElementById('canvas');
-        canvas.width = canvas.getBoundingClientRect().width;
-        return canvas.getBoundingClientRect().width;
+        var _canvas = document.getElementById('canvas');
+        var _dpr = window.devicePixelRatio;
+        var _width = _canvas.getBoundingClientRect().width * _dpr;
+        _canvas.width = _width;
+        return _width;
     });
 
     EM_JS(int, canvas_get_height, (), {
-        var canvas = document.getElementById('canvas');
-        canvas.height = canvas.getBoundingClientRect().height;
-        return canvas.getBoundingClientRect().height;
+        var _canvas = document.getElementById('canvas');
+        var _dpr = window.devicePixelRatio;
+        var _height = _canvas.getBoundingClientRect().height * _dpr;
+        _canvas.height = _height;
+        return _height;
     });
 
-    EM_JS(int, navigator_get_multitouch, (), {
-        if (navigator.maxTouchPoints && navigator.maxTouchPoints >= 2) {
-            return 1;
-        }
-        if (navigator.msMaxTouchPoints && navigator.msMaxTouchPoints >= 2) {
-            return 1;
-        }
-        if ("ontouchstart" in window) {
-            return 1;
-        }
-        return 0;
+    EM_JS(int, navigator_get_touch_points, (), {
+        return navigator.maxTouchPoints;
     });
 
     void emscripten_assert(EMSCRIPTEN_RESULT result)
@@ -229,9 +228,43 @@ namespace {
         if (!is_audio_locked) {
             is_audio_locked = setup_openal();
         }
-        if (!is_mouse_locked) {
+        if (!_is_mouse_locked) {
             emscripten_assert(emscripten_request_pointerlock("#canvas", 1));
-            is_mouse_locked = true;
+
+            // EmscriptenFullscreenStrategy strategy;
+            // memset(&strategy, 0, sizeof(strategy));
+
+            // strategy.scaleMode = EMSCRIPTEN_FULLSCREEN_SCALE_STRETCH; // or KEEP_ASPECT, CENTER, etc.
+            // strategy.canvasResolutionScaleMode = EMSCRIPTEN_FULLSCREEN_CANVAS_SCALE_STDDEF;
+            // strategy.filteringMode = EMSCRIPTEN_FULLSCREEN_FILTERING_DEFAULT;
+
+            // emscripten_assert(emscripten_request_fullscreen_strategy("#canvas", EM_TRUE, &strategy));
+            _is_mouse_locked = true;
+        }
+    }
+
+    void process_lock_touch()
+    {
+        if (!is_audio_locked) {
+            is_audio_locked = setup_openal();
+        }
+        if (!_is_mouse_locked) {
+
+            EmscriptenFullscreenStrategy strategy;
+            memset(&strategy, 0, sizeof(strategy));
+
+            strategy.scaleMode = EMSCRIPTEN_FULLSCREEN_SCALE_STRETCH; // or KEEP_ASPECT, CENTER, etc.
+            strategy.canvasResolutionScaleMode = EMSCRIPTEN_FULLSCREEN_CANVAS_SCALE_HIDEF;
+            strategy.filteringMode = EMSCRIPTEN_FULLSCREEN_FILTERING_DEFAULT;
+
+            strategy.canvasResizedCallback = [](int eventType,
+                                                 const void* reserved,
+                                                 void* userData) -> EM_BOOL {
+                return EM_TRUE;
+            };
+
+            emscripten_assert(emscripten_request_fullscreen_strategy("#canvas", EM_TRUE, &strategy));
+            _is_mouse_locked = true;
         }
     }
 
@@ -250,8 +283,9 @@ namespace {
     EM_BOOL mouse_callback(int event_type, const EmscriptenMouseEvent* event, void* user_data)
     {
         if (event_type == EMSCRIPTEN_EVENT_MOUSEMOVE) {
-            const glm::vec2 _new_position = glm::vec2(event->clientX, event->clientY);
-            _pointer_accumulators[0] += glm::vec2(event->movementX, event->movementY);
+            const glm::float32 _dpr = window_get_dpr();
+            const glm::vec2 _new_position = _dpr * glm::vec2(event->clientX, event->clientY);
+            _pointer_accumulators[0] += _dpr * glm::vec2(event->movementX, event->movementY);
             _pointer_events[0].position = _new_position;
             ImGui::GetIO().AddMousePosEvent(_new_position.x, _new_position.y);
         } else if (event_type == EMSCRIPTEN_EVENT_MOUSEDOWN) {
@@ -272,16 +306,51 @@ namespace {
 
     EM_BOOL touch_callback(int event_type, const EmscriptenTouchEvent* event, void* user_data)
     {
-        const EmscriptenTouchPoint* _touch_point = &(event->touches[0]);
-        glm::vec2 _touch_move_position = glm::vec2(_touch_point->clientX, _touch_point->clientY);
-        if (event_type == EMSCRIPTEN_EVENT_TOUCHSTART) {
-            process_lock();
-            // mouse_position_delta = { 0, 0 };
-        } else if (event_type == EMSCRIPTEN_EVENT_TOUCHMOVE) {
+        static std::unordered_map<glm::uint, glm::vec2> _last_positions = {};
+        const float _dpr = window_get_dpr();
 
-            // mouse_position_delta = _touch_move_position - mouse_position;
+        std::cout << "num touches = " << event->numTouches << std::endl;
+        if (event_type == EMSCRIPTEN_EVENT_TOUCHSTART) {
+            std::cout << "START" << std::endl;
+            for (int _pointer_index = 0; _pointer_index < event->numTouches; ++_pointer_index) {
+                const EmscriptenTouchPoint& _touch_point = event->touches[_pointer_index];
+                if (!_touch_point.isChanged) {
+                    continue;
+                }
+                const glm::uint _event_id = static_cast<glm::uint>(_touch_point.identifier);
+                const glm::vec2 _new_position = _dpr * glm::vec2(_touch_point.clientX, _touch_point.clientY);
+                _last_positions[_event_id] = _new_position;
+                _pointer_accumulators[_event_id] = glm::vec2(0);
+                _pointer_events[_event_id].position = _new_position;
+            }
+            process_lock_touch();
+
+        } else if (event_type == EMSCRIPTEN_EVENT_TOUCHMOVE) {
+            std::cout << "MOVE" << std::endl;
+            for (int _pointer_index = 0; _pointer_index < event->numTouches; ++_pointer_index) {
+                const EmscriptenTouchPoint& _touch_point = event->touches[_pointer_index];
+                if (!_touch_point.isChanged) {
+                    continue;
+                }
+                const glm::uint _event_id = static_cast<glm::uint>(_touch_point.identifier);
+                const glm::vec2 _new_position = _dpr * glm::vec2(_touch_point.clientX, _touch_point.clientY);
+                const glm::vec2 _delta_position = _new_position - _last_positions[_event_id];
+                _last_positions[_event_id] = _new_position;
+                _pointer_accumulators[_event_id] += _delta_position;
+                _pointer_events[_event_id].position = _new_position;
+            }
+
+        } else if (event_type == EMSCRIPTEN_EVENT_TOUCHEND || event_type == EMSCRIPTEN_EVENT_TOUCHCANCEL) {
+            std::cout << "END" << std::endl;
+            for (int _pointer_index = 0; _pointer_index < event->numTouches; ++_pointer_index) {
+                const EmscriptenTouchPoint& _touch_point = event->touches[_pointer_index];
+                const glm::uint _event_id = static_cast<glm::uint>(_touch_point.identifier);
+                _last_positions.erase(_event_id);
+                _pointer_accumulators.erase(_event_id);
+                _pointer_events.erase(_event_id);
+            }
         }
-        // mouse_position = _touch_move_position;
+
         return 0; // we use preventDefault() for touch callbacks (see Safari on iPad)
     }
 #endif
@@ -314,14 +383,13 @@ namespace {
         // TODO: map touch / key events into your input system
         // You can start super simple and just ignore input for now:
 
-        is_mouse_locked = true;
+        _is_mouse_locked = true;
 
         if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION) {
 
             static std::unordered_map<glm::uint, glm::vec2> _last_positions = {};
             for (int32_t _pointer_index = 0; _pointer_index < AMotionEvent_getPointerCount(event); _pointer_index++) {
                 glm::uint _event_id = static_cast<glm::uint>(AMotionEvent_getPointerId(event, _pointer_index));
-                std::cout << std::to_string(_event_id) << std::endl;
                 glm::vec2& _last_position = _last_positions[_event_id];
                 const glm::vec2 _new_position = glm::vec2(AMotionEvent_getX(event, _pointer_index), AMotionEvent_getY(event, _pointer_index));
                 const glm::vec2 _delta_position = _new_position - _last_position;
@@ -370,11 +438,11 @@ namespace {
     static void glfw_window_focus_callback(GLFWwindow* window, int focused)
     {
         if (focused) {
-            is_mouse_locked = true;
+            _is_mouse_locked = true;
             std::cout << "Window gained focus\n";
             glfwSetInputMode(glfw_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         } else {
-            is_mouse_locked = false;
+            _is_mouse_locked = false;
             std::cout << "Window lost focus\n";
             glfwSetInputMode(glfw_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
@@ -415,9 +483,9 @@ namespace {
             }
 
             if (glfw_keyboard_mappings.find(key) != glfw_keyboard_mappings.end()) {
-                if (!is_mouse_locked) {
+                if (!_is_mouse_locked) {
                     glfwSetInputMode(glfw_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                    is_mouse_locked = true;
+                    _is_mouse_locked = true;
                 }
                 _button_events[glfw_keyboard_mappings[key]].state = true;
             }
@@ -452,11 +520,15 @@ namespace {
     void update_mouse_lock()
     {
 #if LUCARIA_PLATFORM_WEB
-        EmscriptenPointerlockChangeEvent _pointer_lock;
-        emscripten_assert(emscripten_get_pointerlock_status(&_pointer_lock));
-        is_mouse_locked = _pointer_lock.isActive;
-#else
+        if (_is_touch_supported) {
+            EmscriptenFullscreenChangeEvent fs;
+            // _is_mouse_locked = (emscripten_get_fullscreen_status(&fs) == EMSCRIPTEN_RESULT_SUCCESS);
 
+        } else {
+            EmscriptenPointerlockChangeEvent _pointer_lock;
+            emscripten_assert(emscripten_get_pointerlock_status(&_pointer_lock));
+            _is_mouse_locked = _pointer_lock.isActive;
+        }
 #endif
     }
 
@@ -666,7 +738,7 @@ namespace {
 #endif
 
         // assert
-        LUCARIA_RUNTIME_OPENGL_ASSERT
+        // LUCARIA_RUNTIME_OPENGL_ASSERT
         if (is_audio_locked) {
             LUCARIA_RUNTIME_OPENAL_ASSERT
         }
@@ -788,7 +860,10 @@ bool get_is_s3tc_supported()
 
 bool get_is_game_locked()
 {
-    return is_audio_locked && is_mouse_locked;
+
+    // std::cout << "is audio locked = " << is_audio_locked << std::endl;
+    // std::cout << "is mouse locked = " << _is_mouse_locked << std::endl;
+    return is_audio_locked && _is_mouse_locked;
 }
 
 void each_scene(const std::function<void(entt::registry&)>& callback)
@@ -834,28 +909,34 @@ int main(int argc, char** argv)
 #endif
 
 #if LUCARIA_PLATFORM_WEB
-    lucaria::emscripten_assert(emscripten_set_keypress_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::key_callback));
-    lucaria::emscripten_assert(emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::key_callback));
-    lucaria::emscripten_assert(emscripten_set_keyup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::key_callback));
-    lucaria::emscripten_assert(emscripten_set_click_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
-    lucaria::emscripten_assert(emscripten_set_mousedown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
-    lucaria::emscripten_assert(emscripten_set_mouseup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
-    lucaria::emscripten_assert(emscripten_set_dblclick_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
-    lucaria::emscripten_assert(emscripten_set_mousemove_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
-    lucaria::emscripten_assert(emscripten_set_mouseenter_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
-    lucaria::emscripten_assert(emscripten_set_mouseleave_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
-    lucaria::emscripten_assert(emscripten_set_mouseover_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
-    lucaria::emscripten_assert(emscripten_set_mouseout_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
-    lucaria::emscripten_assert(emscripten_set_touchstart_callback("#canvas", 0, 1, lucaria::touch_callback));
-    lucaria::emscripten_assert(emscripten_set_touchend_callback("#canvas", 0, 1, lucaria::touch_callback));
-    // lucaria::emscripten_assert(emscripten_set_touchmove_callback("#canvas", 0, 1, lucaria::touch_callback));
-    // lucaria::emscripten_assert(emscripten_set_touchcancel_callback("#canvas", 0, 1, lucaria::touch_callback)); // EMSCRIPTEN_EVENT_TARGET_WINDOW doesnt seem to work on safari
-    lucaria::setup_opengl();
-    lucaria::setup_imgui();
-    lucaria::is_audio_locked = lucaria::setup_openal();
-    lucaria::_is_touch_supported = static_cast<bool>(lucaria::navigator_get_multitouch());
+    lucaria::_is_touch_supported = lucaria::navigator_get_touch_points() > 1;
     lucaria::_is_mouse_supported = !lucaria::_is_touch_supported;
     lucaria::_is_keyboard_supported = !lucaria::_is_touch_supported;
+    if (lucaria::_is_touch_supported) {
+        lucaria::emscripten_assert(emscripten_set_touchstart_callback("#canvas", 0, 1, lucaria::touch_callback));
+        lucaria::emscripten_assert(emscripten_set_touchend_callback("#canvas", 0, 1, lucaria::touch_callback));
+        lucaria::emscripten_assert(emscripten_set_touchmove_callback("#canvas", 0, 1, lucaria::touch_callback));
+        lucaria::emscripten_assert(emscripten_set_touchcancel_callback("#canvas", 0, 1, lucaria::touch_callback)); // EMSCRIPTEN_EVENT_TARGET_WINDOW doesnt seem to work on safari
+    }
+    if (lucaria::_is_mouse_supported) {
+        lucaria::emscripten_assert(emscripten_set_click_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
+        lucaria::emscripten_assert(emscripten_set_mousedown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
+        lucaria::emscripten_assert(emscripten_set_mouseup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
+        lucaria::emscripten_assert(emscripten_set_dblclick_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
+        lucaria::emscripten_assert(emscripten_set_mousemove_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
+        lucaria::emscripten_assert(emscripten_set_mouseenter_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
+        lucaria::emscripten_assert(emscripten_set_mouseleave_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
+        lucaria::emscripten_assert(emscripten_set_mouseover_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
+        lucaria::emscripten_assert(emscripten_set_mouseout_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::mouse_callback));
+    }
+    if (lucaria::_is_keyboard_supported) {
+        lucaria::emscripten_assert(emscripten_set_keypress_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::key_callback));
+        lucaria::emscripten_assert(emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::key_callback));
+        lucaria::emscripten_assert(emscripten_set_keyup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, lucaria::key_callback));
+    }
+
+    lucaria::setup_opengl();
+    lucaria::setup_imgui();
 #endif
 
 #if LUCARIA_PLATFORM_WIN32
