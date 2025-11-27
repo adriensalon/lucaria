@@ -34,7 +34,7 @@ if(EMSCRIPTEN)
     
     if(LUCARIA_DEBUG)
         target_link_options(${LUCARIA_TARGET} PRIVATE -g)
-        # target_link_options(${LUCARIA_TARGET} PRIVATE -sGL_DEBUG=1)
+        target_link_options(${LUCARIA_TARGET} PRIVATE -sGL_DEBUG=1)
         target_link_options(${LUCARIA_TARGET} PRIVATE -sNO_DISABLE_EXCEPTION_CATCHING)
     else()
         target_link_options(${LUCARIA_TARGET} PRIVATE -O3)

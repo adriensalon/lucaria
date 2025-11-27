@@ -55,10 +55,16 @@ struct spatial_interface_component {
     spatial_interface_component& set_interaction(const bool interaction);
     spatial_interface_component& set_cursor_size(const glm::vec2& size);
 
+    [[nodiscard]] std::optional<glm::vec2> get_interaction_position()
+    {
+        return _interaction_screen_position;
+    }
+
 private:
     bool _is_owning = false;
     bool _use_interaction = false;
     glm::uvec2 _viewport_size = glm::uvec2(0);
+    std::optional<glm::vec2> _interaction_screen_position = std::nullopt;
     _detail::fetched_container<texture> _interaction_texture = {};
     _detail::fetched_container<geometry> _viewport_geometry = {};
     std::unique_ptr<mesh> _viewport_mesh = nullptr;

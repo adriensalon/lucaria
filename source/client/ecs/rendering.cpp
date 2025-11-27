@@ -824,16 +824,17 @@ struct rendering_system {
                     ImGui::GetIO().DisplaySize = ImVec2(static_cast<glm::float32>(interface._viewport_size.x), static_cast<glm::float32>(interface._viewport_size.y));
 
                     std::optional<glm::vec2> _raycasted_uvs;
-                    glm::vec2 _interaction_screen_position;
                     if (interface._use_interaction) {
                         _raycasted_uvs = viewport_raycast(interface._viewport_geometry.value());
                         if (_raycasted_uvs) {
-                            _interaction_screen_position = {
+                            interface._interaction_screen_position = {
                                 (_raycasted_uvs.value().x) * interface._viewport_size.x,
                                 (1.f - _raycasted_uvs.value().y) * interface._viewport_size.y
                             };
-                            ImGui::GetIO().MousePos = ImVec2(_interaction_screen_position.x, _interaction_screen_position.y);
+                            ImGui::GetIO().MousePos = ImVec2(interface._interaction_screen_position.value().x, interface._interaction_screen_position.value().y);
                             ImGui::GetIO().MouseDown[0] = get_buttons()[button_key::mouse_left].state;
+                        } else {
+                            interface._interaction_screen_position = std::nullopt;
                         }
                     }
 
@@ -848,7 +849,7 @@ struct rendering_system {
                     if (interface._use_interaction && interface._interaction_texture.has_value()) {
                         const ImTextureID _texture_id = reinterpret_cast<ImTextureID>(static_cast<std::uintptr_t>(interface._interaction_texture.value().get_handle()));
                         if (_raycasted_uvs) {
-                            const ImVec2 _cursor_min(_interaction_screen_position.x, _interaction_screen_position.y);
+                            const ImVec2 _cursor_min(interface._interaction_screen_position.value().x, interface._interaction_screen_position.value().y);
                             const ImVec2 _cursor_max(
                                 _cursor_min.x + interface._cursor_size.x,
                                 _cursor_min.y + interface._cursor_size.y);
