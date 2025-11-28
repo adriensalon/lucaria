@@ -26,22 +26,22 @@ namespace {
         if (*_data32 == 0x03525650) {
             switch (*(_data32 + 2)) {
             case 7:
-                std::cout << "PVR DXT1 RGB" << std::endl;
+                // std::cout << "PVR DXT1 RGB" << std::endl;
                 data.channels = 3;
                 data.is_compressed_s3tc = true;
                 break;
             case 11:
-                std::cout << "PVR DXT5 RGBA" << std::endl;
+                // std::cout << "PVR DXT5 RGBA" << std::endl;
                 data.channels = 4;
                 data.is_compressed_s3tc = true;
                 break;
             case 22:
-                std::cout << "PVR ETC2 RGB" << std::endl;
+                // std::cout << "PVR ETC2 RGB" << std::endl;
                 data.channels = 3;
                 data.is_compressed_etc = true;
                 break;
             case 23:
-                std::cout << "PVR ETC2 RGBA" << std::endl;
+                // std::cout << "PVR ETC2 RGBA" << std::endl;
                 data.channels = 4;
                 data.is_compressed_etc = true;
                 break;
@@ -60,12 +60,12 @@ namespace {
         } else if (*_data32 == 0x58544BAB) {
             switch (*(_data32 + 7)) {
             case 0x9274:
-                std::cout << "KTX ETC2 RGB" << std::endl;
+                // std::cout << "KTX ETC2 RGB" << std::endl;
                 data.channels = 3;
                 data.is_compressed_etc = true;
                 break;
             case 0x9278:
-                std::cout << "KTX ETC2 RGBA" << std::endl;
+                // std::cout << "KTX ETC2 RGBA" << std::endl;
                 data.channels = 4;
                 data.is_compressed_etc = true;
                 break;
