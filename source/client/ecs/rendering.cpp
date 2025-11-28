@@ -737,17 +737,55 @@ struct rendering_system {
     static void draw_unlit_meshes()
     {
         static bool _is_program_setup = false;
-        static std::optional<program> _persistent_unlit_skinned_program = std::nullopt;
         if (!_is_program_setup) {
             shader _unlit_vertex_shader(shader_data { unlit_vertex });
             shader _unlit_fragment_shader(shader_data { unlit_fragment });
             _persistent_unlit_program = program(_unlit_vertex_shader, _unlit_fragment_shader);
+            _is_program_setup = true;
+        }
+
+        program& _unlit_program = _persistent_unlit_program.value();
+        each_scene([&](entt::registry& scene) {
+            scene.view<unlit_model_component, transform_component>(entt::exclude<animator_component>).each([&](unlit_model_component& _model, transform_component& _transform) {
+                if (_model._mesh.has_value() && _model._color.has_value()) {
+                    const glm::mat4 _model_view_projection = camera_view_projection * _transform._transform;
+                    const mesh& _mesh = _model._mesh.value();
+                    const texture& _color = _model._color.value();
+                    _unlit_program.use();
+                    _unlit_program.bind_attribute("vert_position", _mesh, mesh_attribute::position);
+                    _unlit_program.bind_attribute("vert_texcoord", _mesh, mesh_attribute::texcoord);
+                    _unlit_program.bind_uniform("uniform_view", _model_view_projection);
+                    _unlit_program.bind_uniform("uniform_color", _color, 0);
+                    _unlit_program.draw();
+                }
+            });
+
+            scene.view<unlit_model_component>(entt::exclude<transform_component, animator_component>).each([&](unlit_model_component& _model) {
+                if (_model._mesh.has_value() && _model._color.has_value()) {
+                    const mesh& _mesh = _model._mesh.value();
+                    const texture& _color = _model._color.value();
+                    _unlit_program.use();
+                    _unlit_program.bind_attribute("vert_position", _mesh, mesh_attribute::position);
+                    _unlit_program.bind_attribute("vert_texcoord", _mesh, mesh_attribute::texcoord);
+                    _unlit_program.bind_uniform("uniform_color", _color, 0);
+                    _unlit_program.bind_uniform("uniform_view", camera_view_projection);
+                    _unlit_program.draw();
+                }
+            });
+        });
+    }
+
+    static void draw_unlit_skinned_meshes()
+    {
+        static bool _is_program_setup = false;
+        static std::optional<program> _persistent_unlit_skinned_program = std::nullopt;
+        if (!_is_program_setup) {
+            shader _unlit_fragment_shader(shader_data { unlit_fragment });
             shader _unlit_skinned_vertex_shader(shader_data { unlit_skinned_vertex });
             _persistent_unlit_skinned_program = program(_unlit_skinned_vertex_shader, _unlit_fragment_shader);
             _is_program_setup = true;
         }
 
-        program& _unlit_program = _persistent_unlit_program.value();
         program& _unlit_skinned_program = _persistent_unlit_skinned_program.value();
         each_scene([&](entt::registry& scene) {
             scene.view<unlit_model_component, transform_component, animator_component>().each([&](unlit_model_component& _model, transform_component& _transform, animator_component& animator) {
@@ -768,20 +806,6 @@ struct rendering_system {
                 }
             });
 
-            scene.view<unlit_model_component, transform_component>(entt::exclude<animator_component>).each([&](unlit_model_component& _model, transform_component& _transform) {
-                if (_model._mesh.has_value() && _model._color.has_value()) {
-                    const glm::mat4 _model_view_projection = camera_view_projection * _transform._transform;
-                    const mesh& _mesh = _model._mesh.value();
-                    const texture& _color = _model._color.value();
-                    _unlit_program.use();
-                    _unlit_program.bind_attribute("vert_position", _mesh, mesh_attribute::position);
-                    _unlit_program.bind_attribute("vert_texcoord", _mesh, mesh_attribute::texcoord);
-                    _unlit_program.bind_uniform("uniform_view", _model_view_projection);
-                    _unlit_program.bind_uniform("uniform_color", _color, 0);
-                    _unlit_program.draw();
-                }
-            });
-
             scene.view<unlit_model_component, animator_component>(entt::exclude<transform_component>).each([&](unlit_model_component& _model, animator_component& animator) {
                 if (_model._mesh.has_value() && _model._color.has_value() && animator._skeleton.has_value()) {
                     const mesh& _mesh = _model._mesh.value();
@@ -796,19 +820,6 @@ struct rendering_system {
                     _unlit_skinned_program.bind_uniform("uniform_bones_invposes[0]", _mesh.get_invposes());
                     _unlit_skinned_program.bind_uniform("uniform_color", _color, 0);
                     _unlit_skinned_program.draw();
-                }
-            });
-
-            scene.view<unlit_model_component>(entt::exclude<transform_component, animator_component>).each([&](unlit_model_component& _model) {
-                if (_model._mesh.has_value() && _model._color.has_value()) {
-                    const mesh& _mesh = _model._mesh.value();
-                    const texture& _color = _model._color.value();
-                    _unlit_program.use();
-                    _unlit_program.bind_attribute("vert_position", _mesh, mesh_attribute::position);
-                    _unlit_program.bind_attribute("vert_texcoord", _mesh, mesh_attribute::texcoord);
-                    _unlit_program.bind_uniform("uniform_color", _color, 0);
-                    _unlit_program.bind_uniform("uniform_view", camera_view_projection);
-                    _unlit_program.draw();
                 }
             });
         });
@@ -1012,6 +1023,9 @@ void _system_compute_rendering()
     rendering_system::draw_skybox();
     rendering_system::draw_blockout_meshes();
     rendering_system::draw_unlit_meshes();
+    if (!LUCARIA_PLATFORM_WEB || !get_is_touch_supported()) {
+        rendering_system::draw_unlit_skinned_meshes();
+    }
     rendering_system::draw_imgui_spatial_interfaces();
     rendering_system::draw_post_processing();
     rendering_system::draw_imgui_screen_interfaces();
