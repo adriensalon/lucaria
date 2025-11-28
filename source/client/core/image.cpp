@@ -73,9 +73,15 @@ namespace {
                 LUCARIA_RUNTIME_ERROR("Invalid ETC2 image data")
                 break;
             }
-            const std::size_t _offset = sizeof(uint32_t) * 17 + *(_data32 + 15);
-            const glm::uint8* _data_ptr = _content.data() + _offset;
-            const std::size_t _data_size = _content.size() - _offset;
+            
+            const std::uint8_t* _bytes = reinterpret_cast<const std::uint8_t*>(_content.data());
+            const std::uint32_t _header_size = sizeof(std::uint32_t) * 16;
+            const std::uint32_t _bytes_of_key_value = *(_data32 + 15);
+            std::size_t _offset = _header_size + _bytes_of_key_value;
+            const std::uint32_t _image_size = *reinterpret_cast<const std::uint32_t*>(_bytes + _offset);
+            _offset += sizeof(std::uint32_t);
+            const glm::uint8* _data_ptr = _bytes + _offset;
+            const std::size_t _data_size = _image_size;
             data.pixels = std::vector<glm::uint8>(_data_ptr, _data_ptr + _data_size);
             data.width = *(_data32 + 9);
             data.height = *(_data32 + 10);

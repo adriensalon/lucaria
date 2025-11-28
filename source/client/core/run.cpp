@@ -223,16 +223,6 @@ namespace {
 #endif
     }
 
-    void process_lock()
-    {
-        
-    }
-
-    void process_lock_touch()
-    {
-        
-    }
-
     EM_BOOL key_callback(int event_type, const EmscriptenKeyboardEvent* event, void* user_data)
     {
         // process lock
@@ -258,18 +248,6 @@ namespace {
 
     EM_BOOL mouse_callback(int event_type, const EmscriptenMouseEvent* event, void* user_data)
     {
-        // process lock
-        if (!is_audio_locked) {
-            is_audio_locked = setup_openal();
-        }
-        EmscriptenPointerlockChangeEvent _pointer_lock;
-        emscripten_assert(emscripten_get_pointerlock_status(&_pointer_lock));
-        _is_mouse_locked = _pointer_lock.isActive;
-        if (!_is_mouse_locked) {
-            emscripten_assert(emscripten_request_pointerlock("#canvas", 1));
-            _is_mouse_locked = true;
-        }
-
         if (event_type == EMSCRIPTEN_EVENT_MOUSEMOVE) {
             const glm::float32 _dpr = window_get_dpr();
             const glm::vec2 _new_position = _dpr * glm::vec2(event->clientX, event->clientY);
@@ -280,6 +258,18 @@ namespace {
             const glm::uint _button = event->button;
             _button_events[static_cast<button_key>(_button)].state = true;
             ImGui::GetIO().AddMouseButtonEvent(_button, true);
+
+            // process lock
+            if (!is_audio_locked) {
+                is_audio_locked = setup_openal();
+            }
+            EmscriptenPointerlockChangeEvent _pointer_lock;
+            emscripten_assert(emscripten_get_pointerlock_status(&_pointer_lock));
+            _is_mouse_locked = _pointer_lock.isActive;
+            if (!_is_mouse_locked) {
+                emscripten_assert(emscripten_request_pointerlock("#canvas", 1));
+                _is_mouse_locked = true;
+            }
         } else if (event_type == EMSCRIPTEN_EVENT_MOUSEUP) {
             const glm::uint _button = event->button;
             _button_events[static_cast<button_key>(_button)].state = false;
@@ -705,6 +695,7 @@ namespace {
             return;
         }
 
+        // get delta pointers positions
         for (std::pair<const glm::uint, glm::vec2>& _accumulator : _pointer_accumulators) {
             _pointer_events[_accumulator.first].delta = _accumulator.second;
             _accumulator.second = glm::vec2(0);
@@ -716,11 +707,9 @@ namespace {
 #elif LUCARIA_PLATFORM_WIN32
         ImGui_ImplGlfw_NewFrame();
 #endif
+        ImGui::GetIO().DisplaySize = ImVec2(static_cast<glm::float32>(screen_size.x), static_cast<glm::float32>(screen_size.y));
 
         // update
-        ImGui::GetIO().DisplaySize = ImVec2(static_cast<glm::float32>(screen_size.x), static_cast<glm::float32>(screen_size.y));
-        // update_mouse_lock();
-
         update_callback();
 
         _system_compute_motion();
@@ -729,9 +718,6 @@ namespace {
         _system_guizmos_motion();
         _system_guizmos_dynamics();
         _system_compute_rendering();
-
-        // keys_changed.clear();
-        // buttons_changed.clear();
 
         // swap buffers
 #if LUCARIA_PLATFORM_ANDROID
