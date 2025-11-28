@@ -258,6 +258,18 @@ namespace {
 
     EM_BOOL mouse_callback(int event_type, const EmscriptenMouseEvent* event, void* user_data)
     {
+        // process lock
+        if (!is_audio_locked) {
+            is_audio_locked = setup_openal();
+        }
+        EmscriptenPointerlockChangeEvent _pointer_lock;
+        emscripten_assert(emscripten_get_pointerlock_status(&_pointer_lock));
+        _is_mouse_locked = _pointer_lock.isActive;
+        if (!_is_mouse_locked) {
+            emscripten_assert(emscripten_request_pointerlock("#canvas", 1));
+            _is_mouse_locked = true;
+        }
+
         if (event_type == EMSCRIPTEN_EVENT_MOUSEMOVE) {
             const glm::float32 _dpr = window_get_dpr();
             const glm::vec2 _new_position = _dpr * glm::vec2(event->clientX, event->clientY);
@@ -333,6 +345,9 @@ namespace {
         } else if (event_type == EMSCRIPTEN_EVENT_TOUCHEND || event_type == EMSCRIPTEN_EVENT_TOUCHCANCEL) {
             for (int _pointer_index = 0; _pointer_index < event->numTouches; ++_pointer_index) {
                 const EmscriptenTouchPoint& _touch_point = event->touches[_pointer_index];
+                if (!_touch_point.isChanged) {
+                    continue;
+                }
                 const glm::uint _event_id = static_cast<glm::uint>(_touch_point.identifier);
                 _last_positions.erase(_event_id);
                 _pointer_accumulators.erase(_event_id);

@@ -644,10 +644,14 @@ struct rendering_system {
             const glm::mat4 boneLocal = _follow_animator->get_bone_transform(_follow_bone_name);
             const glm::vec3 boneWorld = glm::vec3((followW * boneLocal)[3]);
 
+            // // Boom offset: behind character along ground heading
+            // const float boomDist = show_physics_guizmos ? 1.f : -0.23f; // distance behind
+            // // const float boomDist = 1.53f; // distance behind
+            // const float camHeight = show_physics_guizmos ? 1.f : 0.f; // tweak if needed
             // Boom offset: behind character along ground heading
-            const float boomDist = show_physics_guizmos ? 1.f : -0.23f; // distance behind
+            const float boomDist = -0.23f; // distance behind
             // const float boomDist = 1.53f; // distance behind
-            const float camHeight = show_physics_guizmos ? 1.f : 0.f; // tweak if needed
+            const float camHeight = 0.f; // tweak if needed
 
             player_position = boneWorld - groundF * boomDist + worldUp * camHeight;
             camera_view = glm::lookAt(player_position, player_position + camForward, camUp);
