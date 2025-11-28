@@ -225,55 +225,31 @@ namespace {
 
     void process_lock()
     {
-        if (!is_audio_locked) {
-            is_audio_locked = setup_openal();
-        }
-        if (!_is_mouse_locked) {
-            emscripten_assert(emscripten_request_pointerlock("#canvas", 1));
-
-            // EmscriptenFullscreenStrategy strategy;
-            // memset(&strategy, 0, sizeof(strategy));
-
-            // strategy.scaleMode = EMSCRIPTEN_FULLSCREEN_SCALE_STRETCH; // or KEEP_ASPECT, CENTER, etc.
-            // strategy.canvasResolutionScaleMode = EMSCRIPTEN_FULLSCREEN_CANVAS_SCALE_STDDEF;
-            // strategy.filteringMode = EMSCRIPTEN_FULLSCREEN_FILTERING_DEFAULT;
-
-            // emscripten_assert(emscripten_request_fullscreen_strategy("#canvas", EM_TRUE, &strategy));
-            _is_mouse_locked = true;
-        }
+        
     }
 
     void process_lock_touch()
     {
-        if (!is_audio_locked) {
-            is_audio_locked = setup_openal();
-        }
-        if (!_is_mouse_locked) {
-
-            EmscriptenFullscreenStrategy strategy;
-            memset(&strategy, 0, sizeof(strategy));
-
-            strategy.scaleMode = EMSCRIPTEN_FULLSCREEN_SCALE_STRETCH; // or KEEP_ASPECT, CENTER, etc.
-            strategy.canvasResolutionScaleMode = EMSCRIPTEN_FULLSCREEN_CANVAS_SCALE_HIDEF;
-            strategy.filteringMode = EMSCRIPTEN_FULLSCREEN_FILTERING_DEFAULT;
-
-            strategy.canvasResizedCallback = [](int eventType,
-                                                 const void* reserved,
-                                                 void* userData) -> EM_BOOL {
-                return EM_TRUE;
-            };
-
-            emscripten_assert(emscripten_request_fullscreen_strategy("#canvas", EM_TRUE, &strategy));
-            _is_mouse_locked = true;
-        }
+        
     }
 
     EM_BOOL key_callback(int event_type, const EmscriptenKeyboardEvent* event, void* user_data)
     {
+        // process lock
+        if (!is_audio_locked) {
+            is_audio_locked = setup_openal();
+        }
+        EmscriptenPointerlockChangeEvent _pointer_lock;
+        emscripten_assert(emscripten_get_pointerlock_status(&_pointer_lock));
+        _is_mouse_locked = _pointer_lock.isActive;
+        if (!_is_mouse_locked) {
+            emscripten_assert(emscripten_request_pointerlock("#canvas", 1));
+            _is_mouse_locked = true;
+        }
+
         const button_key _key(emscripten_keyboard_mappings[std::string(event->key)]);
         if (event_type == EMSCRIPTEN_EVENT_KEYDOWN) {
             _button_events[_key].state = true;
-            process_lock();
         } else if (event_type == EMSCRIPTEN_EVENT_KEYUP) {
             _button_events[_key].state = false;
         }
@@ -292,7 +268,6 @@ namespace {
             const glm::uint _button = event->button;
             _button_events[static_cast<button_key>(_button)].state = true;
             ImGui::GetIO().AddMouseButtonEvent(_button, true);
-            process_lock();
         } else if (event_type == EMSCRIPTEN_EVENT_MOUSEUP) {
             const glm::uint _button = event->button;
             _button_events[static_cast<button_key>(_button)].state = false;
@@ -306,12 +281,29 @@ namespace {
 
     EM_BOOL touch_callback(int event_type, const EmscriptenTouchEvent* event, void* user_data)
     {
+        // process lock
+        if (!is_audio_locked) {
+            is_audio_locked = setup_openal();
+        }
+        EmscriptenFullscreenChangeEvent _fullscreen;
+        emscripten_assert(emscripten_get_fullscreen_status(&_fullscreen));
+        _is_mouse_locked = _fullscreen.isFullscreen;
+        if (!_is_mouse_locked) {
+            EmscriptenFullscreenStrategy strategy;
+            memset(&strategy, 0, sizeof(strategy));
+            strategy.scaleMode = EMSCRIPTEN_FULLSCREEN_SCALE_STRETCH;
+            strategy.canvasResolutionScaleMode = EMSCRIPTEN_FULLSCREEN_CANVAS_SCALE_HIDEF;
+            strategy.filteringMode = EMSCRIPTEN_FULLSCREEN_FILTERING_DEFAULT;
+            strategy.canvasResizedCallback = [](int eventType,
+                                                 const void* reserved,
+                                                 void* userData) -> EM_BOOL { return EM_TRUE; };
+            emscripten_assert(emscripten_request_fullscreen_strategy("#canvas", EM_TRUE, &strategy));
+            _is_mouse_locked = true;
+        }
+
         static std::unordered_map<glm::uint, glm::vec2> _last_positions = {};
         const float _dpr = window_get_dpr();
-
-        std::cout << "num touches = " << event->numTouches << std::endl;
         if (event_type == EMSCRIPTEN_EVENT_TOUCHSTART) {
-            std::cout << "START" << std::endl;
             for (int _pointer_index = 0; _pointer_index < event->numTouches; ++_pointer_index) {
                 const EmscriptenTouchPoint& _touch_point = event->touches[_pointer_index];
                 if (!_touch_point.isChanged) {
@@ -323,10 +315,8 @@ namespace {
                 _pointer_accumulators[_event_id] = glm::vec2(0);
                 _pointer_events[_event_id].position = _new_position;
             }
-            process_lock_touch();
 
         } else if (event_type == EMSCRIPTEN_EVENT_TOUCHMOVE) {
-            std::cout << "MOVE" << std::endl;
             for (int _pointer_index = 0; _pointer_index < event->numTouches; ++_pointer_index) {
                 const EmscriptenTouchPoint& _touch_point = event->touches[_pointer_index];
                 if (!_touch_point.isChanged) {
@@ -341,7 +331,6 @@ namespace {
             }
 
         } else if (event_type == EMSCRIPTEN_EVENT_TOUCHEND || event_type == EMSCRIPTEN_EVENT_TOUCHCANCEL) {
-            std::cout << "END" << std::endl;
             for (int _pointer_index = 0; _pointer_index < event->numTouches; ++_pointer_index) {
                 const EmscriptenTouchPoint& _touch_point = event->touches[_pointer_index];
                 const glm::uint _event_id = static_cast<glm::uint>(_touch_point.identifier);
@@ -439,11 +428,9 @@ namespace {
     {
         if (focused) {
             _is_mouse_locked = true;
-            std::cout << "Window gained focus\n";
             glfwSetInputMode(glfw_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         } else {
             _is_mouse_locked = false;
-            std::cout << "Window lost focus\n";
             glfwSetInputMode(glfw_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
     }
@@ -521,8 +508,9 @@ namespace {
     {
 #if LUCARIA_PLATFORM_WEB
         if (_is_touch_supported) {
-            EmscriptenFullscreenChangeEvent fs;
-            // _is_mouse_locked = (emscripten_get_fullscreen_status(&fs) == EMSCRIPTEN_RESULT_SUCCESS);
+            EmscriptenFullscreenChangeEvent _fullscreen;
+            emscripten_assert(emscripten_get_fullscreen_status(&_fullscreen));
+            _is_mouse_locked = _fullscreen.isFullscreen;
 
         } else {
             EmscriptenPointerlockChangeEvent _pointer_lock;
@@ -716,7 +704,7 @@ namespace {
 
         // update
         ImGui::GetIO().DisplaySize = ImVec2(static_cast<glm::float32>(screen_size.x), static_cast<glm::float32>(screen_size.y));
-        update_mouse_lock();
+        // update_mouse_lock();
 
         update_callback();
 
@@ -860,9 +848,6 @@ bool get_is_s3tc_supported()
 
 bool get_is_game_locked()
 {
-
-    // std::cout << "is audio locked = " << is_audio_locked << std::endl;
-    // std::cout << "is mouse locked = " << _is_mouse_locked << std::endl;
     return is_audio_locked && _is_mouse_locked;
 }
 
