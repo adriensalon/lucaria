@@ -66,13 +66,13 @@
 #endif
 
 // config detection
-#if defined(NDEBUG)
-#define LUCARIA_CONFIG_DEBUG 0
-#define LUCARIA_CONFIG_RELEASE 1
-#else
-#define LUCARIA_CONFIG_DEBUG 1
-#define LUCARIA_CONFIG_RELEASE 0
-#endif
+// #if defined(NDEBUG)
+// #define LUCARIA_CONFIG_DEBUG 0
+// #define LUCARIA_CONFIG_RELEASE 1
+// #else
+// #define LUCARIA_CONFIG_DEBUG 1
+// #define LUCARIA_CONFIG_RELEASE 0
+// #endif
 
 // inline for LTO
 #if LUCARIA_COMPILER_CLANG || LUCARIA_COMPILER_GCC
