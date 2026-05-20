@@ -16,8 +16,8 @@ namespace detail {
     struct framebuffer_implementation {
         framebuffer_implementation(const framebuffer_implementation& other) = delete;
         framebuffer_implementation& operator=(const framebuffer_implementation& other) = delete;
-        framebuffer_implementation(framebuffer_implementation&& other);
-        framebuffer_implementation& operator=(framebuffer_implementation&& other);
+        framebuffer_implementation(framebuffer_implementation&& other) = default;
+        framebuffer_implementation& operator=(framebuffer_implementation&& other) = default;
         ~framebuffer_implementation();
 
         framebuffer_implementation();

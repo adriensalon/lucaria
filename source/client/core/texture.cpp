@@ -31,6 +31,13 @@ namespace detail {
     }
 }
 
+texture_object::~texture_object()
+{
+	if (_refcount.is_last_owner()) {
+		_manager->destroy_cell(_resource);
+	}
+}
+
 texture_object texture_object::create(const uint32x2 size)
 {
     return texture_object { detail::engine_resources().textures.create_cell(

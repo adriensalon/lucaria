@@ -102,32 +102,10 @@ namespace detail {
 
     }
 
-    mesh_implementation::mesh_implementation(mesh_implementation&& other)
-    {
-        implementation_opengl.is_owning = false;
-        *this = std::move(other);
-    }
-
-    mesh_implementation& mesh_implementation::operator=(mesh_implementation&& other)
-    {
-        if (implementation_opengl.is_owning) {
-            LUCARIA_RUNTIME_ERROR("Object already owning resources")
-        }
-
-        implementation_opengl.is_owning = other.implementation_opengl.is_owning;
-        implementation_opengl.array_id = other.implementation_opengl.array_id;
-        implementation_opengl.elements_id = other.implementation_opengl.elements_id;
-        implementation_opengl.attribute_ids = std::move(other.implementation_opengl.attribute_ids);
-        invposes = std::move(other.invposes);
-        size = other.size;
-
-        other.implementation_opengl.is_owning = false;
-        return *this;
-    }
-
+    
     mesh_implementation::~mesh_implementation()
     {
-        if (implementation_opengl.is_owning) {
+        if (implementation_opengl.ownership.owns()) {
             glDeleteVertexArrays(1, &implementation_opengl.array_id);
             glDeleteBuffers(1, &implementation_opengl.elements_id);
             for (const std::pair<const mesh_attribute, glm::uint>& _pair : implementation_opengl.attribute_ids) {
@@ -169,7 +147,7 @@ namespace detail {
 		invposes = from.data.invposes;
         size = 3 * static_cast<glm::uint>(from.data.indices.size());
 
-        implementation_opengl.is_owning = true;
+        implementation_opengl.ownership.emplace();
     }
 
 }

@@ -54,6 +54,13 @@ namespace detail {
 
 }
 
+animation_object::~animation_object()
+{
+	if (_refcount.is_last_owner()) {
+		_manager->destroy_cell(_resource);
+	}
+}
+
 animation_object animation_object::fetch(const std::filesystem::path& path)
 {
     detail::resource_container<detail::animation_implementation>* _resource = detail::engine_resources().animations.get_or_create_by_path(path, [&] {

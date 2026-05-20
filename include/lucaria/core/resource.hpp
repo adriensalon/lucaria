@@ -103,6 +103,21 @@ namespace detail {
             return _cell;
         }
 
+        void destroy_cell(resource_container<CellType>* cell)
+        {
+            if (!cell) {
+                return;
+            }
+
+            if (cell->origin_path()) {
+                _cells_by_path.erase(*cell->origin_path());
+            }
+
+            std::erase_if(_cells, [cell](const auto& ptr) {
+                return ptr.get() == cell;
+            });
+        }
+
         void clear()
         {
             _cells_by_path.clear();

@@ -26,27 +26,9 @@ namespace detail {
 
     }
 
-    sound_track_implementation::sound_track_implementation(sound_track_implementation&& other)
-    {
-        *this = std::move(other);
-    }
-
-    sound_track_implementation& sound_track_implementation::operator=(sound_track_implementation&& other)
-    {
-        if (is_owning) {
-            LUCARIA_RUNTIME_ERROR("Object already owning resources")
-        }
-        is_owning = true;
-        id = other.id;
-        sample_rate = other.sample_rate;
-        samples_count = other.samples_count;
-        other.is_owning = false;
-        return *this;
-    }
-
     sound_track_implementation::~sound_track_implementation()
     {
-        if (is_owning) {
+        if (ownership.owns()) {
             alDeleteBuffers(1, &id);
         }
     }
@@ -66,7 +48,7 @@ namespace detail {
 // #if defined(LUCARIA_DEBUG)
 //         std::cout << "Created sound buffer of size " << from.data.samples.size() << " with id " << id << std::endl;
 // #endif
-        is_owning = true;
+        ownership.emplace();
     }
 }
 

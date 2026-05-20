@@ -16,7 +16,7 @@
 #include <lucaria/core/key.hpp>
 #include <lucaria/core/math.hpp>
 #include <lucaria/core/mesh.hpp>
-#include <lucaria/core/workaround.hpp>
+#include <lucaria/core/owning.hpp>
 #include <lucaria/core/program.hpp>
 #include <lucaria/core/renderbuffer.hpp>
 #include <lucaria/core/shader.hpp>
@@ -26,6 +26,7 @@
 #include <lucaria/core/stream.hpp>
 #include <lucaria/core/texture.hpp>
 #include <lucaria/core/window.hpp>
+#include <lucaria/core/workaround.hpp>
 
 #include <lucaria/entity/animator.hpp>
 #include <lucaria/entity/dynamics.hpp>

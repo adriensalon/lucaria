@@ -32,8 +32,8 @@ namespace detail {
         LUCARIA_DELETE_DEFAULT(mesh_implementation)
         mesh_implementation(const mesh_implementation& other) = delete;
         mesh_implementation& operator=(const mesh_implementation& other) = delete;
-        mesh_implementation(mesh_implementation&& other);
-        mesh_implementation& operator=(mesh_implementation&& other);
+        mesh_implementation(mesh_implementation&& other) = default;
+        mesh_implementation& operator=(mesh_implementation&& other) = default;
         ~mesh_implementation();
 
         mesh_implementation(const geometry_implementation& geometry);

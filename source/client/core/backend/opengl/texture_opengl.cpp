@@ -22,29 +22,9 @@ namespace detail {
 
     }
 
-    texture_implementation::texture_implementation(texture_implementation&& other)
-    {
-        implementation_opengl.is_owning = false;
-        *this = std::move(other);
-    }
-
-    texture_implementation& texture_implementation::operator=(texture_implementation&& other)
-    {
-        if (implementation_opengl.is_owning) {
-            LUCARIA_RUNTIME_ERROR("Object already owning resources")
-        }
-
-        implementation_opengl.is_owning = other.implementation_opengl.is_owning;
-        implementation_opengl.id = other.implementation_opengl.id;
-        size = other.size;
-
-        other.implementation_opengl.is_owning = false;
-        return *this;
-    }
-
     texture_implementation::~texture_implementation()
     {
-        if (implementation_opengl.is_owning) {
+        if (implementation_opengl.ownership.owns()) {
             glBindTexture(GL_TEXTURE_2D, 0);
             glDeleteTextures(1, &implementation_opengl.id);
         }
@@ -64,6 +44,7 @@ namespace detail {
 
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         switch (from.data.channels) {
+			
         case 3:
             if (from.data.is_compressed_etc && detail::engine_window().is_etc2_supported) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB8_ETC2, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
@@ -73,6 +54,7 @@ namespace detail {
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, from.data.width, from.data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
             }
             break;
+
         case 4:
             if (from.data.is_compressed_etc && detail::engine_window().is_etc2_supported) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA8_ETC2_EAC, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
@@ -90,7 +72,7 @@ namespace detail {
 //         std::cout << "Created TEXTURE_2D buffer of size " << from.data.width << "x" << from.data.height << " with id " << implementation_opengl.id << std::endl;
 // #endif
 
-        implementation_opengl.is_owning = true;
+        implementation_opengl.ownership.emplace();
     }
 
     texture_implementation::texture_implementation(const glm::uvec2 size)
@@ -108,7 +90,7 @@ namespace detail {
 //         std::cout << "Created EMPTY TEXTURE_2D buffer of size " << size.x << "x" << size.y << " with id " << implementation_opengl.id << std::endl;
 // #endif
 
-        implementation_opengl.is_owning = true;
+        implementation_opengl.ownership.emplace();
     }
 
     void texture_implementation::resize(const uint32x2 new_size)
@@ -129,6 +111,7 @@ namespace detail {
         glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         switch (from.data.channels) {
+
         case 3:
             if (from.data.is_compressed_etc && detail::engine_window().is_etc2_supported) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB8_ETC2, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
@@ -138,6 +121,7 @@ namespace detail {
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, from.data.width, from.data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
             }
             break;
+
         case 4:
             if (from.data.is_compressed_etc && detail::engine_window().is_etc2_supported) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA8_ETC2_EAC, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
@@ -147,6 +131,7 @@ namespace detail {
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, from.data.width, from.data.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);
             }
             break;
+
         default:
             LUCARIA_RUNTIME_ERROR("Invalid texture channels count, must be 3 or 4")
             break;

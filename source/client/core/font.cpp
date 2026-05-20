@@ -62,6 +62,13 @@ namespace detail {
 
 }
 
+font_object::~font_object()
+{
+	if (_refcount.is_last_owner()) {
+		_manager->destroy_cell(_resource);
+	}
+}
+
 font_object font_object::fetch(const std::filesystem::path& path, const float32 font_size)
 {
     detail::resource_container<detail::font_implementation>* _resource = detail::engine_resources().fonts.get_or_create_by_path(path, [&] {

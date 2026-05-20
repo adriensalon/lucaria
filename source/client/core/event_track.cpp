@@ -52,6 +52,13 @@ namespace detail {
 
 }
 
+event_track_object::~event_track_object()
+{
+	if (_refcount.is_last_owner()) {
+		_manager->destroy_cell(_resource);
+	}
+}
+
 event_track_object event_track_object::fetch(const std::filesystem::path& path)
 {
     detail::resource_container<detail::event_track_implementation>* _resource = detail::engine_resources().event_tracks.get_or_create_by_path(path, [&] {

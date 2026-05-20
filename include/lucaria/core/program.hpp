@@ -20,8 +20,8 @@ namespace detail {
         LUCARIA_DELETE_DEFAULT(program_implementation)
         program_implementation(const program_implementation& other) = delete;
         program_implementation& operator=(const program_implementation& other) = delete;
-        program_implementation(program_implementation&& other);
-        program_implementation& operator=(program_implementation&& other);
+        program_implementation(program_implementation&& other) = default;
+        program_implementation& operator=(program_implementation&& other) = default;
         ~program_implementation();
 
         program_implementation(const shader& vertex, const shader& fragment);

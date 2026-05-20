@@ -89,32 +89,9 @@ namespace detail {
 
     }
 
-    program_implementation::program_implementation(program_implementation&& other)
-    {
-        implementation_opengl.is_owning = false;
-        *this = std::move(other);
-    }
-
-    program_implementation& program_implementation::operator=(program_implementation&& other)
-    {
-        if (implementation_opengl.is_owning) {
-            LUCARIA_RUNTIME_ERROR("Object already owning resources")
-        }
-
-        implementation_opengl.is_owning = other.implementation_opengl.is_owning;
-        implementation_opengl.id = other.implementation_opengl.id;
-        implementation_opengl.reflected_attributes = std::move(other.implementation_opengl.reflected_attributes);
-        implementation_opengl.reflected_uniforms = std::move(other.implementation_opengl.reflected_uniforms);
-        implementation_opengl.bound_array_id = other.implementation_opengl.bound_array_id;
-        implementation_opengl.bound_indices_count = other.implementation_opengl.bound_indices_count;
-        
-        other.implementation_opengl.is_owning = false;
-        return *this;
-    }
-
     program_implementation::~program_implementation()
     {
-        if (implementation_opengl.is_owning) {
+        if (implementation_opengl.ownership.owns()) {
             glUseProgram(0);
             glDeleteProgram(implementation_opengl.id);
         }
@@ -148,6 +125,8 @@ namespace detail {
         glDeleteShader(_fragment_id);
         implementation_opengl.reflected_attributes = _reflect_attributes(implementation_opengl.id);
         implementation_opengl.reflected_uniforms = _reflect_uniforms(implementation_opengl.id);
+
+		implementation_opengl.ownership.emplace();
     }
 
     void program_implementation::use() const

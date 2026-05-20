@@ -1,13 +1,15 @@
 #pragma once
 
 #include <lucaria/bin/event_track_data.hpp>
-#include <lucaria/core/workaround.hpp>
+#include <lucaria/core/refcount.hpp>
 #include <lucaria/core/resource.hpp>
+#include <lucaria/core/workaround.hpp>
+
 
 namespace lucaria {
 namespace detail {
 
-	struct motion_system;
+    struct motion_system;
 
     struct event_track_implementation {
         LUCARIA_DELETE_DEFAULT(event_track_implementation)
@@ -31,6 +33,7 @@ struct event_track_object {
     event_track_object& operator=(const event_track_object& other) = default;
     event_track_object(event_track_object&& other) = default;
     event_track_object& operator=(event_track_object&& other) = default;
+    ~event_track_object();
 
     static event_track_object fetch(const std::filesystem::path& path);
 
@@ -42,6 +45,8 @@ struct event_track_object {
     [[nodiscard]] explicit operator bool() const;
 
 private:
+    detail::refcount_flag _refcount = {};
+    detail::resource_manager<detail::event_track_implementation>* _manager = nullptr;
     detail::resource_container<detail::event_track_implementation>* _resource = nullptr;
     explicit event_track_object(detail::resource_container<detail::event_track_implementation>* resource);
     friend struct detail::motion_system;

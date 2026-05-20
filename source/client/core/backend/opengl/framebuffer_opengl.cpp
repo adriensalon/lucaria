@@ -17,32 +17,10 @@ namespace {
 
 namespace detail {
 
-    framebuffer_implementation::framebuffer_implementation(framebuffer_implementation&& other)
-    {
-        implementation_opengl.is_owning = false;
-        *this = std::move(other);
-    }
-
-    framebuffer_implementation& framebuffer_implementation::operator=(framebuffer_implementation&& other)
-    {
-        if (implementation_opengl.is_owning) {
-            LUCARIA_RUNTIME_ERROR("Object already owning resources")
-        }
-        
-		implementation_opengl.is_owning = other.implementation_opengl.is_owning;
-		implementation_opengl.id = other.implementation_opengl.id;
-        implementation_opengl.texture_color_id = other.implementation_opengl.texture_color_id;
-        implementation_opengl.texture_depth_id = other.implementation_opengl.texture_depth_id;
-        implementation_opengl.renderbuffer_color_id = other.implementation_opengl.renderbuffer_color_id;
-        implementation_opengl.renderbuffer_depth_id = other.implementation_opengl.renderbuffer_depth_id;
-
-        other.implementation_opengl.is_owning = false;
-        return *this;
-    }
-
+    
     framebuffer_implementation::~framebuffer_implementation()
     {
-        if (implementation_opengl.is_owning) {
+        if (implementation_opengl.ownership.owns()) {
             glDeleteFramebuffers(1, &implementation_opengl.id);
         }
     }
@@ -55,7 +33,8 @@ namespace detail {
         glDrawBuffers(1, &_none);
         glReadBuffer(GL_NONE);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        implementation_opengl.is_owning = true;
+		
+        implementation_opengl.ownership.emplace();
     }
 
     void framebuffer_implementation::use_default()

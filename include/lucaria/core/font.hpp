@@ -3,8 +3,9 @@
 #include <imgui.h>
 
 #include <lucaria/core/math.hpp>
-#include <lucaria/core/workaround.hpp>
+#include <lucaria/core/refcount.hpp>
 #include <lucaria/core/resource.hpp>
+#include <lucaria/core/workaround.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -29,6 +30,7 @@ struct font_object {
     font_object& operator=(const font_object& other) = default;
     font_object(font_object&& other) = default;
     font_object& operator=(font_object&& other) = default;
+    ~font_object();
 
     static font_object fetch(const std::filesystem::path& path, const float32 font_size);
 
@@ -39,9 +41,11 @@ struct font_object {
     /// @brief Conversion operator for the has_value member function
     [[nodiscard]] explicit operator bool() const;
 
-	[[nodiscard]] ImFont* imgui_font() const;
+    [[nodiscard]] ImFont* imgui_font() const;
 
 private:
+    detail::refcount_flag _refcount = {};
+    detail::resource_manager<detail::font_implementation>* _manager = nullptr;
     detail::resource_container<detail::font_implementation>* _resource = nullptr;
     explicit font_object(detail::resource_container<detail::font_implementation>* resource);
 };

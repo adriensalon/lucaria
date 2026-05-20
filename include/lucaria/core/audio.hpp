@@ -3,6 +3,7 @@
 #include <lucaria/bin/audio_data.hpp>
 #include <lucaria/core/workaround.hpp>
 #include <lucaria/core/resource.hpp>
+#include <lucaria/core/refcount.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -29,6 +30,7 @@ struct audio_object {
     audio_object& operator=(const audio_object& other) = default;
     audio_object(audio_object&& other) = default;
     audio_object& operator=(audio_object&& other) = default;
+	~audio_object();
 
     static audio_object fetch(const std::filesystem::path& path);
 
@@ -37,6 +39,8 @@ struct audio_object {
     [[nodiscard]] explicit operator bool() const;
 
 private:
+	detail::refcount_flag _refcount = {};
+    detail::resource_manager<detail::audio_implementation>* _manager = nullptr;
     detail::resource_container<detail::audio_implementation>* _resource = nullptr;
     explicit audio_object(detail::resource_container<detail::audio_implementation>* resource);
 };

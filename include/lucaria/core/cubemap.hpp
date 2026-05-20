@@ -1,6 +1,7 @@
 #pragma once
 
 #include <lucaria/core/image.hpp>
+#include <lucaria/core/refcount.hpp>
 #include <lucaria/core/resource.hpp>
 
 #if defined(LUCARIA_BACKEND_OPENGL)
@@ -14,14 +15,14 @@
 namespace lucaria {
 namespace detail {
 
-	struct rendering_system;
+    struct rendering_system;
 
     struct cubemap_implementation {
         LUCARIA_DELETE_DEFAULT(cubemap_implementation)
         cubemap_implementation(const cubemap_implementation& other) = delete;
         cubemap_implementation& operator=(const cubemap_implementation& other) = delete;
-        cubemap_implementation(cubemap_implementation&& other);
-        cubemap_implementation& operator=(cubemap_implementation&& other);
+        cubemap_implementation(cubemap_implementation&& other) = default;
+        cubemap_implementation& operator=(cubemap_implementation&& other) = default;
         ~cubemap_implementation();
 
         cubemap_implementation(const std::array<image_implementation, 6>& images);
@@ -43,6 +44,7 @@ struct cubemap_object {
     cubemap_object& operator=(const cubemap_object& other) = default;
     cubemap_object(cubemap_object&& other) = default;
     cubemap_object& operator=(cubemap_object&& other) = default;
+    ~cubemap_object();
 
     /// TODO GO CONTEXT
     static cubemap_object create(const glm::uvec2 size);
@@ -61,6 +63,8 @@ struct cubemap_object {
     [[nodiscard]] explicit operator bool() const;
 
 private:
+    detail::refcount_flag _refcount = {};
+    detail::resource_manager<detail::cubemap_implementation>* _manager = nullptr;
     detail::resource_container<detail::cubemap_implementation>* _resource = nullptr;
     explicit cubemap_object(detail::resource_container<detail::cubemap_implementation>* resource);
     friend struct detail::rendering_system;

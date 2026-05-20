@@ -4,6 +4,7 @@
 
 #include <lucaria/core/audio.hpp>
 #include <lucaria/core/math.hpp>
+#include <lucaria/core/owning.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -12,13 +13,13 @@ struct sound_track_implementation {
     LUCARIA_DELETE_DEFAULT(sound_track_implementation)
     sound_track_implementation(const sound_track_implementation& other) = delete;
     sound_track_implementation& operator=(const sound_track_implementation& other) = delete;
-    sound_track_implementation(sound_track_implementation&& other);
-    sound_track_implementation& operator=(sound_track_implementation&& other);
+    sound_track_implementation(sound_track_implementation&& other) = default;
+    sound_track_implementation& operator=(sound_track_implementation&& other) = default;
     ~sound_track_implementation();
 
     sound_track_implementation(const audio_implementation& from);
 	
-    bool is_owning;
+    owning_flag ownership = {};
     ALuint id;
     uint32 sample_rate;
     uint32 samples_count;

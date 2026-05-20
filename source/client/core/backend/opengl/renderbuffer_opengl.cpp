@@ -3,31 +3,9 @@
 namespace lucaria {
 namespace detail {
 
-    renderbuffer_implementation::renderbuffer_implementation(renderbuffer_implementation&& other)
-    {
-        implementation_opengl.is_owning = false;
-        *this = std::move(other);
-    }
-
-    renderbuffer_implementation& renderbuffer_implementation::operator=(renderbuffer_implementation&& other)
-    {
-        if (implementation_opengl.is_owning) {
-            LUCARIA_RUNTIME_ERROR("Object already owning resources")
-        }
-
-        implementation_opengl.is_owning = other.implementation_opengl.is_owning;
-        implementation_opengl.id = other.implementation_opengl.id;
-        implementation_opengl.internal_format = other.implementation_opengl.internal_format;
-        sampling_count = other.sampling_count;
-        size = other.size;
-
-        other.implementation_opengl.is_owning = false;
-        return *this;
-    }
-
     renderbuffer_implementation::~renderbuffer_implementation()
     {
-        if (implementation_opengl.is_owning) {
+        if (implementation_opengl.ownership.owns()) {
             glDeleteRenderbuffers(1, &implementation_opengl.id);
         }
     }
@@ -52,7 +30,7 @@ namespace detail {
             glRenderbufferStorage(GL_RENDERBUFFER, implementation_opengl.internal_format, static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y));
         }
 
-        implementation_opengl.is_owning = true;
+        implementation_opengl.ownership.emplace();
     }
 
     void renderbuffer_implementation::resize(const glm::uvec2 new_size)

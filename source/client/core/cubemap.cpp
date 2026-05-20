@@ -42,6 +42,13 @@ namespace detail {
     }
 }
 
+cubemap_object::~cubemap_object()
+{
+	if (_refcount.is_last_owner()) {
+		_manager->destroy_cell(_resource);
+	}
+}
+
 cubemap_object cubemap_object::fetch(
     const std::array<std::filesystem::path, 6>& data_paths,
     const std::optional<std::array<std::filesystem::path, 6>>& etc2_paths,

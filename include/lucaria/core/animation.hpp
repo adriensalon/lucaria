@@ -4,6 +4,7 @@
 
 #include <lucaria/core/workaround.hpp>
 #include <lucaria/core/resource.hpp>
+#include <lucaria/core/refcount.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -32,6 +33,7 @@ struct animation_object {
     animation_object& operator=(const animation_object& other) = default;
     animation_object(animation_object&& other) = default;
     animation_object& operator=(animation_object&& other) = default;
+	~animation_object();
 
     static animation_object fetch(const std::filesystem::path& path);
 
@@ -43,6 +45,8 @@ struct animation_object {
     [[nodiscard]] explicit operator bool() const;
 
 private:
+	detail::refcount_flag _refcount = {};
+    detail::resource_manager<detail::animation_implementation>* _manager = nullptr;
     detail::resource_container<detail::animation_implementation>* _resource = nullptr;
     explicit animation_object(detail::resource_container<detail::animation_implementation>* cell);
     friend struct detail::motion_system;

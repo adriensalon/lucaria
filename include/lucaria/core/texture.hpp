@@ -5,6 +5,7 @@
 #include <lucaria/core/image.hpp>
 #include <lucaria/core/math.hpp>
 #include <lucaria/core/resource.hpp>
+#include <lucaria/core/refcount.hpp>
 
 #if defined(LUCARIA_BACKEND_OPENGL)
 #include <lucaria/core/backend/opengl/texture_opengl.hpp>
@@ -23,8 +24,8 @@ namespace detail {
         LUCARIA_DELETE_DEFAULT(texture_implementation)
         texture_implementation(const texture_implementation& other) = delete;
         texture_implementation& operator=(const texture_implementation& other) = delete;
-        texture_implementation(texture_implementation&& other);
-        texture_implementation& operator=(texture_implementation&& other);
+        texture_implementation(texture_implementation&& other) = default;
+        texture_implementation& operator=(texture_implementation&& other) = default;
         ~texture_implementation();
 
         texture_implementation(const image_implementation& image);
@@ -53,6 +54,7 @@ struct texture_object {
     texture_object& operator=(const texture_object& other) = default;
     texture_object(texture_object&& other) = default;
     texture_object& operator=(texture_object&& other) = default;
+	~texture_object();
 
     /// TODO GO CONTEXT
     static texture_object create(const uint32x2 size);
@@ -81,6 +83,8 @@ struct texture_object {
     [[nodiscard]] ImTextureID imgui_texture() const;
 
 private:
+	detail::refcount_flag _refcount = {};
+    detail::resource_manager<detail::texture_implementation>* _manager = nullptr;
     detail::resource_container<detail::texture_implementation>* _resource = nullptr;
     explicit texture_object(detail::resource_container<detail::texture_implementation>* resource);
     friend struct detail::rendering_system;

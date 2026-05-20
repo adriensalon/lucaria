@@ -32,26 +32,9 @@ namespace detail {
 
     }
 
-    cubemap_implementation::cubemap_implementation(cubemap_implementation&& other)
-    {
-        implementation_opengl.is_owning = false;
-        *this = std::move(other);
-    }
-
-    cubemap_implementation& cubemap_implementation::operator=(cubemap_implementation&& other)
-    {
-        if (implementation_opengl.is_owning) {
-            LUCARIA_RUNTIME_ERROR("Object already owning resources")
-        }
-        implementation_opengl.is_owning = other.implementation_opengl.is_owning;
-        implementation_opengl.id = other.implementation_opengl.id;
-        other.implementation_opengl.is_owning = false;
-        return *this;
-    }
-
     cubemap_implementation::~cubemap_implementation()
     {
-        if (implementation_opengl.is_owning) {
+        if (implementation_opengl.ownership.owns()) {
             glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
             glDeleteTextures(1, &implementation_opengl.id);
         }
@@ -95,6 +78,8 @@ namespace detail {
                 break;
             }
         }
+		
+        implementation_opengl.ownership.emplace();
     }
 
 }

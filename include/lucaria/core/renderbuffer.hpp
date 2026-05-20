@@ -17,8 +17,8 @@ namespace detail {
         renderbuffer_implementation() = delete;
         renderbuffer_implementation(const renderbuffer_implementation& other) = delete;
         renderbuffer_implementation& operator=(const renderbuffer_implementation& other) = delete;
-        renderbuffer_implementation(renderbuffer_implementation&& other);
-        renderbuffer_implementation& operator=(renderbuffer_implementation&& other);
+        renderbuffer_implementation(renderbuffer_implementation&& other) = default;
+        renderbuffer_implementation& operator=(renderbuffer_implementation&& other) = default;
         ~renderbuffer_implementation();
 
         renderbuffer_implementation(const uint32x2 size, const glm::uint internal_format, const glm::uint samples = 1);
