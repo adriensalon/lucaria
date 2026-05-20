@@ -25,7 +25,7 @@ namespace detail {
     [[nodiscard]] bool get_is_mouse_supported();
     [[nodiscard]] bool get_is_touch_supported();
     [[nodiscard]] std::unordered_map<input_key, key_event>& get_buttons();
-    [[nodiscard]] std::unordered_map<glm::uint, pointer_event>& get_pointers();
+    [[nodiscard]] std::unordered_map<uint32, pointer_event>& get_pointers();
     [[nodiscard]] float32x2 get_mouse_position();
     [[nodiscard]] float32x2& get_mouse_position_delta();
 

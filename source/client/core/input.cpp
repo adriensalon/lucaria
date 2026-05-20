@@ -65,7 +65,7 @@ std::unordered_map<input_key, detail::key_event>& input_context::button_events()
     return detail::get_buttons();
 }
 
-std::unordered_map<glm::uint, detail::pointer_event>& input_context::pointer_events()
+std::unordered_map<uint32, detail::pointer_event>& input_context::pointer_events()
 {
     return detail::get_pointers();
 }

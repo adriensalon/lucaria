@@ -22,6 +22,10 @@
 #include <lucaria/core/platform/glfw/window_glfw.hpp>
 #endif
 
+#if defined(LUCARIA_PLATFORM_PSP)
+#include <lucaria/core/platform/psp/window_psp.hpp>
+#endif
+
 namespace lucaria {
 namespace detail {
 
@@ -62,6 +66,10 @@ namespace detail {
 
 #if defined(LUCARIA_PLATFORM_GLFW)
         window_implementation_glfw implementation_glfw = {};
+#endif
+
+#if defined(LUCARIA_PLATFORM_PSP)
+        window_implementation_psp implementation_psp = {};
 #endif
 
         bool is_touch_supported = false;

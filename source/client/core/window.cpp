@@ -32,6 +32,13 @@ namespace detail {
         }
 #endif
 
+#if defined(LUCARIA_PLATFORM_PSP)
+        if (implementation_psp.must_install_imgui_callbacks) {
+            ImGui_ImplPSP_Init();
+            implementation_psp.must_install_imgui_callbacks = false;
+        }
+#endif
+
 #if defined(LUCARIA_BACKEND_OPENGL)
         ImGui_ImplOpenGL3_Init("#version 300 es");
         ImGui_ImplOpenGL3_DestroyFontsTexture();
@@ -174,6 +181,10 @@ bool window_context::is_locked()
 
 #if defined(LUCARIA_PLATFORM_GLFW)
     return detail::engine_window().implementation_glfw.is_mouse_locked;
+#endif
+
+#if defined(LUCARIA_PLATFORM_PSP)
+    return true;
 #endif
 
     return false;
