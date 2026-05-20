@@ -4,14 +4,11 @@
 
 #include <lucaria/core/database.hpp>
 #include <lucaria/core/error.hpp>
-#include <lucaria/core/font.hpp>
 #include <lucaria/core/fetch.hpp>
+#include <lucaria/core/font.hpp>
+#include <lucaria/core/window.hpp>
 
 namespace lucaria {
-
-extern std::unique_ptr<ImFontAtlas> _shared_font_atlas;
-extern void _reupload_shared_font_texture();
-
 namespace detail {
 
     namespace {
@@ -23,11 +20,11 @@ namespace detail {
             std::memcpy(_owned_data, data_bytes.data(), _data_size);
             ImFontConfig _config;
             _config.FontDataOwnedByAtlas = true;
-            ImFont* _font = _shared_font_atlas->AddFontFromMemoryTTF(_owned_data, _data_size, font_size, &_config);
-            if (!_shared_font_atlas->Build()) {
+            ImFont* _font = engine_window().shared_font_atlas->AddFontFromMemoryTTF(_owned_data, _data_size, font_size, &_config);
+            if (!engine_window().shared_font_atlas->Build()) {
                 LUCARIA_RUNTIME_ERROR("Failed to build ImGui font atlas")
             }
-            _reupload_shared_font_texture();
+            engine_window().reupload_shared_imgui_font_texture();
             return _font;
         }
 

@@ -57,7 +57,7 @@ animator_component& animator_component::use_animation(const std::string name, co
     _animations.emplace(name, animation);
     _animations.at(name)._resource->on_ready([this, name]() {
         if (_skeleton) {
-#if LUCARIA_CONFIG_DEBUG
+#if defined(LUCARIA_DEBUG)
             const int _animation_tracks = _animations[name]._resource->get().animation.num_tracks();
             const int _skeleton_joints = _skeleton._resource->get().skeleton.num_joints();
             if (_animation_tracks != _skeleton_joints) {
@@ -98,7 +98,7 @@ animator_component& animator_component::use_skeleton(const skeleton_object skele
 
         for (const std::pair<const std::string, animation_object>& _pair : _animations) {
             if (_pair.second) {
-#if LUCARIA_CONFIG_DEBUG
+#if defined(LUCARIA_DEBUG)
                 const int _animation_tracks = _pair.second._resource->get().animation.num_tracks();
                 const int _skeleton_joints = _skeleton._resource->get().skeleton.num_joints();
                 if (_animation_tracks != _skeleton_joints) {

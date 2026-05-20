@@ -1,9 +1,7 @@
 #include <lucaria/entity/interface.hpp>
+#include <lucaria/core/window.hpp>
 
 namespace lucaria {
-
-extern ImGuiContext* _create_shared_context();
-
 namespace {
 
     static void invert_texcoords(std::vector<glm::vec2>& texcoords)
@@ -23,7 +21,7 @@ screen_interface_component& screen_interface_component::set_callback(const std::
 
 spatial_interface_component::spatial_interface_component()
 {
-    _imgui_context = _create_shared_context();
+    _imgui_context = detail::engine_window().create_shared_imgui_context();
     _is_owning = true;
 }
 

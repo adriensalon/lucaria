@@ -14,7 +14,7 @@ namespace detail {
         static void _load_geometry_bytes(geometry_data& data, const std::vector<char>& bytes)
         {
             bytes_stream _stream(bytes);
-#if LUCARIA_JSON
+#if defined(LUCARIA_JSON_ASSETS)
             cereal::JSONInputArchive _archive(_stream);
 #else
             cereal::PortableBinaryInputArchive _archive(_stream);

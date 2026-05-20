@@ -27,15 +27,15 @@ namespace detail {
         async_container(std::future<FetchedType>&& future)
         {
             std::shared_ptr<std::future<FetchedType>> _shared_future = std::make_shared<std::future<FetchedType>>(std::move(future));
-            
-			_poll = [_shared_future]() -> bool {
+
+            _poll = [_shared_future]() -> bool {
                 if (!_shared_future->valid()) {
                     return false;
                 }
                 return _shared_future->wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
             };
-           
-			_get = [_shared_future]() -> FetchedType {
+
+            _get = [_shared_future]() -> FetchedType {
                 return _shared_future->get();
             };
         }
@@ -45,8 +45,8 @@ namespace detail {
         {
             std::shared_ptr<std::future<OriginFetchedType>> _shared_intermediate_future = std::make_shared<std::future<OriginFetchedType>>(std::move(future));
             std::shared_ptr<std::decay_t<ThenCallback>> _shared_decayed_then = std::make_shared<std::decay_t<ThenCallback>>(then);
-            
-			_poll = [_shared_intermediate_future]() -> bool {
+
+            _poll = [_shared_intermediate_future]() -> bool {
                 if (!_shared_intermediate_future->valid()) {
                     return false;
                 }
@@ -144,8 +144,20 @@ namespace detail {
 
     void fetch_bytes(const std::vector<std::filesystem::path>& paths, const std::function<void(const std::vector<std::vector<char>>&)>& callback, bool must_persist = true);
 
-	void set_fetch_path(const std::filesystem::path& fetch_path);
-
-	[[nodiscard]] uint32 async_fetches_waiting();
 }
+
+/// @brief Runtime API for asynchronous loading of objects that allows to configure the filesystem
+struct fetch_context {
+
+    /// @brief Sets a prefix for all the subsequent uses of the filesystem. You can use this if
+    /// you build for multiple platforms and choose different storage path strategies.
+    /// @param prefix_path the prefix path to use for subsequent filesystem accesses
+    void set_prefix_path(const std::filesystem::path& prefix_path);
+
+    /// @brief Gets the current count of fetched objects that are still loading. You can use this to
+    /// check if all the async fetches you issued are complete for loading screens.
+    /// @return the current count of waiting async fetches
+    [[nodiscard]] uint32 async_fetches_waiting();
+};
+
 }

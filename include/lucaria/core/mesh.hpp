@@ -4,16 +4,18 @@
 #include <lucaria/core/math.hpp>
 #include <lucaria/core/resource.hpp>
 
-#if LUCARIA_BACKEND_OPENGL
+#if defined(LUCARIA_BACKEND_OPENGL)
 #include <lucaria/core/backend/opengl/mesh_opengl.hpp>
 #endif
 
-#if LUCARIA_BACKEND_PSPGU
+#if defined(LUCARIA_BACKEND_PSPGU)
 #include <lucaria/core/backend/pspgu/mesh_pspgu.hpp>
 #endif
 
 namespace lucaria {
 namespace detail {
+
+	struct rendering_system;
 
     enum struct mesh_attribute {
         position,
@@ -36,11 +38,11 @@ namespace detail {
 
         mesh_implementation(const geometry_implementation& geometry);
 
-#if LUCARIA_BACKEND_OPENGL
+#if defined(LUCARIA_BACKEND_OPENGL)
         mesh_implementation_opengl implementation_opengl;
 #endif
 
-#if LUCARIA_BACKEND_PSPGU
+#if defined(LUCARIA_BACKEND_PSPGU)
         mesh_implementation_pspgu implementation_pspgu;
 #endif
 
@@ -73,13 +75,13 @@ struct mesh_object {
 private:
     detail::resource_container<detail::mesh_implementation>* _resource = nullptr;
     explicit mesh_object(detail::resource_container<detail::mesh_implementation>* resource);
-    friend struct rendering_system;
+    friend struct detail::rendering_system;
 };
 
 // Internal definitions
 namespace _detail {
 
-#if LUCARIA_CONFIG_DEBUG
+#if defined(LUCARIA_DEBUG)
 
     struct guizmo_mesh {
         LUCARIA_DELETE_DEFAULT(guizmo_mesh)

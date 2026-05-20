@@ -3,7 +3,7 @@
 #include <imgui.h>
 
 #include <lucaria/core/math.hpp>
-#include <lucaria/core/platform.hpp>
+#include <lucaria/core/workaround.hpp>
 #include <lucaria/core/resource.hpp>
 
 namespace lucaria {

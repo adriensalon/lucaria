@@ -3,6 +3,9 @@
 #include <lucaria/core/sound_track.hpp>
 
 namespace lucaria {
+namespace detail {
+	struct mixer_system;
+}
 
 /// @brief
 struct speaker_component {
@@ -30,7 +33,7 @@ private:
     bool _want_playing = false;
     bool _is_looping = false;
     bool _want_looping = false;
-    friend struct mixer_system;
+    friend struct detail::mixer_system;
 };
 
 }

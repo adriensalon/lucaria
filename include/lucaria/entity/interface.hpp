@@ -6,6 +6,9 @@
 #include <lucaria/core/mesh.hpp>
 
 namespace lucaria {
+namespace detail {
+	struct rendering_system;
+}
 
 /// @brief
 enum struct refresh_mode {
@@ -31,7 +34,7 @@ struct screen_interface_component {
 
 private:
     std::function<void()> _imgui_callback = nullptr;
-    friend struct rendering_system;
+    friend struct detail::rendering_system;
 };
 
 struct spatial_interface_component {
@@ -68,7 +71,7 @@ private:
     ImGuiContext* _imgui_context = nullptr;
     std::optional<detail::texture_implementation> _imgui_color_texture = std::nullopt;
     std::optional<detail::framebuffer_implementation> _imgui_framebuffer = std::nullopt;
-    friend struct rendering_system;
+    friend struct detail::rendering_system;
 };
 
 }

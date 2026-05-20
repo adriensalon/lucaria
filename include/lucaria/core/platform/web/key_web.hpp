@@ -5,6 +5,8 @@
 
 #include <lucaria/core/key.hpp>
 
+#include <lucaria/core/platform/web/platform_web.hpp>
+
 namespace lucaria {
 namespace detail {
 

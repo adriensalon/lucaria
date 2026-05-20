@@ -1,10 +1,7 @@
 #include <lucaria/core/texture.hpp>
+#include <lucaria/core/window.hpp>
 
 namespace lucaria {
-
-extern bool _is_etc2_supported;
-extern bool _is_s3tc_supported;
-
 namespace detail {
     namespace {
 
@@ -68,18 +65,18 @@ namespace detail {
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         switch (from.data.channels) {
         case 3:
-            if (from.data.is_compressed_etc && _is_etc2_supported) {
+            if (from.data.is_compressed_etc && detail::engine_window().is_etc2_supported) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB8_ETC2, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
-            } else if (from.data.is_compressed_s3tc && _is_s3tc_supported) {
+            } else if (from.data.is_compressed_s3tc && detail::engine_window().is_s3tc_supported) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
             } else {
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, from.data.width, from.data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
             }
             break;
         case 4:
-            if (from.data.is_compressed_etc && _is_etc2_supported) {
+            if (from.data.is_compressed_etc && detail::engine_window().is_etc2_supported) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA8_ETC2_EAC, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
-            } else if (from.data.is_compressed_s3tc && _is_s3tc_supported) {
+            } else if (from.data.is_compressed_s3tc && detail::engine_window().is_s3tc_supported) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
             } else {
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, from.data.width, from.data.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);
@@ -89,9 +86,9 @@ namespace detail {
             LUCARIA_RUNTIME_ERROR("Invalid texture channels count, must be 3 or 4")
             break;
         }
-#if LUCARIA_CONFIG_DEBUG
-        std::cout << "Created TEXTURE_2D buffer of size " << from.data.width << "x" << from.data.height << " with id " << implementation_opengl.id << std::endl;
-#endif
+// #if defined(LUCARIA_DEBUG)
+//         std::cout << "Created TEXTURE_2D buffer of size " << from.data.width << "x" << from.data.height << " with id " << implementation_opengl.id << std::endl;
+// #endif
 
         implementation_opengl.is_owning = true;
     }
@@ -107,9 +104,9 @@ namespace detail {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
 
-#if LUCARIA_CONFIG_DEBUG
-        std::cout << "Created EMPTY TEXTURE_2D buffer of size " << size.x << "x" << size.y << " with id " << implementation_opengl.id << std::endl;
-#endif
+// #if defined(LUCARIA_DEBUG)
+//         std::cout << "Created EMPTY TEXTURE_2D buffer of size " << size.x << "x" << size.y << " with id " << implementation_opengl.id << std::endl;
+// #endif
 
         implementation_opengl.is_owning = true;
     }
@@ -133,18 +130,18 @@ namespace detail {
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         switch (from.data.channels) {
         case 3:
-            if (from.data.is_compressed_etc && _is_etc2_supported) {
+            if (from.data.is_compressed_etc && detail::engine_window().is_etc2_supported) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB8_ETC2, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
-            } else if (from.data.is_compressed_s3tc && _is_s3tc_supported) {
+            } else if (from.data.is_compressed_s3tc && detail::engine_window().is_s3tc_supported) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
             } else {
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, from.data.width, from.data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
             }
             break;
         case 4:
-            if (from.data.is_compressed_etc && _is_etc2_supported) {
+            if (from.data.is_compressed_etc && detail::engine_window().is_etc2_supported) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA8_ETC2_EAC, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
-            } else if (from.data.is_compressed_s3tc && _is_s3tc_supported) {
+            } else if (from.data.is_compressed_s3tc && detail::engine_window().is_s3tc_supported) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
             } else {
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, from.data.width, from.data.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);

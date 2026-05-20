@@ -51,7 +51,7 @@ struct object_context {
     /// @brief Creates a new texture with the specified size
     /// @param size	the size of the texture to create
     /// @return a texture object with an empty texture of the specified size
-    [[nodiscard]] texture_object emplace_texture(const uint32x2 size);
+    [[nodiscard]] texture_object create_texture(const uint32x2 size);
 
     /// @brief Loads an image from a file asynchronously and uploads directly to the device,
     /// lets the runtime choose the best format it can use without downloading the others

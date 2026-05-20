@@ -3,9 +3,9 @@
 #include <string>
 #include <string_view>
 
-#include <lucaria/core/platform.hpp>
+#include <lucaria/core/workaround.hpp>
 
-#if defined(LUCARIA_CONFIG_DEBUG)
+#if defined(LUCARIA_DEBUG)
 #define LUCARIA_RUNTIME_ERROR(message) lucaria::runtime_error(__FILE__, __LINE__, message);
 #define LUCARIA_RUNTIME_OPENAL_ASSERT lucaria::runtime_openal_assert(__FILE__, __LINE__);
 #define LUCARIA_RUNTIME_OPENGL_ASSERT lucaria::runtime_opengl_assert(__FILE__, __LINE__);

@@ -5,6 +5,9 @@
 #include <lucaria/core/texture.hpp>
 
 namespace lucaria {
+namespace detail {
+	struct rendering_system;
+}
 
 /// @brief
 struct blockout_model_component {
@@ -19,7 +22,7 @@ struct blockout_model_component {
 private:
     mesh_object _mesh = {};
     friend struct motion_system;
-    friend struct rendering_system;
+    friend struct detail::rendering_system;
 };
 
 /// @brief
@@ -39,7 +42,7 @@ private:
     mesh_object _mesh = {};
     texture_object _color = {};
     friend struct motion_system;
-    friend struct rendering_system;
+    friend struct detail::rendering_system;
 };
 
 /// @brief
@@ -69,7 +72,7 @@ private:
     texture_object _occlusion = {};
     texture_object _emissive = {};
     friend struct motion_system;
-    friend struct rendering_system;
+    friend struct detail::rendering_system;
 };
 
 }

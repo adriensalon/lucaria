@@ -1,10 +1,10 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 
-#include <lucaria/core/window.hpp>
 #include <lucaria/core/error.hpp>
+#include <lucaria/core/window.hpp>
 
-#if LUCARIA_BACKEND_OPENGL
+#if defined(LUCARIA_BACKEND_OPENGL)
 #include <backends/imgui_impl_opengl3.h>
 #include <lucaria/core/backend/opengl/backend_opengl.hpp>
 
@@ -18,28 +18,28 @@ namespace detail {
         ImGuiContext* _context = ImGui::CreateContext(shared_font_atlas.get());
         ImGui::SetCurrentContext(_context);
 
-#if LUCARIA_PLATFORM_ANDROID
+#if defined(LUCARIA_PLATFORM_ANDROID)
         if (implementation_android.must_install_imgui_callbacks) {
-            ImGui_ImplAndroid_Init(app->window);
+            ImGui_ImplAndroid_Init(implementation_android.app->window);
             implementation_android.must_install_imgui_callbacks = false;
         }
 #endif
 
-#if LUCARIA_PLATFORM_WIN32
+#if defined(LUCARIA_PLATFORM_GLFW)
         if (implementation_glfw.must_install_imgui_callbacks) {
             ImGui_ImplGlfw_InitForOpenGL(implementation_glfw.window, true);
             implementation_glfw.must_install_imgui_callbacks = false;
         }
 #endif
 
-#if LUCARIA_BACKEND_OPENGL
+#if defined(LUCARIA_BACKEND_OPENGL)
         ImGui_ImplOpenGL3_Init("#version 300 es");
         ImGui_ImplOpenGL3_DestroyFontsTexture();
 #endif
 
         ImGui::GetIO().Fonts->SetTexID(shared_font_texture->imgui_texture());
 
-#if LUCARIA_BACKEND_OPENGL
+#if defined(LUCARIA_BACKEND_OPENGL)
         struct ImGui_ImplOpenGL3_Data {
             GLuint GlVersion;
             char GlslVersionString[32];
@@ -146,5 +146,47 @@ namespace detail {
         alcCloseDevice(_webaudio_device);
     }
 
+    static window_implementation* _engine_window = nullptr;
+
+    void set_engine_window(window_implementation* window)
+    {
+        _engine_window = window;
+    }
+
+    window_implementation& engine_window()
+    {
+        // LUCARIA_ASSERT
+        return *_engine_window;
+    }
+
 }
+
+bool window_context::is_locked()
+{
+#if defined(LUCARIA_PLATFORM_ANDROID)
+    return true;
+#endif
+
+#if defined(LUCARIA_PLATFORM_WEB)
+    return detail::engine_window().implementation_web.is_audio_locked
+        && detail::engine_window().implementation_web.is_mouse_locked;
+#endif
+
+#if defined(LUCARIA_PLATFORM_GLFW)
+    return detail::engine_window().implementation_glfw.is_mouse_locked;
+#endif
+
+    return false;
+}
+
+float64 window_context::time_delta()
+{
+    return detail::engine_window().time_delta_seconds;
+}
+
+float32x2 window_context::screen_size()
+{
+    return detail::engine_window().screen_size;
+}
+
 }

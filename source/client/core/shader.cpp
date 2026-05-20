@@ -11,7 +11,7 @@ namespace {
     static void load_data_from_bytes(shader_data& data, const std::vector<char>& bytes)
     {
         detail::bytes_stream _stream(bytes);
-#if LUCARIA_JSON
+#if defined(LUCARIA_JSON_ASSETS)
         cereal::JSONInputArchive _archive(_stream);
 #else
         cereal::PortableBinaryInputArchive _archive(_stream);

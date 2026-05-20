@@ -22,9 +22,9 @@ namespace detail {
                 LUCARIA_RUNTIME_ERROR("Failed to load skeleton, archive doesn't contain the expected object type")
             }
             _ozz_archive >> handle;
-#if LUCARIA_CONFIG_DEBUG
-            std::cout << "Loaded skeleton with " << handle.num_joints() << " joints." << std::endl;
-#endif
+// #if defined(LUCARIA_DEBUG)
+//             std::cout << "Loaded skeleton with " << handle.num_joints() << " joints." << std::endl;
+// #endif
         }
 
         static async_container<skeleton_implementation> _fetch_skeleton_async(const std::filesystem::path& data_path)

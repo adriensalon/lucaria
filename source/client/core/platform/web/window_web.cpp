@@ -1,6 +1,8 @@
 #include <lucaria/core/error.hpp>
 #include <lucaria/core/window.hpp>
 
+extern "C" void __lucaria_main_scene();
+
 namespace lucaria {
 namespace detail {
 
@@ -40,7 +42,7 @@ namespace detail {
 
         void _emscripten_assert(EMSCRIPTEN_RESULT result)
         {
-#if LUCARIA_CONFIG_DEBUG
+#if defined(LUCARIA_DEBUG)
             if (result != EMSCRIPTEN_RESULT_SUCCESS) {
                 std::string _brief;
                 bool _is_fatal = true;
@@ -279,7 +281,7 @@ namespace detail {
 
             static float64 _last_render_time = 0;
             const float64 _render_time = emscripten_get_now();
-            _window->time_delta_seconds = (_render_time - _last_render_time) / 1000.f;
+            _window->time_delta_seconds = (_render_time - _last_render_time) / 1000.0;
             _last_render_time = _render_time;
 
             int32 _screen_width, _screen_height;
@@ -302,8 +304,13 @@ namespace detail {
 
     }
 
-    window_implementation::window_implementation(const std::function<void()>& update_callback, const std::function<void()>& teardown_callback)
+    window_implementation::window_implementation(
+        const std::function<void()>& update_callback,
+        const std::function<void()>& initialize_callback,
+        const std::function<void()>& destroy_callback)
     {
+		set_engine_window(this);
+
         is_touch_supported = _navigator_get_touch_points() > 1;
         is_mouse_supported = !is_touch_supported;
         is_keyboard_supported = !is_touch_supported;
@@ -337,13 +344,19 @@ namespace detail {
 
         _initialize_backend(is_etc2_supported, is_s3tc_supported);
         initialize_imgui();
-
+		
+        if (initialize_callback) {
+            initialize_callback();
+        }
         stored_update_callback = update_callback;
+		
+		__lucaria_main_scene();
+
         emscripten_set_main_loop_arg(_update_loop, _user_data, 0, EM_TRUE);
         emscripten_set_main_loop_timing(EM_TIMING_RAF, 1);
 
-        if (teardown_callback) {
-            teardown_callback();
+        if (destroy_callback) {
+            destroy_callback();
         }
     }
 

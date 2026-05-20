@@ -27,9 +27,9 @@ namespace detail {
                 LUCARIA_RUNTIME_ERROR("Impossible to load quaternion track, archive doesn't contain the expected object type")
             }
             _ozz_archive >> rotation_handle;
-#if LUCARIA_CONFIG_DEBUG
-            std::cout << "Loaded motion track with position and rotation" << std::endl;
-#endif
+// #if defined(LUCARIA_DEBUG)
+//             std::cout << "Loaded motion track with position and rotation" << std::endl;
+// #endif
         }
 
         static async_container<motion_track_implementation> _fetch_motion_track_async(const std::filesystem::path& path)

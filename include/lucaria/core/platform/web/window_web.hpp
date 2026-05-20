@@ -1,6 +1,5 @@
 #pragma once
 
-#include <lucaria/core/platform/web/platform_web.hpp>
 #include <lucaria/core/platform/web/key_web.hpp>
 
 namespace lucaria {

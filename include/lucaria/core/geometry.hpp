@@ -1,11 +1,13 @@
 #pragma once
 
 #include <lucaria/bin/geometry_data.hpp>
-#include <lucaria/core/platform.hpp>
+#include <lucaria/core/workaround.hpp>
 #include <lucaria/core/resource.hpp>
 
 namespace lucaria {
 namespace detail {
+
+	struct rendering_system;
 
     struct geometry_implementation {
         LUCARIA_DELETE_DEFAULT(geometry_implementation)
@@ -42,9 +44,9 @@ struct geometry_object {
 private:
     detail::resource_container<detail::geometry_implementation>* _resource = nullptr;
     explicit geometry_object(detail::resource_container<detail::geometry_implementation>* resource);
+    friend struct detail::rendering_system;
     friend struct shape_object;
     friend struct spatial_interface_component;
-    friend struct rendering_system;
 };
 
 }

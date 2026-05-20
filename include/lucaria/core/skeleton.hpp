@@ -2,11 +2,13 @@
 
 #include <ozz/animation/runtime/skeleton.h>
 
-#include <lucaria/core/platform.hpp>
+#include <lucaria/core/workaround.hpp>
 #include <lucaria/core/resource.hpp>
 
 namespace lucaria {
 namespace detail {
+
+	struct motion_system;
 
     struct skeleton_implementation {
         LUCARIA_DELETE_DEFAULT(skeleton_implementation)
@@ -43,8 +45,8 @@ struct skeleton_object {
 private:
     detail::resource_container<detail::skeleton_implementation>* _resource = nullptr;
     explicit skeleton_object(detail::resource_container<detail::skeleton_implementation>* resource);
+    friend struct detail::motion_system;
     friend struct animator_component;
-    friend struct motion_system;
 };
 
 }

@@ -10,15 +10,15 @@
 #include <lucaria/core/texture.hpp>
 #include <lucaria/core/input.hpp>
 
-#if LUCARIA_PLATFORM_ANDROID
+#if defined(LUCARIA_PLATFORM_ANDROID)
 #include <lucaria/core/platform/android/window_android.hpp>
 #endif
 
-#if LUCARIA_PLATFORM_WEB
+#if defined(LUCARIA_PLATFORM_WEB)
 #include <lucaria/core/platform/web/window_web.hpp>
 #endif
 
-#if LUCARIA_PLATFORM_WIN32
+#if defined(LUCARIA_PLATFORM_GLFW)
 #include <lucaria/core/platform/glfw/window_glfw.hpp>
 #endif
 
@@ -29,11 +29,22 @@ namespace detail {
         LUCARIA_DELETE_DEFAULT(window_implementation)
         window_implementation(const window_implementation& other) = delete;
         window_implementation& operator=(const window_implementation& other) = delete;
-        window_implementation(window_implementation&& other);
-        window_implementation& operator=(window_implementation&& other);
-        ~window_implementation();
+        window_implementation(window_implementation&& other) = default;
+        window_implementation& operator=(window_implementation&& other) = default;
+        // ~window_implementation();
 
-        window_implementation(const std::function<void()>& update_callback, const std::function<void()>& teardown_callback = nullptr);
+#if defined(LUCARIA_PLATFORM_ANDROID)
+        window_implementation(
+			android_app* app, 			
+			const std::function<void()>& update_callback, 
+			const std::function<void()>& initialize_callback = nullptr, 
+			const std::function<void()>& destroy_callback = nullptr);
+#else
+        window_implementation(
+			const std::function<void()>& update_callback, 
+			const std::function<void()>& initialize_callback = nullptr, 
+			const std::function<void()>& destroy_callback = nullptr);
+#endif
         [[nodiscard]] ImGuiContext* create_shared_imgui_context();
         void reupload_shared_imgui_font_texture();
         void initialize_imgui();
@@ -41,15 +52,15 @@ namespace detail {
         void initialize_openal();
         void destroy_openal();
 
-#if LUCARIA_PLATFORM_ANDROID
+#if defined(LUCARIA_PLATFORM_ANDROID)
         window_implementation_android implementation_android = {};
 #endif
 
-#if LUCARIA_PLATFORM_WEB
+#if defined(LUCARIA_PLATFORM_WEB)
         window_implementation_web implementation_web = {};
 #endif
 
-#if LUCARIA_PLATFORM_WIN32
+#if defined(LUCARIA_PLATFORM_GLFW)
         window_implementation_glfw implementation_glfw = {};
 #endif
 
@@ -71,5 +82,19 @@ namespace detail {
         ImGuiContext* screen_context = nullptr;
     };
 
+	void set_engine_window(window_implementation* window);
+	[[nodiscard]] window_implementation& engine_window();
+
 }
+
+struct window_context {
+
+	[[nodiscard]] bool is_locked();
+
+	[[nodiscard]] float64 time_delta();
+
+	[[nodiscard]] float32x2 screen_size();
+
+};
+
 }

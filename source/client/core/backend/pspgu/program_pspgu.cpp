@@ -106,7 +106,7 @@ namespace detail {
     {
     }
 
-#if LUCARIA_CONFIG_DEBUG
+#if defined(LUCARIA_DEBUG)
     void program_implementation::bind_guizmo(const std::string& name, const _detail::guizmo_mesh& from)
     {
     }

@@ -16,13 +16,13 @@ namespace detail {
         static void _load_event_track_bytes(event_track_data& data, const std::vector<char>& bytes)
         {
             bytes_stream _stream(bytes);
-#if LUCARIA_JSON
+#if defined(LUCARIA_JSON_ASSETS)
             cereal::JSONInputArchive _archive(_stream);
 #else
             cereal::PortableBinaryInputArchive _archive(_stream);
 #endif
             _archive(data);
-#if LUCARIA_CONFIG_DEBUG
+#if defined(LUCARIA_DEBUG)
             std::cout << "Loaded event track" << std::endl;
 #endif
         }

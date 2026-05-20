@@ -1,63 +1,53 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 
-#include <lucaria/core/run.hpp>
 #include <lucaria/entity/mixer.hpp>
+#include <lucaria/entity/scene.hpp>
 #include <lucaria/entity/speaker.hpp>
 
 namespace lucaria {
+namespace detail {
 
-void _system_compute_mixer();
+    namespace {
 
-namespace {
+        std::optional<std::reference_wrapper<transform_component>> listener_transform = std::nullopt;
 
-    std::optional<std::reference_wrapper<transform_component>> listener_transform = std::nullopt;
+    }
 
-}
-
-void use_listener_transform(transform_component& transform)
-{
-    listener_transform = transform;
-}
-
-struct mixer_system {
-
-    static void apply_speaker_transforms()
+    void mixer_system::apply_speaker_transforms()
     {
         if (listener_transform.has_value()) {
-            each_scene([&](entt::registry& scene) {
-                scene.view<speaker_component>().each([](speaker_component& _speaker) {
-                    if (_speaker._sound.has_value() && _speaker._want_playing != _speaker._is_playing) {
+            each_view<speaker_component>([](speaker_component& _speaker) {
+                if (_speaker._sound.has_value() && _speaker._want_playing != _speaker._is_playing) {
 
-                        if (_speaker._want_playing) {
-                            alSourcePlay(_speaker._handle);
+                    if (_speaker._want_playing) {
+                        alSourcePlay(_speaker._handle);
 
-                        } else {
-                            alSourceStop(_speaker._handle);
-                        }
-
-                        _speaker._is_playing = _speaker._want_playing;
+                    } else {
+                        alSourceStop(_speaker._handle);
                     }
-                });
 
-                scene.view<speaker_component, transform_component>().each([](speaker_component& _speaker, transform_component& _transform) {
-                    if (_speaker._sound.has_value()) {
-                        const ALuint _handle = _speaker._handle;
-                        const glm::vec3 _position = _transform.get_position();
-                        const glm::vec3 _forward = _transform.get_forward();
+                    _speaker._is_playing = _speaker._want_playing;
+                }
+            });
 
-                        alSourcei(_handle, AL_SOURCE_RELATIVE, AL_FALSE);
-                        alSource3f(_handle, AL_POSITION, _position.x, _position.y, _position.z);
+            each_view<speaker_component, transform_component>([](speaker_component& _speaker, transform_component& _transform) {
+                if (_speaker._sound.has_value()) {
+                    const ALuint _handle = _speaker._handle;
+                    const glm::vec3 _position = _transform.get_position();
+                    const glm::vec3 _forward = _transform.get_forward();
 
-                        // AL_DIRECTION only matters if we use a cone otherwise we can skip it
-                        alSource3f(_handle, AL_DIRECTION, _forward.x, _forward.y, _forward.z);
-                    }
-                });
+                    alSourcei(_handle, AL_SOURCE_RELATIVE, AL_FALSE);
+                    alSource3f(_handle, AL_POSITION, _position.x, _position.y, _position.z);
+
+                    // AL_DIRECTION only matters if we use a cone otherwise we can skip it
+                    alSource3f(_handle, AL_DIRECTION, _forward.x, _forward.y, _forward.z);
+                }
             });
         }
     }
 
-    static void apply_listener_transform()
+    void mixer_system::apply_listener_transform()
     {
         if (listener_transform.has_value()) {
             const transform_component& _transform = listener_transform->get();
@@ -74,12 +64,18 @@ struct mixer_system {
             alListenerfv(AL_ORIENTATION, _orientation);
         }
     }
-};
 
-void _system_compute_mixer()
+    // void _system_compute_mixer()
+    // {
+    //     mixer_system::apply_speaker_transforms();
+    //     mixer_system::apply_listener_transform();
+    // }
+
+}
+
+void mixer_context::use_listener_transform(transform_component& transform)
 {
-    mixer_system::apply_speaker_transforms();
-    mixer_system::apply_listener_transform();
+    detail::listener_transform = transform;
 }
 
 }

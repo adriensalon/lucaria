@@ -7,15 +7,8 @@
 
 #include <lucaria/core/error.hpp>
 
-#if LUCARIA_PLATFORM_ANDROID
-#include <EGL/egl.h>
-#include <GLES3/gl3.h>
-#elif LUCARIA_PLATFORM_WEB
-#include <GLES3/gl3.h>
-#elif LUCARIA_PLATFORM_WIN32
-#include <glad/gl.h>
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
+#if defined(LUCARIA_BACKEND_OPENGL)
+#include <lucaria/core/backend/opengl/backend_opengl.hpp>
 #endif
 
 namespace lucaria {
@@ -27,7 +20,7 @@ void runtime_error(std::string_view file, const int line, const std::string& mes
     _text.append("line '").append(std::to_string(line)).append(" ");
     _text.append("with message: ").append(message);
     std::cout << _text << std::endl;
-#if defined(__EMSCRIPTEN__)
+#if defined(LUCARIA_PLATFORM_WEB)
     std::terminate();
 #else
     throw std::runtime_error(_text);
@@ -55,7 +48,7 @@ void runtime_openal_assert(std::string_view file, const int line)
 
 void runtime_opengl_assert(std::string_view file, const int line)
 {
-#if !LUCARIA_PLATFORM_PSP // lol TODO
+#if defined(LUCARIA_BACKEND_OPENGL) // lol TODO
     GLenum _gl_err;
     while ((_gl_err = glGetError()) != GL_NO_ERROR) {
         std::string _brief, _description;

@@ -13,6 +13,10 @@
 #include <lucaria/entity/transform.hpp>
 
 namespace lucaria {
+namespace detail {
+	struct motion_system;
+	struct rendering_system;
+}
 
 /// @brief
 struct animation_controller {
@@ -65,7 +69,7 @@ private:
     glm::float32 _last_time_ratio = 0.f;
     bool _has_looped = false;
     std::unordered_map<std::string, std::function<void()>> _event_callbacks = {};
-    friend struct motion_system;
+    friend struct detail::motion_system;
     friend struct animator_component;
 };
 
@@ -125,9 +129,9 @@ private:
     ozz::vector<ozz::math::Float4x4> _model_transforms = {};
     std::unique_ptr<ozz::animation::SamplingJob::Context> _sampling_context = nullptr;
     ozz::vector<ozz::animation::BlendingJob::Layer> _blend_layers = {};
+    friend struct detail::motion_system;
+    friend struct detail::rendering_system;
     friend struct transform_component;
-    friend struct motion_system;
-    friend struct rendering_system;
 };
 
 }

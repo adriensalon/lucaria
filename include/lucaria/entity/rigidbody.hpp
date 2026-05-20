@@ -7,6 +7,10 @@
 #include <lucaria/core/shape.hpp>
 
 namespace lucaria {
+namespace detail {
+    struct dynamics_system;
+    struct motion_system;
+}
 
 struct passive_rigidbody_component {
     passive_rigidbody_component() = default;
@@ -28,7 +32,7 @@ private:
     std::unique_ptr<btRigidBody> _rigidbody = nullptr;
     std::int16_t _group = 0;
     std::int16_t _mask = 0;
-    friend struct dynamics_system;
+    friend struct detail::dynamics_system;
 };
 
 struct kinematic_rigidbody_component {
@@ -56,7 +60,7 @@ private:
     std::vector<collision> _collisions = {};
     glm::vec3 _translation_speed = glm::vec3(0);
     glm::vec3 _rotation_speed = glm::vec3(0);
-    friend struct dynamics_system;
+    friend struct detail::dynamics_system;
 };
 
 struct dynamic_rigidbody_component {
@@ -112,8 +116,8 @@ private:
     glm::vec3 _last_position = glm::vec3(0);
     glm::vec3 _translation_speed = glm::vec3(0);
     glm::vec3 _rotation_speed = glm::vec3(0);
-    friend struct motion_system;
-    friend struct dynamics_system;
+    friend struct detail::motion_system;
+    friend struct detail::dynamics_system;
 };
 
 }

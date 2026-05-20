@@ -1,6 +1,7 @@
-// #define GLAD_GL_IMPLEMENTATION
 #include <lucaria/core/error.hpp>
 #include <lucaria/core/window.hpp>
+
+extern "C" void __lucaria_main_scene();
 
 namespace lucaria {
 namespace detail {
@@ -125,6 +126,11 @@ namespace detail {
         {
             glfwPollEvents();
 
+            static std::chrono::high_resolution_clock::time_point _last_render_time = std::chrono::high_resolution_clock::now();
+            const std::chrono::high_resolution_clock::time_point _render_time = std::chrono::high_resolution_clock::now();
+            window.time_delta_seconds = std::chrono::duration<float64>(_render_time - _last_render_time).count();
+            _last_render_time = _render_time;
+
             int _screen_width, _screen_height;
             glfwGetFramebufferSize(window.implementation_glfw.window, &_screen_width, &_screen_height);
             window.screen_size = uint32x2(_screen_width, _screen_height);
@@ -132,20 +138,28 @@ namespace detail {
                 return;
             }
 
-            for (std::pair<const glm::uint, glm::vec2>& _accumulator : window.pointer_accumulators) {
+            for (std::pair<const uint32, float32x2>& _accumulator : window.pointer_accumulators) {
                 window.pointer_events[_accumulator.first].delta = _accumulator.second;
-                _accumulator.second = glm::vec2(0);
+                _accumulator.second = float32x2(0);
             }
 
-			ImGui_ImplGlfw_NewFrame();
-			ImGui::GetIO().DisplaySize = convert_imgui(window.screen_size);
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::GetIO().DisplaySize = convert_imgui(window.screen_size);
 
-			window.stored_update_callback();
+            window.stored_update_callback();
+
+			glfwSwapBuffers(window.implementation_glfw.window);
         }
     }
 
-    window_implementation::window_implementation(const std::function<void()>& update_callback, const std::function<void()>& teardown_callback)
+    window_implementation::window_implementation(
+		const std::function<void()>& update_callback, 
+		const std::function<void()>& initialize_callback, 
+		const std::function<void()>& destroy_callback
+	)
     {
+		set_engine_window(this);
+		 
         glfwSetErrorCallback(_glfw_error_callback);
         if (!glfwInit()) {
             exit(EXIT_FAILURE);
@@ -168,7 +182,7 @@ namespace detail {
         glfwSetWindowFocusCallback(implementation_glfw.window, _glfw_window_focus_callback);
 
         gladLoadGL(glfwGetProcAddress);
-        glfwSwapInterval(0);
+        glfwSwapInterval(1);
 
         _initialize_backend(is_s3tc_supported);
         initialize_imgui();
@@ -177,6 +191,13 @@ namespace detail {
         is_mouse_supported = true;
         is_keyboard_supported = true;
         is_touch_supported = false;
+		
+        if (initialize_callback) {
+            initialize_callback();
+        }
+        stored_update_callback = update_callback;
+		
+		__lucaria_main_scene();
 
         while (!glfwWindowShouldClose(implementation_glfw.window)) {
             _update_loop(*this);
@@ -184,8 +205,8 @@ namespace detail {
         glfwDestroyWindow(implementation_glfw.window);
         glfwTerminate();
 
-        if (teardown_callback) {
-            teardown_callback();
+        if (destroy_callback) {
+            destroy_callback();
         }
     }
 

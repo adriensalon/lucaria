@@ -22,10 +22,6 @@ namespace detail {
             glGenBuffers(1, &_attribute_id);
             glBindBuffer(GL_ARRAY_BUFFER, _attribute_id);
             glBufferData(GL_ARRAY_BUFFER, 2 * sizeof(glm::float32) * attribute.size(), _attribute_ptr, GL_STATIC_DRAW);
-#if LUCARIA_CONFIG_DEBUG
-            std::cout << "Created VEC2 ARRAY_BUFFER buffer of size " << attribute.size()
-                      << " with id " << _attribute_id << std::endl;
-#endif
             return _attribute_id;
         }
 
@@ -36,10 +32,6 @@ namespace detail {
             glGenBuffers(1, &_attribute_id);
             glBindBuffer(GL_ARRAY_BUFFER, _attribute_id);
             glBufferData(GL_ARRAY_BUFFER, 3 * sizeof(glm::float32) * attribute.size(), _attribute_ptr, GL_STATIC_DRAW);
-#if LUCARIA_CONFIG_DEBUG
-            std::cout << "Created VEC3 ARRAY_BUFFER buffer of size " << attribute.size()
-                      << " with id " << _attribute_id << std::endl;
-#endif
             return _attribute_id;
         }
 
@@ -50,10 +42,6 @@ namespace detail {
             glGenBuffers(1, &_attribute_id);
             glBindBuffer(GL_ARRAY_BUFFER, _attribute_id);
             glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(glm::float32) * attribute.size(), _attribute_ptr, GL_STATIC_DRAW);
-#if LUCARIA_CONFIG_DEBUG
-            std::cout << "Created VEC4 ARRAY_BUFFER buffer of size " << attribute.size()
-                      << " with id " << _attribute_id << std::endl;
-#endif
             return _attribute_id;
         }
 
@@ -64,10 +52,6 @@ namespace detail {
             glGenBuffers(1, &_attribute_id);
             glBindBuffer(GL_ARRAY_BUFFER, _attribute_id);
             glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(glm::uint) * attribute.size(), _attribute_ptr, GL_STATIC_DRAW);
-#if LUCARIA_CONFIG_DEBUG
-            std::cout << "Created UVEC4 ARRAY_BUFFER buffer of size " << attribute.size()
-                      << " with id " << _attribute_id << std::endl;
-#endif
             return _attribute_id;
         }
 
@@ -78,10 +62,6 @@ namespace detail {
             glGenBuffers(1, &_attribute_id);
             glBindBuffer(GL_ARRAY_BUFFER, _attribute_id);
             glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(glm::int32) * attribute.size(), _attribute_ptr, GL_STATIC_DRAW);
-#if LUCARIA_CONFIG_DEBUG
-            std::cout << "Created IVEC4 ARRAY_BUFFER buffer of size " << attribute.size()
-                      << " with id " << _attribute_id << std::endl;
-#endif
             return _attribute_id;
         }
 
@@ -196,7 +176,7 @@ namespace detail {
 
 namespace _detail {
 
-#if LUCARIA_CONFIG_DEBUG
+#if defined(LUCARIA_DEBUG)
     guizmo_mesh::guizmo_mesh(guizmo_mesh&& other)
     {
         *this = std::move(other);

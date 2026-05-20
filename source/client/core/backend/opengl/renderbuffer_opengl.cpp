@@ -36,18 +36,18 @@ namespace detail {
         : size(size)
     {
         static GLint _max_samples = 1;
-#if defined(GL_MAX_SAMPLES)
+// #if defined(GL_MAX_SAMPLES)
         glGetIntegerv(GL_MAX_SAMPLES, &_max_samples);
-#endif
+// #endif
         sampling_count = static_cast<glm::uint>(std::clamp<int>(samples, 1, _max_samples));
         implementation_opengl.internal_format = internal_format;
         glGenRenderbuffers(1, &implementation_opengl.id);
         glBindRenderbuffer(GL_RENDERBUFFER, implementation_opengl.id);
-#if defined(GL_RENDERBUFFER_SAMPLES)
+// #if defined(GL_RENDERBUFFER_SAMPLES)
         if (sampling_count > 1) {
             glRenderbufferStorageMultisample(GL_RENDERBUFFER, static_cast<GLsizei>(sampling_count), implementation_opengl.internal_format, static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y));
         } else
-#endif
+// #endif
         {
             glRenderbufferStorage(GL_RENDERBUFFER, implementation_opengl.internal_format, static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y));
         }

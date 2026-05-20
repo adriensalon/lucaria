@@ -26,7 +26,7 @@ namespace detail {
 
 namespace _detail {
 
-#if LUCARIA_CONFIG_DEBUG
+#if defined(LUCARIA_DEBUG)
     guizmo_mesh::guizmo_mesh(guizmo_mesh&& other)
     {
     }

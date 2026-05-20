@@ -1,7 +1,7 @@
 #pragma once
 
 #include <lucaria/bin/audio_data.hpp>
-#include <lucaria/core/platform.hpp>
+#include <lucaria/core/workaround.hpp>
 #include <lucaria/core/resource.hpp>
 
 namespace lucaria {

@@ -32,7 +32,7 @@ namespace detail {
             glCompileShader(_shader_id);
             glGetShaderiv(_shader_id, GL_COMPILE_STATUS, &_result);
             glGetShaderiv(_shader_id, GL_INFO_LOG_LENGTH, &_log_length);
-#if LUCARIA_CONFIG_DEBUG
+#if defined(LUCARIA_DEBUG)
             if (!_result || _log_length > 0) {
                 std::vector<GLchar> _result_error_msg(_log_length + 1);
                 glGetShaderInfoLog(_shader_id, _log_length, NULL, &_result_error_msg[0]);
@@ -59,9 +59,9 @@ namespace detail {
                 _name[_length] = '\0';
                 glm::int32 _location = glGetAttribLocation(program_id, _name);
                 _attributes[_name] = _location;
-#if LUCARIA_CONFIG_DEBUG
-                std::cout << "Program has attribute '" << _name << "' at location " << _location << std::endl;
-#endif
+// #if defined(LUCARIA_DEBUG)
+//                 std::cout << "Program has attribute '" << _name << "' at location " << _location << std::endl;
+// #endif
             }
             return _attributes;
         }
@@ -80,9 +80,9 @@ namespace detail {
                 _name[_length] = '\0';
                 glm::int32 _location = glGetUniformLocation(program_id, _name);
                 _uniforms[_name] = _location;
-#if LUCARIA_CONFIG_DEBUG
-                std::cout << "Program has uniform '" << _name << "' at location " << _location << std::endl;
-#endif
+// #if defined(LUCARIA_DEBUG)
+//                 std::cout << "Program has uniform '" << _name << "' at location " << _location << std::endl;
+// #endif
             }
             return _uniforms;
         }
@@ -132,7 +132,7 @@ namespace detail {
         glLinkProgram(implementation_opengl.id);
         glGetProgramiv(implementation_opengl.id, GL_LINK_STATUS, &_result);
         glGetProgramiv(implementation_opengl.id, GL_INFO_LOG_LENGTH, &_log_length);
-#if LUCARIA_CONFIG_DEBUG
+#if defined(LUCARIA_DEBUG)
         if (_log_length > 0) {
             std::vector<GLchar> _result_error_msg(_log_length + 1);
             glGetProgramInfoLog(implementation_opengl.id, _log_length, NULL, &_result_error_msg[0]);
@@ -309,7 +309,7 @@ namespace detail {
         glDrawElements(GL_TRIANGLES, implementation_opengl.bound_indices_count, GL_UNSIGNED_INT, 0);
     }
 
-#if LUCARIA_CONFIG_DEBUG
+#if defined(LUCARIA_DEBUG)
     void program_implementation::bind_guizmo(const std::string& name, const _detail::guizmo_mesh& from)
     {
         implementation_opengl.bound_indices_count = from.get_size();

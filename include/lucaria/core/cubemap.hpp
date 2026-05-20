@@ -3,16 +3,18 @@
 #include <lucaria/core/image.hpp>
 #include <lucaria/core/resource.hpp>
 
-#if LUCARIA_BACKEND_OPENGL
+#if defined(LUCARIA_BACKEND_OPENGL)
 #include <lucaria/core/backend/opengl/cubemap_opengl.hpp>
 #endif
 
-#if LUCARIA_BACKEND_PSPGU
+#if defined(LUCARIA_BACKEND_PSPGU)
 #include <lucaria/core/backend/pspgu/cubemap_pspgu.hpp>
 #endif
 
 namespace lucaria {
 namespace detail {
+
+	struct rendering_system;
 
     struct cubemap_implementation {
         LUCARIA_DELETE_DEFAULT(cubemap_implementation)
@@ -24,11 +26,11 @@ namespace detail {
 
         cubemap_implementation(const std::array<image_implementation, 6>& images);
 
-#if LUCARIA_BACKEND_OPENGL
+#if defined(LUCARIA_BACKEND_OPENGL)
         cubemap_implementation_opengl implementation_opengl;
 #endif
 
-#if LUCARIA_BACKEND_PSPGU
+#if defined(LUCARIA_BACKEND_PSPGU)
         cubemap_implementation_pspgu implementation_pspgu;
 #endif
     };
@@ -61,7 +63,7 @@ struct cubemap_object {
 private:
     detail::resource_container<detail::cubemap_implementation>* _resource = nullptr;
     explicit cubemap_object(detail::resource_container<detail::cubemap_implementation>* resource);
-    friend struct rendering_system;
+    friend struct detail::rendering_system;
 };
 
 }

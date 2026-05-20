@@ -5,7 +5,7 @@ namespace {
 
     static void _check_complete()
     {
-#if LUCARIA_CONFIG_DEBUG
+#if defined(LUCARIA_DEBUG)
         GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
         if (status != GL_FRAMEBUFFER_COMPLETE) {
             LUCARIA_RUNTIME_ERROR("Framebuffer incomplete")

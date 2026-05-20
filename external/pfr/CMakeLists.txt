@@ -1,0 +1,3 @@
+add_library(lucaria_external_pfr INTERFACE)
+target_include_directories(lucaria_external_pfr INTERFACE upstream/pfr/include)
+target_compile_features(lucaria_external_pfr INTERFACE cxx_std_20)

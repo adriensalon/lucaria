@@ -57,15 +57,15 @@ namespace detail {
         sample_rate = from.data.sample_rate;
         samples_count = static_cast<glm::uint>(from.data.samples.size());
         alGenBuffers(1, &id);
-#if LUCARIA_CONFIG_DEBUG
+#if defined(LUCARIA_DEBUG)
         if (id == 0) {
             LUCARIA_RUNTIME_ERROR("Failed to generate OpenAL buffer")
         }
 #endif
         alBufferData(id, alGetEnumValue("AL_FORMAT_MONO_FLOAT32"), from.data.samples.data(), static_cast<ALsizei>(from.data.samples.size() * sizeof(glm::float32)), from.data.sample_rate);
-#if LUCARIA_CONFIG_DEBUG
-        std::cout << "Created sound buffer of size " << from.data.samples.size() << " with id " << id << std::endl;
-#endif
+// #if defined(LUCARIA_DEBUG)
+//         std::cout << "Created sound buffer of size " << from.data.samples.size() << " with id " << id << std::endl;
+// #endif
         is_owning = true;
     }
 }

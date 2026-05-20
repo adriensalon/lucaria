@@ -1,11 +1,13 @@
 #pragma once
 
 #include <lucaria/bin/event_track_data.hpp>
-#include <lucaria/core/platform.hpp>
+#include <lucaria/core/workaround.hpp>
 #include <lucaria/core/resource.hpp>
 
 namespace lucaria {
 namespace detail {
+
+	struct motion_system;
 
     struct event_track_implementation {
         LUCARIA_DELETE_DEFAULT(event_track_implementation)
@@ -42,8 +44,8 @@ struct event_track_object {
 private:
     detail::resource_container<detail::event_track_implementation>* _resource = nullptr;
     explicit event_track_object(detail::resource_container<detail::event_track_implementation>* resource);
+    friend struct detail::motion_system;
     friend struct animator_component;
-    friend struct motion_system;
 };
 
 }

@@ -3,11 +3,13 @@
 #include <ozz/animation/runtime/track.h>
 
 #include <lucaria/core/math.hpp>
-#include <lucaria/core/platform.hpp>
+#include <lucaria/core/workaround.hpp>
 #include <lucaria/core/resource.hpp>
 
 namespace lucaria {
 namespace detail {
+
+	struct motion_system;
 
     struct motion_track_implementation {
         LUCARIA_DELETE_DEFAULT(motion_track_implementation)
@@ -46,8 +48,8 @@ struct motion_track_object {
 private:
     detail::resource_container<detail::motion_track_implementation>* _resource = nullptr;
     explicit motion_track_object(detail::resource_container<detail::motion_track_implementation>* resource);
+    friend struct detail::motion_system;
     friend struct animator_component;
-    friend struct motion_system;
 };
 
 }

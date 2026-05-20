@@ -8,8 +8,6 @@
 
 namespace lucaria {
 
-extern bool _is_etc2_supported;
-extern bool _is_s3tc_supported;
 extern const std::filesystem::path& _resolve_image_path(const std::filesystem::path& data_path, const std::optional<std::filesystem::path>& etc2_path, const std::optional<std::filesystem::path>& s3tc_path);
 extern std::vector<std::filesystem::path> _resolve_image_paths(const std::array<std::filesystem::path, 6>& data_paths, const std::optional<std::array<std::filesystem::path, 6>>& etc2_paths, const std::optional<std::array<std::filesystem::path, 6>>& s3tc_paths);
 

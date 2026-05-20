@@ -6,16 +6,18 @@
 #include <lucaria/core/math.hpp>
 #include <lucaria/core/resource.hpp>
 
-#if LUCARIA_BACKEND_OPENGL
+#if defined(LUCARIA_BACKEND_OPENGL)
 #include <lucaria/core/backend/opengl/texture_opengl.hpp>
 #endif
 
-#if LUCARIA_BACKEND_PSPGU
+#if defined(LUCARIA_BACKEND_PSPGU)
 #include <lucaria/core/backend/pspgu/texture_pspgu.hpp>
 #endif
 
 namespace lucaria {
 namespace detail {
+
+	struct rendering_system;
 
     struct texture_implementation {
         LUCARIA_DELETE_DEFAULT(texture_implementation)
@@ -31,11 +33,11 @@ namespace detail {
         void update(const image_implementation& image);
         [[nodiscard]] ImTextureID imgui_texture() const;
 
-#if LUCARIA_BACKEND_OPENGL
+#if defined(LUCARIA_BACKEND_OPENGL)
         texture_implementation_opengl implementation_opengl;
 #endif
 
-#if LUCARIA_BACKEND_PSPGU
+#if defined(LUCARIA_BACKEND_PSPGU)
         texture_implementation_pspgu implementation_pspgu;
 #endif
 
@@ -81,7 +83,7 @@ struct texture_object {
 private:
     detail::resource_container<detail::texture_implementation>* _resource = nullptr;
     explicit texture_object(detail::resource_container<detail::texture_implementation>* resource);
-    friend struct rendering_system;
+    friend struct detail::rendering_system;
 };
 
 }

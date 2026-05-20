@@ -4,24 +4,21 @@
 #include <lucaria/core/database.hpp>
 #include <lucaria/core/image.hpp>
 #include <lucaria/core/stream.hpp>
-
+#include <lucaria/core/window.hpp>
 
 namespace lucaria {
 
 const std::filesystem::path& _resolve_image_path(const std::filesystem::path& data_path, const std::optional<std::filesystem::path>& etc2_path, const std::optional<std::filesystem::path>& s3tc_path);
 std::vector<std::filesystem::path> _resolve_image_paths(const std::array<std::filesystem::path, 6>& data_paths, const std::optional<std::array<std::filesystem::path, 6>>& etc2_paths, const std::optional<std::array<std::filesystem::path, 6>>& s3tc_paths);
 
-extern bool _is_etc2_supported;
-extern bool _is_s3tc_supported;
-
 const std::filesystem::path& _resolve_image_path(
     const std::filesystem::path& data_path,
     const std::optional<std::filesystem::path>& etc2_path,
     const std::optional<std::filesystem::path>& s3tc_path)
 {
-    if (_is_etc2_supported && etc2_path.has_value()) {
+    if (detail::engine_window().is_etc2_supported && etc2_path.has_value()) {
         return etc2_path.value();
-    } else if (_is_s3tc_supported && s3tc_path.has_value()) {
+    } else if (detail::engine_window().is_s3tc_supported && s3tc_path.has_value()) {
         return s3tc_path.value();
     } else {
         return data_path;
@@ -33,9 +30,9 @@ std::vector<std::filesystem::path> _resolve_image_paths(
     const std::optional<std::array<std::filesystem::path, 6>>& etc2_paths,
     const std::optional<std::array<std::filesystem::path, 6>>& s3tc_paths)
 {
-    if (_is_etc2_supported && etc2_paths.has_value()) {
+    if (detail::engine_window().is_etc2_supported && etc2_paths.has_value()) {
         return std::vector<std::filesystem::path>(etc2_paths.value().begin(), etc2_paths.value().end());
-    } else if (_is_s3tc_supported && s3tc_paths.has_value()) {
+    } else if (detail::engine_window().is_s3tc_supported && s3tc_paths.has_value()) {
         return std::vector<std::filesystem::path>(s3tc_paths.value().begin(), s3tc_paths.value().end());
     } else {
         return std::vector<std::filesystem::path>(data_paths.begin(), data_paths.end());
@@ -120,7 +117,7 @@ namespace detail {
                 // binary raw format
             } else {
                 bytes_stream _stream(bytes);
-#if LUCARIA_JSON
+#if defined(LUCARIA_JSON_ASSETS)
                 cereal::JSONInputArchive _archive(_stream);
 #else
                 cereal::PortableBinaryInputArchive _archive(_stream);

@@ -10,6 +10,9 @@
 namespace lucaria {
 namespace detail {
 
+	struct motion_system;
+	struct dynamics_system;
+
     enum struct shape_algorithm {
         convex_hull,
         triangle_mesh,
@@ -68,8 +71,8 @@ private:
 	friend struct passive_rigidbody_component;
 	friend struct kinematic_rigidbody_component;
 	friend struct dynamic_rigidbody_component;
-	friend struct motion_system;
-	friend struct dynamics_system;
+	friend struct detail::motion_system;
+	friend struct detail::dynamics_system;
 };
 
 }

@@ -2,11 +2,11 @@
 
 #include <lucaria/core/renderbuffer.hpp>
 
-#if LUCARIA_BACKEND_OPENGL
+#if defined(LUCARIA_BACKEND_OPENGL)
 #include <lucaria/core/backend/opengl/framebuffer_opengl.hpp>
 #endif
 
-#if LUCARIA_BACKEND_PSPGU
+#if defined(LUCARIA_BACKEND_PSPGU)
 #include <lucaria/core/backend/pspgu/framebuffer_pspgu.hpp>
 #endif
 
@@ -28,11 +28,11 @@ namespace detail {
         void bind_depth(texture_implementation& depth);
         void bind_depth(renderbuffer_implementation& depth);
 
-#if LUCARIA_BACKEND_OPENGL
+#if defined(LUCARIA_BACKEND_OPENGL)
         framebuffer_implementation_opengl implementation_opengl;
 #endif
 
-#if LUCARIA_BACKEND_PSPGU
+#if defined(LUCARIA_BACKEND_PSPGU)
         framebuffer_implementation_pspgu implementation_pspgu;
 #endif
     };

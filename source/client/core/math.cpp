@@ -3,7 +3,6 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <lucaria/core/math.hpp>
-#include <lucaria/core/platform.hpp>
 
 namespace lucaria {
 

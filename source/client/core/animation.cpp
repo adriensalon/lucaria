@@ -24,9 +24,9 @@ namespace detail {
                 LUCARIA_RUNTIME_ERROR("Failed to load animation, archive doesn't contain the expected object type")
             }
             _ozz_archive >> handle;
-#if LUCARIA_CONFIG_DEBUG
-            std::cout << "Loaded animation with " << handle.num_tracks() << " tracks" << std::endl;
-#endif
+// #if defined(LUCARIA_DEBUG)
+//             std::cout << "Loaded animation with " << handle.num_tracks() << " tracks" << std::endl;
+// #endif
         }
 
         static async_container<animation_implementation> _fetch_animation_async(const std::filesystem::path& path)

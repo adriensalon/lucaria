@@ -1,7 +1,7 @@
 #pragma once
 
 #include <lucaria/bin/shader_data.hpp>
-#include <lucaria/core/platform.hpp>
+#include <lucaria/core/workaround.hpp>
 
 namespace lucaria {
 
