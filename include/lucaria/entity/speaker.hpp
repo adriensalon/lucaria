@@ -1,6 +1,7 @@
 #pragma once
 
 #include <lucaria/core/sound_track.hpp>
+#include <lucaria/core/owning.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -12,8 +13,8 @@ struct speaker_component {
     speaker_component();
     speaker_component(const speaker_component& other) = delete;
     speaker_component& operator=(const speaker_component& other) = delete;
-    speaker_component(speaker_component&& other);
-    speaker_component& operator=(speaker_component&& other);
+    speaker_component(speaker_component&& other) = default;
+    speaker_component& operator=(speaker_component&& other) = default;
     ~speaker_component();
     
     speaker_component& use_sound(const sound_track_object sound_track);
@@ -26,8 +27,8 @@ struct speaker_component {
     [[nodiscard]] std::optional<glm::uint> get_count() const;
 
 private:
-    bool _is_owning = false;
-    glm::uint _handle;
+    detail::owning_flag _ownership = {};
+    ALuint _handle;
     sound_track_object _sound = {};
     bool _is_playing = false;
     bool _want_playing = false;

@@ -46,12 +46,38 @@ struct object_context {
 	/// @return 
 	[[nodiscard]] audio_object fetch_audio(const std::filesystem::path& path);
 
+	
+	
+	/// @brief Creates a new geometry from a mesh
+	/// @param mesh the mesh to create the geometry from
+	/// @return a geometry object initialized with the mesh
+	[[nodiscard]] geometry_object emplace_geometry(const mesh_object mesh);
 
+	/// @brief Creates a new geometry from a shape
+	/// @param shape the shape to create the geometry from
+	/// @return a geometry object initialized with the shape
+	[[nodiscard]] geometry_object emplace_geometry(const shape_object shape);
+
+    /// @brief Creates a new image from a texture
+    /// @param texture the texture to create the image from
+    /// @return an image object initialized with the texture
+    [[nodiscard]] image_object emplace_image(const texture_object texture);
+
+	/// @brief Creates a new image from a cubemap face
+	/// @param cubemap the cubemap to create the image from	
+	/// @param face_index the index of the cubemap face to create the image from
+	/// @return an image object initialized with the cubemap face
+    [[nodiscard]] image_object emplace_image(const cubemap_object cubemap, const uint32 face_index);
+
+    /// @brief Creates a new texture from an image
+    /// @param image the image to create the texture from
+    /// @return a texture object initialized with the image
+    [[nodiscard]] texture_object emplace_texture(const image_object image);
 
     /// @brief Creates a new texture with the specified size
     /// @param size	the size of the texture to create
     /// @return a texture object with an empty texture of the specified size
-    [[nodiscard]] texture_object create_texture(const uint32x2 size);
+    [[nodiscard]] texture_object emplace_texture(const uint32x2 size);
 
     /// @brief Loads an image from a file asynchronously and uploads directly to the device,
     /// lets the runtime choose the best format it can use without downloading the others

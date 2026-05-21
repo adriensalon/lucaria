@@ -4,6 +4,7 @@
 
 #include <lucaria/core/framebuffer.hpp>
 #include <lucaria/core/mesh.hpp>
+#include <lucaria/core/owning.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -41,8 +42,8 @@ struct spatial_interface_component {
     spatial_interface_component();
     spatial_interface_component(const spatial_interface_component& other) = delete;
     spatial_interface_component& operator=(const spatial_interface_component& other) = delete;
-    spatial_interface_component(spatial_interface_component&& other);
-    spatial_interface_component& operator=(spatial_interface_component&& other);
+    spatial_interface_component(spatial_interface_component&& other) = default;
+    spatial_interface_component& operator=(spatial_interface_component&& other) = default;
     ~spatial_interface_component();
 
     spatial_interface_component& use_viewport(const geometry_object geometry, const glm::uvec2& size);
@@ -58,7 +59,7 @@ struct spatial_interface_component {
     }
 
 private:
-    bool _is_owning = false;
+    detail::owning_flag _ownership = {};
     bool _use_interaction = false;
     glm::uvec2 _viewport_size = glm::uvec2(0);
     std::optional<glm::vec2> _interaction_screen_position = std::nullopt;

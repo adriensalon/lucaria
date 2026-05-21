@@ -12,32 +12,13 @@ speaker_component::speaker_component()
     if (!_handle) {
         LUCARIA_RUNTIME_ERROR("Failed to generate OpenAL source")
     }
-    _is_owning = true;
-}
 
-speaker_component::speaker_component(speaker_component&& other)
-{
-	_is_owning = false;
-    *this = std::move(other);
-}
-
-speaker_component& speaker_component::operator=(speaker_component&& other)
-{
-    _is_owning = true;
-    _handle = other._handle;
-    _sound = std::move(other._sound);
-    _is_playing = other._is_playing;
-    _want_playing = other._want_playing;
-    _is_looping = other._is_looping;
-    _want_looping = other._want_looping;
-	// TODO CLEANER
-    other._is_owning = false;
-    return *this;
+    _ownership.emplace();
 }
 
 speaker_component::~speaker_component()
 {
-    if (_is_owning) {
+    if (_ownership.owns()) {
         alDeleteSources(1, &_handle);
     }
 }

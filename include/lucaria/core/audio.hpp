@@ -38,6 +38,10 @@ struct audio_object {
 
     [[nodiscard]] explicit operator bool() const;
 
+	[[nodiscard]] audio_data* data();
+
+	[[nodiscard]] const audio_data* data() const;
+
 private:
 	detail::refcount_flag _refcount = {};
     detail::resource_manager<detail::audio_implementation>* _manager = nullptr;

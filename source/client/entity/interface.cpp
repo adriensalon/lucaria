@@ -22,32 +22,12 @@ screen_interface_component& screen_interface_component::set_callback(const std::
 spatial_interface_component::spatial_interface_component()
 {
     _imgui_context = detail::engine_window().create_shared_imgui_context();
-    _is_owning = true;
-}
-
-spatial_interface_component::spatial_interface_component(spatial_interface_component&& other)
-{
-    *this = std::move(other);
-}
-
-spatial_interface_component& spatial_interface_component::operator=(spatial_interface_component&& other)
-{
-    _is_owning = true;
-    _viewport_size = std::move(other._viewport_size);
-    _viewport_geometry = std::move(other._viewport_geometry);
-    _viewport_mesh = std::move(other._viewport_mesh);
-    _imgui_callback = std::move(other._imgui_callback);
-    _refresh_mode = other._refresh_mode;
-    _imgui_context = other._imgui_context;
-    _imgui_color_texture = std::move(other._imgui_color_texture);
-    _imgui_framebuffer = std::move(other._imgui_framebuffer);
-    other._is_owning = false;
-    return *this;
+    _ownership.emplace();
 }
 
 spatial_interface_component::~spatial_interface_component()
 {
-    if (_is_owning) {
+    if (_ownership.owns()) {
         ImGui::DestroyContext(_imgui_context);
     }
 }

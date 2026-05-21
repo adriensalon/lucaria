@@ -18,6 +18,7 @@
 #include <lucaria/core/mesh.hpp>
 #include <lucaria/core/owning.hpp>
 #include <lucaria/core/program.hpp>
+#include <lucaria/core/refcount.hpp>
 #include <lucaria/core/renderbuffer.hpp>
 #include <lucaria/core/shader.hpp>
 #include <lucaria/core/shape.hpp>

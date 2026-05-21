@@ -10,6 +10,9 @@
 namespace lucaria {
 namespace detail {
 
+	struct cubemap_implementation;
+	struct texture_implementation;
+
     struct image_implementation {
         LUCARIA_DELETE_DEFAULT(image_implementation)
         image_implementation(const image_implementation& other) = delete;
@@ -18,7 +21,9 @@ namespace detail {
         image_implementation& operator=(image_implementation&& other) noexcept = default;
 
         image_implementation(const std::vector<char>& bytes);
-        image_implementation(image_data&& data);
+        image_implementation(const texture_implementation& texture);
+        image_implementation(const cubemap_implementation& cubemap, const uint32 face_index);
+        image_implementation(image_data&& data); // TODO merge data here
 
         image_data data;
     };
@@ -72,6 +77,7 @@ struct image_object {
 private:
     detail::resource_container<detail::image_implementation>* _resource = nullptr;
     explicit image_object(detail::resource_container<detail::image_implementation>* resource);
+	friend struct object_context;
 };
 
 }

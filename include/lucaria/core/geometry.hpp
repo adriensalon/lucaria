@@ -7,6 +7,8 @@
 namespace lucaria {
 namespace detail {
 
+	struct shape_implementation;
+	struct mesh_implementation;
 	struct rendering_system;
 
     struct geometry_implementation {
@@ -17,6 +19,8 @@ namespace detail {
         geometry_implementation& operator=(geometry_implementation&& other) = default;
 
         geometry_implementation(const std::vector<char>& bytes);
+        geometry_implementation(const mesh_implementation& mesh);
+        geometry_implementation(const shape_implementation& shape);
         geometry_implementation(geometry_data&& data);
 
         geometry_data data;

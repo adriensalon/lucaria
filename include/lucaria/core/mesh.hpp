@@ -15,7 +15,7 @@
 namespace lucaria {
 namespace detail {
 
-	struct rendering_system;
+    struct rendering_system;
 
     enum struct mesh_attribute {
         position,
@@ -87,8 +87,8 @@ namespace _detail {
         LUCARIA_DELETE_DEFAULT(guizmo_mesh)
         guizmo_mesh(const guizmo_mesh& other) = delete;
         guizmo_mesh& operator=(const guizmo_mesh& other) = delete;
-        guizmo_mesh(guizmo_mesh&& other);
-        guizmo_mesh& operator=(guizmo_mesh&& other);
+        guizmo_mesh(guizmo_mesh&& other) = default;
+        guizmo_mesh& operator=(guizmo_mesh&& other) = default;
         ~guizmo_mesh();
 
         guizmo_mesh(const detail::geometry_implementation& from);
@@ -100,7 +100,7 @@ namespace _detail {
         [[nodiscard]] glm::uint get_positions_handle() const;
 
     private:
-        bool _is_owning;
+        detail::owning_flag _ownership = {};
         glm::uint _size;
         glm::uint _array_handle;
         glm::uint _elements_handle;

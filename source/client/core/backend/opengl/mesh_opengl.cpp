@@ -102,7 +102,6 @@ namespace detail {
 
     }
 
-    
     mesh_implementation::~mesh_implementation()
     {
         if (implementation_opengl.ownership.owns()) {
@@ -143,8 +142,8 @@ namespace detail {
         if (!from.data.weights.empty()) {
             implementation_opengl.attribute_ids[mesh_attribute::weights] = create_attribute_buffer(from.data.weights);
         }
-		
-		invposes = from.data.invposes;
+
+        invposes = from.data.invposes;
         size = 3 * static_cast<glm::uint>(from.data.indices.size());
 
         implementation_opengl.ownership.emplace();
@@ -155,25 +154,9 @@ namespace detail {
 namespace _detail {
 
 #if defined(LUCARIA_DEBUG)
-    guizmo_mesh::guizmo_mesh(guizmo_mesh&& other)
-    {
-        *this = std::move(other);
-    }
-
-    guizmo_mesh& guizmo_mesh::operator=(guizmo_mesh&& other)
-    {
-        _is_owning = true;
-        _size = other._size;
-        _array_handle = other._array_handle;
-        _elements_handle = other._elements_handle;
-        _positions_handle = other._positions_handle;
-        other._is_owning = false;
-        return *this;
-    }
-
     guizmo_mesh::~guizmo_mesh()
     {
-        if (_is_owning) {
+        if (_ownership.owns()) {
             glDeleteVertexArrays(1, &_array_handle);
             glDeleteBuffers(1, &_elements_handle);
             glDeleteBuffers(1, &_positions_handle);
@@ -187,7 +170,7 @@ namespace _detail {
         _size = 2 * static_cast<glm::uint>(_line_indices.size());
         _elements_handle = detail::create_elements_buffer(_line_indices);
         _positions_handle = detail::create_attribute_buffer(from.data.positions);
-        _is_owning = true;
+        _ownership.emplace();
     }
 
     guizmo_mesh::guizmo_mesh(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices)
@@ -196,7 +179,7 @@ namespace _detail {
         _size = 2 * static_cast<glm::uint>(indices.size());
         _elements_handle = detail::create_elements_buffer(indices);
         _positions_handle = detail::create_attribute_buffer(positions);
-        _is_owning = true;
+        _ownership.emplace();
     }
 
     void guizmo_mesh::update(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices)
