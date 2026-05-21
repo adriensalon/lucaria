@@ -1,22 +1,35 @@
 #pragma once
 
 #include <memory>
+#include <variant>
 
 #include <btBulletDynamicsCommon.h>
+#include <cereal/types/variant.hpp>
 #include <glm/glm.hpp>
 
+
+#include <lucaria/bin/path_data.hpp>
 #include <lucaria/core/geometry.hpp>
 
 namespace lucaria {
 namespace detail {
 
-	struct motion_system;
-	struct dynamics_system;
+    struct motion_system;
+    struct dynamics_system;
 
     enum struct shape_algorithm {
         convex_hull,
         triangle_mesh,
         impact_triangle_mesh
+    };
+
+    enum struct shape_origin {
+        path,
+        data,
+        box,
+        sphere,
+        capsule,
+        cone
     };
 
     struct shape_implementation {
@@ -29,12 +42,92 @@ namespace detail {
         shape_implementation(const geometry_implementation& geometry, const shape_algorithm algorithm = shape_algorithm::convex_hull);
         shape_implementation(btCollisionShape* collision_shape, const glm::float32 half_height = 0.f);
 
+        shape_origin origin;
+		std::optional<shape_algorithm> algorithm;
         std::unique_ptr<btCollisionShape> collision_shape;
         std::unique_ptr<btTriangleMesh> triangle_geometry;
         glm::mat4 feet_to_center;
         glm::mat4 center_to_feet;
         glm::float32 half_height;
     };
+
+    struct shape_path_recipe {
+        std::filesystem::path path;
+        shape_algorithm algorithm;
+
+        template <typename ArchiveType>
+        void serialize(ArchiveType& archive)
+        {
+            archive(cereal::make_nvp("path", path));
+            archive(cereal::make_nvp("algorithm", algorithm));
+        }
+    };
+
+    struct shape_data_recipe {
+        geometry_data data;
+        shape_algorithm algorithm;
+
+        template <typename ArchiveType>
+        void serialize(ArchiveType& archive)
+        {
+            archive(cereal::make_nvp("data", data));
+            archive(cereal::make_nvp("algorithm", algorithm));
+        }
+    };
+
+    struct shape_box_recipe {
+        float32x3 half_extents;
+
+        template <typename ArchiveType>
+        void serialize(ArchiveType& archive)
+        {
+            archive(cereal::make_nvp("half_extents", half_extents));
+        }
+    };
+
+    struct shape_sphere_recipe {
+        float32 radius;
+
+        template <typename ArchiveType>
+        void serialize(ArchiveType& archive)
+        {
+            archive(cereal::make_nvp("radius", radius));
+        }
+    };
+
+    struct shape_capsule_recipe {
+        float32 radius;
+        float32 height;
+
+        template <typename ArchiveType>
+        void serialize(ArchiveType& archive)
+        {
+            archive(cereal::make_nvp("radius", radius));
+            archive(cereal::make_nvp("height", height));
+        }
+    };
+
+    struct shape_cone_recipe {
+        float32 radius;
+        float32 height;
+
+        template <typename ArchiveType>
+        void serialize(ArchiveType& archive)
+        {
+            archive(cereal::make_nvp("radius", radius));
+            archive(cereal::make_nvp("height", height));
+        }
+    };
+
+    using shape_recipe = std::variant<
+        shape_path_recipe,
+        shape_data_recipe,
+        shape_box_recipe,
+        shape_sphere_recipe,
+        shape_capsule_recipe,
+        shape_cone_recipe>;
+
+	[[nodiscard]] shape_recipe make_recipe(const implementation_container<shape_implementation>& container);
 
 }
 
@@ -66,13 +159,13 @@ struct shape_object {
     [[nodiscard]] explicit operator bool() const;
 
 private:
-    detail::resource_container<detail::shape_implementation>* _resource = nullptr;
-    explicit shape_object(detail::resource_container<detail::shape_implementation>* resource);
-	friend struct passive_rigidbody_component;
-	friend struct kinematic_rigidbody_component;
-	friend struct dynamic_rigidbody_component;
-	friend struct detail::motion_system;
-	friend struct detail::dynamics_system;
+    detail::implementation_container<detail::shape_implementation>* _resource = nullptr;
+    explicit shape_object(detail::implementation_container<detail::shape_implementation>* resource);
+    friend struct passive_rigidbody_component;
+    friend struct kinematic_rigidbody_component;
+    friend struct dynamic_rigidbody_component;
+    friend struct detail::motion_system;
+    friend struct detail::dynamics_system;
 };
 
 }

@@ -143,13 +143,33 @@ namespace detail {
     }
 
     image_implementation::image_implementation(const std::vector<char>& bytes)
+        : origin(image_origin::path)
     {
         _load_image_bytes(data, bytes);
     }
 
     image_implementation::image_implementation(image_data&& data)
-        : data(std::move(data))
+        : origin(image_origin::data)
+        , data(std::move(data))
     {
+    }
+
+	image_recipe make_recipe(const implementation_container<image_implementation>& container)
+    {
+        const image_implementation& _image = container.fetched.value();
+
+        if (_image.origin == image_origin::path) {
+            return image_path_recipe { container.origin_path.value(), std::nullopt, std::nullopt };
+        }
+
+        else if (_image.origin == image_origin::data) {
+            return image_data_recipe { _image.data };
+        }
+
+        else {
+            LUCARIA_RUNTIME_ERROR("Implementation error");
+            return {};
+        }
     }
 
 }
@@ -159,7 +179,7 @@ image_object image_object::fetch(
     const std::optional<std::filesystem::path>& etc2_path,
     const std::optional<std::filesystem::path>& s3tc_path)
 {
-    detail::resource_container<detail::image_implementation>* _resource = detail::engine_resources().images.get_or_create_by_path(path, [&] {
+    detail::implementation_container<detail::image_implementation>* _resource = detail::engine_resources().images.get_or_create_by_path(path, [&] {
         return detail::_fetch_image_async(path, etc2_path, s3tc_path);
     });
 
@@ -168,7 +188,7 @@ image_object image_object::fetch(
 
 bool image_object::has_value() const
 {
-    return _resource && _resource->is_ready();
+    return _resource && _resource->fetched.has_value();
 }
 
 image_object::operator bool() const
@@ -176,7 +196,7 @@ image_object::operator bool() const
     return has_value();
 }
 
-image_object::image_object(detail::resource_container<detail::image_implementation>* resource)
+image_object::image_object(detail::implementation_container<detail::image_implementation>* resource)
     : _resource(resource)
 {
 }

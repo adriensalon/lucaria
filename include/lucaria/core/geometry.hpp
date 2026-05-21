@@ -1,15 +1,25 @@
 #pragma once
 
+#include <variant>
+
+#include <cereal/types/variant.hpp>
+
 #include <lucaria/bin/geometry_data.hpp>
-#include <lucaria/core/workaround.hpp>
+#include <lucaria/bin/path_data.hpp>
 #include <lucaria/core/resource.hpp>
+#include <lucaria/core/workaround.hpp>
 
 namespace lucaria {
 namespace detail {
 
-	struct shape_implementation;
-	struct mesh_implementation;
-	struct rendering_system;
+    struct shape_implementation;
+    struct mesh_implementation;
+    struct rendering_system;
+
+    enum struct geometry_origin {
+        path,
+        data
+    };
 
     struct geometry_implementation {
         LUCARIA_DELETE_DEFAULT(geometry_implementation)
@@ -23,8 +33,33 @@ namespace detail {
         geometry_implementation(const shape_implementation& shape);
         geometry_implementation(geometry_data&& data);
 
+        geometry_origin origin;
         geometry_data data;
     };
+
+    struct geometry_path_recipe {
+        std::filesystem::path path;
+
+        template <typename ArchiveType>
+        void serialize(ArchiveType& archive)
+        {
+            archive(cereal::make_nvp("path", path));
+        }
+    };
+
+    struct geometry_data_recipe {
+        geometry_data data;
+
+        template <typename ArchiveType>
+        void serialize(ArchiveType& archive)
+        {
+            archive(cereal::make_nvp("data", data));
+        }
+    };
+
+    using geometry_recipe = std::variant<geometry_path_recipe, geometry_data_recipe>;
+
+    [[nodiscard]] geometry_recipe make_recipe(const implementation_container<geometry_implementation>& container);
 
 }
 
@@ -46,8 +81,8 @@ struct geometry_object {
     [[nodiscard]] explicit operator bool() const;
 
 private:
-    detail::resource_container<detail::geometry_implementation>* _resource = nullptr;
-    explicit geometry_object(detail::resource_container<detail::geometry_implementation>* resource);
+    detail::implementation_container<detail::geometry_implementation>* _resource = nullptr;
+    explicit geometry_object(detail::implementation_container<detail::geometry_implementation>* resource);
     friend struct detail::rendering_system;
     friend struct shape_object;
     friend struct spatial_interface_component;

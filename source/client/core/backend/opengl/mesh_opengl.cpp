@@ -114,6 +114,7 @@ namespace detail {
     }
 
     mesh_implementation::mesh_implementation(const geometry_implementation& from)
+		: origin(from.origin == geometry_origin::path ? mesh_origin::path : mesh_origin::data)
     {
         implementation_opengl.array_id = create_vertex_array();
         implementation_opengl.elements_id = create_elements_buffer(from.data.indices);

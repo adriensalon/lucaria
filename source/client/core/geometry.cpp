@@ -2,9 +2,9 @@
 #include <cereal/archives/portable_binary.hpp>
 
 #include <lucaria/core/database.hpp>
+#include <lucaria/core/fetch.hpp>
 #include <lucaria/core/geometry.hpp>
 #include <lucaria/core/stream.hpp>
-#include <lucaria/core/fetch.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -34,20 +34,42 @@ namespace detail {
     }
 
     geometry_implementation::geometry_implementation(const std::vector<char>& bytes)
+        : origin(geometry_origin::path)
     {
         _load_geometry_bytes(data, bytes);
     }
 
     geometry_implementation::geometry_implementation(geometry_data&& data)
-        : data(std::move(data))
+        : origin(geometry_origin::data)
+        , data(std::move(data))
     {
     }
 
+    geometry_recipe make_recipe(const implementation_container<geometry_implementation>& container)
+    {
+        const geometry_implementation& _geometry = container.fetched.value();
+
+        if (_geometry.origin == geometry_origin::path) {
+            return geometry_path_recipe { container.origin_path.value() };
+        } else if (_geometry.origin == geometry_origin::data) {
+            return geometry_data_recipe { _geometry.data };
+        } else {
+            LUCARIA_RUNTIME_ERROR("Implementation error");
+            return {};
+        }
+    }
+
+    // resource_container<geometry_implementation>& apply_recipe(geometry_recipe&& recipe)
+    // {
+    //     return std::visit([](auto&& arg) {
+
+	// 	});
+    // }
 }
 
 geometry_object geometry_object::fetch(const std::filesystem::path& path)
 {
-    detail::resource_container<detail::geometry_implementation>* _resource = detail::engine_resources().geometries.get_or_create_by_path(path, [&] {
+    detail::implementation_container<detail::geometry_implementation>* _resource = detail::engine_resources().geometries.get_or_create_by_path(path, [&] {
         return detail::_fetch_geometry_async(path);
     });
 
@@ -56,7 +78,7 @@ geometry_object geometry_object::fetch(const std::filesystem::path& path)
 
 bool geometry_object::has_value() const
 {
-    return _resource && _resource->is_ready();
+    return _resource && _resource->fetched.has_value();
 }
 
 geometry_object::operator bool() const
@@ -64,9 +86,8 @@ geometry_object::operator bool() const
     return has_value();
 }
 
-geometry_object::geometry_object(detail::resource_container<detail::geometry_implementation>* resource)
+geometry_object::geometry_object(detail::implementation_container<detail::geometry_implementation>* resource)
     : _resource(resource)
 {
 }
-
 }

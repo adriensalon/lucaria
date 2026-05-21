@@ -35,9 +35,9 @@ spatial_interface_component::~spatial_interface_component()
 spatial_interface_component& spatial_interface_component::use_viewport(const geometry_object geometry, const glm::uvec2& size)
 {
     _viewport_geometry = geometry;
-	_viewport_geometry._resource->on_ready([this](detail::geometry_implementation& _on_ready_geometry) {
+	_viewport_geometry._resource->fetched.on_ready([this](detail::geometry_implementation& _on_ready_geometry) {
         invert_texcoords(_on_ready_geometry.data.texcoords);
-        _viewport_mesh.emplace(_viewport_geometry._resource->get());
+        _viewport_mesh.emplace(_viewport_geometry._resource->fetched.value());
     });
 
     _viewport_size = size;

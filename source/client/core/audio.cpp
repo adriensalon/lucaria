@@ -3,13 +3,13 @@
 #include <vorbis/vorbisfile.h>
 
 #include <lucaria/core/audio.hpp>
-#include <lucaria/core/error.hpp>
 #include <lucaria/core/database.hpp>
+#include <lucaria/core/error.hpp>
 #include <lucaria/core/fetch.hpp>
 
 namespace lucaria {
 namespace detail {
-	
+
     namespace {
 
         struct _vorbis_bytes_stream {
@@ -133,25 +133,45 @@ namespace detail {
     }
 
     audio_implementation::audio_implementation(const std::vector<char>& bytes)
+        : origin(audio_origin::path)
     {
         _load_audio_bytes(data, bytes);
     }
 
     audio_implementation::audio_implementation(audio_data&& data)
-        : data(std::move(data))
+        : origin(audio_origin::path)
+        , data(std::move(data))
     {
+    }
+
+    audio_recipe make_recipe(const implementation_container<audio_implementation>& container)
+    {
+        const audio_implementation& _audio = container.fetched.value();
+
+        if (_audio.origin == audio_origin::path) {
+            return audio_path_recipe { container.origin_path.value() };
+        }
+
+        else if (_audio.origin == audio_origin::data) {
+            return audio_data_recipe { _audio.data };
+        }
+
+        else {
+            LUCARIA_RUNTIME_ERROR("Implementation error");
+            return {};
+        }
     }
 
 }
 
 audio_object::~audio_object()
 {
-	// TODO
+    // TODO
 }
 
 audio_object audio_object::fetch(const std::filesystem::path& path)
 {
-    detail::resource_container<detail::audio_implementation>* _resource = detail::engine_resources().audios.get_or_create_by_path(path, [&] {
+    detail::implementation_container<detail::audio_implementation>* _resource = detail::engine_resources().audios.get_or_create_by_path(path, [&] {
         return detail::_fetch_audio_async(path);
     });
 
@@ -160,7 +180,7 @@ audio_object audio_object::fetch(const std::filesystem::path& path)
 
 bool audio_object::has_value() const
 {
-    return _resource && _resource->is_ready();
+    return _resource && _resource->fetched.has_value();
 }
 
 audio_object::operator bool() const
@@ -168,7 +188,7 @@ audio_object::operator bool() const
     return has_value();
 }
 
-audio_object::audio_object(detail::resource_container<detail::audio_implementation>* resource)
+audio_object::audio_object(detail::implementation_container<detail::audio_implementation>* resource)
     : _resource(resource)
 {
 }

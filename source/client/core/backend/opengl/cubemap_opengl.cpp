@@ -41,6 +41,7 @@ namespace detail {
     }
 
     cubemap_implementation::cubemap_implementation(const std::array<detail::image_implementation, 6>& images)
+        : origin(images[0].origin == image_origin::path ? cubemap_origin::path : cubemap_origin::data)
     {
         glGenTextures(1, &implementation_opengl.id);
         glBindTexture(GL_TEXTURE_CUBE_MAP, implementation_opengl.id);
@@ -78,7 +79,7 @@ namespace detail {
                 break;
             }
         }
-		
+
         implementation_opengl.ownership.emplace();
     }
 

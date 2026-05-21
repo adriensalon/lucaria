@@ -26,10 +26,10 @@ speaker_component::~speaker_component()
 speaker_component& speaker_component::use_sound(const sound_track_object sound_track)
 {
     _sound = sound_track;
-    _sound._resource->on_ready([this]() {
+    _sound._resource->fetched.on_ready([this]() {
         _is_playing = false;
         alSourceStop(_handle);
-        alSourcei(_handle, AL_BUFFER, _sound._resource->get().id);
+        alSourcei(_handle, AL_BUFFER, _sound._resource->fetched.value().id);
     });
     return *this;
 }
@@ -57,7 +57,7 @@ std::optional<glm::uint> speaker_component::get_sample_rate() const
     if (!_sound) {
         return std::nullopt;
     }
-    return _sound._resource->get().sample_rate;
+    return _sound._resource->fetched.value().sample_rate;
 }
 
 std::optional<glm::uint> speaker_component::get_count() const
@@ -65,7 +65,7 @@ std::optional<glm::uint> speaker_component::get_count() const
     if (!_sound) {
         return std::nullopt;
     }
-    return _sound._resource->get().samples_count;
+    return _sound._resource->fetched.value().samples_count;
 }
 }
 

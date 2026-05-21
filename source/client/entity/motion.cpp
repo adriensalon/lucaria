@@ -87,7 +87,7 @@ namespace detail {
 
                 // fire events
                 if (_controller._is_playing && animator._event_tracks[_pair.first]) {
-                    for (const event_data& _event : animator._event_tracks[_pair.first]._resource->get().data.events) {
+                    for (const event_data& _event : animator._event_tracks[_pair.first]._resource->fetched.value().data.events) {
                         if (_controller._last_time_ratio <= _controller._time_ratio
                                 ? (_controller._last_time_ratio < _event.time_normalized) && (_event.time_normalized <= _controller._time_ratio)
                                 : (_controller._last_time_ratio < _event.time_normalized) || (_event.time_normalized <= _controller._time_ratio)) {
@@ -114,7 +114,7 @@ namespace detail {
                         const animation_controller& _controller = animator._controllers[_pair.first];
                         ozz::vector<ozz::math::SoaTransform>& _local_transforms = animator._local_transforms[_pair.first];
                         ozz::animation::SamplingJob sampling_job;
-                        sampling_job.animation = &_pair.second._resource->get().animation;
+                        sampling_job.animation = &_pair.second._resource->fetched.value().animation;
                         sampling_job.context = animator._sampling_context.get();
                         sampling_job.ratio = _controller._time_ratio;
                         sampling_job.output = make_span(_local_transforms);
@@ -130,7 +130,7 @@ namespace detail {
                 }
 
                 // blending
-                ozz::animation::Skeleton& _skeleton = animator._skeleton._resource->get().skeleton;
+                ozz::animation::Skeleton& _skeleton = animator._skeleton._resource->fetched.value().skeleton;
                 ozz::animation::BlendingJob _blending_job;
                 _blending_job.threshold = 0.1f; // TODO let user set parameter
                 _blending_job.additive_layers = {};
@@ -161,7 +161,7 @@ namespace detail {
                 if (_pair.second) {
                     const animation_controller& _controller = _animator._controllers.at(_pair.first);
                     if (_controller._weight > 0.f) {
-                        const detail::motion_track_implementation& _track = _pair.second._resource->get();
+                        const detail::motion_track_implementation& _track = _pair.second._resource->fetched.value();
                         const glm::mat4 _delta_transform = detail::_compute_motion_delta(_track, _controller._time_ratio, _controller._last_time_ratio, _controller._weight, _controller._has_looped);
                         _transform.set_transform_relative(_delta_transform);
                     }
@@ -174,7 +174,7 @@ namespace detail {
         each_view<const animator_component, transform_component, dynamic_rigidbody_component>([_delta_time](const animator_component& animator, transform_component& transform, dynamic_rigidbody_component& rigidbody) {
             if (rigidbody._shape) {
                 btRigidBody* _bullet_rigidbody = rigidbody._rigidbody.get();
-                const glm::mat4 _transform_matrix = rigidbody._shape._resource->get().feet_to_center * transform._transform;
+                const glm::mat4 _transform_matrix = rigidbody._shape._resource->fetched.value().feet_to_center * transform._transform;
                 const glm::vec3 _current_position = glm::vec3(_transform_matrix[3]);
                 const glm::quat _current_rotation = glm::quat_cast(_transform_matrix);
                 const btTransform _bullet_transform = convert_bullet(_transform_matrix);
@@ -203,7 +203,7 @@ namespace detail {
                 glm::float32 _sum_blend_size = 0.f;
                 for (const std::pair<const std::string, motion_track_object>& _pair : animator._motion_tracks) {
                     if (_pair.second) {
-                        const detail::motion_track_implementation& _track = _pair.second._resource->get();
+                        const detail::motion_track_implementation& _track = _pair.second._resource->fetched.value();
                         const animation_controller& _controller = animator._controllers.at(_pair.first);
                         if (_controller._weight > 0.f) {
                             const glm::mat4 _delta_motion_transform = detail::_compute_motion_delta(_track, _controller._time_ratio, _controller._last_time_ratio, _controller._weight, _controller._has_looped);
@@ -263,7 +263,7 @@ namespace detail {
                 if (_model_transforms.empty()) {
                     return;
                 }
-                const ozz::span<const std::int16_t>& _joint_parents = animator._skeleton._resource->get().skeleton.joint_parents();
+                const ozz::span<const std::int16_t>& _joint_parents = animator._skeleton._resource->fetched.value().skeleton.joint_parents();
                 if (_model_transforms.size() != _joint_parents.size()) {
                     LUCARIA_RUNTIME_ERROR("Mismatch between model transforms and joint parents sizes")
                 }
@@ -288,7 +288,7 @@ namespace detail {
                 if (_model_transforms.empty()) {
                     return;
                 }
-                const ozz::span<const std::int16_t>& _joint_parents = animator._skeleton._resource->get().skeleton.joint_parents();
+                const ozz::span<const std::int16_t>& _joint_parents = animator._skeleton._resource->fetched.value().skeleton.joint_parents();
                 if (_model_transforms.size() != _joint_parents.size()) {
                     LUCARIA_RUNTIME_ERROR("Mismatch between model transforms and joint parents sizes")
                 }

@@ -1,14 +1,15 @@
 #include <lucaria/core/database.hpp>
 #include <lucaria/core/error.hpp>
-#include <lucaria/core/texture.hpp>
 #include <lucaria/core/fetch.hpp>
+#include <lucaria/core/texture.hpp>
+
 
 namespace lucaria {
 
 extern const std::filesystem::path& _resolve_image_path(const std::filesystem::path& data_path, const std::optional<std::filesystem::path>& etc2_path, const std::optional<std::filesystem::path>& s3tc_path);
 
 namespace detail {
-	
+
     namespace {
 
         static async_container<texture_implementation> _fetch_texture_async(
@@ -29,13 +30,35 @@ namespace detail {
         }
 
     }
+
+    texture_recipe make_recipe(const implementation_container<texture_implementation>& container)
+    {
+        const texture_implementation& _texture = container.fetched.value();
+
+        if (_texture.origin == texture_origin::path) {
+            return texture_path_recipe { container.origin_path.value() };
+        }
+
+        // else if (_texture.origin == texture_origin::data) {
+        //     return texture_data_recipe { image_implementation(_texture).data };
+        // }
+
+        else if (_texture.origin == texture_origin::size) {
+            return texture_size_recipe { _texture.size };
+        }
+
+        else {
+            LUCARIA_RUNTIME_ERROR("Implementation error");
+            return {};
+        }
+    }
 }
 
 texture_object::~texture_object()
 {
-	if (_refcount.is_last_owner()) {
-		_manager->destroy_cell(_resource);
-	}
+    if (_refcount.is_last_owner()) {
+        _manager->destroy_cell(_resource);
+    }
 }
 
 texture_object texture_object::create(const uint32x2 size)
@@ -47,7 +70,7 @@ texture_object texture_object::create(const uint32x2 size)
 
 texture_object texture_object::fetch(const std::filesystem::path& path, const std::optional<std::filesystem::path>& etc2_path, const std::optional<std::filesystem::path>& s3tc_path)
 {
-    detail::resource_container<detail::texture_implementation>* _resource = detail::engine_resources().textures.get_or_create_by_path(path, [&] {
+    detail::implementation_container<detail::texture_implementation>* _resource = detail::engine_resources().textures.get_or_create_by_path(path, [&] {
         return detail::_fetch_texture_async(path, etc2_path, s3tc_path);
     });
 
@@ -56,7 +79,7 @@ texture_object texture_object::fetch(const std::filesystem::path& path, const st
 
 bool texture_object::has_value() const
 {
-    return _resource && _resource->is_ready();
+    return _resource && _resource->fetched.has_value();
 }
 
 texture_object::operator bool() const
@@ -67,29 +90,29 @@ texture_object::operator bool() const
 void texture_object::resize(const uint32x2 new_size)
 {
     if (has_value()) {
-        _resource->get().resize(new_size);
+        _resource->fetched.value().resize(new_size);
     }
 }
 
 uint32x2 texture_object::size() const
 {
     if (has_value()) {
-        return _resource->get().size;
+        return _resource->fetched.value().size;
     }
 
     return uint32x2(0, 0);
 }
 
-ImTextureID texture_object::imgui_texture() const 
+ImTextureID texture_object::imgui_texture() const
 {
-	if (has_value()) {
-        return _resource->get().imgui_texture();
+    if (has_value()) {
+        return _resource->fetched.value().imgui_texture();
     }
 
-	return static_cast<ImTextureID>(0);
+    return static_cast<ImTextureID>(0);
 }
 
-texture_object::texture_object(detail::resource_container<detail::texture_implementation>* resource)
+texture_object::texture_object(detail::implementation_container<detail::texture_implementation>* resource)
     : _resource(resource)
 {
 }

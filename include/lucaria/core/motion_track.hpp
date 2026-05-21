@@ -1,15 +1,24 @@
 #pragma once
 
-#include <ozz/animation/runtime/track.h>
+#include <variant>
 
+#include <ozz/animation/runtime/track.h>
+#include <cereal/types/variant.hpp>
+
+#include <lucaria/bin/path_data.hpp>
 #include <lucaria/core/math.hpp>
-#include <lucaria/core/workaround.hpp>
 #include <lucaria/core/resource.hpp>
+#include <lucaria/core/workaround.hpp>
+
 
 namespace lucaria {
 namespace detail {
 
-	struct motion_system;
+    struct motion_system;
+
+    enum struct motion_track_origin {
+        path
+    };
 
     struct motion_track_implementation {
         LUCARIA_DELETE_DEFAULT(motion_track_implementation)
@@ -22,10 +31,24 @@ namespace detail {
         motion_track_implementation(ozz::animation::Float3Track&& translation_track, ozz::animation::QuaternionTrack&& rotation_track);
         [[nodiscard]] float32x3 get_total_translation() const;
 
+        motion_track_origin origin;
         ozz::animation::Float3Track translation_track;
         ozz::animation::QuaternionTrack rotation_track;
     };
 
+    struct motion_track_path_recipe {
+        std::filesystem::path path;
+
+        template <typename ArchiveType>
+        void serialize(ArchiveType& archive)
+        {
+            archive(cereal::make_nvp("path", path));
+        }
+    };
+
+	using motion_track_recipe = std::variant<motion_track_path_recipe>;
+
+	[[nodiscard]] motion_track_recipe make_recipe(const implementation_container<motion_track_implementation>& container);
 }
 
 /// @brief Represents a motion track on the host. Can be created from a motion track file or from empty data.
@@ -46,8 +69,8 @@ struct motion_track_object {
     [[nodiscard]] explicit operator bool() const;
 
 private:
-    detail::resource_container<detail::motion_track_implementation>* _resource = nullptr;
-    explicit motion_track_object(detail::resource_container<detail::motion_track_implementation>* resource);
+    detail::implementation_container<detail::motion_track_implementation>* _resource = nullptr;
+    explicit motion_track_object(detail::implementation_container<detail::motion_track_implementation>* resource);
     friend struct detail::motion_system;
     friend struct animator_component;
 };

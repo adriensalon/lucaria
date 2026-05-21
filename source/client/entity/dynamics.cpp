@@ -215,7 +215,7 @@ namespace detail {
         each_view<transform_component, dynamic_rigidbody_component>([](transform_component& transform, dynamic_rigidbody_component& rigidbody) {
             // const glm::mat4 _transform = convert(rigidbody._rigidbody->getInterpolationWorldTransform());
             const glm::mat4 _transform = convert(rigidbody._rigidbody->getWorldTransform());
-            const glm::mat4 _center_to_feet = rigidbody._shape._resource->get().center_to_feet;
+            const glm::mat4 _center_to_feet = rigidbody._shape._resource->fetched.value().center_to_feet;
             transform.set_transform_warp(_transform * _center_to_feet);
             rigidbody._last_position = transform.get_position();
             // rigidbody._translation_speed = convert(rigidbody._rigidbody->getInterpolationLinearVelocity());

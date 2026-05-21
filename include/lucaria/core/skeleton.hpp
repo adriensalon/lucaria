@@ -1,14 +1,23 @@
 #pragma once
 
+#include <variant>
+
+#include <cereal/types/variant.hpp>
 #include <ozz/animation/runtime/skeleton.h>
 
-#include <lucaria/core/workaround.hpp>
+#include <lucaria/bin/path_data.hpp>
 #include <lucaria/core/resource.hpp>
+#include <lucaria/core/workaround.hpp>
+
 
 namespace lucaria {
 namespace detail {
 
-	struct motion_system;
+    struct motion_system;
+
+    enum struct skeleton_origin {
+        path
+    };
 
     struct skeleton_implementation {
         LUCARIA_DELETE_DEFAULT(skeleton_implementation)
@@ -20,8 +29,23 @@ namespace detail {
         skeleton_implementation(const std::vector<char>& bytes);
         skeleton_implementation(ozz::animation::Skeleton&& skeleton);
 
+        skeleton_origin origin;
         ozz::animation::Skeleton skeleton;
     };
+
+    struct skeleton_path_recipe {
+        std::filesystem::path path;
+
+        template <typename ArchiveType>
+        void serialize(ArchiveType& archive)
+        {
+            archive(cereal::make_nvp("path", path));
+        }
+    };
+
+	using skeleton_recipe = std::variant<skeleton_path_recipe>;
+
+	[[nodiscard]] skeleton_recipe make_recipe(const implementation_container<skeleton_implementation>& container);
 
 }
 
@@ -43,8 +67,8 @@ struct skeleton_object {
     [[nodiscard]] explicit operator bool() const;
 
 private:
-    detail::resource_container<detail::skeleton_implementation>* _resource = nullptr;
-    explicit skeleton_object(detail::resource_container<detail::skeleton_implementation>* resource);
+    detail::implementation_container<detail::skeleton_implementation>* _resource = nullptr;
+    explicit skeleton_object(detail::implementation_container<detail::skeleton_implementation>* resource);
     friend struct detail::motion_system;
     friend struct animator_component;
 };

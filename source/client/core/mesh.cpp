@@ -1,6 +1,6 @@
 #include <lucaria/core/database.hpp>
-#include <lucaria/core/mesh.hpp>
 #include <lucaria/core/fetch.hpp>
+#include <lucaria/core/mesh.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -21,11 +21,29 @@ namespace detail {
         }
     }
 
+    mesh_recipe make_recipe(const implementation_container<mesh_implementation>& container)
+    {
+        const mesh_implementation& _mesh = container.fetched.value();
+
+        if (_mesh.origin == mesh_origin::path) {
+            return mesh_path_recipe { container.origin_path.value() };
+        }
+
+        // else if (_mesh.origin == mesh_origin::data) {
+		// 	return {};
+        //     // return mesh_data_recipe { geometry_implementation(_mesh).data };
+        // }
+
+        else {
+            LUCARIA_RUNTIME_ERROR("Implementation error");
+            return {};
+        }
+    }
 }
 
 mesh_object mesh_object::fetch(const std::filesystem::path& path)
 {
-    detail::resource_container<detail::mesh_implementation>* _resource = detail::engine_resources().meshes.get_or_create_by_path(path, [&] {
+    detail::implementation_container<detail::mesh_implementation>* _resource = detail::engine_resources().meshes.get_or_create_by_path(path, [&] {
         return detail::_fetch_mesh_async(path);
     });
 
@@ -34,7 +52,7 @@ mesh_object mesh_object::fetch(const std::filesystem::path& path)
 
 bool mesh_object::has_value() const
 {
-    return _resource && _resource->is_ready();
+    return _resource && _resource->fetched.has_value();
 }
 
 mesh_object::operator bool() const
@@ -42,7 +60,7 @@ mesh_object::operator bool() const
     return has_value();
 }
 
-mesh_object::mesh_object(detail::resource_container<detail::mesh_implementation>* resource)
+mesh_object::mesh_object(detail::implementation_container<detail::mesh_implementation>* resource)
     : _resource(resource)
 {
 }

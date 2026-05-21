@@ -5,9 +5,10 @@
 
 #include <lucaria/core/database.hpp>
 #include <lucaria/core/error.hpp>
+#include <lucaria/core/fetch.hpp>
 #include <lucaria/core/skeleton.hpp>
 #include <lucaria/core/stream.hpp>
-#include <lucaria/core/fetch.hpp>
+
 
 namespace lucaria {
 namespace detail {
@@ -22,9 +23,9 @@ namespace detail {
                 LUCARIA_RUNTIME_ERROR("Failed to load skeleton, archive doesn't contain the expected object type")
             }
             _ozz_archive >> handle;
-// #if defined(LUCARIA_DEBUG)
-//             std::cout << "Loaded skeleton with " << handle.num_joints() << " joints." << std::endl;
-// #endif
+            // #if defined(LUCARIA_DEBUG)
+            //             std::cout << "Loaded skeleton with " << handle.num_joints() << " joints." << std::endl;
+            // #endif
         }
 
         static async_container<skeleton_implementation> _fetch_skeleton_async(const std::filesystem::path& data_path)
@@ -41,20 +42,36 @@ namespace detail {
     }
 
     skeleton_implementation::skeleton_implementation(const std::vector<char>& bytes)
+        : origin(skeleton_origin::path)
     {
         _load_skeleton_bytes(skeleton, bytes);
     }
 
     skeleton_implementation::skeleton_implementation(ozz::animation::Skeleton&& skeleton)
-        : skeleton(std::move(skeleton))
+        : origin(skeleton_origin::path)
+		, skeleton(std::move(skeleton))
     {
+    }
+
+    skeleton_recipe make_recipe(const implementation_container<skeleton_implementation>& container)
+    {
+        const skeleton_implementation& _skeleton = container.fetched.value();
+
+        if (_skeleton.origin == skeleton_origin::path) {
+            return skeleton_path_recipe { container.origin_path.value() };
+        }
+
+        else {
+            LUCARIA_RUNTIME_ERROR("Implementation error");
+            return {};
+        }
     }
 
 }
 
 skeleton_object skeleton_object::fetch(const std::filesystem::path& path)
 {
-    detail::resource_container<detail::skeleton_implementation>* _resource = detail::engine_resources().skeletons.get_or_create_by_path(path, [&] {
+    detail::implementation_container<detail::skeleton_implementation>* _resource = detail::engine_resources().skeletons.get_or_create_by_path(path, [&] {
         return detail::_fetch_skeleton_async(path);
     });
 
@@ -63,7 +80,7 @@ skeleton_object skeleton_object::fetch(const std::filesystem::path& path)
 
 bool skeleton_object::has_value() const
 {
-    return _resource && _resource->is_ready();
+    return _resource && _resource->fetched.has_value();
 }
 
 skeleton_object::operator bool() const
@@ -71,7 +88,7 @@ skeleton_object::operator bool() const
     return has_value();
 }
 
-skeleton_object::skeleton_object(detail::resource_container<detail::skeleton_implementation>* resource)
+skeleton_object::skeleton_object(detail::implementation_container<detail::skeleton_implementation>* resource)
     : _resource(resource)
 {
 }

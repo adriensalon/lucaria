@@ -18,8 +18,8 @@ passive_rigidbody_component::~passive_rigidbody_component()
 passive_rigidbody_component& passive_rigidbody_component::use_shape(const shape_object shape)
 {
     _shape = shape;
-    _shape._resource->on_ready([this]() {
-        btCollisionShape* _collision_shape = _shape._resource->get().collision_shape.get();
+    _shape._resource->fetched.on_ready([this]() {
+        btCollisionShape* _collision_shape = _shape._resource->fetched.value().collision_shape.get();
         if (_is_added) {
             _dynamics_world->removeRigidBody(_rigidbody.get());
             _rigidbody->setCollisionShape(_collision_shape);
@@ -67,8 +67,8 @@ passive_rigidbody_component& passive_rigidbody_component::set_mask_layer(const c
 kinematic_rigidbody_component& kinematic_rigidbody_component::use_shape(const shape_object shape)
 {
     _shape = shape;
-    _shape._resource->on_ready([this]() {
-        btCollisionShape* _collision_shape = _shape._resource->get().collision_shape.get();
+    _shape._resource->fetched.on_ready([this]() {
+        btCollisionShape* _collision_shape = _shape._resource->fetched.value().collision_shape.get();
         if (_is_added) {
             _dynamics_world->removeCollisionObject(_ghost.get());
             _ghost->setCollisionShape(_collision_shape);
@@ -121,8 +121,8 @@ const std::vector<collision>& kinematic_rigidbody_component::get_collisions() co
 dynamic_rigidbody_component& dynamic_rigidbody_component::use_shape(const shape_object shape)
 {
     _shape = shape;
-    _shape._resource->on_ready([this]() {
-        btCollisionShape* _collision_shape = _shape._resource->get().collision_shape.get();
+    _shape._resource->fetched.on_ready([this]() {
+        btCollisionShape* _collision_shape = _shape._resource->fetched.value().collision_shape.get();
         if (_is_added) {
             _dynamics_world->removeRigidBody(_rigidbody.get());
             _rigidbody->setCollisionShape(_collision_shape);

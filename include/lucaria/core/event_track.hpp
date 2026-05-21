@@ -1,15 +1,23 @@
 #pragma once
 
+#include <variant>
+
+#include <cereal/types/variant.hpp>
+
 #include <lucaria/bin/event_track_data.hpp>
+#include <lucaria/bin/path_data.hpp>
 #include <lucaria/core/refcount.hpp>
 #include <lucaria/core/resource.hpp>
 #include <lucaria/core/workaround.hpp>
-
 
 namespace lucaria {
 namespace detail {
 
     struct motion_system;
+
+    enum struct event_track_origin {
+        path
+    };
 
     struct event_track_implementation {
         LUCARIA_DELETE_DEFAULT(event_track_implementation)
@@ -21,8 +29,23 @@ namespace detail {
         event_track_implementation(const std::vector<char>& bytes);
         event_track_implementation(event_track_data&& data);
 
+        event_track_origin origin;
         event_track_data data;
     };
+
+    struct event_track_path_recipe {
+        std::filesystem::path path;
+
+        template <typename ArchiveType>
+        void serialize(ArchiveType& archive)
+        {
+            archive(cereal::make_nvp("path", path));
+        }
+    };
+
+    using event_track_recipe = std::variant<event_track_path_recipe>;
+
+    [[nodiscard]] event_track_recipe make_recipe(const implementation_container<event_track_implementation>& container);
 
 }
 
@@ -46,9 +69,9 @@ struct event_track_object {
 
 private:
     detail::refcount_flag _refcount = {};
-    detail::resource_manager<detail::event_track_implementation>* _manager = nullptr;
-    detail::resource_container<detail::event_track_implementation>* _resource = nullptr;
-    explicit event_track_object(detail::resource_container<detail::event_track_implementation>* resource);
+    detail::implementation_manager<detail::event_track_implementation>* _manager = nullptr;
+    detail::implementation_container<detail::event_track_implementation>* _resource = nullptr;
+    explicit event_track_object(detail::implementation_container<detail::event_track_implementation>* resource);
     friend struct detail::motion_system;
     friend struct animator_component;
 };

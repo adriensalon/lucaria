@@ -55,16 +55,16 @@ animation_controller& animation_controller::set_event_callback(const std::string
 animator_component& animator_component::use_animation(const std::string name, const animation_object animation)
 {
     _animations.emplace(name, animation);
-    _animations.at(name)._resource->on_ready([this, name]() {
+    _animations.at(name)._resource->fetched.on_ready([this, name]() {
         if (_skeleton) {
 #if defined(LUCARIA_DEBUG)
-            const int _animation_tracks = _animations[name]._resource->get().animation.num_tracks();
-            const int _skeleton_joints = _skeleton._resource->get().skeleton.num_joints();
+            const int _animation_tracks = _animations[name]._resource->fetched.value().animation.num_tracks();
+            const int _skeleton_joints = _skeleton._resource->fetched.value().skeleton.num_joints();
             if (_animation_tracks != _skeleton_joints) {
                 LUCARIA_RUNTIME_ERROR("Incompatible animation with " + std::to_string(_animation_tracks) + " tracks and skeleton with " + std::to_string(_skeleton_joints) + " joints")
             }
 #endif
-            _local_transforms[name].resize(_skeleton._resource->get().skeleton.num_soa_joints());
+            _local_transforms[name].resize(_skeleton._resource->fetched.value().skeleton.num_soa_joints());
         }
     });
     _controllers[name] = animation_controller();
@@ -92,15 +92,15 @@ animator_component& animator_component::use_event_track(const std::string name, 
 animator_component& animator_component::use_skeleton(const skeleton_object skeleton)
 {
     _skeleton = skeleton;
-    _skeleton._resource->on_ready([this]() {
-        const int _num_joints = _skeleton._resource->get().skeleton.num_joints();
-        const int _num_soa_joints = _skeleton._resource->get().skeleton.num_soa_joints();
+    _skeleton._resource->fetched.on_ready([this]() {
+        const int _num_joints = _skeleton._resource->fetched.value().skeleton.num_joints();
+        const int _num_soa_joints = _skeleton._resource->fetched.value().skeleton.num_soa_joints();
 
         for (const std::pair<const std::string, animation_object>& _pair : _animations) {
             if (_pair.second) {
 #if defined(LUCARIA_DEBUG)
-                const int _animation_tracks = _pair.second._resource->get().animation.num_tracks();
-                const int _skeleton_joints = _skeleton._resource->get().skeleton.num_joints();
+                const int _animation_tracks = _pair.second._resource->fetched.value().animation.num_tracks();
+                const int _skeleton_joints = _skeleton._resource->fetched.value().skeleton.num_joints();
                 if (_animation_tracks != _skeleton_joints) {
                     LUCARIA_RUNTIME_ERROR("Incompatible animation with " + std::to_string(_animation_tracks) + " tracks and skeleton with " + std::to_string(_skeleton_joints) + " joints")
                 }
@@ -124,9 +124,9 @@ animation_controller& animator_component::get_controller(const std::string& name
 glm::mat4 animator_component::get_bone_transform(const std::string& bone)
 {
     if (_skeleton) {
-        const int _num_joints = _skeleton._resource->get().skeleton.num_joints();
+        const int _num_joints = _skeleton._resource->fetched.value().skeleton.num_joints();
         for (int _joint_index = 0; _joint_index < _num_joints; ++_joint_index) {
-            if (std::string(_skeleton._resource->get().skeleton.joint_names()[_joint_index]) == bone) {
+            if (std::string(_skeleton._resource->fetched.value().skeleton.joint_names()[_joint_index]) == bone) {
                 return convert(_model_transforms[_joint_index]);
             }
         }

@@ -27,9 +27,9 @@ namespace detail {
                 LUCARIA_RUNTIME_ERROR("Impossible to load quaternion track, archive doesn't contain the expected object type")
             }
             _ozz_archive >> rotation_handle;
-// #if defined(LUCARIA_DEBUG)
-//             std::cout << "Loaded motion track with position and rotation" << std::endl;
-// #endif
+            // #if defined(LUCARIA_DEBUG)
+            //             std::cout << "Loaded motion track with position and rotation" << std::endl;
+            // #endif
         }
 
         static async_container<motion_track_implementation> _fetch_motion_track_async(const std::filesystem::path& path)
@@ -46,12 +46,14 @@ namespace detail {
     }
 
     motion_track_implementation::motion_track_implementation(const std::vector<char>& bytes)
+		: origin(motion_track_origin::path)
     {
         _load_motion_track_bytes(translation_track, rotation_track, bytes);
     }
 
     motion_track_implementation::motion_track_implementation(ozz::animation::Float3Track&& translation_track, ozz::animation::QuaternionTrack&& rotation_track)
-        : translation_track(std::move(translation_track))
+		: origin(motion_track_origin::path)
+        , translation_track(std::move(translation_track))
         , rotation_track(std::move(rotation_track))
     {
     }
@@ -73,11 +75,24 @@ namespace detail {
         return convert(_position_end - _position_start);
     }
 
+    [[nodiscard]] motion_track_recipe make_recipe(const implementation_container<motion_track_implementation>& container)
+    {
+        const motion_track_implementation& _motion_track = container.fetched.value();
+
+        if (_motion_track.origin == motion_track_origin::path) {
+            return motion_track_path_recipe { container.origin_path.value() };
+        }
+
+        else {
+            LUCARIA_RUNTIME_ERROR("Implementation error");
+            return {};
+        }
+    }
 }
 
 motion_track_object motion_track_object::fetch(const std::filesystem::path& path)
 {
-    detail::resource_container<detail::motion_track_implementation>* _resource = detail::engine_resources().motion_tracks.get_or_create_by_path(path, [&] {
+    detail::implementation_container<detail::motion_track_implementation>* _resource = detail::engine_resources().motion_tracks.get_or_create_by_path(path, [&] {
         return detail::_fetch_motion_track_async(path);
     });
 
@@ -86,7 +101,7 @@ motion_track_object motion_track_object::fetch(const std::filesystem::path& path
 
 bool motion_track_object::has_value() const
 {
-    return _resource && _resource->is_ready();
+    return _resource && _resource->fetched.has_value();
 }
 
 motion_track_object::operator bool() const
@@ -94,7 +109,7 @@ motion_track_object::operator bool() const
     return has_value();
 }
 
-motion_track_object::motion_track_object(detail::resource_container<detail::motion_track_implementation>* resource)
+motion_track_object::motion_track_object(detail::implementation_container<detail::motion_track_implementation>* resource)
     : _resource(resource)
 {
 }

@@ -2,8 +2,8 @@
 #include <cereal/archives/portable_binary.hpp>
 
 #include <lucaria/core/cubemap.hpp>
-#include <lucaria/core/error.hpp>
 #include <lucaria/core/database.hpp>
+#include <lucaria/core/error.hpp>
 #include <lucaria/core/fetch.hpp>
 
 namespace lucaria {
@@ -12,7 +12,7 @@ extern const std::filesystem::path& _resolve_image_path(const std::filesystem::p
 extern std::vector<std::filesystem::path> _resolve_image_paths(const std::array<std::filesystem::path, 6>& data_paths, const std::optional<std::array<std::filesystem::path, 6>>& etc2_paths, const std::optional<std::array<std::filesystem::path, 6>>& s3tc_paths);
 
 namespace detail {
-	
+
     namespace {
 
         static async_container<cubemap_implementation> _fetch_cubemap_async(
@@ -40,13 +40,39 @@ namespace detail {
         }
 
     }
+
+    cubemap_recipe make_recipe(const implementation_container<cubemap_implementation>& container)
+    {
+        const cubemap_implementation& _cubemap = container.fetched.value();
+
+        if (_cubemap.origin == cubemap_origin::path) {
+            // return cubemap_path_recipe { _resolve_image_paths(
+            //     std::array<std::filesystem::path, 6> {
+            //         container.origin_path.value() },
+            //     std::nullopt,
+            //     std::nullopt) };
+			return {};
+            // TODO we should be able to serialize etc2 and s3tc paths if they exist, but for now we just put nullopt
+        }
+
+        else if (_cubemap.origin == cubemap_origin::data) {
+            // return cubemap_data_recipe { _cubemap.data };
+			// TODO
+			return {};
+        }
+
+        else {
+            LUCARIA_RUNTIME_ERROR("Implementation error");
+            return {};
+        }
+    }
 }
 
 cubemap_object::~cubemap_object()
 {
-	if (_refcount.is_last_owner()) {
-		_manager->destroy_cell(_resource);
-	}
+    if (_refcount.is_last_owner()) {
+        _manager->destroy_cell(_resource);
+    }
 }
 
 cubemap_object cubemap_object::fetch(
@@ -54,7 +80,7 @@ cubemap_object cubemap_object::fetch(
     const std::optional<std::array<std::filesystem::path, 6>>& etc2_paths,
     const std::optional<std::array<std::filesystem::path, 6>>& s3tc_paths)
 {
-    detail::resource_container<detail::cubemap_implementation>* _resource = detail::engine_resources().cubemaps.get_or_create_by_path(data_paths[0], [&] {
+    detail::implementation_container<detail::cubemap_implementation>* _resource = detail::engine_resources().cubemaps.get_or_create_by_path(data_paths[0], [&] {
         return detail::_fetch_cubemap_async(data_paths, etc2_paths, s3tc_paths);
     });
 
@@ -63,7 +89,7 @@ cubemap_object cubemap_object::fetch(
 
 bool cubemap_object::has_value() const
 {
-    return _resource && _resource->is_ready();
+    return _resource && _resource->fetched.has_value();
 }
 
 cubemap_object::operator bool() const
@@ -71,9 +97,8 @@ cubemap_object::operator bool() const
     return has_value();
 }
 
-cubemap_object::cubemap_object(detail::resource_container<detail::cubemap_implementation>* resource)
+cubemap_object::cubemap_object(detail::implementation_container<detail::cubemap_implementation>* resource)
     : _resource(resource)
 {
 }
-
 }

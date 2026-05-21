@@ -2,16 +2,27 @@
 
 #include <array>
 #include <optional>
+#include <utility>
+#include <variant>
+
+#include <cereal/types/optional.hpp>
+#include <cereal/types/variant.hpp>
 
 #include <lucaria/bin/image_data.hpp>
-#include <lucaria/core/workaround.hpp>
+#include <lucaria/bin/path_data.hpp>
 #include <lucaria/core/resource.hpp>
+#include <lucaria/core/workaround.hpp>
 
 namespace lucaria {
 namespace detail {
 
-	struct cubemap_implementation;
-	struct texture_implementation;
+    struct cubemap_implementation;
+    struct texture_implementation;
+
+    enum struct image_origin {
+        path,
+        data
+    };
 
     struct image_implementation {
         LUCARIA_DELETE_DEFAULT(image_implementation)
@@ -21,13 +32,41 @@ namespace detail {
         image_implementation& operator=(image_implementation&& other) noexcept = default;
 
         image_implementation(const std::vector<char>& bytes);
-        image_implementation(const texture_implementation& texture);
+        image_implementation(image_data&& data);
+        // image_implementation(const texture_implementation& texture);
         image_implementation(const cubemap_implementation& cubemap, const uint32 face_index);
-        image_implementation(image_data&& data); // TODO merge data here
 
+        image_origin origin;
         image_data data;
     };
 
+    struct image_path_recipe {
+        std::filesystem::path path;
+        std::optional<std::filesystem::path> etc2_path;
+        std::optional<std::filesystem::path> s3tc_path;
+
+        template <typename ArchiveType>
+        void serialize(ArchiveType& archive)
+        {
+            archive(cereal::make_nvp("path", path));
+            archive(cereal::make_nvp("etc2_path", etc2_path));
+            archive(cereal::make_nvp("s3tc_path", s3tc_path));
+        }
+    };
+
+    struct image_data_recipe {
+        image_data data;
+
+        template <typename ArchiveType>
+        void serialize(ArchiveType& archive)
+        {
+            archive(cereal::make_nvp("data", data));
+        }
+    };
+
+    using image_recipe = std::variant<image_path_recipe, image_data_recipe>;
+
+    [[nodiscard]] image_recipe make_recipe(const implementation_container<image_implementation>& container);
 }
 
 /// @brief Represents an image in CPU memory. Can be created from an image file or from an empty size.
@@ -75,9 +114,9 @@ struct image_object {
     [[nodiscard]] glm::uvec2 get_size() const;
 
 private:
-    detail::resource_container<detail::image_implementation>* _resource = nullptr;
-    explicit image_object(detail::resource_container<detail::image_implementation>* resource);
-	friend struct object_context;
+    detail::implementation_container<detail::image_implementation>* _resource = nullptr;
+    explicit image_object(detail::implementation_container<detail::image_implementation>* resource);
+    friend struct object_context;
 };
 
 }

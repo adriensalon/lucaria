@@ -610,7 +610,7 @@ namespace detail {
 
             detail::mesh_implementation& _skybox_mesh = _persistent_skybox_mesh.value();
             detail::program_implementation& _skybox_program = _persistent_skybox_program.value();
-            detail::cubemap_implementation& _skybox_cubemap = skybox_cubemap._resource->get();
+            detail::cubemap_implementation& _skybox_cubemap = skybox_cubemap._resource->fetched.value();
             const glm::mat4 _skybox_rotation_matrix = glm::rotate(glm::identity<glm::mat4>(), glm::radians(_skybox_rotation), glm::vec3(0, 1, 0));
             const glm::mat4 _no_translation_view_projection = camera_projection * glm::mat4(glm::mat3(camera_view)) * _skybox_rotation_matrix;
             _skybox_program.use();
@@ -636,7 +636,7 @@ namespace detail {
         each_view<blockout_model_component, transform_component>([&](blockout_model_component& _model, transform_component& _transform) {
             if (_model._mesh) {
                 const glm::mat4 _model_view_projection = camera_view_projection * _transform._transform;
-                const detail::mesh_implementation& _mesh = _model._mesh._resource->get();
+                const detail::mesh_implementation& _mesh = _model._mesh._resource->fetched.value();
                 _blockout_program.use();
                 _blockout_program.bind_attribute("vert_position", _mesh, detail::mesh_attribute::position);
                 _blockout_program.bind_attribute("vert_normal", _mesh, detail::mesh_attribute::normal);
@@ -647,7 +647,7 @@ namespace detail {
 
         each_view<blockout_model_component>(entt::exclude<transform_component>, [&](blockout_model_component& _model) {
             if (_model._mesh) {
-                const detail::mesh_implementation& _mesh = _model._mesh._resource->get();
+                const detail::mesh_implementation& _mesh = _model._mesh._resource->fetched.value();
                 _blockout_program.use();
                 _blockout_program.bind_attribute("vert_position", _mesh, detail::mesh_attribute::position);
                 _blockout_program.bind_attribute("vert_normal", _mesh, detail::mesh_attribute::normal);
@@ -671,8 +671,8 @@ namespace detail {
         each_view<unlit_model_component, transform_component>(entt::exclude<animator_component>, [&](unlit_model_component& _model, transform_component& _transform) {
             if (_model._mesh && _model._color) {
                 const glm::mat4 _model_view_projection = camera_view_projection * _transform._transform;
-                const mesh_implementation& _mesh = _model._mesh._resource->get();
-                const texture_implementation& _color = _model._color._resource->get();
+                const mesh_implementation& _mesh = _model._mesh._resource->fetched.value();
+                const texture_implementation& _color = _model._color._resource->fetched.value();
                 _unlit_program.use();
                 _unlit_program.bind_attribute("vert_position", _mesh, mesh_attribute::position);
                 _unlit_program.bind_attribute("vert_texcoord", _mesh, mesh_attribute::texcoord);
@@ -684,8 +684,8 @@ namespace detail {
 
         each_view<unlit_model_component>(entt::exclude<transform_component, animator_component>, [&](unlit_model_component& _model) {
             if (_model._mesh && _model._color) {
-                const mesh_implementation& _mesh = _model._mesh._resource->get();
-                const texture_implementation& _color = _model._color._resource->get();
+                const mesh_implementation& _mesh = _model._mesh._resource->fetched.value();
+                const texture_implementation& _color = _model._color._resource->fetched.value();
                 _unlit_program.use();
                 _unlit_program.bind_attribute("vert_position", _mesh, mesh_attribute::position);
                 _unlit_program.bind_attribute("vert_texcoord", _mesh, mesh_attribute::texcoord);
@@ -711,8 +711,8 @@ namespace detail {
         each_view<unlit_model_component, transform_component, animator_component>([&](unlit_model_component& _model, transform_component& _transform, animator_component& animator) {
             if (_model._mesh && _model._color && animator._skeleton.has_value()) {
                 const glm::mat4 _model_view_projection = camera_view_projection * _transform._transform;
-                const mesh_implementation& _mesh = _model._mesh._resource->get();
-                const texture_implementation& _color = _model._color._resource->get();
+                const mesh_implementation& _mesh = _model._mesh._resource->fetched.value();
+                const texture_implementation& _color = _model._color._resource->fetched.value();
                 _unlit_skinned_program.use();
                 _unlit_skinned_program.bind_attribute("vert_position", _mesh, mesh_attribute::position);
                 _unlit_skinned_program.bind_attribute("vert_texcoord", _mesh, mesh_attribute::texcoord);
@@ -728,8 +728,8 @@ namespace detail {
 
         each_view<unlit_model_component, animator_component>(entt::exclude<transform_component>, [&](unlit_model_component& _model, animator_component& animator) {
             if (_model._mesh && _model._color && animator._skeleton.has_value()) {
-                const mesh_implementation& _mesh = _model._mesh._resource->get();
-                const texture_implementation& _color = _model._color._resource->get();
+                const mesh_implementation& _mesh = _model._mesh._resource->fetched.value();
+                const texture_implementation& _color = _model._color._resource->fetched.value();
                 _unlit_skinned_program.use();
                 _unlit_skinned_program.bind_attribute("vert_position", _mesh, mesh_attribute::position);
                 _unlit_skinned_program.bind_attribute("vert_texcoord", _mesh, mesh_attribute::texcoord);
@@ -758,7 +758,7 @@ namespace detail {
 
                 std::optional<glm::vec2> _raycasted_uvs;
                 if (interface._use_interaction) {
-                    _raycasted_uvs = viewport_raycast(interface._viewport_geometry._resource->get());
+                    _raycasted_uvs = viewport_raycast(interface._viewport_geometry._resource->fetched.value());
                     if (_raycasted_uvs) {
                         interface._interaction_screen_position = {
                             (_raycasted_uvs.value().x) * interface._viewport_size.x,

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <lucaria/bin/math_data.hpp>
 #include <lucaria/core/geometry.hpp>
 #include <lucaria/core/math.hpp>
 #include <lucaria/core/resource.hpp>
@@ -28,6 +29,11 @@ namespace detail {
         weights
     };
 
+    enum struct mesh_origin {
+        path,
+        data
+    };
+
     struct mesh_implementation {
         LUCARIA_DELETE_DEFAULT(mesh_implementation)
         mesh_implementation(const mesh_implementation& other) = delete;
@@ -37,6 +43,8 @@ namespace detail {
         ~mesh_implementation();
 
         mesh_implementation(const geometry_implementation& geometry);
+
+        mesh_origin origin;
 
 #if defined(LUCARIA_BACKEND_OPENGL)
         mesh_implementation_opengl implementation_opengl;
@@ -50,6 +58,29 @@ namespace detail {
         uint32 size;
     };
 
+    struct mesh_path_recipe {
+        std::filesystem::path path;
+
+        template <typename ArchiveType>
+        void serialize(ArchiveType& archive)
+        {
+            archive(cereal::make_nvp("path", path));
+        }
+    };
+
+    struct mesh_data_recipe {
+        geometry_data data;
+
+        template <typename ArchiveType>
+        void serialize(ArchiveType& archive)
+        {
+            archive(cereal::make_nvp("data", data));
+        }
+    };
+
+    using mesh_recipe = std::variant<mesh_path_recipe, mesh_data_recipe>;
+
+	[[nodiscard]] mesh_recipe make_recipe(const implementation_container<mesh_implementation>& container);
 }
 
 struct mesh_object {
@@ -73,8 +104,8 @@ struct mesh_object {
     [[nodiscard]] explicit operator bool() const;
 
 private:
-    detail::resource_container<detail::mesh_implementation>* _resource = nullptr;
-    explicit mesh_object(detail::resource_container<detail::mesh_implementation>* resource);
+    detail::implementation_container<detail::mesh_implementation>* _resource = nullptr;
+    explicit mesh_object(detail::implementation_container<detail::mesh_implementation>* resource);
     friend struct detail::rendering_system;
 };
 

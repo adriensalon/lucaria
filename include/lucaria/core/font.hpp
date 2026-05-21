@@ -1,7 +1,12 @@
 #pragma once
 
-#include <imgui.h>
+#include <variant>
 
+#include <imgui.h>
+#include <cereal/types/variant.hpp>
+
+#include <lucaria/bin/math_data.hpp>
+#include <lucaria/bin/path_data.hpp>
 #include <lucaria/core/math.hpp>
 #include <lucaria/core/refcount.hpp>
 #include <lucaria/core/resource.hpp>
@@ -9,6 +14,10 @@
 
 namespace lucaria {
 namespace detail {
+
+    enum struct font_origin {
+        path
+    };
 
     struct font_implementation {
         LUCARIA_DELETE_DEFAULT(font_implementation)
@@ -19,9 +28,25 @@ namespace detail {
 
         font_implementation(const std::vector<char>& data_bytes, const float32 font_size);
 
+        font_origin origin;
         ImFont* font;
     };
 
+    struct font_path_recipe {
+		std::filesystem::path path;
+        float32 font_size;
+
+        template <typename ArchiveType>
+        void serialize(ArchiveType& archive)
+        {
+            archive(cereal::make_nvp("path", path));
+            archive(cereal::make_nvp("font_size", font_size));
+        }
+    };
+
+    using font_recipe = std::variant<font_path_recipe>;
+
+	[[nodiscard]] font_recipe make_recipe(const implementation_container<font_implementation>& container);
 }
 
 struct font_object {
@@ -45,9 +70,9 @@ struct font_object {
 
 private:
     detail::refcount_flag _refcount = {};
-    detail::resource_manager<detail::font_implementation>* _manager = nullptr;
-    detail::resource_container<detail::font_implementation>* _resource = nullptr;
-    explicit font_object(detail::resource_container<detail::font_implementation>* resource);
+    detail::implementation_manager<detail::font_implementation>* _manager = nullptr;
+    detail::implementation_container<detail::font_implementation>* _resource = nullptr;
+    explicit font_object(detail::implementation_container<detail::font_implementation>* resource);
 };
 
 }

@@ -4,129 +4,94 @@
 #include <memory>
 #include <mutex>
 #include <unordered_map>
+#include <variant>
 
 #include <lucaria/core/fetch.hpp>
 
 namespace lucaria {
 namespace detail {
 
-    template <typename CellType>
-    struct resource_container {
-
-        [[nodiscard]] bool is_ready() const
-        {
-            return _fetched.has_value();
-        }
-
-        [[nodiscard]] std::uint32_t get_version() const
-        {
-            return _current_version.load(std::memory_order_acquire);
-        }
-
-        void set(async_container<CellType>&& next_value, const std::optional<std::filesystem::path>& origin_path = std::nullopt)
-        {
-            std::lock_guard lock(_set_mutex);
-            _fetched = std::move(next_value);
-            _origin_path = origin_path;
-
-            _fetched.on_ready([this](CellType&) {
-                _current_version.fetch_add(1, std::memory_order_release);
-            });
-        }
-
-        CellType& get()
-        {
-            return _fetched.value();
-        }
-
-        const CellType& get() const
-        {
-            return _fetched.value();
-        }
-
-        const std::optional<std::filesystem::path>& origin_path() const
-        {
-            return _origin_path;
-        }
-
-        void on_ready(std::function<void(CellType&)> callback) const
-        {
-            _fetched.on_ready(std::move(callback));
-        }
-
-        void on_ready(std::function<void()> callback) const
-        {
-            _fetched.on_ready(std::move(callback));
-        }
-
-    private:
-        async_container<CellType> _fetched = {};
-        std::optional<std::filesystem::path> _origin_path = {};
-        std::atomic<std::uint32_t> _current_version = { 0 };
-        std::mutex _set_mutex = {};
+    template <typename ImplementationType>
+    struct implementation_container {
+        async_container<ImplementationType> fetched = {};
+        std::optional<std::filesystem::path> origin_path = {};
+        std::atomic<std::uint32_t> current_version = { 0 };
     };
 
-    template <typename CellType>
-    struct resource_manager {
+    template <typename ImplementationType>
+    struct implementation_manager {
+        std::vector<std::unique_ptr<implementation_container<ImplementationType>>> cells = {};
+        std::unordered_map<std::filesystem::path, implementation_container<ImplementationType>*> cells_by_path = {};
+        std::mutex set_mutex = {};
 
-        resource_container<CellType>* create_cell()
+        void set_cell(implementation_container<ImplementationType>* cell, async_container<ImplementationType>&& value, std::optional<std::filesystem::path> path = std::nullopt)
         {
-            std::unique_ptr<resource_container<CellType>> _cell = std::make_unique<resource_container<CellType>>();
-            resource_container<CellType>* _raw_cell = _cell.get();
-            _cells.emplace_back(std::move(_cell));
+            std::lock_guard _lock(set_mutex);
+
+            if (cell->origin_path) {
+                cells_by_path.erase(*cell->origin_path);
+            }
+            cell->fetched = std::move(value);
+            cell->origin_path = std::move(path);
+            cell->fetched.on_ready([cell]() {
+                cell->current_version.fetch_add(1, std::memory_order_release);
+            });
+
+            if (cell->origin_path) {
+                cells_by_path.emplace(*cell->origin_path, cell);
+            }
+        }
+
+        implementation_container<ImplementationType>* create_cell()
+        {
+            std::unique_ptr<implementation_container<ImplementationType>> _cell = std::make_unique<implementation_container<ImplementationType>>();
+            implementation_container<ImplementationType>* _raw_cell = _cell.get();
+            cells.emplace_back(std::move(_cell));
             return _raw_cell;
         }
 
-        resource_container<CellType>* create_cell(async_container<CellType>&& value, std::optional<std::filesystem::path> origin_path = std::nullopt)
+        implementation_container<ImplementationType>* create_cell(async_container<ImplementationType>&& value, std::optional<std::filesystem::path> path = std::nullopt)
         {
-            resource_container<CellType>* _cell = create_cell();
-            _cell->set(std::move(value), std::move(origin_path));
+            implementation_container<ImplementationType>* _cell = create_cell();
+            set_cell(_cell, std::move(value), std::move(path));
             return _cell;
         }
 
-        [[nodiscard]] resource_container<CellType>* find_by_path(const std::filesystem::path& path) const
+        [[nodiscard]] implementation_container<ImplementationType>* find_by_path(const std::filesystem::path& path) const
         {
-            auto _it = _cells_by_path.find(path);
-            return _it == _cells_by_path.end() ? nullptr : _it->second;
+            typename std::unordered_map<std::filesystem::path, implementation_container<ImplementationType>*>::const_iterator _iterator = cells_by_path.find(path);
+            return _iterator == cells_by_path.end() ? nullptr : _iterator->second;
         }
 
-        [[nodiscard]] resource_container<CellType>* get_or_create_by_path(const std::filesystem::path& path, std::function<async_container<CellType>()> create_fetch)
+        [[nodiscard]] implementation_container<ImplementationType>* get_or_create_by_path(const std::filesystem::path& path, std::function<async_container<ImplementationType>()> create_fetch)
         {
-            if (resource_container<CellType>* _existing = find_by_path(path)) {
+            if (implementation_container<ImplementationType>* _existing = find_by_path(path)) {
                 return _existing;
             }
 
-            resource_container<CellType>* _cell = create_cell();
-            _cell->set(create_fetch(), path);
-            _cells_by_path.emplace(path, _cell);
-
-            return _cell;
+            return create_cell(create_fetch(), path);
         }
 
-        void destroy_cell(resource_container<CellType>* cell)
+        void destroy_cell(implementation_container<ImplementationType>* cell)
         {
             if (!cell) {
                 return;
             }
 
-            if (cell->origin_path()) {
-                _cells_by_path.erase(*cell->origin_path());
+            if (cell->origin_path) {
+                cells_by_path.erase(*cell->origin_path);
             }
 
-            std::erase_if(_cells, [cell](const auto& ptr) {
+            std::erase_if(cells, [cell](const auto& ptr) {
                 return ptr.get() == cell;
             });
         }
 
         void clear()
         {
-            _cells_by_path.clear();
-            _cells.clear();
+            cells_by_path.clear();
+            cells.clear();
         }
-
-    private:
-        std::vector<std::unique_ptr<resource_container<CellType>>> _cells;
-        std::unordered_map<std::filesystem::path, resource_container<CellType>*> _cells_by_path;
     };
 }
 }

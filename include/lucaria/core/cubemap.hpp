@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cereal/types/array.hpp>
+#include <cereal/types/optional.hpp>
+
 #include <lucaria/core/image.hpp>
 #include <lucaria/core/refcount.hpp>
 #include <lucaria/core/resource.hpp>
@@ -17,6 +20,11 @@ namespace detail {
 
     struct rendering_system;
 
+    enum struct cubemap_origin {
+        path,
+        data
+    };
+
     struct cubemap_implementation {
         LUCARIA_DELETE_DEFAULT(cubemap_implementation)
         cubemap_implementation(const cubemap_implementation& other) = delete;
@@ -27,6 +35,8 @@ namespace detail {
 
         cubemap_implementation(const std::array<image_implementation, 6>& images);
 
+        cubemap_origin origin;
+
 #if defined(LUCARIA_BACKEND_OPENGL)
         cubemap_implementation_opengl implementation_opengl;
 #endif
@@ -36,6 +46,33 @@ namespace detail {
 #endif
     };
 
+    struct cubemap_path_recipe {
+        std::array<std::filesystem::path, 6> paths;
+        std::optional<std::array<std::filesystem::path, 6>> etc2_paths;
+        std::optional<std::array<std::filesystem::path, 6>> s3tc_paths;
+
+        template <typename ArchiveType>
+        void serialize(ArchiveType& archive)
+        {
+            archive(cereal::make_nvp("paths", paths));
+            archive(cereal::make_nvp("etc2_paths", etc2_paths));
+            archive(cereal::make_nvp("s3tc_paths", s3tc_paths));
+        }
+    };
+
+    struct cubemap_data_recipe {
+        std::array<image_data, 6> datas;
+
+        template <typename ArchiveType>
+        void serialize(ArchiveType& archive)
+        {
+            archive(cereal::make_nvp("datas", datas));
+        }
+    };
+
+    using cubemap_recipe = std::variant<cubemap_path_recipe, cubemap_data_recipe>;
+
+    [[nodiscard]] cubemap_recipe make_recipe(const implementation_container<cubemap_implementation>& container);
 }
 
 struct cubemap_object {
@@ -64,9 +101,9 @@ struct cubemap_object {
 
 private:
     detail::refcount_flag _refcount = {};
-    detail::resource_manager<detail::cubemap_implementation>* _manager = nullptr;
-    detail::resource_container<detail::cubemap_implementation>* _resource = nullptr;
-    explicit cubemap_object(detail::resource_container<detail::cubemap_implementation>* resource);
+    detail::implementation_manager<detail::cubemap_implementation>* _manager = nullptr;
+    detail::implementation_container<detail::cubemap_implementation>* _resource = nullptr;
+    explicit cubemap_object(detail::implementation_container<detail::cubemap_implementation>* resource);
     friend struct detail::rendering_system;
 };
 

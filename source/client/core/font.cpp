@@ -56,22 +56,37 @@ namespace detail {
     }
 
     font_implementation::font_implementation(const std::vector<char>& data_bytes, const glm::float32 font_size)
+		: origin(font_origin::path)
     {
         font = _load_font_bytes(data_bytes, font_size);
+    }
+
+    font_recipe make_recipe(const implementation_container<font_implementation>& container)
+    {
+        const font_implementation& _font = container.fetched.value();
+
+        if (_font.origin == font_origin::path) {
+            return font_path_recipe { container.origin_path.value(), _font.font->FontSize };
+        }
+
+        else {
+            LUCARIA_RUNTIME_ERROR("Implementation error");
+            return {};
+        }
     }
 
 }
 
 font_object::~font_object()
 {
-	if (_refcount.is_last_owner()) {
-		_manager->destroy_cell(_resource);
-	}
+    if (_refcount.is_last_owner()) {
+        _manager->destroy_cell(_resource);
+    }
 }
 
 font_object font_object::fetch(const std::filesystem::path& path, const float32 font_size)
 {
-    detail::resource_container<detail::font_implementation>* _resource = detail::engine_resources().fonts.get_or_create_by_path(path, [&] {
+    detail::implementation_container<detail::font_implementation>* _resource = detail::engine_resources().fonts.get_or_create_by_path(path, [&] {
         return detail::_fetch_font_async(path, font_size);
     });
 
@@ -80,7 +95,7 @@ font_object font_object::fetch(const std::filesystem::path& path, const float32 
 
 bool font_object::has_value() const
 {
-    return _resource && _resource->is_ready();
+    return _resource && _resource->fetched.has_value();
 }
 
 font_object::operator bool() const
@@ -94,10 +109,10 @@ ImFont* font_object::imgui_font() const
         return nullptr;
     }
 
-    return _resource->get().font;
+    return _resource->fetched.value().font;
 }
 
-font_object::font_object(detail::resource_container<detail::font_implementation>* resource)
+font_object::font_object(detail::implementation_container<detail::font_implementation>* resource)
     : _resource(resource)
 {
 }

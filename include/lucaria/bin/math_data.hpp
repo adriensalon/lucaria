@@ -29,6 +29,13 @@ void serialize(archive_type_t& archive, glm::ivec3& value)
 }
 
 template <typename archive_type_t>
+void serialize(archive_type_t& archive, glm::uvec2& value)
+{
+    archive(cereal::make_nvp("x", value.x));
+    archive(cereal::make_nvp("y", value.y));
+}
+
+template <typename archive_type_t>
 void serialize(archive_type_t& archive, glm::uvec3& value)
 {
     archive(cereal::make_nvp("x", value.x));

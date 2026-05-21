@@ -20,6 +20,19 @@ namespace detail {
         // constexpr static GLenum COMPRESSED_RGBA_S3TC_DXT3_EXT = 0x83F2;
         constexpr static GLenum COMPRESSED_RGBA_S3TC_DXT5_EXT = 0x83F3;
 
+        [[nodiscard]] static texture_origin _convert_origin(const image_origin origin)
+        {
+            switch (origin) {
+            case image_origin::path:
+                return texture_origin::path;
+            case image_origin::data:
+                return texture_origin::data;
+            default:
+                LUCARIA_RUNTIME_ERROR("Invalid implementation")
+                return {};
+            }
+        }
+
     }
 
     texture_implementation::~texture_implementation()
@@ -31,6 +44,7 @@ namespace detail {
     }
 
     texture_implementation::texture_implementation(const image_implementation& from)
+        : origin(_convert_origin(from.origin))
     {
         size = { from.data.width, from.data.height };
         glGenTextures(1, &implementation_opengl.id);
@@ -44,7 +58,7 @@ namespace detail {
 
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         switch (from.data.channels) {
-			
+
         case 3:
             if (from.data.is_compressed_etc && detail::engine_window().is_etc2_supported) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB8_ETC2, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
@@ -68,15 +82,16 @@ namespace detail {
             LUCARIA_RUNTIME_ERROR("Invalid texture channels count, must be 3 or 4")
             break;
         }
-// #if defined(LUCARIA_DEBUG)
-//         std::cout << "Created TEXTURE_2D buffer of size " << from.data.width << "x" << from.data.height << " with id " << implementation_opengl.id << std::endl;
-// #endif
+        // #if defined(LUCARIA_DEBUG)
+        //         std::cout << "Created TEXTURE_2D buffer of size " << from.data.width << "x" << from.data.height << " with id " << implementation_opengl.id << std::endl;
+        // #endif
 
         implementation_opengl.ownership.emplace();
     }
 
     texture_implementation::texture_implementation(const glm::uvec2 size)
-        : size(size)
+        : origin(texture_origin::size)
+        , size(size)
     {
         glGenTextures(1, &implementation_opengl.id);
         glBindTexture(GL_TEXTURE_2D, implementation_opengl.id);
@@ -86,15 +101,17 @@ namespace detail {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
 
-// #if defined(LUCARIA_DEBUG)
-//         std::cout << "Created EMPTY TEXTURE_2D buffer of size " << size.x << "x" << size.y << " with id " << implementation_opengl.id << std::endl;
-// #endif
+        // #if defined(LUCARIA_DEBUG)
+        //         std::cout << "Created EMPTY TEXTURE_2D buffer of size " << size.x << "x" << size.y << " with id " << implementation_opengl.id << std::endl;
+        // #endif
 
         implementation_opengl.ownership.emplace();
     }
 
     void texture_implementation::resize(const uint32x2 new_size)
     {
+		origin = texture_origin::size;
+
         if (size != new_size) {
             size = new_size;
             glBindTexture(GL_TEXTURE_2D, implementation_opengl.id);
@@ -104,7 +121,9 @@ namespace detail {
 
     void texture_implementation::update(const image_implementation& from)
     {
-		const GLsizei _pixels_count = static_cast<GLsizei>(from.data.pixels.size());
+		origin = texture_origin::data;
+
+        const GLsizei _pixels_count = static_cast<GLsizei>(from.data.pixels.size());
         const GLubyte* _pixels_ptr = from.data.pixels.data();
 
         glBindTexture(GL_TEXTURE_2D, implementation_opengl.id);
