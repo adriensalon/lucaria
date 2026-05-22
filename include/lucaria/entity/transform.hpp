@@ -4,6 +4,7 @@
 #include <vector>
 
 #include <lucaria/core/math.hpp>
+#include <lucaria/entity/entity.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -29,7 +30,7 @@ struct transform_component {
     /// @brief
     /// @param parent_transform
     /// @return this instance for chaining methods
-    transform_component& use_parent(transform_component& parent_transform);
+    transform_component& use_parent(scene_entity parent_entity);
 
     /// @brief
     /// @param position
@@ -69,13 +70,24 @@ struct transform_component {
 
 private:
     glm::mat4 _transform = glm::mat4(1);
-    std::optional<std::reference_wrapper<transform_component>> _parent = {};
+    std::optional<scene_entity> _parent_entity = std::nullopt;
+    std::optional<std::reference_wrapper<transform_component>> _parent_transform = {};
     std::vector<std::reference_wrapper<transform_component>> _children = {};
+
     void _apply_delta_to_children(const glm::mat4& delta);
+
+    template <typename Archive>
+    void serialize(Archive& archive)
+    {
+		archive(cereal::make_nvp("transform", _transform));
+        archive(cereal::make_nvp("parent", _parent_entity));
+    }
+
     friend struct detail::dynamics_system;
     friend struct detail::motion_system;
     friend struct detail::mixer_system;
     friend struct detail::rendering_system;
+    friend class cereal::access;
 };
 
 }

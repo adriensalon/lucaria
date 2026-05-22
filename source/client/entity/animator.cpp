@@ -46,7 +46,7 @@ animation_controller& animation_controller::set_weight(const float ratio)
     return *this;
 }
 
-animation_controller& animation_controller::set_event_callback(const std::string& name, const std::function<void()>& callback)
+animation_controller& animation_controller::event_callback(const std::string& name, const std::function<void()>& callback)
 {
     _event_callbacks[name] = callback;
     return *this;
@@ -54,7 +54,7 @@ animation_controller& animation_controller::set_event_callback(const std::string
 
 animator_component& animator_component::use_animation(const std::string name, const animation_object animation)
 {
-    _animations.emplace(name, animation);
+    _animations.insert_or_assign(name, animation);
     _animations.at(name)._resource->fetched.on_ready([this, name]() {
         if (_skeleton) {
 #if defined(LUCARIA_DEBUG)
@@ -76,7 +76,7 @@ animator_component& animator_component::use_motion_track(const std::string name,
     if (_animations.find(name) == _animations.end()) {
         LUCARIA_RUNTIME_ERROR("Impossible to emplace motion track because animation does not exist with this name")
     }
-    _motion_tracks.emplace(name, track);
+    _motion_tracks.insert_or_assign(name, track);
     return *this;
 }
 
@@ -85,7 +85,7 @@ animator_component& animator_component::use_event_track(const std::string name, 
     if (_animations.find(name) == _animations.end()) {
         LUCARIA_RUNTIME_ERROR("Impossible to emplace event track because animation does not exist with this name")
     }
-    _event_tracks.emplace(name, track);
+    _event_tracks.insert_or_assign(name, track);
     return *this;
 }
 

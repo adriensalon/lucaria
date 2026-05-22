@@ -58,7 +58,7 @@ struct animation_controller {
     /// @param name
     /// @param callback
     /// @return this instance for chaining methods
-    animation_controller& set_event_callback(const std::string& name, const std::function<void()>& callback);
+    animation_controller& event_callback(const std::string& name, const std::function<void()>& callback);
 
 private:
     bool _is_playing = false;
@@ -73,14 +73,18 @@ private:
     template <typename ArchiveType>
     void serialize(ArchiveType& archive)
     {
-        archive(cereal::make_nvp("_is_playing", _is_playing));
-        archive(cereal::make_nvp("_is_looping", _is_looping));
-		// etc
+        archive(cereal::make_nvp("is_playing", _is_playing));
+        archive(cereal::make_nvp("is_looping", _is_looping));
+        archive(cereal::make_nvp("playback_speed", _playback_speed));
+        archive(cereal::make_nvp("weight", _weight));
+        archive(cereal::make_nvp("time_ratio", _time_ratio));
+        archive(cereal::make_nvp("last_time_ratio", _last_time_ratio));
+        archive(cereal::make_nvp("has_looped", _has_looped));
     }
 
     friend struct detail::motion_system;
     friend struct animator_component;
-	friend class cereal::access;
+    friend class cereal::access;
 };
 
 /// @brief
@@ -139,9 +143,41 @@ private:
     ozz::vector<ozz::math::Float4x4> _model_transforms = {};
     std::unique_ptr<ozz::animation::SamplingJob::Context> _sampling_context = nullptr;
     ozz::vector<ozz::animation::BlendingJob::Layer> _blend_layers = {};
+
+    template <typename ArchiveType>
+    void save(ArchiveType& archive) const
+    {
+        archive(cereal::make_nvp("skeleton", _skeleton));
+        archive(cereal::make_nvp("animations", _animations));
+        archive(cereal::make_nvp("motion_tracks", _motion_tracks));
+        archive(cereal::make_nvp("event_tracks", _event_tracks));
+        archive(cereal::make_nvp("controllers", _controllers));
+    }
+
+    template <typename ArchiveType>
+    void load(ArchiveType& archive)
+    {
+        archive(cereal::make_nvp("skeleton", _skeleton));
+        archive(cereal::make_nvp("animations", _animations));
+        archive(cereal::make_nvp("motion_tracks", _motion_tracks));
+        archive(cereal::make_nvp("event_tracks", _event_tracks));
+        archive(cereal::make_nvp("controllers", _controllers));
+        use_skeleton(_skeleton);
+        for (auto& [name, animation] : _animations) {
+            use_animation(name, animation);
+        }
+        for (auto& [name, track] : _motion_tracks) {
+            use_motion_track(name, track);
+        }
+        for (auto& [name, track] : _event_tracks) {
+            use_event_track(name, track);
+        }
+    }
+
     friend struct detail::motion_system;
     friend struct detail::rendering_system;
     friend struct transform_component;
+    friend class cereal::access;
 };
 
 }

@@ -13,6 +13,7 @@
 
 #include <lucaria/core/detection.hpp>
 #include <lucaria/entity/animator.hpp>
+#include <lucaria/entity/entity.hpp>
 #include <lucaria/entity/interface.hpp>
 #include <lucaria/entity/model.hpp>
 #include <lucaria/entity/rigidbody.hpp>
@@ -71,8 +72,8 @@ namespace detail {
         }
     };
 
-	struct scene_components_save {
-		std::vector<component_save_entry<animator_component>> animators = {};
+    struct scene_components_save {
+        std::vector<component_save_entry<animator_component>> animators = {};
         std::vector<component_save_entry<screen_interface_component>> screen_interfaces = {};
         std::vector<component_save_entry<spatial_interface_component>> spatial_interfaces = {};
         std::vector<component_save_entry<blockout_model_component>> blockout_models = {};
@@ -83,21 +84,21 @@ namespace detail {
         std::vector<component_save_entry<speaker_component>> speakers = {};
         std::vector<component_save_entry<transform_component>> transforms = {};
 
-		template <typename ArchiveType>
+        template <typename ArchiveType>
         void serialize(ArchiveType& archive)
         {
-            // archive(cereal::make_nvp("animators", animators));
-            // archive(cereal::make_nvp("screen_interfaces", screen_interfaces));
-            // archive(cereal::make_nvp("spatial_interfaces", spatial_interfaces));
-            // archive(cereal::make_nvp("blockout_models", blockout_models));
+            archive(cereal::make_nvp("animators", animators));
+            archive(cereal::make_nvp("screen_interfaces", screen_interfaces));
+            archive(cereal::make_nvp("spatial_interfaces", spatial_interfaces));
+            archive(cereal::make_nvp("blockout_models", blockout_models));
             archive(cereal::make_nvp("unlit_models", unlit_models));
             archive(cereal::make_nvp("passive_rigidbodies", passive_rigidbodies));
             archive(cereal::make_nvp("kinematic_rigidbodies", kinematic_rigidbodies));
             archive(cereal::make_nvp("dynamic_rigidbodies", dynamic_rigidbodies));
-            // archive(cereal::make_nvp("speakers", speakers));
-            // archive(cereal::make_nvp("transforms", transforms));
+            archive(cereal::make_nvp("speakers", speakers));
+            archive(cereal::make_nvp("transforms", transforms));
         }
-	};
+    };
 
     struct scene_save {
         std::string type_id = {};
@@ -191,41 +192,6 @@ namespace detail {
         }
     }
 }
-
-/// @brief
-struct scene_entity {
-
-    /// @brief
-    [[nodiscard]] bool has_value() const;
-
-private:
-    entt::entity _entity = entt::null;
-    entt::registry* _registry = nullptr;
-
-    template <typename ArchiveType>
-    void save(ArchiveType& archive) const
-    {
-        detail::scene_database& _database = detail::engine_scene_database();
-        const uint32 _scene_id = _database.save_database.get_scene_id(_registry);
-        const uint32 _entity_id = _database.save_database.get_entity_id(_registry, _entity);
-        archive(cereal::make_nvp("scene_save_id", _scene_id));
-        archive(cereal::make_nvp("entity_save_id", _entity_id));
-    }
-
-    template <typename ArchiveType>
-    void load(ArchiveType& archive)
-    {
-        detail::scene_database& _database = detail::engine_scene_database();
-        uint32 _scene_id, _entity_id;
-        archive(cereal::make_nvp("scene_save_id", _scene_id));
-        archive(cereal::make_nvp("entity_save_id", _entity_id));
-        _registry = _database.load_database.get_registry(_scene_id);
-        _entity = _database.load_database.get_entity(_scene_id, _entity_id);
-    }
-
-    friend struct scene_context;
-    friend class cereal::access;
-};
 
 /// @brief
 struct scene_context {

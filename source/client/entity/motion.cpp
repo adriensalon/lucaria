@@ -86,8 +86,9 @@ namespace detail {
                 _controller._time_ratio = glm::mod(_controller._time_ratio, 1.f);
 
                 // fire events
-                if (_controller._is_playing && animator._event_tracks[_pair.first]) {
-                    for (const event_data& _event : animator._event_tracks[_pair.first]._resource->fetched.value().data.events) {
+                typename std::unordered_map<std::string, lucaria::event_track_object>::const_iterator _event_track_it = animator._event_tracks.find(_pair.first);
+                if (_controller._is_playing && _event_track_it != animator._event_tracks.end() && _event_track_it->second) {
+                    for (const event_data& _event : _event_track_it->second._resource->fetched.value().data.events) {
                         if (_controller._last_time_ratio <= _controller._time_ratio
                                 ? (_controller._last_time_ratio < _event.time_normalized) && (_event.time_normalized <= _controller._time_ratio)
                                 : (_controller._last_time_ratio < _event.time_normalized) || (_event.time_normalized <= _controller._time_ratio)) {
@@ -111,8 +112,8 @@ namespace detail {
                 ozz::vector<ozz::animation::BlendingJob::Layer> _blend_layers;
                 for (std::pair<const std::string, animation_object>& _pair : animator._animations) {
                     if (_pair.second) {
-                        const animation_controller& _controller = animator._controllers[_pair.first];
-                        ozz::vector<ozz::math::SoaTransform>& _local_transforms = animator._local_transforms[_pair.first];
+                        const animation_controller& _controller = animator._controllers.at(_pair.first);
+                        ozz::vector<ozz::math::SoaTransform>& _local_transforms = animator._local_transforms.at(_pair.first);
                         ozz::animation::SamplingJob sampling_job;
                         sampling_job.animation = &_pair.second._resource->fetched.value().animation;
                         sampling_job.context = animator._sampling_context.get();

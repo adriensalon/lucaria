@@ -162,9 +162,6 @@ namespace detail {
     struct scene_save_database {
         std::unordered_map<const entt::registry*, uint32> scene_ids = {};
         std::unordered_map<const entt::registry*, scene_entity_save_database> scene_entities = {};
-
-        [[nodiscard]] uint32 get_scene_id(const entt::registry* registry) const;
-        [[nodiscard]] uint32 get_entity_id(const entt::registry* registry, const entt::entity entity) const;
     };
 
     struct scene_load_database {
@@ -186,21 +183,21 @@ namespace detail {
 
 }
 
-#define LUCARIA_DATABASE_OBJECT_SERIALIZATION_IMPLEMENTATION(ObjectName, PluralName)                                        \
-    template <typename ArchiveType>                                                                                 \
-    void ObjectName##_object::save(ArchiveType& archive) const                                                      \
-    {                                                                                                           \
+#define LUCARIA_DATABASE_OBJECT_SERIALIZATION_IMPLEMENTATION(ObjectName, PluralName)                         \
+    template <typename ArchiveType>                                                                          \
+    void ObjectName##_object::save(ArchiveType& archive) const                                               \
+    {                                                                                                        \
         const uint32 _id = detail::engine_scene_database().objects_save_database->PluralName.get(_resource); \
-        archive(cereal::make_nvp(#ObjectName "_reference", _id));                                               \
-    }                                                                                                           \
-    template <typename ArchiveType>                                                                                 \
-    void ObjectName##_object::load(ArchiveType& archive)                                                            \
-    {                                                                                                           \
-        uint32 _id = 0;                                                                                         \
-        archive(cereal::make_nvp(#ObjectName "_reference", _id));                                               \
+        archive(cereal::make_nvp(#ObjectName "_reference", _id));                                            \
+    }                                                                                                        \
+    template <typename ArchiveType>                                                                          \
+    void ObjectName##_object::load(ArchiveType& archive)                                                     \
+    {                                                                                                        \
+        uint32 _id = 0;                                                                                      \
+        archive(cereal::make_nvp(#ObjectName "_reference", _id));                                            \
         _resource = detail::engine_scene_database().objects_save_database->PluralName.get(_id);              \
         _manager = &detail::engine_resources().PluralName;                                                   \
-        _refcount.emplace();                                                                                    \
+        _refcount.emplace();                                                                                 \
     }
 
 LUCARIA_DATABASE_OBJECT_SERIALIZATION_IMPLEMENTATION(animation, animations)

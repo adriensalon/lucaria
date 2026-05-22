@@ -54,8 +54,14 @@ struct blockout_model_component {
 private:
     mesh_object _mesh = {};
 
-    friend struct motion_system;
+    template <typename ArchiveType>
+    void serialize(ArchiveType& archive)
+    {
+        archive(cereal::make_nvp("mesh", _mesh));
+    }
+
     friend struct detail::rendering_system;
+	friend class cereal::access;
 };
 
 /// @brief
@@ -78,11 +84,10 @@ private:
     template <typename ArchiveType>
     void serialize(ArchiveType& archive)
     {
-        archive(cereal::make_nvp("mesh_reference", _mesh));
-        archive(cereal::make_nvp("color_reference", _color));
+        archive(cereal::make_nvp("mesh", _mesh));
+        archive(cereal::make_nvp("color", _color));
     }
 
-    friend struct motion_system;
     friend struct detail::rendering_system;
 	friend class cereal::access;
 };

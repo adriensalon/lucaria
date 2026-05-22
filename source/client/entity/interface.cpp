@@ -13,7 +13,7 @@ namespace {
 
 }
 
-screen_interface_component& screen_interface_component::set_callback(const std::function<void()>& callback)
+screen_interface_component& screen_interface_component::draw_callback(const std::function<void()>& callback)
 {
     _imgui_callback = callback;
     return *this;
@@ -53,17 +53,12 @@ spatial_interface_component& spatial_interface_component::use_interaction_textur
     return *this;
 }
 
-spatial_interface_component& spatial_interface_component::set_callback(const std::function<void()>& callback)
+spatial_interface_component& spatial_interface_component::draw_callback(const std::function<void()>& callback)
 {
     _imgui_callback = callback;
     return *this;
 }
 
-spatial_interface_component& spatial_interface_component::set_refresh(const refresh_mode mode)
-{
-    _refresh_mode = mode;
-    return *this;
-}
 spatial_interface_component& spatial_interface_component::set_interaction(const bool interaction)
 {
     _use_interaction = interaction;

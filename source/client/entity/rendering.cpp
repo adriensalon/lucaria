@@ -749,9 +749,7 @@ namespace detail {
         each_view<spatial_interface_component>([](spatial_interface_component& interface) {
             if (interface._viewport_geometry.has_value()
                 && interface._viewport_mesh
-                && interface._imgui_callback
-                && (!interface._refresh_mode
-                    || (interface._refresh_mode != refresh_mode::never))) {
+                && interface._imgui_callback) {
 
                 ImGui::SetCurrentContext(interface._imgui_context);
                 ImGui::GetIO().DisplaySize = ImVec2(static_cast<glm::float32>(interface._viewport_size.x), static_cast<glm::float32>(interface._viewport_size.y));
@@ -813,10 +811,6 @@ namespace detail {
                 _unlit_program.bind_uniform("uniform_color", interface._imgui_color_texture.value(), 0);
                 _unlit_program.bind_uniform("uniform_view", camera_view_projection);
                 _unlit_program.draw();
-
-                if (interface._refresh_mode != refresh_mode::always) {
-                    interface._refresh_mode = refresh_mode::never;
-                }
             }
         });
     }

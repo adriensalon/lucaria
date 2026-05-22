@@ -182,7 +182,7 @@ namespace detail {
         glfwSetWindowFocusCallback(implementation_glfw.window, _glfw_window_focus_callback);
 
         gladLoadGL(glfwGetProcAddress);
-        glfwSwapInterval(1);
+        glfwSwapInterval(0);
 
         _initialize_backend(is_s3tc_supported);
         initialize_imgui();

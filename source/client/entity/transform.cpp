@@ -35,10 +35,12 @@ transform_component& transform_component::use_parent()
     return *this;
 }
 
-transform_component& transform_component::use_parent(transform_component& transform)
+transform_component& transform_component::use_parent(scene_entity parent_entity)
 {
-    transform._children.emplace_back(std::ref(*this));
-    _parent = std::ref(transform);
+    _parent_entity = parent_entity;
+    transform_component& _transform = parent_entity._registry->get<transform_component>(parent_entity._entity);
+    _transform._children.emplace_back(std::ref(*this));
+    _parent_transform = std::ref(_transform);
     return *this;
 }
 
