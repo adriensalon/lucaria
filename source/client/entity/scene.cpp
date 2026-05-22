@@ -39,8 +39,8 @@ namespace detail {
 scene_entity scene_context::emplace_entity()
 {
 	scene_entity _entity;
-	_entity._entity = _self_scene->components.create();
-	_entity._registry = &_self_scene->components;
+	_entity._entity = _self_scene->components->create();
+	_entity._registry = _self_scene->components.get();
     return _entity;
 }
 
@@ -56,52 +56,52 @@ void scene_context::mark_erase_self()
 
 animator_component& scene_context::emplace_animator(const scene_entity entity)
 {
-    return _self_scene->components.emplace<animator_component>(entity._entity);
+    return _self_scene->components->emplace<animator_component>(entity._entity);
 }
 
 screen_interface_component& scene_context::emplace_screen_interface(const scene_entity entity)
 {
-    return _self_scene->components.emplace<screen_interface_component>(entity._entity);
+    return _self_scene->components->emplace<screen_interface_component>(entity._entity);
 }
 
 spatial_interface_component& scene_context::emplace_spatial_interface(const scene_entity entity)
 {
-    return _self_scene->components.emplace<spatial_interface_component>(entity._entity);
+    return _self_scene->components->emplace<spatial_interface_component>(entity._entity);
 }
 
 blockout_model_component& scene_context::emplace_blockout_model(const scene_entity entity)
 {
-    return _self_scene->components.emplace<blockout_model_component>(entity._entity);
+    return _self_scene->components->emplace<blockout_model_component>(entity._entity);
 }
 
 unlit_model_component& scene_context::emplace_unlit_model(const scene_entity entity)
 {
-    return _self_scene->components.emplace<unlit_model_component>(entity._entity);
+    return _self_scene->components->emplace<unlit_model_component>(entity._entity);
 }
 
 passive_rigidbody_component& scene_context::emplace_passive_rigidbody(const scene_entity entity)
 {
-    return _self_scene->components.emplace<passive_rigidbody_component>(entity._entity);
+    return _self_scene->components->emplace<passive_rigidbody_component>(entity._entity);
 }
 
 kinematic_rigidbody_component& scene_context::emplace_kinematic_rigidbody(const scene_entity entity)
 {
-    return _self_scene->components.emplace<kinematic_rigidbody_component>(entity._entity);
+    return _self_scene->components->emplace<kinematic_rigidbody_component>(entity._entity);
 }
 
 dynamic_rigidbody_component& scene_context::emplace_dynamic_rigidbody(const scene_entity entity)
 {
-    return _self_scene->components.emplace<dynamic_rigidbody_component>(entity._entity);
+    return _self_scene->components->emplace<dynamic_rigidbody_component>(entity._entity);
 }
 
 speaker_component& scene_context::emplace_speaker(const scene_entity entity)
 {
-    return _self_scene->components.emplace<speaker_component>(entity._entity);
+    return _self_scene->components->emplace<speaker_component>(entity._entity);
 }
 
 transform_component& scene_context::emplace_transform(const scene_entity entity)
 {
-    return _self_scene->components.emplace<transform_component>(entity._entity);
+    return _self_scene->components->emplace<transform_component>(entity._entity);
 }
 
 }

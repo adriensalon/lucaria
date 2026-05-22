@@ -38,7 +38,7 @@ namespace detail {
         std::string type_id = {};
         bool is_marked_erase = false;
         std::vector<entt::entity> entities_marked_erase = {};
-        entt::registry components = {};
+        std::unique_ptr<entt::registry> components = std::make_unique<entt::registry>();
         std::any user_data = {};
     };
 
@@ -110,7 +110,7 @@ namespace detail {
         {
             archive(cereal::make_nvp("type_id", type_id));
             archive(cereal::make_nvp("components", components));
-            engine_scene_types().at(type_id).json_save(*scene, archive);
+			engine_scene_types().at(type_id).json_save(*scene, archive);
         }
 
         template <typename ArchiveType>
@@ -152,22 +152,22 @@ namespace detail {
 
         _scene_type.binary_save = [](scene_implementation& scene, cereal::PortableBinaryOutputArchive& archive) {
             SceneType& typed_scene = std::any_cast<SceneType&>(scene.user_data);
-            // archive(typed_scene);
+            archive(typed_scene);
         };
 
         _scene_type.binary_load = [](scene_implementation& scene, cereal::PortableBinaryInputArchive& archive) {
             SceneType& typed_scene = std::any_cast<SceneType&>(scene.user_data);
-            // archive(typed_scene);
+            archive(typed_scene);
         };
 
         _scene_type.json_save = [](scene_implementation& scene, cereal::JSONOutputArchive& archive) {
             SceneType& typed_scene = std::any_cast<SceneType&>(scene.user_data);
-            // archive(typed_scene);
+            archive(typed_scene);
         };
 
         _scene_type.json_load = [](scene_implementation& scene, cereal::JSONInputArchive& archive) {
             SceneType& typed_scene = std::any_cast<SceneType&>(scene.user_data);
-            // archive(typed_scene);
+            archive(typed_scene);
         };
 
         engine_scene_type_ids()[std::type_index(typeid(SceneType))] = type_id;
@@ -180,7 +180,7 @@ namespace detail {
     void each_view(Callback&& callback)
     {
         for (scene_implementation& _scene : engine_scenes()) {
-            _scene.components.view<ComponentTypes...>().each(std::forward<Callback>(callback));
+            _scene.components->view<ComponentTypes...>().each(std::forward<Callback>(callback));
         }
     }
 
@@ -188,7 +188,7 @@ namespace detail {
     void each_view(entt::exclude_t<ExcludeComponentTypes...> exclude, Callback&& callback)
     {
         for (scene_implementation& _scene : engine_scenes()) {
-            _scene.components.view<ComponentTypes...>(exclude).each(std::forward<Callback>(callback));
+            _scene.components->view<ComponentTypes...>(exclude).each(std::forward<Callback>(callback));
         }
     }
 }
@@ -215,7 +215,7 @@ struct scene_context {
     void each_view(Callback&& callback)
     {
         for (detail::scene_implementation& _scene : detail::engine_scenes()) {
-            _scene.components.view<ComponentTypes...>().each(std::forward<Callback>(callback));
+            _scene.components->view<ComponentTypes...>().each(std::forward<Callback>(callback));
         }
     }
 
@@ -229,7 +229,7 @@ struct scene_context {
     void each_view(entt::exclude_t<ExcludeComponentTypes...> exclude, Callback&& callback)
     {
         for (detail::scene_implementation& _scene : detail::engine_scenes()) {
-            _scene.components.view<ComponentTypes...>(exclude).each(std::forward<Callback>(callback));
+            _scene.components->view<ComponentTypes...>(exclude).each(std::forward<Callback>(callback));
         }
     }
 
@@ -240,7 +240,7 @@ struct scene_context {
     template <typename... ComponentTypes, typename Callback>
     void each_view_self(Callback&& callback)
     {
-        _self_scene->components.view<ComponentTypes...>().each(std::forward<Callback>(callback));
+        _self_scene->components->view<ComponentTypes...>().each(std::forward<Callback>(callback));
     }
 
     /// @brief
@@ -252,7 +252,7 @@ struct scene_context {
     template <typename... ComponentTypes, typename... ExcludeComponentTypes, typename Callback>
     void each_view_self(entt::exclude_t<ExcludeComponentTypes...> exclude, Callback&& callback)
     {
-        _self_scene->components.view<ComponentTypes...>(exclude).each(std::forward<Callback>(callback));
+        _self_scene->components->view<ComponentTypes...>(exclude).each(std::forward<Callback>(callback));
     }
 
     /// @brief
