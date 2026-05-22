@@ -8,12 +8,12 @@ namespace detail {
     namespace {
 
         template <typename ComponentType>
-        [[nodiscard]] std::vector<component_save_entry<ComponentType>> _save_component_group(entt::registry* registry, const detail::scene_entity_save_database& entity_ids)
+        [[nodiscard]] std::vector<scene_component_recipe<ComponentType>> _save_component_group(entt::registry* registry, const std::unordered_map<entt::entity, uint32>& entity_ids)
         {
-            std::vector<component_save_entry<ComponentType>> _components = {};
+            std::vector<scene_component_recipe<ComponentType>> _components = {};
             registry->view<ComponentType>().each(
                 [&](entt::entity entity, ComponentType& component) {
-                    component_save_entry<ComponentType>& _back = _components.emplace_back();
+                    scene_component_recipe<ComponentType>& _back = _components.emplace_back();
                     _back.entity = entity_ids.at(entity);
                     _back.component = &component;
                 });
@@ -40,14 +40,14 @@ void game_context::save_snapshot(const std::filesystem::path& path)
     detail::recipe_save_database _save_recipes = detail::engine_resources().make_all_recipes(_save_database);
     _archive(cereal::make_nvp("objects", _save_recipes));
 
-    detail::scene_save_database& _scene_save_database = detail::engine_scene_database().save_database;
-    _scene_save_database.scene_ids.clear();
-    _scene_save_database.scene_entities.clear();
+	detail::scene_database& _scene_save_database = detail::engine_scene_database();
+    _scene_save_database.save_map_scene_ids.clear();
+    _scene_save_database.save_map_scene_entities.clear();
     uint32 _next_scene_id = 1;
     for (detail::scene_implementation& _scene : detail::engine_scenes()) {
         entt::registry* _registry = _scene.components.get();
-        _scene_save_database.scene_ids.emplace(_registry, _next_scene_id++);
-        detail::scene_entity_save_database& _entity_ids = _scene_save_database.scene_entities[_registry];
+        _scene_save_database.save_map_scene_ids.emplace(_registry, _next_scene_id++);
+        std::unordered_map<entt::entity, uint32>& _entity_ids = _scene_save_database.save_map_scene_entities[_registry];
         uint32 _next_entity_id = 1;
         for (entt::entity _entity : _registry->storage<entt::entity>()) {
             _entity_ids.emplace(_entity, _next_entity_id++);
@@ -56,11 +56,11 @@ void game_context::save_snapshot(const std::filesystem::path& path)
 
     // scenes
     detail::engine_scene_database().objects_save_database = &_save_database;
-    std::vector<detail::scene_save> _scene_saves = {};
+    std::vector<detail::scene_recipe> _scene_saves = {};
     std::unordered_map<std::string, detail::scene_type_implementation>& _scene_types = detail::engine_scene_types();
     for (detail::scene_implementation& _scene : detail::engine_scenes()) {
-        const detail::scene_entity_save_database& _entity_ids = detail::engine_scene_database().save_database.scene_entities.at(_scene.components.get());
-        detail::scene_save& _scene_save = _scene_saves.emplace_back();
+        const std::unordered_map<entt::entity, uint32>& _entity_ids = detail::engine_scene_database().save_map_scene_entities.at(_scene.components.get());
+        detail::scene_recipe& _scene_save = _scene_saves.emplace_back();
         _scene_save.type_id = _scene.type_id;
         _scene_save.scene = &_scene;
         _scene_save.components.animators = detail::_save_component_group<animator_component>(_scene.components.get(), _entity_ids);

@@ -79,8 +79,8 @@ private:
     void save(ArchiveType& archive) const
     {
         detail::scene_database& _database = detail::engine_scene_database();
-        const uint32 _scene_id = _database.save_database.scene_ids.at(_registry);
-        const uint32 _entity_id = _database.save_database.scene_entities.at(_registry).at(_entity);
+        const uint32 _scene_id = _database.save_map_scene_ids.at(_registry);
+        const uint32 _entity_id = _database.save_map_scene_entities.at(_registry).at(_entity);
         archive(cereal::make_nvp("scene_save_id", _scene_id));
         archive(cereal::make_nvp("entity_save_id", _entity_id));
     }

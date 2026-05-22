@@ -59,30 +59,29 @@ namespace detail {
     [[nodiscard]] game_context& engine_context();
 
     template <typename ComponentType>
-    struct component_save_entry {
+    struct scene_component_recipe {
         uint32 entity = 0;
         ComponentType* component = nullptr;
 
-        template <typename Archive>
-        void serialize(Archive& archive)
+        template <typename ArchiveType>
+        void serialize(ArchiveType& archive)
         {
-            archive(
-                cereal::make_nvp("entity", entity),
-                cereal::make_nvp("component", *component));
+            archive(cereal::make_nvp("entity", entity));
+            archive(cereal::make_nvp("component", *component));
         }
     };
 
-    struct scene_components_save {
-        std::vector<component_save_entry<animator_component>> animators = {};
-        std::vector<component_save_entry<screen_interface_component>> screen_interfaces = {};
-        std::vector<component_save_entry<spatial_interface_component>> spatial_interfaces = {};
-        std::vector<component_save_entry<blockout_model_component>> blockout_models = {};
-        std::vector<component_save_entry<unlit_model_component>> unlit_models = {};
-        std::vector<component_save_entry<passive_rigidbody_component>> passive_rigidbodies = {};
-        std::vector<component_save_entry<kinematic_rigidbody_component>> kinematic_rigidbodies = {};
-        std::vector<component_save_entry<dynamic_rigidbody_component>> dynamic_rigidbodies = {};
-        std::vector<component_save_entry<speaker_component>> speakers = {};
-        std::vector<component_save_entry<transform_component>> transforms = {};
+    struct scene_components_recipe {
+        std::vector<scene_component_recipe<animator_component>> animators = {};
+        std::vector<scene_component_recipe<screen_interface_component>> screen_interfaces = {};
+        std::vector<scene_component_recipe<spatial_interface_component>> spatial_interfaces = {};
+        std::vector<scene_component_recipe<blockout_model_component>> blockout_models = {};
+        std::vector<scene_component_recipe<unlit_model_component>> unlit_models = {};
+        std::vector<scene_component_recipe<passive_rigidbody_component>> passive_rigidbodies = {};
+        std::vector<scene_component_recipe<kinematic_rigidbody_component>> kinematic_rigidbodies = {};
+        std::vector<scene_component_recipe<dynamic_rigidbody_component>> dynamic_rigidbodies = {};
+        std::vector<scene_component_recipe<speaker_component>> speakers = {};
+        std::vector<scene_component_recipe<transform_component>> transforms = {};
 
         template <typename ArchiveType>
         void serialize(ArchiveType& archive)
@@ -100,9 +99,9 @@ namespace detail {
         }
     };
 
-    struct scene_save {
+    struct scene_recipe {
         std::string type_id = {};
-        scene_components_save components = {};
+        scene_components_recipe components = {};
         scene_implementation* scene = nullptr;
 
         template <typename ArchiveType>
@@ -110,7 +109,7 @@ namespace detail {
         {
             archive(cereal::make_nvp("type_id", type_id));
             archive(cereal::make_nvp("components", components));
-			engine_scene_types().at(type_id).json_save(*scene, archive);
+            engine_scene_types().at(type_id).json_save(*scene, archive);
         }
 
         template <typename ArchiveType>

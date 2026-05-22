@@ -156,25 +156,11 @@ namespace detail {
         [[nodiscard]] object_save_database apply_recipes(recipe_save_database&& recipes);
     };
 
-    using scene_entity_save_database = std::unordered_map<entt::entity, uint32>;
-    using scene_entity_load_database = std::unordered_map<uint32, entt::entity>;
-
-    struct scene_save_database {
-        std::unordered_map<const entt::registry*, uint32> scene_ids = {};
-        std::unordered_map<const entt::registry*, scene_entity_save_database> scene_entities = {};
-    };
-
-    struct scene_load_database {
-        std::unordered_map<uint32, entt::registry*> scenes = {};
-        std::unordered_map<uint32, scene_entity_load_database> scene_entities = {};
-
-        [[nodiscard]] entt::registry* get_registry(const uint32 scene_id) const;
-        [[nodiscard]] entt::entity get_entity(const uint32 scene_id, const uint32 entity_id) const;
-    };
-
     struct scene_database {
-        scene_save_database save_database = {};
-        scene_load_database load_database = {};
+        std::unordered_map<const entt::registry*, uint32> save_map_scene_ids = {};
+        std::unordered_map<const entt::registry*, std::unordered_map<entt::entity, uint32>> save_map_scene_entities = {};
+        std::unordered_map<uint32, entt::registry*> load_map_scenes = {};
+        std::unordered_map<uint32, std::unordered_map<uint32, entt::entity>> load_map_scene_entities = {};
         implementation_save_database* objects_save_database = nullptr;
     };
 
