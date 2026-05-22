@@ -7,6 +7,7 @@
 #include <lucaria/bin/geometry_data.hpp>
 #include <lucaria/bin/path_data.hpp>
 #include <lucaria/core/resource.hpp>
+#include <lucaria/core/refcount.hpp>
 #include <lucaria/core/workaround.hpp>
 
 namespace lucaria {
@@ -81,11 +82,19 @@ struct geometry_object {
     [[nodiscard]] explicit operator bool() const;
 
 private:
+    detail::refcount_flag _refcount = {};
+    detail::implementation_manager<detail::geometry_implementation>* _manager = nullptr;
     detail::implementation_container<detail::geometry_implementation>* _resource = nullptr;
-    explicit geometry_object(detail::implementation_container<detail::geometry_implementation>* resource);
+    
+	template <typename ArchiveType>
+    void save(ArchiveType& archive) const;
+    template <typename ArchiveType>
+    void load(ArchiveType& archive);
+
     friend struct detail::rendering_system;
     friend struct shape_object;
     friend struct spatial_interface_component;
+	friend class cereal::access;
 };
 
 }

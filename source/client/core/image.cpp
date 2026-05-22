@@ -179,11 +179,13 @@ image_object image_object::fetch(
     const std::optional<std::filesystem::path>& etc2_path,
     const std::optional<std::filesystem::path>& s3tc_path)
 {
-    detail::implementation_container<detail::image_implementation>* _resource = detail::engine_resources().images.get_or_create_by_path(path, [&] {
+	image_object _image = {};
+    _image._resource = detail::engine_resources().images.get_or_create_by_path(path, [&] {
         return detail::_fetch_image_async(path, etc2_path, s3tc_path);
     });
-
-    return image_object { _resource };
+    _image._manager = &detail::engine_resources().images;
+    _image._refcount.emplace();
+    return _image;
 }
 
 bool image_object::has_value() const
@@ -194,11 +196,6 @@ bool image_object::has_value() const
 image_object::operator bool() const
 {
     return has_value();
-}
-
-image_object::image_object(detail::implementation_container<detail::image_implementation>* resource)
-    : _resource(resource)
-{
 }
 
 }

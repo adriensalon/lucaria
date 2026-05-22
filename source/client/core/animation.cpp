@@ -78,11 +78,13 @@ animation_object::~animation_object()
 
 animation_object animation_object::fetch(const std::filesystem::path& path)
 {
-    detail::implementation_container<detail::animation_implementation>* _resource = detail::engine_resources().animations.get_or_create_by_path(path, [&] {
+    animation_object _animation = {};
+    _animation._resource = detail::engine_resources().animations.get_or_create_by_path(path, [&] {
         return detail::_fetch_animation_async(path);
     });
-
-    return animation_object { _resource };
+    _animation._manager = &detail::engine_resources().animations;
+    _animation._refcount.emplace();
+    return _animation;
 }
 
 bool animation_object::has_value() const
@@ -93,11 +95,6 @@ bool animation_object::has_value() const
 animation_object::operator bool() const
 {
     return has_value();
-}
-
-animation_object::animation_object(detail::implementation_container<detail::animation_implementation>* resource)
-    : _resource(resource)
-{
 }
 
 }

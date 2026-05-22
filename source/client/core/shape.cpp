@@ -102,25 +102,29 @@ namespace detail {
 
         } else if (_shape.origin == shape_origin::box) {
             btBoxShape* _casted_shape = static_cast<btBoxShape*>(_shape.collision_shape.get());
-            return shape_box_recipe { 
-				convert(_casted_shape->getHalfExtentsWithoutMargin()) };
+            return shape_box_recipe {
+                convert(_casted_shape->getHalfExtentsWithoutMargin())
+            };
 
         } else if (_shape.origin == shape_origin::sphere) {
             btSphereShape* _casted_shape = static_cast<btSphereShape*>(_shape.collision_shape.get());
-            return shape_sphere_recipe { 
-				static_cast<float32>(_casted_shape->getRadius()) };
+            return shape_sphere_recipe {
+                static_cast<float32>(_casted_shape->getRadius())
+            };
 
         } else if (_shape.origin == shape_origin::capsule) {
             btCapsuleShape* _casted_shape = static_cast<btCapsuleShape*>(_shape.collision_shape.get());
-            return shape_capsule_recipe { 
-				static_cast<float32>(_casted_shape->getRadius()), 
-				2.f * static_cast<float32>(_casted_shape->getHalfHeight()) };
+            return shape_capsule_recipe {
+                static_cast<float32>(_casted_shape->getRadius()),
+                2.f * static_cast<float32>(_casted_shape->getHalfHeight())
+            };
 
         } else if (_shape.origin == shape_origin::cone) {
             btConeShape* _casted_shape = static_cast<btConeShape*>(_shape.collision_shape.get());
-			return shape_cone_recipe { 
-				static_cast<float32>(_casted_shape->getRadius()), 
-				static_cast<float32>(_casted_shape->getHeight()) };
+            return shape_cone_recipe {
+                static_cast<float32>(_casted_shape->getRadius()),
+                static_cast<float32>(_casted_shape->getHeight())
+            };
         }
 
         else {
@@ -133,48 +137,72 @@ namespace detail {
 
 shape_object shape_object::create(const geometry_object geometry, const detail::shape_algorithm algorithm)
 {
-    return shape_object { detail::engine_resources().shapes.create_cell(
+    shape_object _shape = {};
+    _shape._resource = detail::engine_resources().shapes.create_cell(
         detail::async_container<detail::shape_implementation>(
-            detail::shape_implementation(geometry._resource->fetched.value(), algorithm))) };
+            detail::shape_implementation(geometry._resource->fetched.value(), algorithm)));
+    _shape._manager = &detail::engine_resources().shapes;
+    _shape._refcount.emplace();
+    return _shape;
 }
 
 shape_object shape_object::create_box(const glm::vec3& half_extents)
 {
-    return shape_object { detail::engine_resources().shapes.create_cell(
+    shape_object _shape = {};
+    _shape._resource = detail::engine_resources().shapes.create_cell(
         detail::async_container<detail::shape_implementation>(
             detail::shape_implementation(
-                new btBoxShape(convert_bullet(half_extents)), half_extents.z))) };
+                new btBoxShape(convert_bullet(half_extents)), half_extents.z)));
+    _shape._manager = &detail::engine_resources().shapes;
+    _shape._refcount.emplace();
+    return _shape;
 }
 
 shape_object shape_object::create_sphere(const glm::float32 radius)
 {
-    return shape_object { detail::engine_resources().shapes.create_cell(
+    shape_object _shape = {};
+    _shape._resource = detail::engine_resources().shapes.create_cell(
         detail::async_container<detail::shape_implementation>(
             detail::shape_implementation(
-                new btSphereShape(static_cast<btScalar>(radius)), radius))) };
+                new btSphereShape(static_cast<btScalar>(radius)), radius)));
+    _shape._manager = &detail::engine_resources().shapes;
+    _shape._refcount.emplace();
+    return _shape;
 }
 
 shape_object shape_object::create_capsule(const glm::float32 radius, const glm::float32 height)
 {
-    return shape_object { detail::engine_resources().shapes.create_cell(
+    shape_object _shape = {};
+    _shape._resource = detail::engine_resources().shapes.create_cell(
         detail::async_container<detail::shape_implementation>(
             detail::shape_implementation(
-                new btCapsuleShape(static_cast<btScalar>(radius), static_cast<btScalar>(height)), radius + height * 0.5f))) };
+                new btCapsuleShape(static_cast<btScalar>(radius), static_cast<btScalar>(height)), radius + height * 0.5f)));
+    _shape._manager = &detail::engine_resources().shapes;
+    _shape._refcount.emplace();
+    return _shape;
 }
 
 shape_object shape_object::create_cone(const glm::float32 radius, const glm::float32 height)
 {
-    return shape_object { detail::engine_resources().shapes.create_cell(
+    shape_object _shape = {};
+    _shape._resource = detail::engine_resources().shapes.create_cell(
         detail::async_container<detail::shape_implementation>(
             detail::shape_implementation(
-                new btConeShape(static_cast<btScalar>(radius), static_cast<btScalar>(height)), height * 0.5f))) };
+                new btConeShape(static_cast<btScalar>(radius), static_cast<btScalar>(height)), height * 0.5f)));
+    _shape._manager = &detail::engine_resources().shapes;
+    _shape._refcount.emplace();
+    return _shape;
 }
 
 shape_object shape_object::fetch(const std::filesystem::path& path, const detail::shape_algorithm algorithm)
 {
-    return shape_object { detail::engine_resources().shapes.get_or_create_by_path(path, [&] {
+    shape_object _shape = {};
+    _shape._resource = detail::engine_resources().shapes.get_or_create_by_path(path, [&] {
         return detail::_fetch_shape_async(path, algorithm);
-    }) };
+    });
+    _shape._manager = &detail::engine_resources().shapes;
+    _shape._refcount.emplace();
+    return _shape;
 }
 
 [[nodiscard]] bool shape_object::has_value() const
@@ -185,11 +213,6 @@ shape_object shape_object::fetch(const std::filesystem::path& path, const detail
 [[nodiscard]] shape_object::operator bool() const
 {
     return has_value();
-}
-
-shape_object::shape_object(detail::implementation_container<detail::shape_implementation>* resource)
-    : _resource(resource)
-{
 }
 
 }

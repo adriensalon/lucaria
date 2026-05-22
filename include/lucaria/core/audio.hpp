@@ -80,7 +80,13 @@ private:
     detail::refcount_flag _refcount = {};
     detail::implementation_manager<detail::audio_implementation>* _manager = nullptr;
     detail::implementation_container<detail::audio_implementation>* _resource = nullptr;
-    explicit audio_object(detail::implementation_container<detail::audio_implementation>* resource);
+    
+	template <typename ArchiveType>
+    void save(ArchiveType& archive) const;
+    template <typename ArchiveType>
+    void load(ArchiveType& archive);
+
+	friend class cereal::access;
 };
 
 }

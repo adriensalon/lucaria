@@ -70,9 +70,17 @@ struct sound_track_object {
     [[nodiscard]] explicit operator bool() const;
 
 private:
+    detail::refcount_flag _refcount = {};
+    detail::implementation_manager<detail::sound_track_implementation>* _manager = nullptr;
     detail::implementation_container<detail::sound_track_implementation>* _resource = nullptr;
-    explicit sound_track_object(detail::implementation_container<detail::sound_track_implementation>* resource);
-    friend struct speaker_component;
+
+    template <typename ArchiveType>
+    void save(ArchiveType& archive) const;
+    template <typename ArchiveType>
+    void load(ArchiveType& archive);
+
+	friend struct speaker_component;
+	friend class cereal::access;
 };
 
 }

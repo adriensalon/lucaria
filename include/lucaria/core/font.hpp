@@ -72,7 +72,13 @@ private:
     detail::refcount_flag _refcount = {};
     detail::implementation_manager<detail::font_implementation>* _manager = nullptr;
     detail::implementation_container<detail::font_implementation>* _resource = nullptr;
-    explicit font_object(detail::implementation_container<detail::font_implementation>* resource);
+    
+	template <typename ArchiveType>
+    void save(ArchiveType& archive) const;
+    template <typename ArchiveType>
+    void load(ArchiveType& archive);
+
+	friend class cereal::access;
 };
 
 }

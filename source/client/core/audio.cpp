@@ -171,11 +171,13 @@ audio_object::~audio_object()
 
 audio_object audio_object::fetch(const std::filesystem::path& path)
 {
-    detail::implementation_container<detail::audio_implementation>* _resource = detail::engine_resources().audios.get_or_create_by_path(path, [&] {
+	audio_object _audio = {};
+    _audio._resource = detail::engine_resources().audios.get_or_create_by_path(path, [&] {
         return detail::_fetch_audio_async(path);
     });
-
-    return audio_object { _resource };
+    _audio._manager = &detail::engine_resources().audios;
+    _audio._refcount.emplace();
+    return _audio;
 }
 
 bool audio_object::has_value() const
@@ -186,11 +188,6 @@ bool audio_object::has_value() const
 audio_object::operator bool() const
 {
     return has_value();
-}
-
-audio_object::audio_object(detail::implementation_container<detail::audio_implementation>* resource)
-    : _resource(resource)
-{
 }
 
 }

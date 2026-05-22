@@ -70,9 +70,15 @@ private:
     detail::refcount_flag _refcount = {};
     detail::implementation_manager<detail::animation_implementation>* _manager = nullptr;
     detail::implementation_container<detail::animation_implementation>* _resource = nullptr;
-    explicit animation_object(detail::implementation_container<detail::animation_implementation>* cell);
-    friend struct detail::motion_system;
+    
+	template <typename ArchiveType>
+    void save(ArchiveType& archive) const;
+    template <typename ArchiveType>
+    void load(ArchiveType& archive);
+    
+	friend struct detail::motion_system;
     friend struct animator_component;
+	friend class cereal::access;
 };
 
 }

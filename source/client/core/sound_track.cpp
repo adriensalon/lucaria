@@ -74,11 +74,13 @@ namespace detail {
 
 sound_track_object sound_track_object::fetch(const std::filesystem::path& path)
 {
-    detail::implementation_container<detail::sound_track_implementation>* _resource = detail::engine_resources().sound_tracks.get_or_create_by_path(path, [&] {
+	sound_track_object _sound_track = {};
+    _sound_track._resource = detail::engine_resources().sound_tracks.get_or_create_by_path(path, [&] {
         return detail::_fetch_sound_track_async(path);
     });
-
-    return sound_track_object { _resource };
+    _sound_track._manager = &detail::engine_resources().sound_tracks;
+    _sound_track._refcount.emplace();
+    return _sound_track;
 }
 
 bool sound_track_object::has_value() const
@@ -89,11 +91,6 @@ bool sound_track_object::has_value() const
 sound_track_object::operator bool() const
 {
     return has_value();
-}
-
-sound_track_object::sound_track_object(detail::implementation_container<detail::sound_track_implementation>* resource)
-    : _resource(resource)
-{
 }
 
 }

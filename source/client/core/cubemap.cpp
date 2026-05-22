@@ -80,11 +80,13 @@ cubemap_object cubemap_object::fetch(
     const std::optional<std::array<std::filesystem::path, 6>>& etc2_paths,
     const std::optional<std::array<std::filesystem::path, 6>>& s3tc_paths)
 {
-    detail::implementation_container<detail::cubemap_implementation>* _resource = detail::engine_resources().cubemaps.get_or_create_by_path(data_paths[0], [&] {
+	cubemap_object _cubemap = {};
+    _cubemap._resource = detail::engine_resources().cubemaps.get_or_create_by_path(data_paths[0], [&] {
         return detail::_fetch_cubemap_async(data_paths, etc2_paths, s3tc_paths);
     });
-
-    return cubemap_object { _resource };
+    _cubemap._manager = &detail::engine_resources().cubemaps;
+    _cubemap._refcount.emplace();
+    return _cubemap;
 }
 
 bool cubemap_object::has_value() const
@@ -97,8 +99,4 @@ cubemap_object::operator bool() const
     return has_value();
 }
 
-cubemap_object::cubemap_object(detail::implementation_container<detail::cubemap_implementation>* resource)
-    : _resource(resource)
-{
-}
 }

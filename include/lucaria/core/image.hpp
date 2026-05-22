@@ -10,6 +10,7 @@
 
 #include <lucaria/bin/image_data.hpp>
 #include <lucaria/bin/path_data.hpp>
+#include <lucaria/core/refcount.hpp>
 #include <lucaria/core/resource.hpp>
 #include <lucaria/core/workaround.hpp>
 
@@ -114,9 +115,17 @@ struct image_object {
     [[nodiscard]] glm::uvec2 get_size() const;
 
 private:
+    detail::refcount_flag _refcount = {};
+    detail::implementation_manager<detail::image_implementation>* _manager = nullptr;
     detail::implementation_container<detail::image_implementation>* _resource = nullptr;
-    explicit image_object(detail::implementation_container<detail::image_implementation>* resource);
+
+    template <typename ArchiveType>
+    void save(ArchiveType& archive) const;
+    template <typename ArchiveType>
+    void load(ArchiveType& archive);
+
     friend struct object_context;
+	friend class cereal::access;
 };
 
 }

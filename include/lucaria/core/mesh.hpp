@@ -3,6 +3,7 @@
 #include <lucaria/bin/math_data.hpp>
 #include <lucaria/core/geometry.hpp>
 #include <lucaria/core/math.hpp>
+#include <lucaria/core/refcount.hpp>
 #include <lucaria/core/resource.hpp>
 
 #if defined(LUCARIA_BACKEND_OPENGL)
@@ -104,9 +105,17 @@ struct mesh_object {
     [[nodiscard]] explicit operator bool() const;
 
 private:
+    detail::refcount_flag _refcount = {};
+    detail::implementation_manager<detail::mesh_implementation>* _manager = nullptr;
     detail::implementation_container<detail::mesh_implementation>* _resource = nullptr;
-    explicit mesh_object(detail::implementation_container<detail::mesh_implementation>* resource);
+
+    template <typename ArchiveType>
+    void save(ArchiveType& archive) const;
+    template <typename ArchiveType>
+    void load(ArchiveType& archive);
+
     friend struct detail::rendering_system;
+	friend class cereal::access;
 };
 
 // Internal definitions

@@ -78,7 +78,7 @@ private:
     template <typename ArchiveType>
     void serialize(ArchiveType& archive)
     {
-        // archive(cereal::make_nvp("mesh_reference", _mesh));
+        archive(cereal::make_nvp("mesh_reference", _mesh));
         archive(cereal::make_nvp("color_reference", _color));
     }
 

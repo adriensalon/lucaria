@@ -103,8 +103,14 @@ private:
     detail::refcount_flag _refcount = {};
     detail::implementation_manager<detail::cubemap_implementation>* _manager = nullptr;
     detail::implementation_container<detail::cubemap_implementation>* _resource = nullptr;
-    explicit cubemap_object(detail::implementation_container<detail::cubemap_implementation>* resource);
+    
+	template <typename ArchiveType>
+    void save(ArchiveType& archive) const;
+    template <typename ArchiveType>
+    void load(ArchiveType& archive);
+
     friend struct detail::rendering_system;
+	friend class cereal::access;
 };
 
 }

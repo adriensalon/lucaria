@@ -71,11 +71,13 @@ namespace detail {
 
 skeleton_object skeleton_object::fetch(const std::filesystem::path& path)
 {
-    detail::implementation_container<detail::skeleton_implementation>* _resource = detail::engine_resources().skeletons.get_or_create_by_path(path, [&] {
+	skeleton_object _skeleton = {};
+    _skeleton._resource = detail::engine_resources().skeletons.get_or_create_by_path(path, [&] {
         return detail::_fetch_skeleton_async(path);
     });
-
-    return skeleton_object { _resource };
+    _skeleton._manager = &detail::engine_resources().skeletons;
+    _skeleton._refcount.emplace();
+    return _skeleton;
 }
 
 bool skeleton_object::has_value() const
@@ -86,11 +88,6 @@ bool skeleton_object::has_value() const
 skeleton_object::operator bool() const
 {
     return has_value();
-}
-
-skeleton_object::skeleton_object(detail::implementation_container<detail::skeleton_implementation>* resource)
-    : _resource(resource)
-{
 }
 
 }

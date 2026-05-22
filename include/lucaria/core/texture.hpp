@@ -5,8 +5,6 @@
 #include <lucaria/bin/math_data.hpp>
 #include <lucaria/core/image.hpp>
 #include <lucaria/core/math.hpp>
-#include <lucaria/core/refcount.hpp>
-#include <lucaria/core/resource.hpp>
 
 #if defined(LUCARIA_BACKEND_OPENGL)
 #include <lucaria/core/backend/opengl/texture_opengl.hpp>

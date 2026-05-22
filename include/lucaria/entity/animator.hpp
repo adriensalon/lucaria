@@ -14,8 +14,8 @@
 
 namespace lucaria {
 namespace detail {
-	struct motion_system;
-	struct rendering_system;
+    struct motion_system;
+    struct rendering_system;
 }
 
 /// @brief
@@ -69,8 +69,18 @@ private:
     glm::float32 _last_time_ratio = 0.f;
     bool _has_looped = false;
     std::unordered_map<std::string, std::function<void()>> _event_callbacks = {};
+
+    template <typename ArchiveType>
+    void serialize(ArchiveType& archive)
+    {
+        archive(cereal::make_nvp("_is_playing", _is_playing));
+        archive(cereal::make_nvp("_is_looping", _is_looping));
+		// etc
+    }
+
     friend struct detail::motion_system;
     friend struct animator_component;
+	friend class cereal::access;
 };
 
 /// @brief

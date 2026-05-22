@@ -92,11 +92,13 @@ namespace detail {
 
 motion_track_object motion_track_object::fetch(const std::filesystem::path& path)
 {
-    detail::implementation_container<detail::motion_track_implementation>* _resource = detail::engine_resources().motion_tracks.get_or_create_by_path(path, [&] {
+	motion_track_object _motion_track = {};
+    _motion_track._resource = detail::engine_resources().motion_tracks.get_or_create_by_path(path, [&] {
         return detail::_fetch_motion_track_async(path);
     });
-
-    return motion_track_object { _resource };
+    _motion_track._manager = &detail::engine_resources().motion_tracks;
+    _motion_track._refcount.emplace();
+    return _motion_track;
 }
 
 bool motion_track_object::has_value() const
@@ -107,11 +109,6 @@ bool motion_track_object::has_value() const
 motion_track_object::operator bool() const
 {
     return has_value();
-}
-
-motion_track_object::motion_track_object(detail::implementation_container<detail::motion_track_implementation>* resource)
-    : _resource(resource)
-{
 }
 
 }

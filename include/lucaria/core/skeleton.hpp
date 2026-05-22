@@ -67,10 +67,18 @@ struct skeleton_object {
     [[nodiscard]] explicit operator bool() const;
 
 private:
+    detail::refcount_flag _refcount = {};
+    detail::implementation_manager<detail::skeleton_implementation>* _manager = nullptr;
     detail::implementation_container<detail::skeleton_implementation>* _resource = nullptr;
-    explicit skeleton_object(detail::implementation_container<detail::skeleton_implementation>* resource);
+
+    template <typename ArchiveType>
+    void save(ArchiveType& archive) const;
+    template <typename ArchiveType>
+    void load(ArchiveType& archive);
+
     friend struct detail::motion_system;
     friend struct animator_component;
+	friend class cereal::access;
 };
 
 }

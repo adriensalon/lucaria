@@ -69,11 +69,13 @@ namespace detail {
 
 geometry_object geometry_object::fetch(const std::filesystem::path& path)
 {
-    detail::implementation_container<detail::geometry_implementation>* _resource = detail::engine_resources().geometries.get_or_create_by_path(path, [&] {
+	geometry_object _geometry = {};
+    _geometry._resource = detail::engine_resources().geometries.get_or_create_by_path(path, [&] {
         return detail::_fetch_geometry_async(path);
     });
-
-    return geometry_object { _resource };
+    _geometry._manager = &detail::engine_resources().geometries;
+    _geometry._refcount.emplace();
+    return _geometry;
 }
 
 bool geometry_object::has_value() const
@@ -86,8 +88,4 @@ geometry_object::operator bool() const
     return has_value();
 }
 
-geometry_object::geometry_object(detail::implementation_container<detail::geometry_implementation>* resource)
-    : _resource(resource)
-{
-}
 }

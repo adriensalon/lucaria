@@ -32,7 +32,26 @@ private:
     std::unique_ptr<btRigidBody> _rigidbody = nullptr;
     std::int16_t _group = 0;
     std::int16_t _mask = 0;
+
+    template <typename Archive>
+    void save(Archive& archive) const
+    {
+        archive(cereal::make_nvp("shape", _shape));
+        archive(cereal::make_nvp("group", _group));
+        archive(cereal::make_nvp("mask", _mask));
+    }
+
+    template <typename Archive>
+    void load(Archive& archive)
+    {
+        archive(cereal::make_nvp("shape", _shape));
+        archive(cereal::make_nvp("group", _group));
+        archive(cereal::make_nvp("mask", _mask));
+        use_shape(_shape);
+    }
+
     friend struct detail::dynamics_system;
+    friend class cereal::access;
 };
 
 struct kinematic_rigidbody_component {
@@ -60,7 +79,30 @@ private:
     std::vector<collision> _collisions = {};
     glm::vec3 _translation_speed = glm::vec3(0);
     glm::vec3 _rotation_speed = glm::vec3(0);
+
+    template <typename Archive>
+    void save(Archive& archive) const
+    {
+        archive(cereal::make_nvp("shape", _shape));
+        archive(cereal::make_nvp("group", _group));
+        archive(cereal::make_nvp("mask", _mask));
+        archive(cereal::make_nvp("translation_speed", _translation_speed));
+        archive(cereal::make_nvp("rotation_speed", _rotation_speed));
+    }
+
+    template <typename Archive>
+    void load(Archive& archive)
+    {
+        archive(cereal::make_nvp("shape", _shape));
+        archive(cereal::make_nvp("group", _group));
+        archive(cereal::make_nvp("mask", _mask));
+        archive(cereal::make_nvp("translation_speed", _translation_speed));
+        archive(cereal::make_nvp("rotation_speed", _rotation_speed));
+        use_shape(_shape);
+    }
+
     friend struct detail::dynamics_system;
+    friend class cereal::access;
 };
 
 struct dynamic_rigidbody_component {
@@ -116,8 +158,69 @@ private:
     glm::vec3 _last_position = glm::vec3(0);
     glm::vec3 _translation_speed = glm::vec3(0);
     glm::vec3 _rotation_speed = glm::vec3(0);
+
+    template <typename Archive>
+    void save(Archive& archive) const
+    {
+        archive(cereal::make_nvp("shape", _shape));
+        archive(cereal::make_nvp("group", _group));
+        archive(cereal::make_nvp("mask", _mask));
+		archive(cereal::make_nvp("mass", _mass));
+        archive(cereal::make_nvp("friction", _friction));
+        archive(cereal::make_nvp("linear_kp", _linear_kp));
+        archive(cereal::make_nvp("linear_kd", _linear_kd));
+        archive(cereal::make_nvp("linear_max_force", _linear_max_force));
+        archive(cereal::make_nvp("angular_kp", _angular_kp));
+        archive(cereal::make_nvp("angular_kd", _angular_kd));
+        archive(cereal::make_nvp("angular_max_force", _angular_max_force));
+        archive(cereal::make_nvp("angular_airborne_scale", _angular_airborne_scale));
+        archive(cereal::make_nvp("angular_factor", _angular_factor));
+        archive(cereal::make_nvp("target_linear_position", _target_linear_position));
+        archive(cereal::make_nvp("target_angular_position", _target_angular_position));
+        archive(cereal::make_nvp("target_linear_velocity", _target_linear_velocity));
+        archive(cereal::make_nvp("target_angular_velocity", _target_angular_velocity));
+        archive(cereal::make_nvp("linear_forces", _linear_forces));
+        archive(cereal::make_nvp("angular_forces", _angular_forces));
+        archive(cereal::make_nvp("linear_impulses", _linear_impulses));
+        archive(cereal::make_nvp("angular_impulses", _angular_impulses));
+        archive(cereal::make_nvp("last_position", _last_position));
+        archive(cereal::make_nvp("translation_speed", _translation_speed));
+        archive(cereal::make_nvp("rotation_speed", _rotation_speed));
+    }
+
+    template <typename Archive>
+    void load(Archive& archive)
+    {
+        archive(cereal::make_nvp("shape", _shape));
+        archive(cereal::make_nvp("group", _group));
+        archive(cereal::make_nvp("mask", _mask));
+		archive(cereal::make_nvp("mass", _mass));
+        archive(cereal::make_nvp("friction", _friction));
+        archive(cereal::make_nvp("linear_kp", _linear_kp));
+        archive(cereal::make_nvp("linear_kd", _linear_kd));
+        archive(cereal::make_nvp("linear_max_force", _linear_max_force));
+        archive(cereal::make_nvp("angular_kp", _angular_kp));
+        archive(cereal::make_nvp("angular_kd", _angular_kd));
+        archive(cereal::make_nvp("angular_max_force", _angular_max_force));
+        archive(cereal::make_nvp("angular_airborne_scale", _angular_airborne_scale));
+        archive(cereal::make_nvp("angular_factor", _angular_factor));
+        archive(cereal::make_nvp("target_linear_position", _target_linear_position));
+        archive(cereal::make_nvp("target_angular_position", _target_angular_position));
+        archive(cereal::make_nvp("target_linear_velocity", _target_linear_velocity));
+        archive(cereal::make_nvp("target_angular_velocity", _target_angular_velocity));
+        archive(cereal::make_nvp("linear_forces", _linear_forces));
+        archive(cereal::make_nvp("angular_forces", _angular_forces));
+        archive(cereal::make_nvp("linear_impulses", _linear_impulses));
+        archive(cereal::make_nvp("angular_impulses", _angular_impulses));
+        archive(cereal::make_nvp("last_position", _last_position));
+        archive(cereal::make_nvp("translation_speed", _translation_speed));
+        archive(cereal::make_nvp("rotation_speed", _rotation_speed));
+        use_shape(_shape);
+    }
+
     friend struct detail::motion_system;
     friend struct detail::dynamics_system;
+	friend class cereal::access;
 };
 
 }

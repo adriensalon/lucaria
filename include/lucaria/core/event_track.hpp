@@ -71,9 +71,15 @@ private:
     detail::refcount_flag _refcount = {};
     detail::implementation_manager<detail::event_track_implementation>* _manager = nullptr;
     detail::implementation_container<detail::event_track_implementation>* _resource = nullptr;
-    explicit event_track_object(detail::implementation_container<detail::event_track_implementation>* resource);
-    friend struct detail::motion_system;
+    
+	template <typename ArchiveType>
+    void save(ArchiveType& archive) const;
+    template <typename ArchiveType>
+    void load(ArchiveType& archive);
+
+	friend struct detail::motion_system;
     friend struct animator_component;
+	friend class cereal::access;
 };
 
 }

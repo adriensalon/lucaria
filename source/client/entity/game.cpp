@@ -63,10 +63,16 @@ void game_context::save_snapshot(const std::filesystem::path& path)
         detail::scene_save& _scene_save = _scene_saves.emplace_back();
         _scene_save.type_id = _scene.type_id;
         _scene_save.scene = &_scene;
-        _scene_save.transforms = detail::_save_component_group<transform_component>(_scene.components, _entity_ids);
-        _scene_save.unlit_models = detail::_save_component_group<unlit_model_component>(_scene.components, _entity_ids);
-        _scene_save.speakers = detail::_save_component_group<speaker_component>(_scene.components, _entity_ids);
-        _scene_save.dynamic_rigidbodies = detail::_save_component_group<dynamic_rigidbody_component>(_scene.components, _entity_ids);
+        _scene_save.components.animators = detail::_save_component_group<animator_component>(_scene.components, _entity_ids);
+        _scene_save.components.screen_interfaces = detail::_save_component_group<screen_interface_component>(_scene.components, _entity_ids);
+        _scene_save.components.spatial_interfaces = detail::_save_component_group<spatial_interface_component>(_scene.components, _entity_ids);
+        _scene_save.components.blockout_models = detail::_save_component_group<blockout_model_component>(_scene.components, _entity_ids);
+        _scene_save.components.unlit_models = detail::_save_component_group<unlit_model_component>(_scene.components, _entity_ids);
+        _scene_save.components.passive_rigidbodies = detail::_save_component_group<passive_rigidbody_component>(_scene.components, _entity_ids);
+        _scene_save.components.kinematic_rigidbodies = detail::_save_component_group<kinematic_rigidbody_component>(_scene.components, _entity_ids);
+        _scene_save.components.dynamic_rigidbodies = detail::_save_component_group<dynamic_rigidbody_component>(_scene.components, _entity_ids);
+        _scene_save.components.speakers = detail::_save_component_group<speaker_component>(_scene.components, _entity_ids);
+        _scene_save.components.transforms = detail::_save_component_group<transform_component>(_scene.components, _entity_ids);
     }
     _archive(cereal::make_nvp("scenes", _scene_saves));
     detail::engine_scene_database().objects_save_database = nullptr;

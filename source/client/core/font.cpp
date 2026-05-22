@@ -86,11 +86,13 @@ font_object::~font_object()
 
 font_object font_object::fetch(const std::filesystem::path& path, const float32 font_size)
 {
-    detail::implementation_container<detail::font_implementation>* _resource = detail::engine_resources().fonts.get_or_create_by_path(path, [&] {
+	font_object _font = {};
+    _font._resource = detail::engine_resources().fonts.get_or_create_by_path(path, [&] {
         return detail::_fetch_font_async(path, font_size);
     });
-
-    return font_object { _resource };
+    _font._manager = &detail::engine_resources().fonts;
+    _font._refcount.emplace();
+    return _font;
 }
 
 bool font_object::has_value() const
@@ -110,11 +112,6 @@ ImFont* font_object::imgui_font() const
     }
 
     return _resource->fetched.value().font;
-}
-
-font_object::font_object(detail::implementation_container<detail::font_implementation>* resource)
-    : _resource(resource)
-{
 }
 
 }

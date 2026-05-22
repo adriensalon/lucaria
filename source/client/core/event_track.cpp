@@ -81,11 +81,13 @@ event_track_object::~event_track_object()
 
 event_track_object event_track_object::fetch(const std::filesystem::path& path)
 {
-    detail::implementation_container<detail::event_track_implementation>* _resource = detail::engine_resources().event_tracks.get_or_create_by_path(path, [&] {
+	event_track_object _event_track = {};
+    _event_track._resource = detail::engine_resources().event_tracks.get_or_create_by_path(path, [&] {
         return detail::_fetch_event_track_async(path);
     });
-
-    return event_track_object { _resource };
+    _event_track._manager = &detail::engine_resources().event_tracks;
+    _event_track._refcount.emplace();
+    return _event_track;
 }
 
 bool event_track_object::has_value() const
@@ -96,11 +98,6 @@ bool event_track_object::has_value() const
 event_track_object::operator bool() const
 {
     return has_value();
-}
-
-event_track_object::event_track_object(detail::implementation_container<detail::event_track_implementation>* resource)
-    : _resource(resource)
-{
 }
 
 }

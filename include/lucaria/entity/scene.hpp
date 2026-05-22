@@ -71,23 +71,44 @@ namespace detail {
         }
     };
 
+	struct scene_components_save {
+		std::vector<component_save_entry<animator_component>> animators = {};
+        std::vector<component_save_entry<screen_interface_component>> screen_interfaces = {};
+        std::vector<component_save_entry<spatial_interface_component>> spatial_interfaces = {};
+        std::vector<component_save_entry<blockout_model_component>> blockout_models = {};
+        std::vector<component_save_entry<unlit_model_component>> unlit_models = {};
+        std::vector<component_save_entry<passive_rigidbody_component>> passive_rigidbodies = {};
+        std::vector<component_save_entry<kinematic_rigidbody_component>> kinematic_rigidbodies = {};
+        std::vector<component_save_entry<dynamic_rigidbody_component>> dynamic_rigidbodies = {};
+        std::vector<component_save_entry<speaker_component>> speakers = {};
+        std::vector<component_save_entry<transform_component>> transforms = {};
+
+		template <typename ArchiveType>
+        void serialize(ArchiveType& archive)
+        {
+            // archive(cereal::make_nvp("animators", animators));
+            // archive(cereal::make_nvp("screen_interfaces", screen_interfaces));
+            // archive(cereal::make_nvp("spatial_interfaces", spatial_interfaces));
+            // archive(cereal::make_nvp("blockout_models", blockout_models));
+            archive(cereal::make_nvp("unlit_models", unlit_models));
+            archive(cereal::make_nvp("passive_rigidbodies", passive_rigidbodies));
+            archive(cereal::make_nvp("kinematic_rigidbodies", kinematic_rigidbodies));
+            archive(cereal::make_nvp("dynamic_rigidbodies", dynamic_rigidbodies));
+            // archive(cereal::make_nvp("speakers", speakers));
+            // archive(cereal::make_nvp("transforms", transforms));
+        }
+	};
+
     struct scene_save {
-        std::string type_id;
-        std::vector<component_save_entry<transform_component>> transforms;
-        std::vector<component_save_entry<unlit_model_component>> unlit_models;
-        std::vector<component_save_entry<speaker_component>> speakers;
-        std::vector<component_save_entry<dynamic_rigidbody_component>> dynamic_rigidbodies;
+        std::string type_id = {};
+        scene_components_save components = {};
         scene_implementation* scene = nullptr;
 
         template <typename ArchiveType>
         void save(ArchiveType& archive) const
         {
             archive(cereal::make_nvp("type_id", type_id));
-            // cereal::make_nvp("transforms", transforms),
-            archive(cereal::make_nvp("unlit_models", unlit_models));
-            // cereal::make_nvp("speakers", speakers),
-            // cereal::make_nvp("dynamic_rigidbodies", dynamic_rigidbodies)
-
+            archive(cereal::make_nvp("components", components));
             engine_scene_types().at(type_id).json_save(*scene, archive);
         }
 
@@ -95,11 +116,7 @@ namespace detail {
         void load(ArchiveType& archive)
         {
             archive(cereal::make_nvp("type_id", type_id));
-            // cereal::make_nvp("transforms", transforms),
-            archive(cereal::make_nvp("unlit_models", unlit_models));
-            // cereal::make_nvp("speakers", speakers),
-            // cereal::make_nvp("dynamic_rigidbodies", dynamic_rigidbodies)
-
+            archive(cereal::make_nvp("components", components));
             engine_scene_types().at(type_id).json_load(*scene, archive);
         }
     };

@@ -159,13 +159,21 @@ struct shape_object {
     [[nodiscard]] explicit operator bool() const;
 
 private:
+    detail::refcount_flag _refcount = {};
+    detail::implementation_manager<detail::shape_implementation>* _manager = nullptr;
     detail::implementation_container<detail::shape_implementation>* _resource = nullptr;
-    explicit shape_object(detail::implementation_container<detail::shape_implementation>* resource);
-    friend struct passive_rigidbody_component;
-    friend struct kinematic_rigidbody_component;
-    friend struct dynamic_rigidbody_component;
+
+    template <typename ArchiveType>
+    void save(ArchiveType& archive) const;
+    template <typename ArchiveType>
+    void load(ArchiveType& archive);
+
     friend struct detail::motion_system;
     friend struct detail::dynamics_system;
+	friend struct passive_rigidbody_component;
+    friend struct kinematic_rigidbody_component;
+    friend struct dynamic_rigidbody_component;
+	friend class cereal::access;
 };
 
 }

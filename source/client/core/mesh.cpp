@@ -43,11 +43,13 @@ namespace detail {
 
 mesh_object mesh_object::fetch(const std::filesystem::path& path)
 {
-    detail::implementation_container<detail::mesh_implementation>* _resource = detail::engine_resources().meshes.get_or_create_by_path(path, [&] {
+	mesh_object _mesh = {};
+    _mesh._resource = detail::engine_resources().meshes.get_or_create_by_path(path, [&] {
         return detail::_fetch_mesh_async(path);
     });
-
-    return mesh_object { _resource };
+    _mesh._manager = &detail::engine_resources().meshes;
+    _mesh._refcount.emplace();
+    return _mesh;
 }
 
 bool mesh_object::has_value() const
@@ -58,11 +60,6 @@ bool mesh_object::has_value() const
 mesh_object::operator bool() const
 {
     return has_value();
-}
-
-mesh_object::mesh_object(detail::implementation_container<detail::mesh_implementation>* resource)
-    : _resource(resource)
-{
 }
 
 }
