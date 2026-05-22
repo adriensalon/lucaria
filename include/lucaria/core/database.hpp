@@ -1,7 +1,10 @@
 #pragma once
 
+#include <unordered_map>
+
 #include <cereal/cereal.hpp>
 #include <cereal/types/vector.hpp>
+#include <entt/entt.hpp>
 
 #include <lucaria/core/animation.hpp>
 #include <lucaria/core/cubemap.hpp>
@@ -23,9 +26,25 @@ namespace detail {
         std::unordered_map<const implementation_container<ImplementationType>*, uint32> ids = {};
         uint32 next_id = 1;
 
+        [[nodiscard]] uint32 get(const implementation_container<ImplementationType>* resource) const
+        {
+            if (!resource) {
+                LUCARIA_RUNTIME_ERROR("Object implementation was nullptr");
+                return 0;
+            }
+
+            if (typename std::unordered_map<const implementation_container<ImplementationType>*, uint32>::const_iterator it = ids.find(resource); it != ids.end()) {
+                return it->second;
+            }
+
+            LUCARIA_RUNTIME_ERROR("Object was not registered before component recipe save");
+            return 0;
+        }
+
         [[nodiscard]] uint32 get_or_create(const implementation_container<ImplementationType>* resource)
         {
             if (!resource) {
+                LUCARIA_RUNTIME_ERROR("Object implementation was nullptr");
                 return 0;
             }
 
@@ -137,9 +156,54 @@ namespace detail {
         [[nodiscard]] object_save_database apply_recipes(recipe_save_database&& recipes);
     };
 
-    implementation_database& engine_resources();
+    using scene_entity_save_database = std::unordered_map<entt::entity, uint32>;
+    using scene_entity_load_database = std::unordered_map<uint32, entt::entity>;
+
+    struct scene_save_database {
+        std::unordered_map<const entt::registry*, uint32> scene_ids = {};
+        std::unordered_map<const entt::registry*, scene_entity_save_database> scene_entities = {};
+
+        [[nodiscard]] uint32 get_scene_id(const entt::registry* registry) const;
+        [[nodiscard]] uint32 get_entity_id(const entt::registry* registry, const entt::entity entity) const;
+    };
+
+    struct scene_load_database {
+        std::unordered_map<uint32, entt::registry*> scenes = {};
+        std::unordered_map<uint32, scene_entity_load_database> scene_entities = {};
+
+        [[nodiscard]] entt::registry* get_registry(const uint32 scene_id) const;
+        [[nodiscard]] entt::entity get_entity(const uint32 scene_id, const uint32 entity_id) const;
+    };
+
+    struct scene_database {
+        scene_save_database save_database = {};
+        scene_load_database load_database = {};
+        implementation_save_database* objects_save_database = nullptr;
+    };
+
+    [[nodiscard]] implementation_database& engine_resources();
+    [[nodiscard]] scene_database& engine_scene_database();
 
 }
+
+#define LUCARIA_DATABASE_OBJECT_SERIALIZATION_IMPLEMENTATION(ObjectName)                                        \
+    template <typename ArchiveType>                                                                                 \
+    void ObjectName##_object::save(ArchiveType& archive) const                                                      \
+    {                                                                                                           \
+        const uint32 _id = detail::engine_scene_database().objects_save_database->ObjectName##s.get(_resource); \
+        archive(cereal::make_nvp(#ObjectName "_reference", _id));                                               \
+    }                                                                                                           \
+    template <typename ArchiveType>                                                                                 \
+    void ObjectName##_object::load(ArchiveType& archive)                                                            \
+    {                                                                                                           \
+        uint32 _id = 0;                                                                                         \
+        archive(cereal::make_nvp(#ObjectName "_reference", _id));                                               \
+        _resource = detail::engine_scene_database().objects_save_database->ObjectName##s.get(_id);              \
+        _manager = &detail::engine_resources().ObjectName##s;                                                   \
+        _refcount.emplace();                                                                                    \
+    }
+
+LUCARIA_DATABASE_OBJECT_SERIALIZATION_IMPLEMENTATION(texture)
 
 struct object_context {
 

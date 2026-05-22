@@ -17,9 +17,13 @@
 #endif
 
 namespace lucaria {
+
+struct texture_object;
+
 namespace detail {
 
     struct rendering_system;
+    struct implementation_save_database;
 
     enum struct texture_origin {
         path,
@@ -90,6 +94,7 @@ namespace detail {
     using texture_recipe = std::variant<texture_path_recipe, texture_data_recipe, texture_size_recipe>;
 
     [[nodiscard]] texture_recipe make_recipe(const implementation_container<texture_implementation>& container);
+   
     // [[nodiscard]] resource_container<texture_implementation>& apply_recipe(implementation_manager<texture_implementation>& manager, texture_recipe&& recipe);
 
 }
@@ -133,8 +138,14 @@ private:
     detail::refcount_flag _refcount = {};
     detail::implementation_manager<detail::texture_implementation>* _manager = nullptr;
     detail::implementation_container<detail::texture_implementation>* _resource = nullptr;
-    explicit texture_object(detail::implementation_container<detail::texture_implementation>* resource);
+
+    template <typename ArchiveType>
+    void save(ArchiveType& archive) const;
+    template <typename ArchiveType>
+    void load(ArchiveType& archive);
+
     friend struct detail::rendering_system;
+	friend class cereal::access;
 };
 
 }

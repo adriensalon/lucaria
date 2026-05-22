@@ -3,7 +3,6 @@
 #include <lucaria/core/fetch.hpp>
 #include <lucaria/core/texture.hpp>
 
-
 namespace lucaria {
 
 extern const std::filesystem::path& _resolve_image_path(const std::filesystem::path& data_path, const std::optional<std::filesystem::path>& etc2_path, const std::optional<std::filesystem::path>& s3tc_path);
@@ -63,18 +62,24 @@ texture_object::~texture_object()
 
 texture_object texture_object::create(const uint32x2 size)
 {
-    return texture_object { detail::engine_resources().textures.create_cell(
+    texture_object _texture = {};
+    _texture._resource = detail::engine_resources().textures.create_cell(
         detail::async_container<detail::texture_implementation>(
-            detail::texture_implementation(size))) };
+            detail::texture_implementation(size)));
+    _texture._manager = &detail::engine_resources().textures;
+    _texture._refcount.emplace();
+    return _texture;
 }
 
 texture_object texture_object::fetch(const std::filesystem::path& path, const std::optional<std::filesystem::path>& etc2_path, const std::optional<std::filesystem::path>& s3tc_path)
 {
-    detail::implementation_container<detail::texture_implementation>* _resource = detail::engine_resources().textures.get_or_create_by_path(path, [&] {
+    texture_object _texture = {};
+    _texture._resource = detail::engine_resources().textures.get_or_create_by_path(path, [&] {
         return detail::_fetch_texture_async(path, etc2_path, s3tc_path);
     });
-
-    return texture_object { _resource };
+    _texture._manager = &detail::engine_resources().textures;
+    _texture._refcount.emplace();
+    return _texture;
 }
 
 bool texture_object::has_value() const
@@ -110,11 +115,6 @@ ImTextureID texture_object::imgui_texture() const
     }
 
     return static_cast<ImTextureID>(0);
-}
-
-texture_object::texture_object(detail::implementation_container<detail::texture_implementation>* resource)
-    : _resource(resource)
-{
 }
 
 }

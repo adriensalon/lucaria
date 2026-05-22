@@ -76,5 +76,11 @@ namespace detail {
         return _database;
     }
 
+    scene_database& engine_scene_database()
+    {
+        static scene_database _database = {};
+        return _database;
+    }
+
 }
 }
