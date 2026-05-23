@@ -1,9 +1,8 @@
 #pragma once
 
-#include <cereal/types/variant.hpp>
 #include <ozz/animation/runtime/animation.h>
 
-#include <lucaria/bin/path_data.hpp>
+#include <lucaria/bin/container_types.hpp>
 #include <lucaria/core/refcount.hpp>
 #include <lucaria/core/resource.hpp>
 #include <lucaria/core/workaround.hpp>

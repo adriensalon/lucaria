@@ -47,31 +47,30 @@ namespace detail {
         {
             const std::vector<uint8_t>& _content = *(reinterpret_cast<const std::vector<uint8_t>*>(&bytes));
             const uint32_t* _data32 = (uint32_t*)_content.data();
-            data.is_compressed_etc = false;
-            data.is_compressed_s3tc = false;
+            data.type = image_data_type::binary;
 
-            // S3TC compression
+            // PVR
             if (*_data32 == 0x03525650) {
                 switch (*(_data32 + 2)) {
                 case 7:
                     // std::cout << "PVR DXT1 RGB" << std::endl;
                     data.channels = 3;
-                    data.is_compressed_s3tc = true;
+                    data.type = image_data_type::s3tc_compressed;
                     break;
                 case 11:
                     // std::cout << "PVR DXT5 RGBA" << std::endl;
                     data.channels = 4;
-                    data.is_compressed_s3tc = true;
+                    data.type = image_data_type::s3tc_compressed;
                     break;
                 case 22:
                     // std::cout << "PVR ETC2 RGB" << std::endl;
                     data.channels = 3;
-                    data.is_compressed_etc = true;
+                    data.type = image_data_type::etc2_compressed;
                     break;
                 case 23:
                     // std::cout << "PVR ETC2 RGBA" << std::endl;
                     data.channels = 4;
-                    data.is_compressed_etc = true;
+                    data.type = image_data_type::etc2_compressed;
                     break;
                 default:
                     LUCARIA_RUNTIME_ERROR("Invalid S3TC image data")
@@ -84,18 +83,18 @@ namespace detail {
                 data.height = *(_data32 + 6);
                 data.width = *(_data32 + 7);
 
-                // ETC2 compression
+                // KTX
             } else if (*_data32 == 0x58544BAB) {
                 switch (*(_data32 + 7)) {
                 case 0x9274:
                     // std::cout << "KTX ETC2 RGB" << std::endl;
                     data.channels = 3;
-                    data.is_compressed_etc = true;
+                    data.type = image_data_type::etc2_compressed;
                     break;
                 case 0x9278:
                     // std::cout << "KTX ETC2 RGBA" << std::endl;
                     data.channels = 4;
-                    data.is_compressed_etc = true;
+                    data.type = image_data_type::etc2_compressed;
                     break;
                 default:
                     LUCARIA_RUNTIME_ERROR("Invalid ETC2 image data")
@@ -154,7 +153,7 @@ namespace detail {
     {
     }
 
-	image_recipe make_recipe(const implementation_container<image_implementation>& container)
+    image_recipe make_recipe(const implementation_container<image_implementation>& container)
     {
         const image_implementation& _image = container.fetched.value();
 
@@ -179,7 +178,7 @@ image_object image_object::fetch(
     const std::optional<std::filesystem::path>& etc2_path,
     const std::optional<std::filesystem::path>& s3tc_path)
 {
-	image_object _image = {};
+    image_object _image = {};
     _image._resource = detail::engine_resources().images.get_or_create_by_path(path, [&] {
         return detail::_fetch_image_async(path, etc2_path, s3tc_path);
     });

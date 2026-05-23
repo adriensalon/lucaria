@@ -1,11 +1,7 @@
 #pragma once
 
-#include <variant>
-
-#include <cereal/types/variant.hpp>
 #include <ozz/animation/runtime/skeleton.h>
 
-#include <lucaria/bin/path_data.hpp>
 #include <lucaria/core/resource.hpp>
 #include <lucaria/core/workaround.hpp>
 

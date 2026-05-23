@@ -15,6 +15,7 @@ lucaria::shader_data import_text(const std::filesystem::path& text_path)
     }
     std::stringstream _buffer;
     _buffer << _stream.rdbuf();
+    _data.type = lucaria::shader_data_type::glsl;
     _data.text = _buffer.str();
     return _data;
 }

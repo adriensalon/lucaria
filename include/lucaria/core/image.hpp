@@ -1,15 +1,8 @@
 #pragma once
 
-#include <array>
-#include <optional>
 #include <utility>
-#include <variant>
-
-#include <cereal/types/optional.hpp>
-#include <cereal/types/variant.hpp>
 
 #include <lucaria/bin/image_data.hpp>
-#include <lucaria/bin/path_data.hpp>
 #include <lucaria/core/refcount.hpp>
 #include <lucaria/core/resource.hpp>
 #include <lucaria/core/workaround.hpp>

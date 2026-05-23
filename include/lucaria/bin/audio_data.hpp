@@ -1,13 +1,13 @@
 #pragma once
 
-#include <cereal/types/vector.hpp>
-#include <glm/glm.hpp>
+#include <lucaria/bin/container_types.hpp>
+#include <lucaria/bin/math_types.hpp>
 
 namespace lucaria {
 
 struct audio_data {
-    glm::uint sample_rate;
-    std::vector<glm::float32> samples;
+    uint32 sample_rate = 0;
+    std::vector<float32> samples = {};
 
     template <typename archive_t>
     void serialize(archive_t& archive)

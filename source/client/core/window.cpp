@@ -86,8 +86,7 @@ namespace detail {
 
         image_data _font_atlas_data = {};
         _font_atlas_data.channels = 4;
-        _font_atlas_data.is_compressed_etc = false;
-        _font_atlas_data.is_compressed_s3tc = false;
+        _font_atlas_data.type = image_data_type::binary;
         _font_atlas_data.width = _width;
         _font_atlas_data.height = _height;
         _font_atlas_data.pixels = std::vector<glm::uint8>(_pixels, _pixels + (_width * _height * 4));

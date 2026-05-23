@@ -1,16 +1,15 @@
 #pragma once
 
-#include <cereal/types/string.hpp>
-#include <cereal/types/vector.hpp>
-#include <glm/glm.hpp>
+#include <lucaria/bin/container_types.hpp>
+#include <lucaria/bin/math_types.hpp>
 
 namespace lucaria {
 
 struct event_data {
-    std::string name;
-    glm::float32 frame;
-    glm::float32 time;
-    glm::float32 time_normalized; // [0..1]
+    std::string name = {};
+    float32 frame = 0.f;
+    float32 time = 0.f;
+    float32 time_normalized = 0.f;
 
     template <typename archive_t>
     void serialize(archive_t& archive)
@@ -23,11 +22,11 @@ struct event_data {
 };
 
 struct event_track_data {
-    glm::float32 frames_per_second;
-    glm::float32 frame_start;
-    glm::float32 frame_end;
-    glm::float32 duration_seconds;
-    std::vector<event_data> events;
+    float32 frames_per_second = 0.f;
+    float32 frame_start = 0.f;
+    float32 frame_end = 0.f;
+    float32 duration_seconds = 0.f;
+    std::vector<event_data> events = {};
 
     template <typename archive_t>
     void serialize(archive_t& archive)

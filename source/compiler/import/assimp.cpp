@@ -288,9 +288,9 @@ lucaria::geometry_data import_assimp(const std::filesystem::path& assimp_path,
     for (unsigned m = 0; m < _scene->mNumMeshes; ++m)
         total_vertices += _scene->mMeshes[m]->mNumVertices;
 
-    _data.count = static_cast<uint32_t>(total_vertices);
-    _data.bones.resize(_data.count, glm::ivec4(0));
-    _data.weights.resize(_data.count, glm::vec4(0.0f));
+    _data.vertices_count = static_cast<uint32_t>(total_vertices);
+    _data.bones.resize(_data.vertices_count, glm::ivec4(0));
+    _data.weights.resize(_data.vertices_count, glm::vec4(0.0f));
     _data.invposes.resize(_skeleton_reindex.size(), glm::mat4(1.0f));
 
     // Track which invpose we’ve already written (meshes can repeat bones)
@@ -378,7 +378,7 @@ lucaria::geometry_data import_assimp(const std::filesystem::path& assimp_path,
     }
 
     // (optional) normalize weights per vertex
-    for (uint32_t v = 0; v < _data.count; ++v) {
+    for (uint32_t v = 0; v < _data.vertices_count; ++v) {
         float s = _data.weights[v].x + _data.weights[v].y + _data.weights[v].z + _data.weights[v].w;
         if (s > 0.0f) _data.weights[v] /= s;
     }

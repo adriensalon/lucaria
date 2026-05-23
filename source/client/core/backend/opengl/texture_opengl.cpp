@@ -60,9 +60,9 @@ namespace detail {
         switch (from.data.channels) {
 
         case 3:
-            if (from.data.is_compressed_etc && detail::engine_window().is_etc2_supported) {
+            if ((from.data.type == image_data_type::etc2_compressed) && detail::engine_window().is_etc2_supported) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB8_ETC2, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
-            } else if (from.data.is_compressed_s3tc && detail::engine_window().is_s3tc_supported) {
+            } else if ((from.data.type == image_data_type::s3tc_compressed) && detail::engine_window().is_s3tc_supported) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
             } else {
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, from.data.width, from.data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
@@ -70,9 +70,9 @@ namespace detail {
             break;
 
         case 4:
-            if (from.data.is_compressed_etc && detail::engine_window().is_etc2_supported) {
+            if ((from.data.type == image_data_type::etc2_compressed) && detail::engine_window().is_etc2_supported) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA8_ETC2_EAC, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
-            } else if (from.data.is_compressed_s3tc && detail::engine_window().is_s3tc_supported) {
+            } else if ((from.data.type == image_data_type::s3tc_compressed) && detail::engine_window().is_s3tc_supported) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
             } else {
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, from.data.width, from.data.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);
@@ -132,9 +132,9 @@ namespace detail {
         switch (from.data.channels) {
 
         case 3:
-            if (from.data.is_compressed_etc && detail::engine_window().is_etc2_supported) {
+            if ((from.data.type == image_data_type::etc2_compressed) && detail::engine_window().is_etc2_supported) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB8_ETC2, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
-            } else if (from.data.is_compressed_s3tc && detail::engine_window().is_s3tc_supported) {
+            } else if ((from.data.type == image_data_type::s3tc_compressed) && detail::engine_window().is_s3tc_supported) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
             } else {
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, from.data.width, from.data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
@@ -142,9 +142,9 @@ namespace detail {
             break;
 
         case 4:
-            if (from.data.is_compressed_etc && detail::engine_window().is_etc2_supported) {
+            if ((from.data.type == image_data_type::etc2_compressed) && detail::engine_window().is_etc2_supported) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA8_ETC2_EAC, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
-            } else if (from.data.is_compressed_s3tc && detail::engine_window().is_s3tc_supported) {
+            } else if ((from.data.type == image_data_type::s3tc_compressed) && detail::engine_window().is_s3tc_supported) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
             } else {
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, from.data.width, from.data.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);

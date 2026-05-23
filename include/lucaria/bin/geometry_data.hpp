@@ -1,30 +1,27 @@
 #pragma once
 
-#include <cereal/types/vector.hpp>
-
-#include <lucaria/bin/math_data.hpp>
+#include <lucaria/bin/container_types.hpp>
+#include <lucaria/bin/math_types.hpp>
 
 namespace lucaria {
 
 struct geometry_data {
-    glm::uint count = 0; // vertices count
-    std::vector<glm::vec3> positions = {};
-    std::vector<glm::vec4> colors = {};
-    std::vector<glm::vec3> normals = {};
-    std::vector<glm::vec3> tangents = {};
-    std::vector<glm::vec3> bitangents = {};
-    std::vector<glm::vec2> texcoords = {};
-    std::vector<glm::ivec4> bones = {};
-    std::vector<glm::vec4> weights = {};
-    // std::vector<glm::uvec2> line_indices = {};
-    std::vector<glm::uvec3> indices = {};
-    // std::vector<glm::uvec4> quad_indices = {};
-    std::vector<glm::mat4> invposes = {};
+    uint32 vertices_count = 0;
+    std::vector<float32x3> positions = {};
+    std::vector<float32x4> colors = {};
+    std::vector<float32x3> normals = {};
+    std::vector<float32x3> tangents = {};
+    std::vector<float32x3> bitangents = {};
+    std::vector<float32x2> texcoords = {};
+    std::vector<int32x4> bones = {};
+    std::vector<float32x4> weights = {};
+    std::vector<uint32x3> indices = {};
+    std::vector<float32x4x4> invposes = {};
     
     template <typename archive_t>
     void serialize(archive_t& archive)
     {
-        archive(cereal::make_nvp("count", count));
+        archive(cereal::make_nvp("vertices_count", vertices_count));
         archive(cereal::make_nvp("positions", positions));
         archive(cereal::make_nvp("colors", colors));
         archive(cereal::make_nvp("normals", normals));

@@ -1,14 +1,9 @@
 #pragma once
 
 #include <memory>
-#include <variant>
 
 #include <btBulletDynamicsCommon.h>
-#include <cereal/types/variant.hpp>
-#include <glm/glm.hpp>
 
-
-#include <lucaria/bin/path_data.hpp>
 #include <lucaria/core/geometry.hpp>
 
 namespace lucaria {
@@ -43,7 +38,7 @@ namespace detail {
         shape_implementation(btCollisionShape* collision_shape, const glm::float32 half_height = 0.f);
 
         shape_origin origin;
-		std::optional<shape_algorithm> algorithm;
+        std::optional<shape_algorithm> algorithm;
         std::unique_ptr<btCollisionShape> collision_shape;
         std::unique_ptr<btTriangleMesh> triangle_geometry;
         glm::mat4 feet_to_center;
@@ -127,7 +122,7 @@ namespace detail {
         shape_capsule_recipe,
         shape_cone_recipe>;
 
-	[[nodiscard]] shape_recipe make_recipe(const implementation_container<shape_implementation>& container);
+    [[nodiscard]] shape_recipe make_recipe(const implementation_container<shape_implementation>& container);
 
 }
 
@@ -170,10 +165,10 @@ private:
 
     friend struct detail::motion_system;
     friend struct detail::dynamics_system;
-	friend struct passive_rigidbody_component;
+    friend struct passive_rigidbody_component;
     friend struct kinematic_rigidbody_component;
     friend struct dynamic_rigidbody_component;
-	friend class cereal::access;
+    friend class cereal::access;
 };
 
 }

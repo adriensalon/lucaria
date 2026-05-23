@@ -1,12 +1,17 @@
 #pragma once
 
-#include <cereal/types/string.hpp>
+#include <lucaria/bin/container_types.hpp>
 
 namespace lucaria {
 
+enum struct shader_data_type {
+	glsl,
+};
+
 struct shader_data {
-    std::string text;
-    
+	shader_data_type type = shader_data_type::glsl;
+    std::string text = {};
+
     template <typename archive_t>
     void serialize(archive_t& archive)
     {

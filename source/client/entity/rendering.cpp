@@ -600,8 +600,8 @@ namespace detail {
                 _geometry_data.indices = skybox_indices;
                 detail::geometry_implementation _skybox_geometry(std::move(_geometry_data));
 
-                shader _skybox_vertex_shader(shader_data { skybox_vertex });
-                shader _skybox_fragment_shader(shader_data { skybox_fragment });
+                shader _skybox_vertex_shader(shader_data { shader_data_type::glsl, skybox_vertex });
+                shader _skybox_fragment_shader(shader_data { shader_data_type::glsl, skybox_fragment });
 
                 _persistent_skybox_mesh.emplace(_skybox_geometry);
                 _persistent_skybox_program.emplace(_skybox_vertex_shader, _skybox_fragment_shader);
@@ -626,8 +626,8 @@ namespace detail {
         static bool _is_program_setup = false;
         static std::optional<detail::program_implementation> _persistent_blockout_program = std::nullopt;
         if (!_is_program_setup) {
-            shader _blockout_vertex_shader(shader_data { blockout_vertex });
-            shader _blockout_fragment_shader(shader_data { blockout_fragment });
+            shader _blockout_vertex_shader((shader_data { shader_data_type::glsl, blockout_vertex }));
+            shader _blockout_fragment_shader(shader_data { shader_data_type::glsl, blockout_fragment });
             _persistent_blockout_program = detail::program_implementation(_blockout_vertex_shader, _blockout_fragment_shader);
             _is_program_setup = true;
         }
@@ -661,8 +661,8 @@ namespace detail {
     {
         static bool _is_program_setup = false;
         if (!_is_program_setup) {
-            shader _unlit_vertex_shader(shader_data { unlit_vertex });
-            shader _unlit_fragment_shader(shader_data { unlit_fragment });
+            shader _unlit_vertex_shader(shader_data { shader_data_type::glsl, unlit_vertex });
+            shader _unlit_fragment_shader(shader_data { shader_data_type::glsl, unlit_fragment });
             _persistent_unlit_program = program_implementation(_unlit_vertex_shader, _unlit_fragment_shader);
             _is_program_setup = true;
         }
@@ -701,8 +701,8 @@ namespace detail {
         static bool _is_program_setup = false;
         static std::optional<program_implementation> _persistent_unlit_skinned_program = std::nullopt;
         if (!_is_program_setup) {
-            shader _unlit_fragment_shader(shader_data { unlit_fragment });
-            shader _unlit_skinned_vertex_shader(shader_data { unlit_skinned_vertex });
+            shader _unlit_fragment_shader(shader_data { shader_data_type::glsl, unlit_fragment });
+            shader _unlit_skinned_vertex_shader(shader_data { shader_data_type::glsl, unlit_skinned_vertex });
             _persistent_unlit_skinned_program = program_implementation(_unlit_skinned_vertex_shader, _unlit_fragment_shader);
             _is_program_setup = true;
         }
@@ -864,8 +864,8 @@ namespace detail {
             };
 
             geometry_implementation _post_processing_geometry(std::move(_geometry_data));
-            shader _post_processing_vertex_shader(shader_data { post_processing_vertex });
-            shader _post_processing_fragment_shader(shader_data { post_processing_fragment });
+            shader _post_processing_vertex_shader(shader_data { shader_data_type::glsl, post_processing_vertex });
+            shader _post_processing_fragment_shader(shader_data { shader_data_type::glsl, post_processing_fragment });
 
             _persistent_post_processing_mesh.emplace(_post_processing_geometry);
             _persistent_post_processing_program = program_implementation(_post_processing_vertex_shader, _post_processing_fragment_shader);
@@ -918,8 +918,8 @@ namespace detail {
             static bool _is_program_setup = false;
             static std::optional<program_implementation> _persistent_guizmo_program = std::nullopt;
             if (!_is_program_setup) {
-                shader _guizmo_vertex_shader(shader_data { guizmo_vertex });
-                shader _guizmo_fragment_shader(shader_data { guizmo_fragment });
+                shader _guizmo_vertex_shader(shader_data { shader_data_type::glsl, guizmo_vertex });
+                shader _guizmo_fragment_shader(shader_data { shader_data_type::glsl, guizmo_fragment });
                 _persistent_guizmo_program = program_implementation(_guizmo_vertex_shader, _guizmo_fragment_shader);
                 _is_program_setup = true;
             }

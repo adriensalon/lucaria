@@ -1,13 +1,10 @@
 #pragma once
 
-#include <variant>
 
 #include <imgui.h>
-#include <cereal/types/variant.hpp>
 
-#include <lucaria/bin/math_data.hpp>
-#include <lucaria/bin/path_data.hpp>
-#include <lucaria/core/math.hpp>
+#include <lucaria/bin/math_types.hpp>
+#include <lucaria/bin/container_types.hpp>
 #include <lucaria/core/refcount.hpp>
 #include <lucaria/core/resource.hpp>
 #include <lucaria/core/workaround.hpp>

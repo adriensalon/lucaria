@@ -1,11 +1,6 @@
 #pragma once
 
-#include <variant>
-
-#include <cereal/types/variant.hpp>
-
 #include <lucaria/bin/geometry_data.hpp>
-#include <lucaria/bin/path_data.hpp>
 #include <lucaria/core/resource.hpp>
 #include <lucaria/core/refcount.hpp>
 #include <lucaria/core/workaround.hpp>

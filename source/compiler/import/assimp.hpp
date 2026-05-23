@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <optional>
 
-#include <lucaria/common/geometry_data.hpp>
+#include <lucaria/bin/geometry_data.hpp>
 
 bool assimp_has_skeleton(const std::filesystem::path& assimp_path);
 lucaria::geometry_data import_assimp(const std::filesystem::path& assimp_path, const std::optional<std::filesystem::path>& skeleton_path);
