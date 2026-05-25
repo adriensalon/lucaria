@@ -17,7 +17,7 @@ static std::string read_file(const std::filesystem::path& p)
     return oss.str();
 }
 
-lucaria::event_track_data import_event_track(const std::filesystem::path& json_path)
+lucaria::data_event_track import_event_track(const std::filesystem::path& json_path)
 {
     using namespace rapidjson;
 
@@ -45,7 +45,7 @@ lucaria::event_track_data import_event_track(const std::filesystem::path& json_p
         return root[key];
     };
 
-    lucaria::event_track_data out {};
+    lucaria::data_event_track out {};
     out.frames_per_second = require_number("frames_per_second");
     out.frame_start = require_number("frame_start");
     out.frame_end = require_number("frame_end");
@@ -69,7 +69,7 @@ lucaria::event_track_data import_event_track(const std::filesystem::path& json_p
             return obj[key].GetString();
         };
 
-        lucaria::event_data ev {};
+        lucaria::data_event ev {};
         ev.name = req_str(e, "name");
         ev.frame = req_num(e, "frame");
         ev.time = req_num(e, "time");

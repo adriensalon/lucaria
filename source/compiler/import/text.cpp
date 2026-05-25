@@ -5,9 +5,9 @@
 
 #include "text.hpp"
 
-lucaria::shader_data import_text(const std::filesystem::path& text_path)
+lucaria::data_shader import_text(const std::filesystem::path& text_path)
 {
-    lucaria::shader_data _data;
+    lucaria::data_shader _data;
     std::ifstream _stream(text_path);
     if (!_stream) {
         std::cout << "Impossible to import shader '" << text_path.string() << "'" << std::endl;
@@ -15,7 +15,7 @@ lucaria::shader_data import_text(const std::filesystem::path& text_path)
     }
     std::stringstream _buffer;
     _buffer << _stream.rdbuf();
-    _data.type = lucaria::shader_data_type::glsl;
+    _data.type = lucaria::data_shader_profile::glsl;
     _data.text = _buffer.str();
     return _data;
 }

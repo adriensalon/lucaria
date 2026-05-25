@@ -24,7 +24,9 @@ endif()
 
 add_library(lucaria_external_imgui STATIC EXCLUDE_FROM_ALL ${imgui_sources})
 set_target_properties(lucaria_external_imgui PROPERTIES CXX_STANDARD 17)
+target_include_directories(lucaria_external_imgui PUBLIC "config")
 target_include_directories(lucaria_external_imgui PUBLIC "upstream/imgui")
+target_compile_definitions(lucaria_external_imgui PUBLIC -DIMGUI_USER_CONFIG="lucaria_imconfig.h")
 
 if(PSP)
 	target_include_directories(lucaria_external_imgui PUBLIC "upstream/imgui_psp/include")

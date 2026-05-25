@@ -18,9 +18,38 @@ add_subdirectory(${LUCARIA_EXTERNAL_DIR}/vorbis ${CMAKE_CURRENT_BINARY_DIR}/exte
 add_subdirectory(${LUCARIA_EXTERNAL_DIR}/woff ${CMAKE_CURRENT_BINARY_DIR}/external/woff)
 
 # lucaria client library
-file(GLOB lucaria_client_core_sources "core/*.cpp")
-file(GLOB lucaria_client_entity_sources "entity/*.cpp")
-add_library(lucaria_client STATIC ${lucaria_client_core_sources} ${lucaria_client_entity_sources})
+set(lucaria_client_core_sources
+	"core/manager_game.cpp"
+	"core/manager_object.cpp"
+	"core/manager_scene.cpp"
+	"core/manager_window.cpp"
+	"core/object_animation.cpp"
+	"core/object_audio.cpp"
+	"core/object_cubemap.cpp"
+	"core/object_event_track.cpp"
+	"core/object_font.cpp"
+	"core/object_geometry.cpp"
+	"core/object_image.cpp"
+	"core/object_mesh.cpp"
+	"core/object_motion_track.cpp"
+	"core/object_program.cpp"
+	"core/object_shader.cpp"
+	"core/object_shape.cpp"
+	"core/object_skeleton.cpp"
+	"core/object_sound_track.cpp"
+	"core/object_texture.cpp"
+	"core/system_dynamics.cpp"
+	"core/system_mixer.cpp"
+	"core/system_motion.cpp"
+	"core/system_rendering.cpp"
+	"core/utils_access.cpp"
+	"core/utils_error.cpp"
+	"core/utils_math.cpp"
+	"core/utils_owning.cpp"
+	"core/utils_refcount.cpp"
+	"core/utils_stream.cpp")
+file(GLOB lucaria_client_public_sources "public/*.cpp")
+add_library(lucaria_client STATIC ${lucaria_client_core_sources} ${lucaria_client_public_sources})
 target_include_directories(lucaria_client PUBLIC ${LUCARIA_INCLUDE_DIR})
 set_target_properties(lucaria_client PROPERTIES CXX_STANDARD 17)
 target_compile_definitions(lucaria_client PUBLIC BT_NO_SIMD_OPERATOR_OVERLOADS) # ozz implements them already
@@ -51,22 +80,29 @@ if(ANDROID)
     add_library(android_native_app_glue STATIC ${NATIVE_APP_GLUE_DIR}/android_native_app_glue.c)
     target_include_directories(android_native_app_glue PUBLIC ${NATIVE_APP_GLUE_DIR})
     target_link_libraries(lucaria_client PUBLIC EGL android log android_native_app_glue)
+	target_sources(lucaria_client PRIVATE
+		"core/main_android.cpp"
+		"core/manager_window_android.cpp")
 elseif(EMSCRIPTEN)
     message("-- Configuring Lucaria engine for Web platform")
-	file(GLOB lucaria_client_platform_web_sources "core/platform/web/*.cpp")
-	target_sources(lucaria_client PRIVATE ${lucaria_client_platform_web_sources})
 	target_compile_definitions(lucaria_client PUBLIC -DLUCARIA_PLATFORM_WEB)
+	target_sources(lucaria_client PRIVATE
+		"core/main_web.cpp"
+		"core/manager_window_web.cpp")
 elseif(WIN32) # add macos & linux
     message("-- Configuring Lucaria engine for Win32/MacOS/Linux platform")
-	file(GLOB lucaria_client_platform_glfw_sources "core/platform/glfw/*.cpp")
-	target_sources(lucaria_client PRIVATE ${lucaria_client_platform_glfw_sources})
 	target_compile_definitions(lucaria_client PUBLIC -DLUCARIA_PLATFORM_GLFW)
+	target_sources(lucaria_client PRIVATE
+		"core/main_glfw.cpp"
+		"core/manager_window_glfw.cpp"
+		"core/utils_glfw.cpp")
 elseif(PSP)
     message("-- Configuring Lucaria engine for PlayStation Portable platform")
-	file(GLOB lucaria_client_platform_psp_sources "core/platform/psp/*.cpp")
-	target_sources(lucaria_client PRIVATE ${lucaria_client_platform_psp_sources})
 	target_compile_definitions(lucaria_client PUBLIC -DLUCARIA_PLATFORM_PSP)
     target_link_libraries(lucaria_client PUBLIC pspdebug pspge pspdisplay)
+	target_sources(lucaria_client PRIVATE
+		"core/main_psp.cpp"
+		"core/manager_window_psp.cpp")
 endif()
 
 # generator
@@ -88,14 +124,24 @@ endif()
 # backend
 if(PSP)
     message("-- Configuring Lucaria engine with PSPGU graphics backend")
-	file(GLOB lucaria_client_backend_pspgu_sources "core/backend/pspgu/*.cpp")
-	target_sources(lucaria_client PRIVATE ${lucaria_client_backend_pspgu_sources})
 	target_compile_definitions(lucaria_client PUBLIC -DLUCARIA_BACKEND_PSPGU)
+	target_sources(lucaria_client PRIVATE
+		"core/object_cubemap_pspgu.cpp"
+		"core/object_framebuffer_pspgu.cpp"
+		"core/object_mesh_pspgu.cpp"
+		"core/object_program_pspgu.cpp"
+		"core/object_texture_pspgu.cpp"
+		"core/object_renderbuffer_pspgu.cpp")
 else()
     message("-- Configuring Lucaria engine with OpenGL graphics backend")
-	file(GLOB lucaria_client_backend_opengl_sources "core/backend/opengl/*.cpp")
-	target_sources(lucaria_client PRIVATE ${lucaria_client_backend_opengl_sources})
 	target_compile_definitions(lucaria_client PUBLIC -DLUCARIA_BACKEND_OPENGL)
+	target_sources(lucaria_client PRIVATE
+		"core/object_cubemap_opengl.cpp"
+		"core/object_framebuffer_opengl.cpp"
+		"core/object_mesh_opengl.cpp"
+		"core/object_program_opengl.cpp"
+		"core/object_texture_opengl.cpp"
+		"core/object_renderbuffer_opengl.cpp")
 endif()
 
 # simd

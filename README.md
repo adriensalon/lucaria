@@ -115,12 +115,12 @@ void add_entities_and_components(entt::registry& my_scene)
     const entt::entity my_entity = my_scene.create();
 
     // add a transform component
-    my_scene.emplace<transform_component>(my_entity)
+    my_scene.emplace<component_transform>(my_entity)
         .use_parent()
         .set_position_warp(glm::vec3(1.6f, 0.f, 0.f));
 
     // add an unlit model component
-    my_scene.emplace<unlit_model_component>(my_entity)
+    my_scene.emplace<component_model_unlit>(my_entity)
         .use_color(my_texture)
         .use_mesh(my_mesh);
 
@@ -131,11 +131,11 @@ void add_entities_and_components(entt::registry& my_scene)
         .use_motion_track("walk", my_motion_track);
 
     // add a speaker component 
-    my_scene.emplace<speaker_component>(my_entity)
+    my_scene.emplace<component_speaker_spatial>(my_entity)
         .use_sound(my_sound_track);
 
     // add a dynamic rigidbody component
-    my_scene.emplace<dynamic_rigidbody_component>(my_entity)
+    my_scene.emplace<component_rigidbody_dynamic>(my_entity)
         .use_shape(room00_state->shape_character)
         .set_group_layer(collision_layer::layer_1)
         .set_mask_layer(collision_layer::layer_0)

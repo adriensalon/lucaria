@@ -156,9 +156,9 @@ bool assimp_has_skeleton(const std::filesystem::path& assimp_path)
     return _mesh->mNumBones > 0;
 }
 
-// lucaria::geometry_data import_assimp(const std::filesystem::path& assimp_path, const std::optional<std::filesystem::path>& skeleton_path)
+// lucaria::data_geometry import_assimp(const std::filesystem::path& assimp_path, const std::optional<std::filesystem::path>& skeleton_path)
 // {
-//     lucaria::geometry_data _data;
+//     lucaria::data_geometry _data;
 //     Assimp::Importer _importer;
 //     const aiScene* _scene = _importer.ReadFile(assimp_path.string(), aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType);
 //     if (!_scene) {
@@ -261,10 +261,10 @@ bool assimp_has_skeleton(const std::filesystem::path& assimp_path)
 //     return _data;
 // }
 
-lucaria::geometry_data import_assimp(const std::filesystem::path& assimp_path,
+lucaria::data_geometry import_assimp(const std::filesystem::path& assimp_path,
                                      const std::optional<std::filesystem::path>& skeleton_path)
 {
-    lucaria::geometry_data _data;
+    lucaria::data_geometry _data;
     Assimp::Importer _importer;
     const aiScene* _scene = _importer.ReadFile(
         assimp_path.string(),

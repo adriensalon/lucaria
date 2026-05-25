@@ -5,4 +5,4 @@
 
 #include <lucaria/bin/shader_data.hpp>
 
-lucaria::shader_data import_text(const std::filesystem::path& text_path);
+lucaria::data_shader import_text(const std::filesystem::path& text_path);
