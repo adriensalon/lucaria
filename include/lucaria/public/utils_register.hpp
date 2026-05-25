@@ -3,6 +3,9 @@
 #include <lucaria/core/utils_register.hpp>
 
 /// @brief
+#define LUCARIA_REGISTER_COMPONENT(ComponentType) LUCARIA_REGISTER_COMPONENT_IMPLEMENTATION(ComponentType)
+
+/// @brief
 #define LUCARIA_REGISTER_SCENE(SceneType) LUCARIA_REGISTER_SCENE_IMPLEMENTATION(SceneType)
 
 /// @brief

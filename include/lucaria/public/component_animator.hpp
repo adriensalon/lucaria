@@ -14,7 +14,9 @@
 
 namespace lucaria {
 
-/// @brief
+/// @brief Component that allows an entity to be animated using ozz-animation. 
+/// It can use animations, motion tracks and event tracks, and it can be controlled 
+/// using the returned controllers.
 struct component_animator_controller {
     component_animator_controller() = default;
     component_animator_controller(const component_animator_controller& other) = delete;

@@ -91,7 +91,7 @@ namespace detail {
         template <typename ArchiveType>
         void serialize(ArchiveType& archive)
         {
-            archive(cereal::make_nvp("save_id", save_id));
+            archive(cereal::make_nvp("object_save_id", save_id));
             archive(cereal::make_nvp("recipe", recipe));
         }
     };

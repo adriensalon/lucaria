@@ -20,7 +20,7 @@ namespace detail {
             registry->view<ComponentType>().each(
                 [&](entt::entity entity, ComponentType& component) {
                     recipe_object_scene_component<ComponentType>& _back = _components.emplace_back();
-                    _back.recipe_component_id = entity_ids.at(entity);
+                    _back.component_save_id = entity_ids.at(entity);
                     _back.component = &component;
                 });
             return _components;
@@ -94,7 +94,7 @@ namespace detail {
 
         for (std::unique_ptr<object_scene>& scene : manager.scenes) {
             entt::registry* registry = &scene->components;
-            const auto& entity_ids = mappings.save_map_scene_entities.at(registry);
+            const std::unordered_map<entt::entity, lucaria::uint32>& entity_ids = mappings.save_map_scene_entities.at(registry);
 
             recipe_object_scene& saved = recipe.scenes.emplace_back();
             saved.type_id = scene->type_id;
@@ -111,6 +111,14 @@ namespace detail {
             saved.components.dynamic_rigidbodies = _save_component_group<component_rigidbody_dynamic>(registry, entity_ids);
             saved.components.speakers = _save_component_group<component_speaker_spatial>(registry, entity_ids);
             saved.components.transforms = _save_component_group<component_transform>(registry, entity_ids);
+
+            for (auto& [type_id, callbacks] : manager.user_component_types) {
+                recipe_object_scene_user_component_group& user_component = saved.user_components.emplace_back();
+                user_component.type_id = type_id;
+                user_component.scene = scene.get();
+                user_component.component_type_callbacks = &callbacks;
+                user_component.entity_ids = &entity_ids;
+            }
         }
 
         return recipe;

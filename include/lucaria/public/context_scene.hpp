@@ -48,7 +48,7 @@ struct context_scene {
     template <typename... ComponentTypes, typename Callback>
     void each_view_self(Callback&& callback)
     {
-        _manager->current_scene->components->view<ComponentTypes...>().each(std::forward<Callback>(callback));
+        _manager->current_scene->components.view<ComponentTypes...>().each(std::forward<Callback>(callback));
     }
 
     /// @brief
@@ -60,7 +60,7 @@ struct context_scene {
     template <typename... ComponentTypes, typename... ExcludeComponentTypes, typename Callback>
     void each_view_self(entt::exclude_t<ExcludeComponentTypes...> exclude, Callback&& callback)
     {
-        _manager->current_scene->components->view<ComponentTypes...>(exclude).each(std::forward<Callback>(callback));
+        _manager->current_scene->components.view<ComponentTypes...>(exclude).each(std::forward<Callback>(callback));
     }
 
     /// @brief
@@ -112,6 +112,18 @@ struct context_scene {
     /// @param entity
     /// @return
     component_transform& create_transform(const handle_entity entity);
+
+    /// @brief Creates a registered user component on an entity.
+    /// @tparam ComponentType User component type registered with manager_scene::register_component_user.
+    /// @tparam ...Args Constructor argument types.
+    /// @param entity Target entity.
+    /// @param ...args Constructor arguments forwarded to the component.
+    /// @return the newly created user component.
+    template <typename ComponentType, typename... Args>
+    ComponentType& create_component_user(const handle_entity entity, Args&&... args)
+    {
+        return _manager->current_scene->components.emplace<ComponentType>(entity._entity, std::forward<Args>(args)...);
+    }
 
 private:
     detail::manager_scene* _manager;

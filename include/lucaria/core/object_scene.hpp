@@ -35,13 +35,13 @@ namespace detail {
 
     template <typename ComponentType>
     struct recipe_object_scene_component {
-        uint32 recipe_component_id = 0;
+        uint32 component_save_id = 0;
         ComponentType* component = nullptr;
 
         template <typename ArchiveType>
         void serialize(ArchiveType& archive)
         {
-            archive(cereal::make_nvp("recipe_component_id", recipe_component_id));
+            archive(cereal::make_nvp("component_save_id", component_save_id));
             archive(cereal::make_nvp("component", *component));
         }
     };

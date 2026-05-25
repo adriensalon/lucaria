@@ -3,8 +3,8 @@
 #define CEREAL_FUTURE_EXPERIMENTAL
 #include <cereal/archives/adapters.hpp>
 
-#include <lucaria/core/manager_game.hpp>
 #include <lucaria/core/manager_scene.hpp>
+#include <lucaria/core/manager_game.hpp>
 #include <lucaria/core/utils_access.hpp>
 #include <lucaria/core/utils_register.hpp>
 #include <lucaria/public/component_animator.hpp>
@@ -15,13 +15,13 @@
 #include <lucaria/public/component_transform.hpp>
 #include <lucaria/public/context_game.hpp>
 
-
 namespace lucaria {
 namespace detail {
 
     manager_game::manager_game()
     {
         context_game _game;
+		
         access_context _access;
         _access.set(*this, _game);
         _access.set(input, _game.input);
@@ -31,7 +31,10 @@ namespace detail {
         _access.set(dynamics, _game.dynamics);
         _access.set(mixer, _game.mixer);
         _access.set(rendering, _game.rendering);
+
+        apply_component_registrations(scenes);
         apply_scene_registrations(scenes);
+
         window.run(input, objects,
 
             [this, &_game]() { apply_main_scene(_game); }, [this, &_game]() {
@@ -51,6 +54,7 @@ namespace detail {
         std::ofstream _ofstream(path, std::ios::binary);
         archive_json_output _archive(_mappings, _ofstream);
         _archive(cereal::make_nvp("game", _recipe_game));
+
     }
 
     void manager_game::load_snapshot(const std::filesystem::path& path)

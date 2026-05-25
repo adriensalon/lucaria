@@ -74,6 +74,33 @@ struct handle_entity {
     /// @return
     [[nodiscard]] component_transform& get_transform() const;
 
+    /// @brief Returns true if this entity owns the requested user component.
+    /// @tparam ComponentType User component type.
+	/// @return true if the entity has the component, false otherwise.
+	template <typename ComponentType>
+  	bool has_component_user() const
+    {
+        return _registry && _registry->all_of<ComponentType>(_entity);
+    }
+
+    /// @brief Gets a user component from this entity.
+    /// @tparam ComponentType User component type.
+	template <typename ComponentType>
+    [[nodiscard]] ComponentType& get_component_user() const
+    {
+        return _registry->get<ComponentType>(_entity);
+    }
+
+    /// @brief Removes a user component from this entity if present.
+    /// @tparam ComponentType User component type.
+	template <typename ComponentType>
+    void remove_component_user() const
+    {
+        if (_registry) {
+            _registry->remove<ComponentType>(_entity);
+        }
+    }
+
 private:
     entt::entity _entity = entt::null;
     entt::registry* _registry = nullptr;
