@@ -1,10 +1,52 @@
-if(LUCARIA_BUILD_COMPILERS)
+if(NOT LUCARIA_BUILD_COMPILERS)
+
+	set(imgui_sources
+		"upstream/imgui_1897/imgui.cpp"
+		"upstream/imgui_1897/imgui_widgets.cpp"
+		"upstream/imgui_1897/imgui_tables.cpp"
+		"upstream/imgui_1897/imgui_draw.cpp"
+		"upstream/imgui_1897/imgui_demo.cpp"
+		"upstream/imgui_1897/misc/cpp/imgui_stdlib.cpp")
+	if(ANDROID)
+		list(APPEND imgui_sources
+			"upstream/imgui_1897/backends/imgui_impl_android.cpp"
+			"upstream/imgui_1897/backends/imgui_impl_opengl3.cpp")		
+	elseif(EMSCRIPTEN)
+		list(APPEND imgui_sources
+			"upstream/imgui_1897/backends/imgui_impl_opengl3.cpp")
+	elseif(WIN32)
+		list(APPEND imgui_sources
+			"upstream/imgui_1897/backends/imgui_impl_glfw.cpp"
+			"upstream/imgui_1897/backends/imgui_impl_opengl3.cpp")
+	elseif(PSP)
+		list(APPEND imgui_sources
+			"upstream/imgui_psp/source/imgui_impl_psp.cpp")
+	endif()	
+
+	add_library(lucaria_external_imgui STATIC EXCLUDE_FROM_ALL ${imgui_sources})
+	set_target_properties(lucaria_external_imgui PROPERTIES CXX_STANDARD 17)
+	target_include_directories(lucaria_external_imgui PUBLIC "config")
+	target_include_directories(lucaria_external_imgui PUBLIC "upstream/imgui_1897")
+	target_compile_definitions(lucaria_external_imgui PUBLIC -DIMGUI_USER_CONFIG="lucaria_imconfig.h")
+
+	if(ANDROID)
+		target_link_libraries(lucaria_external_imgui PUBLIC GLESv3)
+	endif()
+	if(PSP)
+		target_include_directories(lucaria_external_imgui PUBLIC "upstream/imgui_psp/include")
+		target_link_libraries(lucaria_external_imgui PUBLIC pspctrl pspgu psprtc)
+	endif()
+	if(WIN32)
+		target_link_libraries(lucaria_external_imgui PRIVATE lucaria_external_glfw)
+	endif()
+
+else()
 
 	set(lucaria_patched_imgui_dir "${CMAKE_CURRENT_BINARY_DIR}/patched")
 	set(lucaria_patched_imgui_dir "${lucaria_patched_imgui_dir}" PARENT_SCOPE)
 
 	file(MAKE_DIRECTORY "${lucaria_patched_imgui_dir}/backends")
-	file(READ "upstream/imgui_1928/backends/imgui_impl_opengl3_loader.h" IMGUI_GL_LOADER_TEXT)
+	file(READ "upstream/imgui_1927/backends/imgui_impl_opengl3_loader.h" IMGUI_GL_LOADER_TEXT)
 
 	# needed by Tracy texture code
 	string(REPLACE
@@ -67,73 +109,31 @@ if(LUCARIA_BUILD_COMPILERS)
 	file(WRITE "${lucaria_patched_imgui_dir}/backends/imgui_impl_opengl3_loader.h" "${IMGUI_GL_LOADER_TEXT}")
 
 	configure_file(
-		"upstream/imgui_1928/backends/imgui_impl_opengl3.cpp"
+		"upstream/imgui_1927/backends/imgui_impl_opengl3.cpp"
 		"${lucaria_patched_imgui_dir}/backends/imgui_impl_opengl3.cpp"
 		COPYONLY)
 	configure_file(
-		"upstream/imgui_1928/backends/imgui_impl_opengl3.h"
+		"upstream/imgui_1927/backends/imgui_impl_opengl3.h"
 		"${lucaria_patched_imgui_dir}/backends/imgui_impl_opengl3.h"
 		COPYONLY)
 
 	set(imgui_sources
-		"upstream/imgui_1928/imgui.cpp"
-		"upstream/imgui_1928/imgui_widgets.cpp"
-		"upstream/imgui_1928/imgui_tables.cpp"
-		"upstream/imgui_1928/imgui_draw.cpp"
-		"upstream/imgui_1928/imgui_demo.cpp"
-		"upstream/imgui_1928/misc/cpp/imgui_stdlib.cpp")
+		"upstream/imgui_1927/imgui.cpp"
+		"upstream/imgui_1927/imgui_widgets.cpp"
+		"upstream/imgui_1927/imgui_tables.cpp"
+		"upstream/imgui_1927/imgui_draw.cpp"
+		"upstream/imgui_1927/imgui_demo.cpp"
+		"upstream/imgui_1927/misc/cpp/imgui_stdlib.cpp")
 	list(APPEND imgui_sources
-		"upstream/imgui_1928/backends/imgui_impl_glfw.cpp"
+		"upstream/imgui_1927/backends/imgui_impl_glfw.cpp"
 		"${lucaria_patched_imgui_dir}/backends/imgui_impl_opengl3.cpp")
 
 	add_library(lucaria_external_imgui STATIC EXCLUDE_FROM_ALL ${imgui_sources})
 	set_target_properties(lucaria_external_imgui PROPERTIES CXX_STANDARD 17)
+	target_include_directories(lucaria_external_imgui BEFORE PUBLIC "${lucaria_patched_imgui_dir}")
 	target_include_directories(lucaria_external_imgui PUBLIC "config")
-	target_include_directories(lucaria_external_imgui PUBLIC "upstream/imgui_1928")
+	target_include_directories(lucaria_external_imgui PUBLIC "upstream/imgui_1927")
 	target_compile_definitions(lucaria_external_imgui PUBLIC -DIMGUI_USER_CONFIG="lucaria_imconfig.h")
 	target_link_libraries(lucaria_external_imgui PRIVATE lucaria_external_glfw)
-	target_include_directories(lucaria_external_imgui BEFORE PRIVATE "${lucaria_patched_imgui_dir}")
-
-else()
-
-	set(imgui_sources
-		"upstream/imgui_1897/imgui.cpp"
-		"upstream/imgui_1897/imgui_widgets.cpp"
-		"upstream/imgui_1897/imgui_tables.cpp"
-		"upstream/imgui_1897/imgui_draw.cpp"
-		"upstream/imgui_1897/imgui_demo.cpp"
-		"upstream/imgui_1897/misc/cpp/imgui_stdlib.cpp")
-	if(ANDROID)
-		list(APPEND imgui_sources
-			"upstream/imgui_1897/backends/imgui_impl_android.cpp"
-			"upstream/imgui_1897/backends/imgui_impl_opengl3.cpp")		
-	elseif(EMSCRIPTEN)
-		list(APPEND imgui_sources
-			"upstream/imgui_1897/backends/imgui_impl_opengl3.cpp")
-	elseif(WIN32)
-		list(APPEND imgui_sources
-			"upstream/imgui_1897/backends/imgui_impl_glfw.cpp"
-			"upstream/imgui_1897/backends/imgui_impl_opengl3.cpp")
-	elseif(PSP)
-		list(APPEND imgui_sources
-			"upstream/imgui_1897_psp/source/imgui_impl_psp.cpp")
-	endif()	
-
-	add_library(lucaria_external_imgui STATIC EXCLUDE_FROM_ALL ${imgui_sources})
-	set_target_properties(lucaria_external_imgui PROPERTIES CXX_STANDARD 17)
-	target_include_directories(lucaria_external_imgui PUBLIC "config")
-	target_include_directories(lucaria_external_imgui PUBLIC "upstream/imgui_1897")
-	target_compile_definitions(lucaria_external_imgui PUBLIC -DIMGUI_USER_CONFIG="lucaria_imconfig.h")
-
-	if(ANDROID)
-		target_link_libraries(lucaria_external_imgui PUBLIC GLESv3)
-	endif()
-	if(PSP)
-		target_include_directories(lucaria_external_imgui PUBLIC "upstream/imgui_psp/include")
-		target_link_libraries(lucaria_external_imgui PUBLIC pspctrl pspgu psprtc)
-	endif()
-	if(WIN32)
-		target_link_libraries(lucaria_external_imgui PRIVATE lucaria_external_glfw)
-	endif()
 
 endif()

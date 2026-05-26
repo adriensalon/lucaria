@@ -191,7 +191,7 @@ else()
 		"upstream/tracy/profiler/src/RunQueue.cpp"
 		"upstream/tracy/profiler/src/WindowPosition.cpp")
 	set(tracy_viewer_backend_sources
-		"source/backend_glfw.cpp")
+		"upstream/tracy/profiler/src/BackendGlfw.cpp")
     set(lucaria_tracy_host_sources
 		${tracy_common_sources}
 		${tracy_server_sources}
@@ -215,6 +215,8 @@ else()
 		"upstream/tracy/profiler/src/profiler"
 		"upstream/tracy/dtl"
 		"${CMAKE_CURRENT_BINARY_DIR}/tracy_generated")
+
+	target_compile_definitions(lucaria_external_imgui PUBLIC -DIMGUI_USE_WCHAR32)
 
     target_link_libraries(lucaria_external_tracy PUBLIC
         lucaria_external_base64

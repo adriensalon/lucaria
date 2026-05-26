@@ -1,3 +1,5 @@
+#include <tracy/Tracy.hpp>
+
 #include <lucaria/core/manager_input.hpp>
 #include <lucaria/core/manager_object.hpp>
 #include <lucaria/core/manager_window.hpp>
@@ -169,6 +171,8 @@ namespace detail {
         const std::function<void()>& setup_callback,
         const std::function<void()>& update_callback)
     {
+        tracy::SetThreadName("Main Thread");
+		
         glfwSetErrorCallback(_glfw_error_callback);
         if (!glfwInit()) {
             exit(EXIT_FAILURE);
@@ -205,6 +209,7 @@ namespace detail {
         setup_callback();
         stored_update_callback = update_callback;
         while (!glfwWindowShouldClose(window)) {
+            ZoneScopedN("Frame");
             _update_loop(*this, input);
         }
         glfwDestroyWindow(window);

@@ -151,18 +151,5 @@ namespace detail {
         alcCloseDevice(_webaudio_device);
     }
 
-    static manager_window* _engine_window = nullptr;
-
-    void set_engine_window(manager_window* window)
-    {
-        _engine_window = window;
-    }
-
-    manager_window& engine_window()
-    {
-        // LUCARIA_ASSERT
-        return *_engine_window;
-    }
-
 }
 }
