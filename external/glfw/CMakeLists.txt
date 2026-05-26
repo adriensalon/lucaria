@@ -1,6 +1,3 @@
-
-
-
 set(glfw_main_sources
     "upstream/glfw/src/context.c"
     "upstream/glfw/src/init.c"
@@ -15,14 +12,11 @@ set(glfw_main_sources
     "upstream/glfw/src/null_monitor.c"
     "upstream/glfw/src/null_window.c"
     "upstream/glfw/src/null_joystick.c")
-
-
 if(APPLE)
     set(glfw_platform_sources
         "upstream/glfw/src/cocoa_time.c"
         "upstream/glfw/src/posix_module.c"
         "upstream/glfw/src/posix_thread.c")
-
 elseif(WIN32)
     set(glfw_platform_sources
         "upstream/glfw/src/win32_time.c"
@@ -32,15 +26,13 @@ elseif(WIN32)
         "upstream/glfw/src/win32_joystick.c"
         "upstream/glfw/src/win32_monitor.c"
         "upstream/glfw/src/win32_window.c"
-        "upstream/glfw/src/wgl_context.c")
-    
+        "upstream/glfw/src/wgl_context.c")    
 else()
     set(glfw_platform_sources 
         "upstream/glfw/src/posix_module.c"
         "upstream/glfw/src/posix_time.c"
         "upstream/glfw/src/posix_thread.c")
 endif()
-
 set(glfw_sources 
     ${glfw_main_sources}
     ${glfw_platform_sources})

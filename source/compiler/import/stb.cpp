@@ -4,9 +4,9 @@
 
 #include "stb.hpp"
 
-lucaria::image_data import_stb(const std::filesystem::path& stb_path)
+lucaria::data_image import_stb(const std::filesystem::path& stb_path)
 {
-    lucaria::image_data _data;
+    lucaria::data_image _data;
     int _width, _height, _channels;
     unsigned char* _pixels = stbi_load(stb_path.string().c_str(), &_width, &_height, &_channels, NULL);
     if (_pixels == nullptr) {

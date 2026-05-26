@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.15)
+
+enable_testing()
+set(UNIT_TEST_SOURCES sstream.c utils.c)
+if(CAPSTONE_RISCV_SUPPORT)
+    list(APPEND UNIT_TEST_SOURCES riscv_op_count_iter.c riscv_sysreg.c riscv_reg_access.c)
+endif()
+include_directories(include)
+
+foreach(TSRC ${UNIT_TEST_SOURCES})
+    string(REGEX REPLACE ".c$" "" TBIN ${TSRC})
+    add_executable(${TBIN} "${TESTS_UNIT_DIR}/${TSRC}")
+    target_link_libraries(${TBIN} PRIVATE capstone)
+    add_test(NAME "unit_${TBIN}" COMMAND ${TBIN})
+endforeach()

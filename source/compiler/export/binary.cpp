@@ -35,7 +35,7 @@ void export_binary(const lucaria::data_shader& data, const std::filesystem::path
     std::cout << "   Exporting binary shader " << output_path.filename() << std::endl;
 }
 
-void export_binary(const lucaria::image_data& data, const std::filesystem::path& output_path)
+void export_binary(const lucaria::data_image& data, const std::filesystem::path& output_path)
 {
     detail::compile_binary_or_json(data, output_path);
     std::cout << "   Exporting binary image " << output_path.filename() << std::endl;

@@ -139,8 +139,7 @@ namespace detail {
 
     ImTextureID object_texture::imgui_texture() const
     {
-        return reinterpret_cast<ImTextureID>(
-            static_cast<std::uintptr_t>(id));
+        return reinterpret_cast<ImTextureID>(static_cast<std::uintptr_t>(id));
     }
 
 }

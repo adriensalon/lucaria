@@ -1,0 +1,199 @@
+if(LUCARIA_BUILD_COMPILERS)
+
+    set(curl_core_sources
+        "upstream/curl/lib/asyn-base.c"
+        "upstream/curl/lib/asyn-thrdd.c"
+        "upstream/curl/lib/bufq.c"
+        "upstream/curl/lib/bufref.c"
+        "upstream/curl/lib/cf-h1-proxy.c"
+        "upstream/curl/lib/cf-haproxy.c"
+        "upstream/curl/lib/cf-https-connect.c"
+        "upstream/curl/lib/cf-socket.c"
+        "upstream/curl/lib/cfilters.c"
+        "upstream/curl/lib/conncache.c"
+        "upstream/curl/lib/connect.c"
+        "upstream/curl/lib/content_encoding.c"
+        "upstream/curl/lib/cshutdn.c"
+        "upstream/curl/lib/curl_addrinfo.c"
+        "upstream/curl/lib/curl_endian.c"
+        "upstream/curl/lib/curl_fnmatch.c"
+        "upstream/curl/lib/curl_get_line.c"
+        "upstream/curl/lib/curl_gethostname.c"
+        "upstream/curl/lib/curl_memrchr.c"
+        "upstream/curl/lib/curl_range.c"
+        "upstream/curl/lib/curl_sasl.c"
+        "upstream/curl/lib/curl_sha512_256.c"
+        "upstream/curl/lib/curl_sspi.c"
+        "upstream/curl/lib/curl_threads.c"
+        "upstream/curl/lib/curl_trc.c"
+        "upstream/curl/lib/cw-out.c"
+        "upstream/curl/lib/cw-pause.c"
+        "upstream/curl/lib/dynhds.c"
+        "upstream/curl/lib/easy.c"
+        "upstream/curl/lib/easygetopt.c"
+        "upstream/curl/lib/easyoptions.c"
+        "upstream/curl/lib/escape.c"
+        "upstream/curl/lib/fopen.c"
+        "upstream/curl/lib/formdata.c"
+        "upstream/curl/lib/getenv.c"
+        "upstream/curl/lib/getinfo.c"
+        "upstream/curl/lib/hash.c"
+        "upstream/curl/lib/headers.c"
+        "upstream/curl/lib/hmac.c"
+        "upstream/curl/lib/hostip.c"
+        "upstream/curl/lib/hostip4.c"
+        "upstream/curl/lib/hostip6.c"
+        "upstream/curl/lib/http.c"
+        "upstream/curl/lib/http1.c"
+        "upstream/curl/lib/http_chunks.c"
+        "upstream/curl/lib/http_digest.c"
+        "upstream/curl/lib/http_ntlm.c"
+        "upstream/curl/lib/http_proxy.c"
+        "upstream/curl/lib/if2ip.c"
+        "upstream/curl/lib/llist.c"
+        "upstream/curl/lib/md4.c"
+        "upstream/curl/lib/md5.c"
+        "upstream/curl/lib/memdebug.c"
+        "upstream/curl/lib/mime.c"
+        "upstream/curl/lib/mprintf.c"
+        "upstream/curl/lib/multi.c"
+        "upstream/curl/lib/multi_ev.c"
+        "upstream/curl/lib/netrc.c"
+        "upstream/curl/lib/noproxy.c"
+        "upstream/curl/lib/parsedate.c"
+        "upstream/curl/lib/progress.c"
+        "upstream/curl/lib/rand.c"
+        "upstream/curl/lib/request.c"
+        "upstream/curl/lib/select.c"
+        "upstream/curl/lib/sendf.c"
+        "upstream/curl/lib/setopt.c"
+        "upstream/curl/lib/sha256.c"
+        "upstream/curl/lib/share.c"
+        "upstream/curl/lib/slist.c"
+        "upstream/curl/lib/socketpair.c"
+        "upstream/curl/lib/socks.c"
+        "upstream/curl/lib/socks_sspi.c"
+        "upstream/curl/lib/speedcheck.c"
+        "upstream/curl/lib/splay.c"
+        "upstream/curl/lib/strcase.c"
+        "upstream/curl/lib/strdup.c"
+        "upstream/curl/lib/strequal.c"
+        "upstream/curl/lib/strerror.c"
+        "upstream/curl/lib/system_win32.c"
+        "upstream/curl/lib/transfer.c"
+        "upstream/curl/lib/uint-bset.c"
+        "upstream/curl/lib/uint-hash.c"
+        "upstream/curl/lib/uint-spbset.c"
+        "upstream/curl/lib/uint-table.c"
+        "upstream/curl/lib/url.c"
+        "upstream/curl/lib/urlapi.c"
+        "upstream/curl/lib/version.c"
+    	"upstream/curl/lib/idn.c"
+		"upstream/curl/lib/vquic/vquic.c")
+    set(curl_vtls_sources
+        "upstream/curl/lib/vtls/cipher_suite.c"
+        "upstream/curl/lib/vtls/hostcheck.c"
+        "upstream/curl/lib/vtls/keylog.c"
+        "upstream/curl/lib/vtls/schannel.c"
+        "upstream/curl/lib/vtls/schannel_verify.c"
+        "upstream/curl/lib/vtls/vtls.c"
+        "upstream/curl/lib/vtls/vtls_scache.c"
+        "upstream/curl/lib/vtls/vtls_spack.c"
+        "upstream/curl/lib/vtls/x509asn1.c")
+    set(curl_vauth_sources
+        "upstream/curl/lib/vauth/cleartext.c"
+        "upstream/curl/lib/vauth/cram.c"
+        "upstream/curl/lib/vauth/digest.c"
+        "upstream/curl/lib/vauth/digest_sspi.c"
+        "upstream/curl/lib/vauth/ntlm.c"
+        "upstream/curl/lib/vauth/ntlm_sspi.c"
+        "upstream/curl/lib/vauth/oauth2.c"
+        "upstream/curl/lib/vauth/vauth.c")
+    set(curl_curlx_sources
+        "upstream/curl/lib/curlx/base64.c"
+        "upstream/curl/lib/curlx/dynbuf.c"
+        "upstream/curl/lib/curlx/inet_ntop.c"
+        "upstream/curl/lib/curlx/inet_pton.c"
+        "upstream/curl/lib/curlx/multibyte.c"
+        "upstream/curl/lib/curlx/nonblock.c"
+        "upstream/curl/lib/curlx/strparse.c"
+        "upstream/curl/lib/curlx/timediff.c"
+        "upstream/curl/lib/curlx/timeval.c"
+        "upstream/curl/lib/curlx/version_win32.c"
+        "upstream/curl/lib/curlx/wait.c"
+        "upstream/curl/lib/curlx/warnless.c"
+        "upstream/curl/lib/curlx/winapi.c")
+    add_library(lucaria_external_curl STATIC EXCLUDE_FROM_ALL
+        ${curl_core_sources}
+        ${curl_vtls_sources}
+        ${curl_vauth_sources}
+        ${curl_curlx_sources})
+
+    set_target_properties(lucaria_external_curl PROPERTIES
+        C_STANDARD 99
+        C_STANDARD_REQUIRED ON)
+
+    target_include_directories(lucaria_external_curl PUBLIC "upstream/curl/include")
+
+    target_include_directories(lucaria_external_curl PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+        "upstream/curl/lib")
+
+    target_compile_definitions(lucaria_external_curl PUBLIC CURL_STATICLIB)
+    target_compile_definitions(lucaria_external_curl PRIVATE
+        BUILDING_LIBCURL
+        USE_SCHANNEL
+        USE_WINDOWS_SSPI
+        USE_WIN32_IDN
+		CURL_DISABLE_HTTP3
+        CURL_DISABLE_LDAP
+        CURL_DISABLE_LDAPS
+        CURL_DISABLE_TELNET
+        CURL_DISABLE_DICT
+        CURL_DISABLE_FILE
+        CURL_DISABLE_TFTP
+        CURL_DISABLE_FTP
+        CURL_DISABLE_GOPHER
+        CURL_DISABLE_IMAP
+        CURL_DISABLE_POP3
+        CURL_DISABLE_RTSP
+        CURL_DISABLE_SMB
+        CURL_DISABLE_SMTP
+        CURL_DISABLE_MQTT
+        CURL_DISABLE_DOH
+        CURL_DISABLE_WEBSOCKETS
+        CURL_DISABLE_NEGOTIATE_AUTH
+        CURL_DISABLE_KERBEROS_AUTH
+        CURL_DISABLE_AWS
+        CURL_DISABLE_ALTSVC
+        CURL_DISABLE_HSTS
+        CURL_DISABLE_COOKIES)
+
+	if(MSVC)
+		target_compile_options(lucaria_external_curl PRIVATE
+			"/FI${CMAKE_CURRENT_LIST_DIR}/include/curl_include_win32.hpp")
+		target_compile_definitions(lucaria_external_curl PRIVATE
+			_WIN32_WINNT=0x0601
+    		WINVER=0x0601
+			SECURITY_WIN32
+			WIN32_LEAN_AND_MEAN
+			NOMINMAX
+			USE_SCHANNEL
+			USE_WINDOWS_SSPI
+			USE_WIN32_IDN)
+        target_link_libraries(lucaria_external_curl PUBLIC
+            ws2_32
+            crypt32
+            secur32
+            normaliz
+            bcrypt)
+        target_compile_options(lucaria_external_curl PRIVATE
+            /wd4005
+            /wd4018
+            /wd4146
+            /wd4244
+            /wd4267
+            /wd4996)
+    endif()
+
+endif()

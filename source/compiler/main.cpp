@@ -19,6 +19,8 @@
 #include "tool/oggenc.hpp"
 #include "tool/woff2compress.hpp"
 
+#include "profiler/profiler_tracy.hpp"
+
 namespace detail {
 
 using commands_map = std::unordered_map<std::string, std::vector<std::string>>;
@@ -299,6 +301,7 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
 
 int main(int argc, char* argv[])
 {
+	lucaria::detail::run_tracy_profiler_window("127.0.0.1", 8000);
     detail::commands_map _commands = detail::extract_args(argc, argv);
     if (detail::process_help_command(_commands)) {
         return 0;

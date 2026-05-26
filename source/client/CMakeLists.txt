@@ -14,6 +14,7 @@ add_subdirectory(${LUCARIA_EXTERNAL_DIR}/ogg ${CMAKE_CURRENT_BINARY_DIR}/externa
 add_subdirectory(${LUCARIA_EXTERNAL_DIR}/ozz ${CMAKE_CURRENT_BINARY_DIR}/external/ozz)
 add_subdirectory(${LUCARIA_EXTERNAL_DIR}/pfr ${CMAKE_CURRENT_BINARY_DIR}/external/pfr)
 add_subdirectory(${LUCARIA_EXTERNAL_DIR}/stb ${CMAKE_CURRENT_BINARY_DIR}/external/stb)
+add_subdirectory(${LUCARIA_EXTERNAL_DIR}/tracy ${CMAKE_CURRENT_BINARY_DIR}/external/tracy)
 add_subdirectory(${LUCARIA_EXTERNAL_DIR}/vorbis ${CMAKE_CURRENT_BINARY_DIR}/external/vorbis)
 add_subdirectory(${LUCARIA_EXTERNAL_DIR}/woff ${CMAKE_CURRENT_BINARY_DIR}/external/woff)
 
@@ -67,6 +68,7 @@ target_link_libraries(lucaria_client PUBLIC lucaria_external_imgui)
 target_link_libraries(lucaria_client PUBLIC lucaria_external_ozz)
 target_link_libraries(lucaria_client PUBLIC lucaria_external_pfr)
 target_link_libraries(lucaria_client PUBLIC lucaria_external_stb)
+target_link_libraries(lucaria_client PUBLIC lucaria_external_tracy)
 target_link_libraries(lucaria_client PUBLIC lucaria_external_vorbis)
 target_link_libraries(lucaria_client PUBLIC lucaria_external_woff)
 
