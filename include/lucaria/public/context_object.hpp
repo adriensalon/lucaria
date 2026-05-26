@@ -14,6 +14,7 @@
 #include <lucaria/public/handle_skeleton.hpp>
 #include <lucaria/public/handle_sound_track.hpp>
 #include <lucaria/public/handle_texture.hpp>
+#include <lucaria/public/handle_user_asset.hpp>
 
 namespace lucaria {
 
@@ -91,6 +92,15 @@ struct context_object {
     /// @param profile
     handle_texture fetch_texture(const std::filesystem::path& path, const std::optional<data_image_profile> profile = std::nullopt);
 
+    template <typename AssetType>
+    handle_user_asset<AssetType> fetch_user_asset(const std::filesystem::path& path)
+    {
+        handle_user_asset<AssetType> _user_asset = {};
+        _user_asset._cached = &detail::fetch(*_manager, _manager->get_user_asset_storage<AssetType>().assets, path);
+        _user_asset._refcount = detail::flag_refcount(&_user_asset._cached->refs);
+        return _user_asset;
+    }
+
     //
     //
     //
@@ -127,6 +137,16 @@ struct context_object {
     /// @param size	the size of the texture to create
     /// @return a texture object with an empty texture of the specified size
     handle_texture create_texture(const uint32x2 size);
+
+    template <typename AssetType, typename... AssetTypeArgs>
+    handle_user_asset<AssetType> create_user_asset(AssetTypeArgs&&... args)
+    {
+        handle_user_asset<AssetType> _user_asset = {};
+        _user_asset._cached = _manager->get_user_asset_storage<AssetType>().assets.create_cell();
+        _user_asset._cached->fetched = detail::object_user_asset<AssetType>(std::forward<AssetTypeArgs>(args)...);
+        _user_asset._refcount = detail::flag_refcount(&_user_asset._cached->refs);
+        return _user_asset;
+    }
 
     //
     //

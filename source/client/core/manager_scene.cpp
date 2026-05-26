@@ -117,7 +117,6 @@ namespace detail {
                 user_component.type_id = type_id;
                 user_component.scene = scene.get();
                 user_component.component_type_callbacks = &callbacks;
-                user_component.entity_ids = &entity_ids;
             }
         }
 

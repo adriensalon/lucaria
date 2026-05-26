@@ -31,7 +31,7 @@ namespace detail {
     };
 
     [[nodiscard]] container_cache<object_audio>& fetch(
-        manager_object& fetches,
+        manager_object& objects,
         container_cache_vector<object_audio>& cached_vector,
         const std::filesystem::path& path);
 

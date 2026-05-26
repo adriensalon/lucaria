@@ -4,9 +4,6 @@
 #include <stdexcept>
 #include <typeindex>
 
-#include <cereal/archives/json.hpp>
-#include <cereal/archives/portable_binary.hpp>
-
 #include <lucaria/bin/types_containers.hpp>
 #include <lucaria/core/manager_object.hpp>
 #include <lucaria/core/object_scene.hpp>
@@ -19,8 +16,6 @@ namespace detail {
 
     struct manager_game;
 
-    // mappings
-
     struct mappings_manager_scene {
         std::unordered_map<const entt::registry*, uint32> save_map_scene_ids = {};
         std::unordered_map<const entt::registry*, std::unordered_map<entt::entity, uint32>> save_map_scene_entities = {};
@@ -32,8 +27,6 @@ namespace detail {
         mappings_manager_object_save objects = {};
         mappings_manager_scene scenes = {};
     };
-
-    // archives
 
     using archive_json_output_type_base = cereal::JSONOutputArchive;
     using archive_json_output = cereal::UserDataAdapter<mappings_manager_game_save, archive_json_output_type_base>;
@@ -48,8 +41,8 @@ namespace detail {
     using archive_binary_input = cereal::UserDataAdapter<mappings_manager_game_save, archive_binary_input_type_base>;
 
     struct user_component_type_callbacks {
-        std::function<void(object_scene&, const std::unordered_map<entt::entity, uint32>&, cereal::PortableBinaryOutputArchive&)> binary_save = nullptr;
-        std::function<void(object_scene&, const std::unordered_map<entt::entity, uint32>&, cereal::JSONOutputArchive&)> json_save = nullptr;
+        std::function<void(object_scene&, cereal::PortableBinaryOutputArchive&)> binary_save = nullptr;
+        std::function<void(object_scene&, cereal::JSONOutputArchive&)> json_save = nullptr;
     };
 
     struct object_scene_type_callbacks {
@@ -62,6 +55,54 @@ namespace detail {
         std::function<void(object_scene&, cereal::JSONOutputArchive&)> json_save = nullptr;
         std::function<void(object_scene&, cereal::JSONInputArchive&)> json_load = nullptr;
     };
+
+    template <typename ObjectType, typename RecipeType>
+    void make_recipes_for(
+        std::vector<recipe_object_entry<RecipeType>>& recipes,
+        const container_cache_vector<ObjectType>& cached_vector,
+        mappings_container_cache_vector<ObjectType>& ids)
+    {
+        for (const std::unique_ptr<container_cache<ObjectType>>& _cached_ptr : cached_vector.cells) {
+            const container_cache<ObjectType>* _cached = _cached_ptr.get();
+            recipes.push_back(recipe_object_entry<RecipeType> { ids.get_or_create(_cached), make_recipe(*_cached) });
+        }
+    }
+
+    template <typename AssetType, typename ArchiveType>
+    void save_user_asset_group(manager_object& objects, ArchiveType& archive)
+    {
+        auto& mappings = cereal::get_user_data<mappings_manager_game_save>(archive);
+        const auto& storage = objects.template get_user_asset_storage<AssetType>();
+        std::vector<recipe_object_entry<recipe_object_user_asset<AssetType>>> recipes = {};
+        make_recipes_for(recipes, storage.assets, mappings.objects.user_assets.template get_mapping<AssetType>());
+        archive(cereal::make_nvp("assets", recipes));
+    }
+
+    template <typename AssetType, typename ArchiveType>
+    void load_user_asset_group(manager_object& objects, ArchiveType& archive)
+    {
+        // auto& mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
+        // auto& storage = objects.template get_user_asset_storage<AssetType>();
+        // std::vector<recipe_object_user_asset_entry<AssetType>> recipes = {};
+        // archive(cereal::make_nvp("assets", recipes));
+        // for (const auto& recipe : recipes) {
+        //     container_cache<object_user_asset<AssetType>>* cell = nullptr;
+        //     std::visit([&](const auto& concrete_recipe) {
+        //         using Recipe = std::decay_t<decltype(concrete_recipe)>;
+        //         if constexpr (std::is_same_v<Recipe, recipe_object_user_asset_path<AssetType>>) {
+        //             cell = &fetch_user_asset<AssetType>(                        objects,                        storage.assets,                        concrete_recipe.path);
+        //         } else if constexpr (std::is_same_v<Recipe, recipe_object_user_asset_data<AssetType>>) {
+        //             cell = storage.assets.create_cell();
+        //             cell->fetched = container_async<object_user_asset<AssetType>>(
+        //                 object_user_asset<AssetType>(
+        //                     AssetType(concrete_recipe.value)));
+        //         }
+        //     },
+        //         recipe.asset);
+
+        //     mappings.objects.user_assets.template set<AssetType>(recipe.object_save_id, cell);
+        // }
+    }
 
     struct manager_scene {
         std::vector<std::unique_ptr<object_scene>> scenes = {};
@@ -144,23 +185,25 @@ namespace detail {
         {
             user_component_type_callbacks _component_type = {};
 
-            _component_type.binary_save = [](object_scene& scene, const std::unordered_map<entt::entity, uint32>& entity_ids, cereal::PortableBinaryOutputArchive& archive) {
+            _component_type.binary_save = [](object_scene& scene, cereal::PortableBinaryOutputArchive& archive) {
+                const detail::mappings_manager_game_save& _mappings = cereal::get_user_data<detail::mappings_manager_game_save>(archive);
                 std::vector<recipe_object_scene_component<ComponentType>> _components = {};
                 scene.components.view<ComponentType>().each(
                     [&](entt::entity entity, ComponentType& component) {
                         recipe_object_scene_component<ComponentType>& _back = _components.emplace_back();
-                        _back.component_save_id = entity_ids.at(entity);
+                        _back.component_save_id = _mappings.scenes.save_map_scene_entities.at(&scene.components).at(entity);
                         _back.component = &component;
                     });
                 archive(cereal::make_nvp("components", _components));
             };
 
-            _component_type.json_save = [](object_scene& scene, const std::unordered_map<entt::entity, uint32>& entity_ids, cereal::JSONOutputArchive& archive) {
+            _component_type.json_save = [](object_scene& scene, cereal::JSONOutputArchive& archive) {
+                const detail::mappings_manager_game_save& _mappings = cereal::get_user_data<detail::mappings_manager_game_save>(archive);
                 std::vector<recipe_object_scene_component<ComponentType>> _components = {};
                 scene.components.view<ComponentType>().each(
                     [&](entt::entity entity, ComponentType& component) {
                         recipe_object_scene_component<ComponentType>& _back = _components.emplace_back();
-                        _back.component_save_id = entity_ids.at(entity);
+                        _back.component_save_id = _mappings.scenes.save_map_scene_entities.at(&scene.components).at(entity);
                         _back.component = &component;
                     });
                 archive(cereal::make_nvp("components", _components));
@@ -191,16 +234,15 @@ namespace detail {
         std::string type_id = {};
         object_scene* scene = nullptr;
         user_component_type_callbacks* component_type_callbacks = nullptr;
-        const std::unordered_map<entt::entity, uint32>* entity_ids = nullptr;
 
         template <typename ArchiveType>
         void save(ArchiveType& archive) const
         {
             archive(cereal::make_nvp("type_id", type_id));
             if constexpr (std::is_base_of_v<cereal::JSONOutputArchive, ArchiveType>) {
-                component_type_callbacks->json_save(*scene, *entity_ids, archive);
+                component_type_callbacks->json_save(*scene, archive);
             } else if constexpr (std::is_base_of_v<cereal::PortableBinaryOutputArchive, ArchiveType>) {
-                component_type_callbacks->binary_save(*scene, *entity_ids, archive);
+                component_type_callbacks->binary_save(*scene, archive);
             }
         }
 

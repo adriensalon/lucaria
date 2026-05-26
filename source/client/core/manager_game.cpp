@@ -21,7 +21,7 @@ namespace detail {
     manager_game::manager_game()
     {
         context_game _game;
-		
+
         access_context _access;
         _access.set(*this, _game);
         _access.set(input, _game.input);
@@ -32,6 +32,7 @@ namespace detail {
         _access.set(mixer, _game.mixer);
         _access.set(rendering, _game.rendering);
 
+        apply_user_asset_registrations(objects);
         apply_component_registrations(scenes);
         apply_scene_registrations(scenes);
 

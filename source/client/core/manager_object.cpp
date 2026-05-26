@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include <lucaria/core/manager_object.hpp>
+#include <lucaria/core/manager_scene.hpp>
 #include <lucaria/core/utils_async.hpp>
 
 #if defined(LUCARIA_PLATFORM_WEB)
@@ -79,18 +80,6 @@ namespace detail {
                 fetches.async_fetches_waiting--;
             }).detach();
 #endif
-        }
-
-        template <typename ObjectType, typename RecipeType>
-        static void _make_recipes_for(
-            std::vector<recipe_object_entry<RecipeType>>& recipes,
-            const container_cache_vector<ObjectType>& cached_vector,
-            mappings_container_cache_vector<ObjectType>& ids)
-        {
-            for (const std::unique_ptr<container_cache<ObjectType>>& _cached_ptr : cached_vector.cells) {
-                const container_cache<ObjectType>* _cached = _cached_ptr.get();
-                recipes.push_back(recipe_object_entry<RecipeType> { ids.get_or_create(_cached), make_recipe(*_cached) });
-            }
         }
 
     }
@@ -206,19 +195,27 @@ namespace detail {
     recipe_manager_object make_recipe(const manager_object& objects, mappings_manager_object_save& mappings)
     {
         recipe_manager_object _recipes;
-        _make_recipes_for(_recipes.images, objects.images, mappings.images);
-        _make_recipes_for(_recipes.textures, objects.textures, mappings.textures);
-        _make_recipes_for(_recipes.cubemaps, objects.cubemaps, mappings.cubemaps);
-        _make_recipes_for(_recipes.geometries, objects.geometries, mappings.geometries);
-        _make_recipes_for(_recipes.shapes, objects.shapes, mappings.shapes);
-        _make_recipes_for(_recipes.meshes, objects.meshes, mappings.meshes);
-        _make_recipes_for(_recipes.fonts, objects.fonts, mappings.fonts);
-        _make_recipes_for(_recipes.audios, objects.audios, mappings.audios);
-        _make_recipes_for(_recipes.sound_tracks, objects.sound_tracks, mappings.sound_tracks);
-        _make_recipes_for(_recipes.skeletons, objects.skeletons, mappings.skeletons);
-        _make_recipes_for(_recipes.animations, objects.animations, mappings.animations);
-        _make_recipes_for(_recipes.motion_tracks, objects.motion_tracks, mappings.motion_tracks);
-        _make_recipes_for(_recipes.event_tracks, objects.event_tracks, mappings.event_tracks);
+
+        make_recipes_for(_recipes.images, objects.images, mappings.images);
+        make_recipes_for(_recipes.textures, objects.textures, mappings.textures);
+        make_recipes_for(_recipes.cubemaps, objects.cubemaps, mappings.cubemaps);
+        make_recipes_for(_recipes.geometries, objects.geometries, mappings.geometries);
+        make_recipes_for(_recipes.shapes, objects.shapes, mappings.shapes);
+        make_recipes_for(_recipes.meshes, objects.meshes, mappings.meshes);
+        make_recipes_for(_recipes.fonts, objects.fonts, mappings.fonts);
+        make_recipes_for(_recipes.audios, objects.audios, mappings.audios);
+        make_recipes_for(_recipes.sound_tracks, objects.sound_tracks, mappings.sound_tracks);
+        make_recipes_for(_recipes.skeletons, objects.skeletons, mappings.skeletons);
+        make_recipes_for(_recipes.animations, objects.animations, mappings.animations);
+        make_recipes_for(_recipes.motion_tracks, objects.motion_tracks, mappings.motion_tracks);
+        make_recipes_for(_recipes.event_tracks, objects.event_tracks, mappings.event_tracks);
+
+        for (const auto& [_type_id, _callbacks] : objects.user_asset_types) {
+            recipe_object_user_asset_group& _group = _recipes.user_assets.emplace_back();
+            _group.type_id = _type_id;
+            _group.objects = const_cast<manager_object*>(&objects);
+            _group.callbacks = const_cast<user_asset_type_callbacks*>(&_callbacks);
+        }
 
         return _recipes;
     }
