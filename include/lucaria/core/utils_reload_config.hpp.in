@@ -1,0 +1,24 @@
+#pragma once
+
+#include <lucaria/bin/types_math.hpp>
+
+namespace lucaria {
+namespace detail {
+
+    inline constexpr const char* __lucaria_reload_cmake_configure_command = "@LUCARIA_RELOAD_CMAKE_CONFIGURE_COMMAND@";
+
+    inline constexpr const char* __lucaria_reload_cmake_build_command = "@LUCARIA_RELOAD_CMAKE_BUILD_COMMAND@";
+
+    inline constexpr const char* __lucaria_reload_shared_library_path = "@LUCARIA_RELOAD_SHARED_LIBRARY_PATH@";
+
+    inline constexpr const char* __lucaria_reload_cache_directory = "@LUCARIA_RELOAD_CACHE_DIRECTORY@";
+
+    // clang-format off
+    inline constexpr const char* __lucaria_reload_watched_paths[] = {
+@LUCARIA_RELOAD_WATCHED_PATHS@ };
+    // clang-format on
+
+    inline constexpr uint32 __lucaria_reload_watched_paths_count = sizeof(__lucaria_reload_watched_paths) / sizeof(__lucaria_reload_watched_paths[0]);
+
+}
+}

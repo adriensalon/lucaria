@@ -1,6 +1,7 @@
 #pragma once
 
 #include <lucaria/core/manager_scene.hpp>
+#include <lucaria/core/utils_reload.hpp>
 #include <lucaria/public/context_game.hpp>
 
 #define LUCARIA_REGISTER_USER_ASSET_IMPLEMENTATION(AssetType)                          \
@@ -30,14 +31,15 @@
     };                                                                            \
     static SceneType##_scene_registration SceneType##_scene_registration_instance;
 
-#define LUCARIA_MAIN_SCENE_IMPLEMENTATION(SceneType)                         \
-    struct SceneType##_main_scene_registration {                             \
-        SceneType##_main_scene_registration()                                \
-        {                                                                    \
-            ::lucaria::detail::enqueue_main_scene_registration<SceneType>(); \
-        }                                                                    \
-    };                                                                       \
-    static SceneType##_main_scene_registration SceneType##_main_scene_registration_instance;
+#define LUCARIA_MAIN_SCENE_IMPLEMENTATION(SceneType)                                         \
+    struct SceneType##_main_scene_registration {                                             \
+        SceneType##_main_scene_registration()                                                \
+        {                                                                                    \
+            ::lucaria::detail::enqueue_main_scene_registration<SceneType>();                 \
+        }                                                                                    \
+    };                                                                                       \
+    static SceneType##_main_scene_registration SceneType##_main_scene_registration_instance; \
+    LUCARIA_RELOAD_MODULE_IMPLEMENTATION
 
 namespace lucaria {
 
@@ -153,6 +155,18 @@ namespace detail {
         if (_main_scene.emplace_into) {
             _main_scene.emplace_into(game);
         }
+    }
+
+    inline void clear_pending_type_registrations()
+    {
+        global_pending_user_asset_registrations().clear();
+        global_pending_component_registrations().clear();
+        global_pending_scene_registrations().clear();
+    }
+
+    inline void clear_pending_main_scene_registration()
+    {
+        global_pending_main_scene_registration() = {};
     }
 
 }

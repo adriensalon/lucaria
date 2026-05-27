@@ -15,6 +15,10 @@
 #include <lucaria/public/component_transform.hpp>
 #include <lucaria/public/context_game.hpp>
 
+// Store static pointers when hotreloading is enabled
+LUCARIA_PLUGIN_EXPORT bool __lucaria_plugin_register(::lucaria::detail::manager_game* game);
+LUCARIA_PLUGIN_EXPORT bool __lucaria_plugin_start(::lucaria::context_game* game);
+
 namespace lucaria {
 namespace detail {
 
@@ -31,14 +35,12 @@ namespace detail {
         _access.set(dynamics, _game.dynamics);
         _access.set(mixer, _game.mixer);
         _access.set(rendering, _game.rendering);
-
-        apply_user_asset_registrations(objects);
-        apply_component_registrations(scenes);
-        apply_scene_registrations(scenes);
+		
+		__lucaria_plugin_register(this);
 
         window.run(input, objects,
 
-            [this, &_game]() { apply_main_scene(_game); }, [this, &_game]() {
+            [this, &_game]() { __lucaria_plugin_start(&_game); }, [this, &_game]() {
 			scenes.update_callbacks(_game);
 			scenes.update_systems(*this); 
 			objects.gc_unused(); });

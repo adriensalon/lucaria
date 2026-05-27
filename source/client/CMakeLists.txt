@@ -18,6 +18,30 @@ add_subdirectory(${LUCARIA_EXTERNAL_DIR}/tracy ${CMAKE_CURRENT_BINARY_DIR}/exter
 add_subdirectory(${LUCARIA_EXTERNAL_DIR}/vorbis ${CMAKE_CURRENT_BINARY_DIR}/external/vorbis)
 add_subdirectory(${LUCARIA_EXTERNAL_DIR}/woff ${CMAKE_CURRENT_BINARY_DIR}/external/woff)
 
+if(NOT LUCARIA_DISABLE_RELOAD)
+	set(LUCARIA_RELOAD_SOURCE_DIR "${CMAKE_SOURCE_DIR}")
+	set(LUCARIA_RELOAD_BUILD_DIR "${CMAKE_BINARY_DIR}")
+	set(LUCARIA_RELOAD_TARGET "user_game") # TODO
+	set(LUCARIA_RELOAD_CMAKE_CONFIGURE_COMMAND
+		"cmake -S ${LUCARIA_RELOAD_SOURCE_DIR} -B ${LUCARIA_RELOAD_BUILD_DIR}")
+	set(LUCARIA_RELOAD_CMAKE_BUILD_COMMAND
+		"cmake --build ${LUCARIA_RELOAD_BUILD_DIR} --target ${LUCARIA_RELOAD_TARGET} --config $<CONFIG>")
+	set(LUCARIA_RELOAD_SHARED_LIBRARY_PATH
+		"$<TARGET_FILE:${LUCARIA_RELOAD_TARGET}>")
+	set(LUCARIA_RELOAD_CACHE_DIRECTORY 
+		"${CMAKE_BINARY_DIR}/lucaria_hotreload")
+	set(LUCARIA_RELOAD_WATCHED_PATHS "")
+	message(${LUCARIA_TARGET_SOURCES})
+	foreach(path IN LISTS LUCARIA_TARGET_SOURCES)
+		file(TO_CMAKE_PATH "${path}" path_normalized)
+		string(APPEND LUCARIA_RELOAD_WATCHED_PATHS "\"${path_normalized}\",\n")
+	endforeach()
+	configure_file(
+		"${LUCARIA_INCLUDE_DIR}/lucaria/core/utils_reload_config.hpp.in"
+		"${CMAKE_BINARY_DIR}/generated/lucaria/core/utils_reload_config.hpp"
+		@ONLY)
+endif()
+
 # lucaria client library
 set(lucaria_client_core_sources
 	"core/manager_game.cpp"
@@ -45,9 +69,11 @@ set(lucaria_client_core_sources
 	"core/system_rendering.cpp"
 	"core/utils_access.cpp"
 	"core/utils_error.cpp"
+	"core/utils_filewatch.cpp"
 	"core/utils_math.cpp"
 	"core/utils_owning.cpp"
 	"core/utils_refcount.cpp"
+	"core/utils_reload.cpp"
 	"core/utils_stream.cpp")
 file(GLOB lucaria_client_public_sources "public/*.cpp")
 add_library(lucaria_client STATIC ${lucaria_client_core_sources} ${lucaria_client_public_sources})
@@ -71,6 +97,11 @@ target_link_libraries(lucaria_client PUBLIC lucaria_external_stb)
 target_link_libraries(lucaria_client PUBLIC lucaria_external_tracy)
 target_link_libraries(lucaria_client PUBLIC lucaria_external_vorbis)
 target_link_libraries(lucaria_client PUBLIC lucaria_external_woff)
+
+# reload
+if(NOT LUCARIA_DISABLE_RELOAD)
+	target_include_directories(lucaria_client PUBLIC "${CMAKE_BINARY_DIR}/generated")
+endif()
 
 
 # platform
@@ -97,6 +128,7 @@ elseif(WIN32) # add macos & linux
 	target_sources(lucaria_client PRIVATE
 		"core/main_glfw.cpp"
 		"core/manager_window_glfw.cpp"
+		"core/utils_reload_win32.cpp"
 		"core/utils_glfw.cpp")
 elseif(PSP)
     message("-- Configuring Lucaria engine for PlayStation Portable platform")
