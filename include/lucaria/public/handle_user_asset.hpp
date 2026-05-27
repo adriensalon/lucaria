@@ -35,13 +35,26 @@ private:
     template <typename Archive>
     void load(Archive& archive)
     {
-        // uint32 asset_id = 0;
-        // archive(cereal::make_nvp("object_save_id", asset_id));
+        uint32 asset_id = 0;
+        archive(cereal::make_nvp("object_save_id", asset_id));
 
-        // auto& mappings = cereal::get_user_data<detail::mappings_manager_game_load>(archive);
+        if (asset_id == 0) {
+            _cached = nullptr;
+            _refcount = {};
+            return;
+        }
 
-        // cached = mappings.objects.user_assets.get<AssetType>(asset_id);
-        // refcount = detail::flag_refcount(&cached->refs);
+        detail::mappings_manager_game_load& mappings = cereal::get_user_data<detail::mappings_manager_game_load>(archive);
+
+        _cached = mappings.objects.user_assets.template get<AssetType>(asset_id);
+
+        if (_cached == nullptr) {
+            LUCARIA_DEBUG_ERROR("Failed to resolve user asset handle while loading");
+            _refcount = {};
+            return;
+        }
+
+        _refcount = detail::flag_refcount(&_cached->refs);
     }
 
     friend struct context_object;

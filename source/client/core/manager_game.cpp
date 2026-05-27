@@ -3,8 +3,9 @@
 #define CEREAL_FUTURE_EXPERIMENTAL
 #include <cereal/archives/adapters.hpp>
 
-#include <lucaria/core/manager_scene.hpp>
 #include <lucaria/core/manager_game.hpp>
+#include <lucaria/core/manager_object.hpp>
+#include <lucaria/core/manager_scene.hpp>
 #include <lucaria/core/utils_access.hpp>
 #include <lucaria/core/utils_register.hpp>
 #include <lucaria/public/component_animator.hpp>
@@ -25,6 +26,7 @@ namespace detail {
     manager_game::manager_game()
     {
         context_game _game;
+        context = &_game;
 
         access_context _access;
         _access.set(*this, _game);
@@ -35,8 +37,8 @@ namespace detail {
         _access.set(dynamics, _game.dynamics);
         _access.set(mixer, _game.mixer);
         _access.set(rendering, _game.rendering);
-		
-		__lucaria_plugin_register(this);
+
+        __lucaria_plugin_register(this);
 
         window.run(input, objects,
 
@@ -48,38 +50,36 @@ namespace detail {
 
     void manager_game::save_snapshot(const std::filesystem::path& path)
     {
-        recipe_manager_game _recipe_game = {};
-
+        recipe_manager_game _recipe = {};
         mappings_manager_game_save _mappings = {};
-        _recipe_game.objects = make_recipe(objects, _mappings.objects);
-        _recipe_game.scenes = make_recipe(scenes, _mappings.scenes);
+        _recipe.objects = make_recipe(objects, _mappings.objects);
+        _recipe.scenes = make_recipe(scenes, _mappings.scenes);
 
         std::ofstream _ofstream(path, std::ios::binary);
         archive_json_output _archive(_mappings, _ofstream);
-        _archive(cereal::make_nvp("game", _recipe_game));
-
+        _archive(cereal::make_nvp("assets", _recipe.objects));
+        _archive(cereal::make_nvp("components", _recipe.scenes));
     }
 
     void manager_game::load_snapshot(const std::filesystem::path& path)
     {
-        // std::ifstream _ifstream(path, std::ios::binary);
-        // // cereal::PortableBinaryInputArchive _archive(_ifstream);
-        // cereal::JSONInputArchive _archive(_ifstream);
+        mappings_manager_game_load _mappings = {};
+        _mappings.loading_objects = &objects;
+        _mappings.loading_scene_manager = &scenes;
+        _mappings.dynamics = &context->dynamics;
 
-        // // objects
-        // recipe_manager_object _save_recipes = {};
-        // _archive(cereal::make_nvp("objects", _save_recipes));
-        // object_save_database _save_objects = engine_resources().apply_recipes(std::move(_save_recipes));
+        std::ifstream _ifstream(path, std::ios::binary);
+        archive_json_input _archive(_mappings, _ifstream);
 
-        // // scenes
-        // std::unordered_map<std::string, scene_type_implementation>& _scene_types = engine_scene_types();
-        // for (scene_implementation& _scene : engine_scenes()) {
-        //     // components TODO LATER
+        recipe_manager_game _recipe = {};
 
-        //     scene_type_implementation& _scene_type = _scene_types.at(_scene.type_id);
-        //     // _scene_type.binary_load(_scene, _archive);
-        //     _scene_type.json_load(_scene, _archive);
-        // }
+        _archive(cereal::make_nvp("assets", _recipe.objects));
+        apply_recipe(window, objects, _mappings.objects, _recipe.objects);
+
+        // scenes.scenes.clear();
+        scenes.current_scene = nullptr;
+
+        _archive(cereal::make_nvp("components", _recipe.scenes));
     }
 
 }

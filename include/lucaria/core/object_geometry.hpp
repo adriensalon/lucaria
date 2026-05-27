@@ -62,6 +62,7 @@ namespace detail {
     using recipe_object_geometry = std::variant<recipe_object_geometry_path, recipe_object_geometry_data>;
 
     [[nodiscard]] recipe_object_geometry make_recipe(const container_cache<object_geometry>& cache);
+	[[nodiscard]] container_cache<object_geometry>* apply_recipe(manager_object& objects, container_cache_vector<object_geometry>& cached, recipe_object_geometry& recipe);
 
 }
 }

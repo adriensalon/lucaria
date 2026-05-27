@@ -77,5 +77,26 @@ namespace detail {
         }
     }
 
+	container_cache<object_event_track>* apply_recipe(manager_object& objects, container_cache_vector<object_event_track>& cached_vector, recipe_object_event_track& recipe)
+    {
+        return std::visit([&](auto& value) -> container_cache<object_event_track>* {
+            using RecipeType = std::decay_t<decltype(value)>;
+
+            if constexpr (std::is_same_v<RecipeType, recipe_object_event_track_path>) {
+                return &fetch(objects, cached_vector, value.path);
+
+            } else if constexpr (std::is_same_v<RecipeType, recipe_object_event_track_data>) {
+                return cached_vector.create_cell(
+                    container_async<object_event_track>(
+                        object_event_track(std::move(value.data))));
+
+            } else {
+                LUCARIA_DEBUG_ERROR("Implementation error");
+				return nullptr;
+            }
+        },
+            recipe);
+    }
+
 }
 }

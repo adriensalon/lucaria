@@ -96,5 +96,21 @@ namespace detail {
             return {};
         }
     }
+
+	container_cache<object_motion_track>* apply_recipe(manager_object& objects, container_cache_vector<object_motion_track>& cached_vector, recipe_object_motion_track& recipe)
+    {
+        return std::visit([&](auto& value) -> container_cache<object_motion_track>* {
+            using RecipeType = std::decay_t<decltype(value)>;
+
+            if constexpr (std::is_same_v<RecipeType, recipe_object_motion_track_path>) {
+                return &fetch(objects, cached_vector, value.path);
+
+            } else {
+                LUCARIA_DEBUG_ERROR("Implementation error");
+				return nullptr;
+            }
+        },
+            recipe);
+    }
 }
 }

@@ -130,6 +130,7 @@ namespace detail {
         recipe_object_shape_cone>;
 
     [[nodiscard]] recipe_object_shape make_recipe(const container_cache<object_shape>& cache);
+	[[nodiscard]] container_cache<object_shape>* apply_recipe(manager_object& objects, container_cache_vector<object_shape>& cached, recipe_object_shape& recipe);
 
 }
 }

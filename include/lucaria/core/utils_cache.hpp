@@ -121,41 +121,51 @@ namespace detail {
     // mappings
 
     template <typename ObjectType>
-    struct mappings_container_cache_vector {
-
-        std::unordered_map<const container_cache<ObjectType>*, uint32> ids = {};
-        uint32 next_id = 1;
+    struct mappings_container_cache_vector_save {
 
         [[nodiscard]] uint32 get(const container_cache<ObjectType>* resource) const
         {
-            if (!resource) {
-                LUCARIA_DEBUG_ERROR("Object implementation was nullptr");
-                return 0;
-            }
-
-            if (typename std::unordered_map<const container_cache<ObjectType>*, uint32>::const_iterator it = ids.find(resource); it != ids.end()) {
-                return it->second;
-            }
-
-            LUCARIA_DEBUG_ERROR("Object was not registered before component recipe save");
-            return 0;
+            LUCARIA_DEBUG_ASSERT(resource, "Object implementation was nullptr");
+            typename std::unordered_map<const container_cache<ObjectType>*, uint32>::const_iterator _iterator = _asset_ids.find(resource);
+            LUCARIA_DEBUG_ASSERT(_iterator != _asset_ids.end(), "Object was not registered before component recipe save");
+            return _iterator->second;
         }
 
         [[nodiscard]] uint32 get_or_create(const container_cache<ObjectType>* resource)
         {
-            if (!resource) {
-                LUCARIA_DEBUG_ERROR("Object implementation was nullptr");
-                return 0;
+            LUCARIA_DEBUG_ASSERT(resource, "Object implementation was nullptr");
+            typename std::unordered_map<const container_cache<ObjectType>*, uint32>::const_iterator _iterator = _asset_ids.find(resource);
+            if (_iterator != _asset_ids.end()) {
+                return _iterator->second;
             }
-
-            if (typename std::unordered_map<const container_cache<ObjectType>*, uint32>::const_iterator it = ids.find(resource); it != ids.end()) {
-                return it->second;
-            }
-
-            const uint32 id = next_id++;
-            ids.emplace(resource, id);
-            return id;
+            const uint32 _asset_id = _next_id++;
+            _asset_ids.emplace(resource, _asset_id);
+            return _asset_id;
         }
+
+    private:
+        std::unordered_map<const container_cache<ObjectType>*, uint32> _asset_ids = {};
+        uint32 _next_id = 1;
+    };
+
+    template <typename ObjectType>
+    struct mappings_container_cache_vector_load {
+
+        void set(const uint32 id, container_cache<ObjectType>* asset)
+        {
+            LUCARIA_DEBUG_ASSERT(id != 0 && asset != nullptr, "Invalid object load mapping");
+            _assets[id] = asset;
+        }
+
+        [[nodiscard]] container_cache<ObjectType>* get(const uint32 id) const
+        {
+            typename std::unordered_map<uint32, container_cache<ObjectType>*>::const_iterator _iterator = _assets.find(id);
+            LUCARIA_DEBUG_ASSERT(_iterator != _assets.end(), "Object save id was not loaded before handle load");
+            return _iterator->second;
+        }
+
+    private:
+        std::unordered_map<uint32, container_cache<ObjectType>*> _assets = {};
     };
 }
 }

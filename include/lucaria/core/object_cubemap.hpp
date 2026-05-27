@@ -77,5 +77,7 @@ namespace detail {
     using recipe_object_cubemap = std::variant<recipe_object_cubemap_path, recipe_object_cubemap_data>;
 
     [[nodiscard]] recipe_object_cubemap make_recipe(const container_cache<object_cubemap>& cache);
+	[[nodiscard]] container_cache<object_cubemap>* apply_recipe(manager_object& objects, container_cache_vector<object_cubemap>& cached, recipe_object_cubemap& recipe);
+
 }
 }

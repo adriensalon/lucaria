@@ -34,6 +34,18 @@ private:
     template <typename ArchiveType>
     void load(ArchiveType& archive)
     {
+		uint32 _asset_id = 0;
+        archive(cereal::make_nvp("object_save_id", _asset_id));
+        detail::mappings_manager_game_load& _mappings = cereal::get_user_data<detail::mappings_manager_game_load>(archive);
+        detail::container_cache<detail::object_geometry>* _cached_cell = _mappings.objects.geometries.get(_asset_id);
+        if (_cached_cell == nullptr) {
+            LUCARIA_DEBUG_ERROR("Failed to resolve geometry handle while loading");
+            _cached = nullptr;
+            _refcount = {};
+            return;
+        }
+        _cached = _cached_cell;
+        _refcount = detail::flag_refcount(&_cached->refs);
     }
 
     friend struct context_object;

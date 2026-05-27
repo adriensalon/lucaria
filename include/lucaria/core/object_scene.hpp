@@ -1,6 +1,7 @@
 #pragma once
 
 #include <any>
+#include <memory>
 
 #include <entt/entt.hpp>
 
@@ -34,45 +35,22 @@ namespace detail {
     // recipes
 
     template <typename ComponentType>
-    struct recipe_object_scene_component {
-        uint32 component_save_id = 0;
-        ComponentType* component = nullptr;
-
+    struct component_emplace_factory {
         template <typename ArchiveType>
-        void serialize(ArchiveType& archive)
+        static ComponentType& emplace(
+            ArchiveType&,
+            entt::registry& registry,
+            entt::entity entity)
         {
-            archive(cereal::make_nvp("component_save_id", component_save_id));
-            archive(cereal::make_nvp("component", *component));
+            if constexpr (std::is_default_constructible_v<ComponentType>) {
+                return registry.emplace_or_replace<ComponentType>(entity);
+            } else {
+                static_assert(
+                    std::is_default_constructible_v<ComponentType>,
+                    "Component is not default constructible. Provide component_emplace_factory specialization.");
+            }
         }
     };
-
-    struct recipe_object_scene_registry {
-        std::vector<recipe_object_scene_component<component_animator>> animators = {};
-        std::vector<recipe_object_scene_component<component_interface_screen>> screen_interfaces = {};
-        std::vector<recipe_object_scene_component<component_interface_spatial>> spatial_interfaces = {};
-        std::vector<recipe_object_scene_component<component_model_blockout>> blockout_models = {};
-        std::vector<recipe_object_scene_component<component_model_unlit>> unlit_models = {};
-        std::vector<recipe_object_scene_component<component_rigidbody_passive>> passive_rigidbodies = {};
-        std::vector<recipe_object_scene_component<component_rigidbody_kinematic>> kinematic_rigidbodies = {};
-        std::vector<recipe_object_scene_component<component_rigidbody_dynamic>> dynamic_rigidbodies = {};
-        std::vector<recipe_object_scene_component<component_speaker_spatial>> speakers = {};
-        std::vector<recipe_object_scene_component<component_transform>> transforms = {};
-
-        template <typename ArchiveType>
-        void serialize(ArchiveType& archive)
-        {
-            archive(cereal::make_nvp("animators", animators));
-            archive(cereal::make_nvp("screen_interfaces", screen_interfaces));
-            archive(cereal::make_nvp("spatial_interfaces", spatial_interfaces));
-            archive(cereal::make_nvp("blockout_models", blockout_models));
-            archive(cereal::make_nvp("unlit_models", unlit_models));
-            archive(cereal::make_nvp("passive_rigidbodies", passive_rigidbodies));
-            archive(cereal::make_nvp("kinematic_rigidbodies", kinematic_rigidbodies));
-            archive(cereal::make_nvp("dynamic_rigidbodies", dynamic_rigidbodies));
-            archive(cereal::make_nvp("speakers", speakers));
-            archive(cereal::make_nvp("transforms", transforms));
-        }
-    };    
 
 }
 }

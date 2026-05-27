@@ -15,7 +15,7 @@
 
 namespace lucaria {
 namespace detail {
-	
+
     struct manager_object;
 
     enum struct object_texture_origin {
@@ -56,7 +56,7 @@ namespace detail {
     };
 
     [[nodiscard]] container_cache<object_texture>& fetch(
-		manager_object& objects,
+        manager_object& objects,
         container_cache_vector<object_texture>& cache_vector,
         const std::filesystem::path& path,
         const std::optional<data_image_profile> profile = std::nullopt);
@@ -98,6 +98,7 @@ namespace detail {
     using recipe_object_texture = std::variant<recipe_object_texture_path, recipe_object_texture_data, recipe_object_texture_size>;
 
     [[nodiscard]] recipe_object_texture make_recipe(const container_cache<object_texture>& cache);
+    [[nodiscard]] container_cache<object_texture>* apply_recipe(manager_object& objects, container_cache_vector<object_texture>& cached, recipe_object_texture& recipe);
 
 }
 }

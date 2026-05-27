@@ -60,5 +60,6 @@ namespace detail {
     using recipe_object_audio = std::variant<recipe_object_audio_path, recipe_object_audio_data>;
 
     [[nodiscard]] recipe_object_audio make_recipe(const container_cache<object_audio>& cache);
+	[[nodiscard]] container_cache<object_audio>* apply_recipe(manager_object& objects, container_cache_vector<object_audio>& cached, recipe_object_audio& recipe);
 }
 }

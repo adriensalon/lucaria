@@ -118,6 +118,7 @@ namespace detail {
     using recipe_object_mesh = std::variant<recipe_object_mesh_path, recipe_object_mesh_data>;
 
     [[nodiscard]] recipe_object_mesh make_recipe(const container_cache<object_mesh>& cache);
+	[[nodiscard]] container_cache<object_mesh>* apply_recipe(manager_object& objects, container_cache_vector<object_mesh>& cached, recipe_object_mesh& recipe);
 
 }
 }

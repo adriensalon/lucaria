@@ -220,5 +220,24 @@ namespace detail {
         return _recipes;
     }
 
+    void apply_recipe(manager_window& window, manager_object& objects, mappings_manager_object_load& mappings, recipe_manager_object& recipe)
+    {
+        apply_recipes_for(objects, objects.images, mappings.images, recipe.images);
+        apply_recipes_for(objects, objects.textures, mappings.textures, recipe.textures);
+        apply_recipes_for(objects, objects.cubemaps, mappings.cubemaps, recipe.cubemaps);
+        apply_recipes_for(objects, objects.geometries, mappings.geometries, recipe.geometries);
+        apply_recipes_for(objects, objects.shapes, mappings.shapes, recipe.shapes);
+        apply_recipes_for(objects, objects.meshes, mappings.meshes, recipe.meshes);
+        apply_recipes_for(window, objects, objects.fonts, mappings.fonts, recipe.fonts);
+        apply_recipes_for(objects, objects.audios, mappings.audios, recipe.audios);
+        apply_recipes_for(objects, objects.sound_tracks, mappings.sound_tracks, recipe.sound_tracks);
+        apply_recipes_for(objects, objects.skeletons, mappings.skeletons, recipe.skeletons);
+        apply_recipes_for(objects, objects.animations, mappings.animations, recipe.animations);
+        apply_recipes_for(objects, objects.motion_tracks, mappings.motion_tracks, recipe.motion_tracks);
+        apply_recipes_for(objects, objects.event_tracks, mappings.event_tracks, recipe.event_tracks);
+
+		// missing user asset groups
+    }
+
 }
 }

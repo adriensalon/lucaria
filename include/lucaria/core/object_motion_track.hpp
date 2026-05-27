@@ -52,5 +52,7 @@ namespace detail {
     using recipe_object_motion_track = std::variant<recipe_object_motion_track_path>;
 
     [[nodiscard]] recipe_object_motion_track make_recipe(const container_cache<object_motion_track>& cache);
+	[[nodiscard]] container_cache<object_motion_track>* apply_recipe(manager_object& objects, container_cache_vector<object_motion_track>& cached, recipe_object_motion_track& recipe);
+
 }
 }

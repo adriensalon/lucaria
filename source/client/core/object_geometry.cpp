@@ -44,15 +44,15 @@ namespace detail {
     {
     }
 
-	container_cache<object_geometry>& fetch(
-		manager_object& objects, 
+    container_cache<object_geometry>& fetch(
+        manager_object& objects,
         container_cache_vector<object_geometry>& cached_vector,
-		const std::filesystem::path& path)
-	{
-		return *cached_vector.get_or_create_by_path(path, [&objects, path] {
+        const std::filesystem::path& path)
+    {
+        return *cached_vector.get_or_create_by_path(path, [&objects, path] {
             return _fetch_geometry_async(objects, path);
         });
-	}
+    }
 
     recipe_object_geometry make_recipe(const container_cache<object_geometry>& cached)
     {
@@ -63,11 +63,32 @@ namespace detail {
 
         } else if (_geometry.origin == object_geometry_origin::data) {
             return recipe_object_geometry_data { _geometry.data };
-			
+
         } else {
             LUCARIA_DEBUG_ERROR("Implementation error");
             return {};
         }
+    }
+
+    container_cache<object_geometry>* apply_recipe(manager_object& objects, container_cache_vector<object_geometry>& cached_vector, recipe_object_geometry& recipe)
+    {
+        return std::visit([&](auto& value) -> container_cache<object_geometry>* {
+            using RecipeType = std::decay_t<decltype(value)>;
+
+            if constexpr (std::is_same_v<RecipeType, recipe_object_geometry_path>) {
+                return &fetch(objects, cached_vector, value.path);
+
+            } else if constexpr (std::is_same_v<RecipeType, recipe_object_geometry_data>) {
+                return cached_vector.create_cell(
+                    container_async<object_geometry>(
+                        object_geometry(std::move(value.data))));
+
+            } else {
+                LUCARIA_DEBUG_ERROR("Implementation error");
+                return nullptr;
+            }
+        },
+            recipe);
     }
 
 }

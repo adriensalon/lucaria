@@ -58,6 +58,7 @@ namespace detail {
     using recipe_object_event_track = std::variant<recipe_object_event_track_path, recipe_object_event_track_data>;
 
     [[nodiscard]] recipe_object_event_track make_recipe(const container_cache<object_event_track>& cache);
+	[[nodiscard]] container_cache<object_event_track>* apply_recipe(manager_object& objects, container_cache_vector<object_event_track>& cached, recipe_object_event_track& recipe);
 
 }
 }

@@ -48,7 +48,7 @@ namespace detail {
 
         if (_cubemap.origin == object_cubemap_origin::path) {
             // return recipe_object_cubemap_path {} // TODO W PROFILE ?
-			return {};
+            return {};
         }
 
         else if (_cubemap.origin == object_cubemap_origin::data) {
@@ -60,6 +60,34 @@ namespace detail {
             LUCARIA_DEBUG_ERROR("Implementation error");
             return {};
         }
+    }
+
+    container_cache<object_cubemap>* apply_recipe(manager_object& objects, container_cache_vector<object_cubemap>& cached_vector, recipe_object_cubemap& recipe)
+    {
+        return std::visit([&](auto& value) -> container_cache<object_cubemap>* {
+            using RecipeType = std::decay_t<decltype(value)>;
+
+            if constexpr (std::is_same_v<RecipeType, recipe_object_cubemap_path>) {
+                return &fetch(objects, cached_vector, value.paths, value.profile);
+
+            } else if constexpr (std::is_same_v<RecipeType, recipe_object_cubemap_data>) {
+                return cached_vector.create_cell(
+                    container_async<object_cubemap>(
+                        object_cubemap({
+							
+                            object_image(std::move(value.datas[0])),
+                            object_image(std::move(value.datas[1])),
+                            object_image(std::move(value.datas[2])),
+                            object_image(std::move(value.datas[3])),
+                            object_image(std::move(value.datas[4])),
+                            object_image(std::move(value.datas[5])) })));
+
+            } else {
+                LUCARIA_DEBUG_ERROR("Implementation error");
+                return nullptr;
+            }
+        },
+            recipe);
     }
 }
 }

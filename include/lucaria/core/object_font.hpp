@@ -55,5 +55,7 @@ namespace detail {
     using recipe_object_font = std::variant<recipe_object_font_path>;
 
     [[nodiscard]] recipe_object_font make_recipe(const container_cache<object_font>& cache);
+	[[nodiscard]] container_cache<object_font>* apply_recipe(manager_window& window, manager_object& objects, container_cache_vector<object_font>& cached, recipe_object_font& recipe);
+
 }
 }

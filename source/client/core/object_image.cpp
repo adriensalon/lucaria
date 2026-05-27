@@ -194,6 +194,18 @@ namespace detail {
     {
     }
 
+    container_cache<object_image>& fetch(
+        manager_object& objects,
+        container_cache_vector<object_image>& cached_vector,
+        const std::filesystem::path& path,
+        const std::optional<data_image_profile> profile)
+    {
+        const std::filesystem::path _resolved_path = resolve_profile(objects, path, profile);
+        return *cached_vector.get_or_create_by_path(_resolved_path, [&objects, _resolved_path] {
+            return _fetch_image_async(objects, _resolved_path);
+        });
+    }
+
     recipe_object_image make_recipe(const container_cache<object_image>& cached)
     {
         const object_image& _image = cached.fetched.value();
@@ -212,16 +224,25 @@ namespace detail {
         }
     }
 
-    container_cache<object_image>& fetch(
-        manager_object& objects,
-        container_cache_vector<object_image>& cached_vector,
-        const std::filesystem::path& path,
-        const std::optional<data_image_profile> profile)
+    container_cache<object_image>* apply_recipe(manager_object& objects, container_cache_vector<object_image>& cached_vector, recipe_object_image& recipe)
     {
-        const std::filesystem::path _resolved_path = resolve_profile(objects, path, profile);
-        return *cached_vector.get_or_create_by_path(_resolved_path, [&objects, _resolved_path] {
-            return _fetch_image_async(objects, _resolved_path);
-        });
+        return std::visit([&](auto& value) -> container_cache<object_image>* {
+            using RecipeType = std::decay_t<decltype(value)>;
+
+            if constexpr (std::is_same_v<RecipeType, recipe_object_image_path>) {
+                return &fetch(objects, cached_vector, value.path, value.profile);
+
+            } else if constexpr (std::is_same_v<RecipeType, recipe_object_image_data>) {
+                return cached_vector.create_cell(
+                    container_async<object_image>(
+                        object_image(std::move(value.data))));
+
+            } else {
+                LUCARIA_DEBUG_ERROR("Implementation error");
+                return nullptr;
+            }
+        },
+            recipe);
     }
 
 }

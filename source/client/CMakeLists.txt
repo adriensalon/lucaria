@@ -97,6 +97,9 @@ target_link_libraries(lucaria_client PUBLIC lucaria_external_stb)
 target_link_libraries(lucaria_client PUBLIC lucaria_external_tracy)
 target_link_libraries(lucaria_client PUBLIC lucaria_external_vorbis)
 target_link_libraries(lucaria_client PUBLIC lucaria_external_woff)
+if (MSVC)
+    target_compile_options(lucaria_client PRIVATE /bigobj)
+endif()
 
 # reload
 if(NOT LUCARIA_DISABLE_RELOAD)

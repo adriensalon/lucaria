@@ -21,15 +21,15 @@ namespace detail {
         }
     }
 
-	container_cache<object_mesh>& fetch(
+    container_cache<object_mesh>& fetch(
         manager_object& objects,
         container_cache_vector<object_mesh>& cached_vector,
         const std::filesystem::path& path)
-	{
-		return *cached_vector.get_or_create_by_path(path, [&objects, path] {
+    {
+        return *cached_vector.get_or_create_by_path(path, [&objects, path] {
             return _fetch_mesh_async(objects, path);
         });
-	}
+    }
 
     recipe_object_mesh make_recipe(const container_cache<object_mesh>& cached)
     {
@@ -40,7 +40,7 @@ namespace detail {
         }
 
         // else if (_mesh.origin == object_mesh_origin::data) {
-		// 	return {};
+        // 	return {};
         //     // return recipe_object_mesh_data { object_geometry(_mesh).data };
         // }
 
@@ -48,6 +48,27 @@ namespace detail {
             LUCARIA_DEBUG_ERROR("Implementation error");
             return {};
         }
+    }
+
+    container_cache<object_mesh>* apply_recipe(manager_object& objects, container_cache_vector<object_mesh>& cached_vector, recipe_object_mesh& recipe)
+    {
+        return std::visit([&](auto& value) -> container_cache<object_mesh>* {
+            using RecipeType = std::decay_t<decltype(value)>;
+
+            if constexpr (std::is_same_v<RecipeType, recipe_object_mesh_path>) {
+                return &fetch(objects, cached_vector, value.path);
+
+            } else if constexpr (std::is_same_v<RecipeType, recipe_object_mesh_data>) {
+                return cached_vector.create_cell(
+                    container_async<object_mesh>(
+                        object_mesh(std::move(value.data))));
+
+            } else {
+                LUCARIA_DEBUG_ERROR("Implementation error");
+                return nullptr;
+            }
+        },
+            recipe);
     }
 }
 }

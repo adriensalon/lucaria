@@ -67,5 +67,21 @@ namespace detail {
         }
     }
 
+	container_cache<object_skeleton>* apply_recipe(manager_object& objects, container_cache_vector<object_skeleton>& cached_vector, recipe_object_skeleton& recipe)
+    {
+        return std::visit([&](auto& value) -> container_cache<object_skeleton>* {
+            using RecipeType = std::decay_t<decltype(value)>;
+
+            if constexpr (std::is_same_v<RecipeType, recipe_object_skeleton_path>) {
+                return &fetch(objects, cached_vector, value.path);
+
+            } else {
+                LUCARIA_DEBUG_ERROR("Implementation error");
+				return nullptr;
+            }
+        },
+            recipe);
+    }
+
 }
 }

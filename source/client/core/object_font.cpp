@@ -86,43 +86,21 @@ namespace detail {
         }
     }
 
+	container_cache<object_font>* apply_recipe(manager_window& window, manager_object& objects, container_cache_vector<object_font>& cached_vector, recipe_object_font& recipe)
+    {
+        return std::visit([&](auto& value) -> container_cache<object_font>* {
+            using RecipeType = std::decay_t<decltype(value)>;
+
+            if constexpr (std::is_same_v<RecipeType, recipe_object_font_path>) {
+                return &fetch(window, objects, cached_vector, value.path, value.font_size);
+
+            } else {
+                LUCARIA_DEBUG_ERROR("Implementation error");
+				return nullptr;
+            }
+        },
+            recipe);
+    }
+
 }
-
-// handle_font::~handle_font()
-// {
-//     if (_refcount.is_last_owner()) {
-//         _manager->destroy_cell(_resource);
-//     }
-// }
-
-// handle_font handle_font::fetch(const std::filesystem::path& path, const float32 font_size)
-// {
-// 	handle_font _font = {};
-//     _font._resource = detail::engine_resources().fonts.get_or_create_by_path(path, [&] {
-//         return detail::_fetch_font_async(path, font_size);
-//     });
-//     _font._manager = &detail::engine_resources().fonts;
-//     _font._refcount.emplace();
-//     return _font;
-// }
-
-// bool handle_font::has_value() const
-// {
-//     return _resource && _resource->fetched.has_value();
-// }
-
-// handle_font::operator bool() const
-// {
-//     return has_value();
-// }
-
-// ImFont* handle_font::imgui_font() const
-// {
-//     if (!_resource) {
-//         return nullptr;
-//     }
-
-//     return _resource->fetched.value().font;
-// }
-
 }

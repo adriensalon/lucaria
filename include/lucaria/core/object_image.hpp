@@ -75,5 +75,7 @@ namespace detail {
     using recipe_object_image = std::variant<recipe_object_image_path, recipe_object_image_data>;
 
     [[nodiscard]] recipe_object_image make_recipe(const container_cache<object_image>& cache);
+	[[nodiscard]] container_cache<object_image>* apply_recipe(manager_object& objects, container_cache_vector<object_image>& cached, recipe_object_image& recipe);
+
 }
 }

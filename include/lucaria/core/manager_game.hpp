@@ -30,6 +30,7 @@ namespace detail {
 		system_motion motion = {};
 		system_mixer mixer = {};
 		system_rendering rendering = {};
+		context_game* context = nullptr;
 
         void save_snapshot(const std::filesystem::path& path);
         void load_snapshot(const std::filesystem::path& path);

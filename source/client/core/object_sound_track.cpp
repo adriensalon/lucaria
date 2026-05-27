@@ -51,15 +51,15 @@ namespace detail {
         ownership.emplace();
     }
 
-	container_cache<object_sound_track>& fetch(
-		manager_object& objects,
+    container_cache<object_sound_track>& fetch(
+        manager_object& objects,
         container_cache_vector<object_sound_track>& cached_vector,
         const std::filesystem::path& path)
-	{
-		return *cached_vector.get_or_create_by_path(path, [&objects, path] {
+    {
+        return *cached_vector.get_or_create_by_path(path, [&objects, path] {
             return _fetch_sound_track_async(objects, path);
         });
-	}
+    }
 
     recipe_object_sound_track make_recipe(const container_cache<object_sound_track>& cached)
     {
@@ -78,6 +78,27 @@ namespace detail {
             LUCARIA_DEBUG_ERROR("Implementation error");
             return {};
         }
+    }
+
+    container_cache<object_sound_track>* apply_recipe(manager_object& objects, container_cache_vector<object_sound_track>& cached_vector, recipe_object_sound_track& recipe)
+    {
+        return std::visit([&](auto& value) -> container_cache<object_sound_track>* {
+            using RecipeType = std::decay_t<decltype(value)>;
+
+            if constexpr (std::is_same_v<RecipeType, recipe_object_sound_track_path>) {
+                return &fetch(objects, cached_vector, value.path);
+
+            // } else if constexpr (std::is_same_v<RecipeType, recipe_object_audio_data>) {
+            //     return cached_vector.create_cell(
+            //         container_async<object_audio>(
+            //             object_audio(std::move(value.data))));
+
+            } else {
+                LUCARIA_DEBUG_ERROR("Implementation error");
+                return nullptr;
+            }
+        },
+            recipe);
     }
 }
 }

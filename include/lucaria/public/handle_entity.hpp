@@ -76,16 +76,16 @@ struct handle_entity {
 
     /// @brief Returns true if this entity owns the requested user component.
     /// @tparam ComponentType User component type.
-	/// @return true if the entity has the component, false otherwise.
-	template <typename ComponentType>
-  	bool has_component_user() const
+    /// @return true if the entity has the component, false otherwise.
+    template <typename ComponentType>
+    bool has_component_user() const
     {
         return _registry && _registry->all_of<ComponentType>(_entity);
     }
 
     /// @brief Gets a user component from this entity.
     /// @tparam ComponentType User component type.
-	template <typename ComponentType>
+    template <typename ComponentType>
     [[nodiscard]] ComponentType& get_component_user() const
     {
         return _registry->get<ComponentType>(_entity);
@@ -93,7 +93,7 @@ struct handle_entity {
 
     /// @brief Removes a user component from this entity if present.
     /// @tparam ComponentType User component type.
-	template <typename ComponentType>
+    template <typename ComponentType>
     void remove_component_user() const
     {
         if (_registry) {
@@ -118,7 +118,46 @@ private:
     template <typename ArchiveType>
     void load(ArchiveType& archive)
     {
-        // TODO
+        uint32 scene_id = 0;
+        uint32 entity_id = 0;
+
+        archive(cereal::make_nvp("scene_save_id", scene_id));
+        archive(cereal::make_nvp("entity_save_id", entity_id));
+
+        if (scene_id == 0 || entity_id == 0) {
+            _registry = nullptr;
+            _entity = entt::null;
+            return;
+        }
+
+        detail::mappings_manager_game_load& mappings = cereal::get_user_data<detail::mappings_manager_game_load>(archive);
+
+        auto scene_it = mappings.scenes.load_map_scenes.find(scene_id);
+        if (scene_it == mappings.scenes.load_map_scenes.end()) {
+            LUCARIA_DEBUG_ERROR("Failed to resolve scene while loading entity handle");
+            _registry = nullptr;
+            _entity = entt::null;
+            return;
+        }
+
+        auto entities_it = mappings.scenes.load_map_scene_entities.find(scene_id);
+        if (entities_it == mappings.scenes.load_map_scene_entities.end()) {
+            LUCARIA_DEBUG_ERROR("Failed to resolve scene entity map while loading entity handle");
+            _registry = nullptr;
+            _entity = entt::null;
+            return;
+        }
+
+        auto entity_it = entities_it->second.find(entity_id);
+        if (entity_it == entities_it->second.end()) {
+            LUCARIA_DEBUG_ERROR("Failed to resolve entity while loading entity handle");
+            _registry = nullptr;
+            _entity = entt::null;
+            return;
+        }
+
+        _registry = scene_it->second;
+        _entity = entity_it->second;
     }
 
     friend struct component_transform;

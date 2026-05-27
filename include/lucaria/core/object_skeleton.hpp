@@ -49,6 +49,7 @@ namespace detail {
     using recipe_object_skeleton = std::variant<recipe_object_skeleton_path>;
 
     [[nodiscard]] recipe_object_skeleton make_recipe(const container_cache<object_skeleton>& cache);
+	[[nodiscard]] container_cache<object_skeleton>* apply_recipe(manager_object& objects, container_cache_vector<object_skeleton>& cached, recipe_object_skeleton& recipe);
 
 }
 }

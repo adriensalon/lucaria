@@ -57,5 +57,31 @@ namespace detail {
             return {};
         }
     }
+
+    container_cache<object_texture>* apply_recipe(manager_object& objects, container_cache_vector<object_texture>& cached_vector, recipe_object_texture& recipe)
+    {
+        return std::visit([&](auto& value) -> container_cache<object_texture>* {
+            using RecipeType = std::decay_t<decltype(value)>;
+
+            if constexpr (std::is_same_v<RecipeType, recipe_object_texture_path>) {
+                return &fetch(objects, cached_vector, value.path, value.profile);
+
+            } else if constexpr (std::is_same_v<RecipeType, recipe_object_texture_data>) {
+                return cached_vector.create_cell(
+                    container_async<object_texture>(
+                        object_texture(object_image(std::move(value.data)))));
+
+            } else if constexpr (std::is_same_v<RecipeType, recipe_object_texture_size>) {
+                return cached_vector.create_cell(
+                    container_async<object_texture>(
+                        object_texture(value.size)));
+
+            } else {
+                LUCARIA_DEBUG_ERROR("Implementation error");
+				return nullptr;
+            }
+        },
+            recipe);
+    }
 }
 }

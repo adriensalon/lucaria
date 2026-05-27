@@ -170,5 +170,26 @@ namespace detail {
         }
     }
 
+	container_cache<object_audio>* apply_recipe(manager_object& objects, container_cache_vector<object_audio>& cached_vector, recipe_object_audio& recipe)
+    {
+        return std::visit([&](auto& value) -> container_cache<object_audio>* {
+            using RecipeType = std::decay_t<decltype(value)>;
+
+            if constexpr (std::is_same_v<RecipeType, recipe_object_audio_path>) {
+                return &fetch(objects, cached_vector, value.path);
+
+            } else if constexpr (std::is_same_v<RecipeType, recipe_object_audio_data>) {
+                return cached_vector.create_cell(
+                    container_async<object_audio>(
+                        object_audio(std::move(value.data))));
+
+            } else {
+                LUCARIA_DEBUG_ERROR("Implementation error");
+				return nullptr;
+            }
+        },
+            recipe);
+    }
+
 }
 }

@@ -144,76 +144,50 @@ namespace detail {
         }
     }
 
+    container_cache<object_shape>* apply_recipe(manager_object& objects, container_cache_vector<object_shape>& cached_vector, recipe_object_shape& recipe)
+    {
+        return std::visit([&](auto& value) -> container_cache<object_shape>* {
+            using RecipeType = std::decay_t<decltype(value)>;
+
+            if constexpr (std::is_same_v<RecipeType, recipe_object_shape_path>) {
+                return &fetch(objects, cached_vector, value.path, value.algorithm);
+
+                // } else if constexpr (std::is_same_v<RecipeType, recipe_object_shape_data>) {
+                //     return cached_vector.create_cell(
+                //         container_async<object_shape>(
+                //             object_shape(std::move(value.data))));
+
+            } else if constexpr (std::is_same_v<RecipeType, recipe_object_shape_box>) {
+                return cached_vector.create_cell(
+                    container_async<object_shape>(
+                        object_shape(
+                            new btBoxShape(convert_bullet(value.half_extents)), value.half_extents.z)));
+
+            } else if constexpr (std::is_same_v<RecipeType, recipe_object_shape_sphere>) {
+                return cached_vector.create_cell(
+                    container_async<object_shape>(
+                        object_shape(
+                            new btSphereShape(static_cast<btScalar>(value.radius)), static_cast<btScalar>(value.radius))));
+
+            } else if constexpr (std::is_same_v<RecipeType, recipe_object_shape_capsule>) {
+                return cached_vector.create_cell(
+                    container_async<object_shape>(
+                        object_shape(
+                            new btCapsuleShape(static_cast<btScalar>(value.radius), static_cast<btScalar>(value.height)))));
+
+            } else if constexpr (std::is_same_v<RecipeType, recipe_object_shape_cone>) {
+                return cached_vector.create_cell(
+                    container_async<object_shape>(
+                        object_shape(
+                            new btConeShape(static_cast<btScalar>(value.radius), static_cast<btScalar>(value.height)))));
+
+            } else {
+                LUCARIA_DEBUG_ERROR("Implementation error");
+                return nullptr;
+            }
+        },
+            recipe);
+    }
+
 }
-
-// shape_object shape_object::create(const handle_geometry geometry, const shape_algorithm algorithm)
-// {
-//     shape_object _shape = {};
-//     _shape._resource = engine_resources().shapes.create_cell(
-//         container_async<object_shape>(
-//             object_shape(geometry._resource->fetched.value(), algorithm)));
-//     _shape._manager = &engine_resources().shapes;
-//     _shape._refcount.emplace();
-//     return _shape;
-// }
-
-// shape_object shape_object::create_box(const float32x3& half_extents)
-// {
-//     shape_object _shape = {};
-//     _shape._resource = engine_resources().shapes.create_cell(
-//         container_async<object_shape>(
-//             object_shape(
-//                 new btBoxShape(convert_bullet(half_extents)), half_extents.z)));
-//     _shape._manager = &engine_resources().shapes;
-//     _shape._refcount.emplace();
-//     return _shape;
-// }
-
-// shape_object shape_object::create_sphere(const glm::float32 radius)
-// {
-//     shape_object _shape = {};
-//     _shape._resource = engine_resources().shapes.create_cell(
-//         container_async<object_shape>(
-//             object_shape(
-//                 new btSphereShape(static_cast<btScalar>(radius)), radius)));
-//     _shape._manager = &engine_resources().shapes;
-//     _shape._refcount.emplace();
-//     return _shape;
-// }
-
-// shape_object shape_object::create_capsule(const glm::float32 radius, const glm::float32 height)
-// {
-//     shape_object _shape = {};
-//     _shape._resource = engine_resources().shapes.create_cell(
-//         container_async<object_shape>(
-//             object_shape(
-//                 new btCapsuleShape(static_cast<btScalar>(radius), static_cast<btScalar>(height)), radius + height * 0.5f)));
-//     _shape._manager = &engine_resources().shapes;
-//     _shape._refcount.emplace();
-//     return _shape;
-// }
-
-// shape_object shape_object::create_cone(const glm::float32 radius, const glm::float32 height)
-// {
-//     shape_object _shape = {};
-//     _shape._resource = engine_resources().shapes.create_cell(
-//         container_async<object_shape>(
-//             object_shape(
-//                 new btConeShape(static_cast<btScalar>(radius), static_cast<btScalar>(height)), height * 0.5f)));
-//     _shape._manager = &engine_resources().shapes;
-//     _shape._refcount.emplace();
-//     return _shape;
-// }
-
-// shape_object shape_object::fetch(const std::filesystem::path& path, const shape_algorithm algorithm)
-// {
-//     shape_object _shape = {};
-//     _shape._resource = engine_resources().shapes.get_or_create_by_path(path, [&] {
-//         return _fetch_shape_async(path, algorithm);
-//     });
-//     _shape._manager = &engine_resources().shapes;
-//     _shape._refcount.emplace();
-//     return _shape;
-// }
-
 }

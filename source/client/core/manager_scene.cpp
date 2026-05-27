@@ -1,12 +1,12 @@
 #include <lucaria/core/manager_game.hpp>
 #include <lucaria/core/manager_scene.hpp>
-#include <lucaria/public/context_game.hpp>
 #include <lucaria/public/component_animator.hpp>
 #include <lucaria/public/component_interface.hpp>
 #include <lucaria/public/component_model.hpp>
 #include <lucaria/public/component_rigidbody.hpp>
 #include <lucaria/public/component_speaker.hpp>
 #include <lucaria/public/component_transform.hpp>
+#include <lucaria/public/context_game.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -21,10 +21,28 @@ namespace detail {
                 [&](entt::entity entity, ComponentType& component) {
                     recipe_object_scene_component<ComponentType>& _back = _components.emplace_back();
                     _back.component_save_id = entity_ids.at(entity);
-                    _back.component = &component;
+                    _back.component_save = &component;
+                    // _back.component = std::make_shared<ComponentType>(component);
                 });
             return _components;
         }
+
+        // template <typename ComponentType>
+        // void _apply_component_group(
+        //     object_scene& scene,
+        //     uint32 scene_save_id,
+        //     mappings_manager_scene_load& mappings,
+        //     std::vector<recipe_object_scene_component<ComponentType>>& recipes)
+        // {
+        //     for (recipe_object_scene_component<ComponentType>& entry : recipes) {
+        //         if (entry.component_load == nullptr) {
+        //             LUCARIA_DEBUG_ERROR("Missing loaded component");
+        //             continue;
+        //         }
+        //         entt::entity entity = mappings.load_map_scene_entities.at(scene_save_id).at(entry.component_save_id);
+        //         scene.components.emplace_or_replace<ComponentType>(entity, std::move(*entry.component_load));
+        //     }
+        // }
     }
 
     void manager_scene::start_scene(context_game& game, object_scene& scene)
@@ -72,7 +90,24 @@ namespace detail {
         game.rendering.update_draw_debug_guizmos(game.dynamics, game.input, game.scenes);
     }
 
-    recipe_manager_scene make_recipe(manager_scene& manager, mappings_manager_scene& mappings)
+    void apply_recipes_for(
+        manager_window& window,
+        manager_object& objects,
+        container_cache_vector<object_font>& cached_vector,
+        mappings_container_cache_vector_load<object_font>& mappings,
+        std::vector<recipe_object_entry<recipe_object_font>>& recipes)
+    {
+        for (auto& entry : recipes) {
+            container_cache<object_font>* cell = apply_recipe(window, objects, cached_vector, entry.recipe);
+            if (cell == nullptr) {
+                LUCARIA_DEBUG_ERROR("Failed to apply font recipe");
+                continue;
+            }
+            mappings.set(entry.save_id, cell);
+        }
+    }
+
+    recipe_manager_scene make_recipe(manager_scene& manager, mappings_manager_scene_save& mappings)
     {
         recipe_manager_scene recipe;
 
@@ -97,6 +132,11 @@ namespace detail {
             const std::unordered_map<entt::entity, lucaria::uint32>& entity_ids = mappings.save_map_scene_entities.at(registry);
 
             recipe_object_scene& saved = recipe.scenes.emplace_back();
+            saved.scene_save_id = mappings.save_map_scene_ids.at(registry);
+            for (const auto& [entity, entity_id] : entity_ids) {
+                saved.components.entity_save_ids.push_back(entity_id);
+            }
+
             saved.type_id = scene->type_id;
             saved.scene = scene.get();
             saved.scene_type_callbacks = &manager.scene_types.at(scene->type_id);
@@ -122,6 +162,59 @@ namespace detail {
 
         return recipe;
     }
+
+    // void apply_recipe(object_scene& scene, uint32 scene_save_id, mappings_manager_scene_load& mappings, recipe_object_scene_registry& registry_recipe)
+    // {
+    //     _apply_component_group(scene, scene_save_id, mappings, registry_recipe.transforms);
+    //     _apply_component_group(scene, scene_save_id, mappings, registry_recipe.animators);
+    //     _apply_component_group(scene, scene_save_id, mappings, registry_recipe.screen_interfaces);
+    //     _apply_component_group(scene, scene_save_id, mappings, registry_recipe.spatial_interfaces);
+    //     _apply_component_group(scene, scene_save_id, mappings, registry_recipe.blockout_models);
+    //     _apply_component_group(scene, scene_save_id, mappings, registry_recipe.unlit_models);
+    //     _apply_component_group(scene, scene_save_id, mappings, registry_recipe.passive_rigidbodies);
+    //     _apply_component_group(scene, scene_save_id, mappings, registry_recipe.kinematic_rigidbodies);
+    //     _apply_component_group(scene, scene_save_id, mappings, registry_recipe.dynamic_rigidbodies);
+    //     _apply_component_group(scene, scene_save_id, mappings, registry_recipe.speakers);
+    // }
+
+    // void apply_recipe(context_game& game, manager_scene& manager, mappings_manager_scene_load& mappings, recipe_manager_scene& recipe)
+    // {
+    //     manager.scenes.clear();
+    //     manager.current_scene = nullptr;
+
+    //     for (recipe_object_scene& scene_recipe : recipe.scenes) {
+    //         auto it = manager.scene_types.find(scene_recipe.type_id);
+    //         if (it == manager.scene_types.end()) {
+    //             LUCARIA_DEBUG_ERROR("Unknown scene type while loading snapshot");
+    //             continue;
+    //         }
+
+    //         std::unique_ptr<object_scene>& scene_ptr = manager.scenes.emplace_back();
+    //         scene_ptr = std::make_unique<object_scene>();
+
+    //         object_scene& scene = *scene_ptr;
+    //         scene.type_id = scene_recipe.type_id;
+
+    //         if (it->second.construct) {
+    //             it->second.construct(scene);
+    //         }
+
+    //         mappings.load_map_scenes[scene_recipe.scene_save_id] = &scene.components;
+
+    //         for (uint32 entity_save_id : scene_recipe.components.entity_save_ids) {
+    //             entt::entity entity = scene.components.create();
+    //             mappings.load_map_scene_entities[scene_recipe.scene_save_id][entity_save_id] = entity;
+    //         }
+
+    //         apply_recipe(
+    //             scene,
+    //             scene_recipe.scene_save_id,
+    //             mappings,
+    //             scene_recipe.components);
+
+    //         // user components and user scene data later
+    //     }
+    // }
 
 }
 }

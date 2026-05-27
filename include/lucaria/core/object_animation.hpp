@@ -49,6 +49,7 @@ namespace detail {
     using recipe_object_animation = std::variant<recipe_object_animation_path>;
 
     [[nodiscard]] recipe_object_animation make_recipe(const container_cache<object_animation>& cache);
+	[[nodiscard]] container_cache<object_animation>* apply_recipe(manager_object& objects, container_cache_vector<object_animation>& cached, recipe_object_animation& recipe);
 
 }
 }
