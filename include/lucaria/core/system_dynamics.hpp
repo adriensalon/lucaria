@@ -13,8 +13,8 @@ namespace detail {
         system_dynamics();
         system_dynamics(const system_dynamics& other) = delete;
         system_dynamics& operator=(const system_dynamics& other) = delete;
-        system_dynamics(system_dynamics&& other) = default;
-        system_dynamics& operator=(system_dynamics&& other) = default;
+        system_dynamics(system_dynamics&& other) = delete;
+        system_dynamics& operator=(system_dynamics&& other) = delete;
 
         const float32x3 world_up = float32x3(0, 1, 0);
         const float32x3 world_forward = float32x3(0, 0, -1);

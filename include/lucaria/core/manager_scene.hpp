@@ -35,8 +35,8 @@ namespace detail {
         manager_scene() = default;
         manager_scene(const manager_scene& other) = delete;
         manager_scene& operator=(const manager_scene& other) = delete;
-        manager_scene(manager_scene&& other) = default;
-        manager_scene& operator=(manager_scene&& other) = default;
+        manager_scene(manager_scene&& other) = delete;
+        manager_scene& operator=(manager_scene&& other) = delete;
 
         std::vector<std::unique_ptr<object_scene>> scenes = {};
         std::unordered_map<std::string, object_scene_type_callbacks> scene_types = {};
@@ -70,19 +70,19 @@ namespace detail {
                 scene.user_data.emplace<SceneType>();
             };
 
-            if constexpr (has_start_v<SceneType>) {
+            if constexpr (has_user_scene_start_v<SceneType>) {
                 _scene_type.start = [](context_game& game, object_scene& scene) {
                     SceneType& _typed_scene = std::any_cast<SceneType&>(scene.user_data);
                     _typed_scene.start(game);
                 };
             }
-            if constexpr (has_update_v<SceneType>) {
+            if constexpr (has_user_scene_update_v<SceneType>) {
                 _scene_type.update = [](context_game& game, object_scene& scene) {
                     SceneType& _typed_scene = std::any_cast<SceneType&>(scene.user_data);
                     _typed_scene.update(game);
                 };
             }
-            if constexpr (has_stop_v<SceneType>) {
+            if constexpr (has_user_scene_stop_v<SceneType>) {
                 _scene_type.stop = [](context_game& game, object_scene& scene) {
                     SceneType& _typed_scene = std::any_cast<SceneType&>(scene.user_data);
                     _typed_scene.stop(game);
@@ -113,7 +113,7 @@ namespace detail {
             scene_types[std::move(type_id)] = std::move(_scene_type);
         }
 
-		// defined in serialize_scenes.hpp
+        // implemented in serialize_scenes.hpp
         template <typename ComponentType>
         void register_component_user(std::string type_id);
 

@@ -1,12 +1,17 @@
-#include <lucaria/core/error.hpp>
-#include <lucaria/core/window.hpp>
-
-extern "C" void __lucaria_main_scene();
+#include <lucaria/core/manager_object.hpp>
+#include <lucaria/core/manager_window.hpp>
+#include <lucaria/core/utils_key.hpp>
+#include <lucaria/core/utils_math.hpp>
 
 namespace lucaria {
 namespace detail {
 
     namespace {
+
+        struct _emscripten_context {
+            manager_window* window = nullptr;
+            manager_input* input = nullptr;
+        };
 
         EM_JS(int, _browser_get_samplerate, (), {
             var AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -85,26 +90,26 @@ namespace detail {
 
         EM_BOOL _key_callback(int event_type, const EmscriptenKeyboardEvent* event, void* user_data)
         {
-            manager_window* _window = static_cast<manager_window*>(user_data);
+            _emscripten_context* _user_context = static_cast<_emscripten_context*>(user_data);
 
-            if (!_window->implementation_web.is_audio_locked) {
-                _window->initialize_openal();
-                _window->implementation_web.is_audio_locked = true;
+            if (!_user_context->window->is_audio_locked) {
+                _user_context->window->initialize_openal();
+                _user_context->window->is_audio_locked = true;
             }
 
             EmscriptenPointerlockChangeEvent _pointer_lock;
             _emscripten_assert(emscripten_get_pointerlock_status(&_pointer_lock));
-            _window->implementation_web.is_mouse_locked = _pointer_lock.isActive;
-            if (!_window->implementation_web.is_mouse_locked) {
+            _user_context->window->is_mouse_locked = _pointer_lock.isActive;
+            if (!_user_context->window->is_mouse_locked) {
                 _emscripten_assert(emscripten_request_pointerlock("#canvas", 1));
-                _window->implementation_web.is_mouse_locked = true;
+                _user_context->window->is_mouse_locked = true;
             }
 
             const input_key _key(emscripten_keyboard_mappings.at(std::string(event->key)));
             if (event_type == EMSCRIPTEN_EVENT_KEYDOWN) {
-                _window->key_events[_key].state = true;
+                _user_context->input->key_events[_key].state = true;
             } else if (event_type == EMSCRIPTEN_EVENT_KEYUP) {
-                _window->key_events[_key].state = false;
+                _user_context->input->key_events[_key].state = false;
             }
 
             return 0;
@@ -112,56 +117,56 @@ namespace detail {
 
         EM_BOOL _mouse_callback(int event_type, const EmscriptenMouseEvent* event, void* user_data)
         {
-            manager_window* _window = static_cast<manager_window*>(user_data);
+            _emscripten_context* _user_context = static_cast<_emscripten_context*>(user_data);
 
             if (event_type == EMSCRIPTEN_EVENT_MOUSEMOVE) {
                 const float32 _dpr = _window_get_dpr();
                 const float32x2 _new_position = _dpr * float32x2(event->clientX, event->clientY);
-                _window->pointer_accumulators[0] += _dpr * float32x2(event->movementX, event->movementY);
-                _window->pointer_events[0].position = _new_position;
+                _user_context->window->pointer_accumulators[0] += _dpr * float32x2(event->movementX, event->movementY);
+                _user_context->input->pointer_events[0].position = _new_position;
                 ImGui::GetIO().AddMousePosEvent(_new_position.x, _new_position.y);
 
             } else if (event_type == EMSCRIPTEN_EVENT_MOUSEDOWN) {
                 const uint32 _button = event->button;
                 switch (_button) {
                 case 0:
-                    _window->key_events[input_key::mouse_left].state = true;
+                    _user_context->input->key_events[input_key::mouse_left].state = true;
                     break;
                 case 1:
-                    _window->key_events[input_key::mouse_right].state = true;
+                    _user_context->input->key_events[input_key::mouse_right].state = true;
                     break;
                 case 2:
-                    _window->key_events[input_key::mouse_middle].state = true;
+                    _user_context->input->key_events[input_key::mouse_middle].state = true;
                     break;
                 default:
                     break;
                 }
                 ImGui::GetIO().AddMouseButtonEvent(_button, true);
 
-                if (!_window->implementation_web.is_audio_locked) {
-                    _window->initialize_openal();
-                    _window->implementation_web.is_audio_locked = true;
+                if (!_user_context->window->is_audio_locked) {
+                    _user_context->window->initialize_openal();
+                    _user_context->window->is_audio_locked = true;
                 }
 
                 EmscriptenPointerlockChangeEvent _pointer_lock;
                 _emscripten_assert(emscripten_get_pointerlock_status(&_pointer_lock));
-                _window->implementation_web.is_mouse_locked = _pointer_lock.isActive;
-                if (!_window->implementation_web.is_mouse_locked) {
+                _user_context->window->is_mouse_locked = _pointer_lock.isActive;
+                if (!_user_context->window->is_mouse_locked) {
                     _emscripten_assert(emscripten_request_pointerlock("#canvas", 1));
-                    _window->implementation_web.is_mouse_locked = true;
+                    _user_context->window->is_mouse_locked = true;
                 }
 
             } else if (event_type == EMSCRIPTEN_EVENT_MOUSEUP) {
                 const uint32 _button = event->button;
                 switch (_button) {
                 case 0:
-                    _window->key_events[input_key::mouse_left].state = false;
+                    _user_context->input->key_events[input_key::mouse_left].state = false;
                     break;
                 case 1:
-                    _window->key_events[input_key::mouse_right].state = false;
+                    _user_context->input->key_events[input_key::mouse_right].state = false;
                     break;
                 case 2:
-                    _window->key_events[input_key::mouse_middle].state = false;
+                    _user_context->input->key_events[input_key::mouse_middle].state = false;
                     break;
                 default:
                     break;
@@ -178,18 +183,18 @@ namespace detail {
 
         EM_BOOL _touch_callback(int event_type, const EmscriptenTouchEvent* event, void* user_data)
         {
-            manager_window* _window = static_cast<manager_window*>(user_data);
+            _emscripten_context* _user_context = static_cast<_emscripten_context*>(user_data);
 
-            if (!_window->implementation_web.is_audio_locked) {
-                _window->initialize_openal();
-                _window->implementation_web.is_audio_locked = true;
+            if (!_user_context->window->is_audio_locked) {
+                _user_context->window->initialize_openal();
+                _user_context->window->is_audio_locked = true;
             }
 
             // mobile web goes fullscreen on first touch
             EmscriptenFullscreenChangeEvent _fullscreen;
             _emscripten_assert(emscripten_get_fullscreen_status(&_fullscreen));
-            _window->implementation_web.is_mouse_locked = _fullscreen.isFullscreen;
-            if (!_window->implementation_web.is_mouse_locked) {
+            _user_context->window->is_mouse_locked = _fullscreen.isFullscreen;
+            if (!_user_context->window->is_mouse_locked) {
                 EmscriptenFullscreenStrategy _strategy;
                 std::memset(&_strategy, 0, sizeof(_strategy));
                 _strategy.scaleMode = EMSCRIPTEN_FULLSCREEN_SCALE_STRETCH;
@@ -197,7 +202,7 @@ namespace detail {
                 _strategy.filteringMode = EMSCRIPTEN_FULLSCREEN_FILTERING_DEFAULT;
                 _strategy.canvasResizedCallback = [](int event_type, const void* reserved, void* user_data) -> EM_BOOL { return EM_TRUE; };
                 _emscripten_assert(emscripten_request_fullscreen_strategy("#canvas", EM_TRUE, &_strategy));
-                _window->implementation_web.is_mouse_locked = true;
+                _user_context->window->is_mouse_locked = true;
             }
 
             static std::unordered_map<uint32, float32x2> _last_positions = {};
@@ -213,8 +218,8 @@ namespace detail {
                     const uint32 _event_id = static_cast<uint32>(_touch_point.identifier);
                     const float32x2 _new_position = _dpr * float32x2(_touch_point.clientX, _touch_point.clientY);
                     _last_positions[_event_id] = _new_position;
-                    _window->pointer_accumulators[_event_id] = float32x2(0);
-                    _window->pointer_events[_event_id].position = _new_position;
+                    _user_context->window->pointer_accumulators[_event_id] = float32x2(0);
+                    _user_context->input->pointer_events[_event_id].position = _new_position;
                 }
 
             } else if (event_type == EMSCRIPTEN_EVENT_TOUCHMOVE) {
@@ -228,8 +233,8 @@ namespace detail {
                     const float32x2 _new_position = _dpr * float32x2(_touch_point.clientX, _touch_point.clientY);
                     const float32x2 _delta_position = _new_position - _last_positions[_event_id];
                     _last_positions[_event_id] = _new_position;
-                    _window->pointer_accumulators[_event_id] += _delta_position;
-                    _window->pointer_events[_event_id].position = _new_position;
+                    _user_context->window->pointer_accumulators[_event_id] += _delta_position;
+                    _user_context->input->pointer_events[_event_id].position = _new_position;
                 }
 
             } else if (event_type == EMSCRIPTEN_EVENT_TOUCHEND || event_type == EMSCRIPTEN_EVENT_TOUCHCANCEL) {
@@ -241,8 +246,8 @@ namespace detail {
 
                     const uint32 _event_id = static_cast<uint32>(_touch_point.identifier);
                     _last_positions.erase(_event_id);
-                    _window->pointer_accumulators.erase(_event_id);
-                    _window->pointer_events.erase(_event_id);
+                    _user_context->window->pointer_accumulators.erase(_event_id);
+                    _user_context->input->pointer_events.erase(_event_id);
                 }
             }
 
@@ -277,87 +282,79 @@ namespace detail {
 
         static void _update_loop(void* user_data)
         {
-            manager_window* _window = static_cast<manager_window*>(user_data);
+            _emscripten_context* _user_context = static_cast<_emscripten_context*>(user_data);
 
             static float64 _last_render_time = 0;
             const float64 _render_time = emscripten_get_now();
-            _window->time_delta_seconds = (_render_time - _last_render_time) / 1000.0;
+            _user_context->window->time_delta_seconds = (_render_time - _last_render_time) / 1000.0;
             _last_render_time = _render_time;
 
             int32 _screen_width, _screen_height;
             _screen_width = _canvas_get_width();
             _screen_height = _canvas_get_height();
-            _window->screen_size = uint32x2(_screen_width, _screen_height);
-            if (_window->screen_size == uint32x2(0)) {
+            _user_context->window->screen_size = uint32x2(_screen_width, _screen_height);
+            if (_user_context->window->screen_size == uint32x2(0)) {
                 return;
             }
 
-            for (std::pair<const uint32, float32x2>& _accumulator : _window->pointer_accumulators) {
-                _window->pointer_events[_accumulator.first].delta = _accumulator.second;
+            for (std::pair<const uint32, float32x2>& _accumulator : _user_context->window->pointer_accumulators) {
+                const float32x2 _delta = _accumulator.second;
+				_user_context->input->pointer_events[_accumulator.first].delta = _delta;
+                if (_accumulator.first == 0) {
+                    _user_context->input->mouse_position_delta = _delta;
+                    _user_context->input->mouse_position = _user_context->input->pointer_events[0].position;
+                }
                 _accumulator.second = float32x2(0);
             }
 
-            ImGui::GetIO().DisplaySize = convert_imgui(_window->screen_size);
+            ImGui::GetIO().DisplaySize = convert_imgui(_user_context->window->screen_size);
 
-            _window->stored_update_callback();
+            _user_context->window->stored_update_callback();
         }
 
     }
 
-    manager_window::manager_window(
-        const std::function<void()>& update_callback,
-        const std::function<void()>& initialize_callback,
-        const std::function<void()>& destroy_callback)
+    void manager_window::run(
+        manager_input& input,
+        manager_object& objects,
+        const std::function<void()>& setup_callback,
+        const std::function<void()>& update_callback)
     {
-		set_engine_window(this);
+        input.is_touch_supported = _navigator_get_touch_points() > 1;
+        input.is_mouse_supported = !input.is_touch_supported;
+        input.is_keyboard_supported = !input.is_touch_supported;
 
-        is_touch_supported = _navigator_get_touch_points() > 1;
-        is_mouse_supported = !is_touch_supported;
-        is_keyboard_supported = !is_touch_supported;
-
-        void* _user_data = static_cast<void*>(this);
-
-        if (is_touch_supported) {
-            _emscripten_assert(emscripten_set_touchstart_callback("#canvas", _user_data, 1, _touch_callback));
-            _emscripten_assert(emscripten_set_touchend_callback("#canvas", _user_data, 1, _touch_callback));
-            _emscripten_assert(emscripten_set_touchmove_callback("#canvas", _user_data, 1, _touch_callback));
-            _emscripten_assert(emscripten_set_touchcancel_callback("#canvas", _user_data, 1, _touch_callback)); // EMSCRIPTEN_EVENT_TARGET_WINDOW doesnt seem to work on safari
+        _emscripten_context _user_context = { this, &input };
+        if (input.is_touch_supported) {
+            _emscripten_assert(emscripten_set_touchstart_callback("#canvas", &_user_context, 1, _touch_callback));
+            _emscripten_assert(emscripten_set_touchend_callback("#canvas", &_user_context, 1, _touch_callback));
+            _emscripten_assert(emscripten_set_touchmove_callback("#canvas", &_user_context, 1, _touch_callback));
+            _emscripten_assert(emscripten_set_touchcancel_callback("#canvas", &_user_context, 1, _touch_callback)); // EMSCRIPTEN_EVENT_TARGET_WINDOW doesnt seem to work on safari
+        }
+        if (input.is_mouse_supported) {
+            _emscripten_assert(emscripten_set_click_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, &_user_context, 1, _mouse_callback));
+            _emscripten_assert(emscripten_set_mousedown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, &_user_context, 1, _mouse_callback));
+            _emscripten_assert(emscripten_set_mouseup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, &_user_context, 1, _mouse_callback));
+            _emscripten_assert(emscripten_set_dblclick_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, &_user_context, 1, _mouse_callback));
+            _emscripten_assert(emscripten_set_mousemove_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, &_user_context, 1, _mouse_callback));
+            _emscripten_assert(emscripten_set_mouseenter_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, &_user_context, 1, _mouse_callback));
+            _emscripten_assert(emscripten_set_mouseleave_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, &_user_context, 1, _mouse_callback));
+            _emscripten_assert(emscripten_set_mouseover_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, &_user_context, 1, _mouse_callback));
+            _emscripten_assert(emscripten_set_mouseout_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, &_user_context, 1, _mouse_callback));
+        }
+        if (input.is_keyboard_supported) {
+            _emscripten_assert(emscripten_set_keypress_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, &_user_context, 1, _key_callback));
+            _emscripten_assert(emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, &_user_context, 1, _key_callback));
+            _emscripten_assert(emscripten_set_keyup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, &_user_context, 1, _key_callback));
         }
 
-        if (is_mouse_supported) {
-            _emscripten_assert(emscripten_set_click_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, _user_data, 1, _mouse_callback));
-            _emscripten_assert(emscripten_set_mousedown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, _user_data, 1, _mouse_callback));
-            _emscripten_assert(emscripten_set_mouseup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, _user_data, 1, _mouse_callback));
-            _emscripten_assert(emscripten_set_dblclick_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, _user_data, 1, _mouse_callback));
-            _emscripten_assert(emscripten_set_mousemove_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, _user_data, 1, _mouse_callback));
-            _emscripten_assert(emscripten_set_mouseenter_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, _user_data, 1, _mouse_callback));
-            _emscripten_assert(emscripten_set_mouseleave_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, _user_data, 1, _mouse_callback));
-            _emscripten_assert(emscripten_set_mouseover_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, _user_data, 1, _mouse_callback));
-            _emscripten_assert(emscripten_set_mouseout_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, _user_data, 1, _mouse_callback));
-        }
-
-        if (is_keyboard_supported) {
-            _emscripten_assert(emscripten_set_keypress_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, _user_data, 1, _key_callback));
-            _emscripten_assert(emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, _user_data, 1, _key_callback));
-            _emscripten_assert(emscripten_set_keyup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, _user_data, 1, _key_callback));
-        }
-
-        _initialize_backend(is_etc2_supported, is_s3tc_supported);
+        _initialize_backend(objects.is_etc2_supported, objects.is_s3tc_supported);
         initialize_imgui();
-		
-        if (initialize_callback) {
-            initialize_callback();
-        }
+
+        setup_callback();
         stored_update_callback = update_callback;
-		
-		__lucaria_main_scene();
-
-        emscripten_set_main_loop_arg(_update_loop, _user_data, 0, EM_TRUE);
+        emscripten_set_main_loop_arg(_update_loop, &_user_context, 0, EM_TRUE);
         emscripten_set_main_loop_timing(EM_TIMING_RAF, 1);
-
-        if (destroy_callback) {
-            destroy_callback();
-        }
     }
 
 }

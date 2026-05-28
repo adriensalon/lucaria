@@ -172,7 +172,11 @@ namespace detail {
         const std::function<void()>& update_callback)
     {
         tracy::SetThreadName("Main Thread");
-		
+
+        input.is_mouse_supported = true;
+        input.is_keyboard_supported = true;
+        input.is_touch_supported = false;
+
         glfwSetErrorCallback(_glfw_error_callback);
         if (!glfwInit()) {
             exit(EXIT_FAILURE);
@@ -201,10 +205,6 @@ namespace detail {
         _initialize_backend(objects.is_s3tc_supported);
         initialize_imgui();
         initialize_openal();
-
-        input.is_mouse_supported = true;
-        input.is_keyboard_supported = true;
-        input.is_touch_supported = false;
 
         setup_callback();
         stored_update_callback = update_callback;

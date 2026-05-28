@@ -31,8 +31,8 @@ namespace detail {
         manager_window() = default;
         manager_window(const manager_window& other) = delete;
         manager_window& operator=(const manager_window& other) = delete;
-        manager_window(manager_window&& other) = default;
-        manager_window& operator=(manager_window&& other) = default;
+        manager_window(manager_window&& other) = delete;
+        manager_window& operator=(manager_window&& other) = delete;
 
         bool is_fullscreen = false;
         uint32x2 screen_size = uint32x2(0);

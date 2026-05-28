@@ -10,7 +10,7 @@
 #include <lucaria/core/object_skeleton.hpp>
 #include <lucaria/core/object_sound_track.hpp>
 #include <lucaria/core/object_texture.hpp>
-#include <lucaria/core/serialize_archives.hpp>
+#include <lucaria/core/serialize_mappings.hpp>
 #include <lucaria/core/user_asset.hpp>
 
 namespace lucaria {
@@ -30,8 +30,8 @@ namespace detail {
         manager_object() = default;
         manager_object(const manager_object& other) = delete;
         manager_object& operator=(const manager_object& other) = delete;
-        manager_object(manager_object&& other) = default;
-        manager_object& operator=(manager_object&& other) = default;
+        manager_object(manager_object&& other) = delete;
+        manager_object& operator=(manager_object&& other) = delete;
 
         bool is_etc2_supported = false;
         bool is_s3tc_supported = false;
@@ -55,6 +55,7 @@ namespace detail {
         std::unordered_map<std::string, user_asset_type_callbacks> user_asset_types = {};
         std::unordered_map<std::type_index, std::string> user_asset_type_ids = {};
 
+		// implemented in serialize_assets.hpp
         template <typename AssetType>
         void register_user_asset(std::string type_id);
 

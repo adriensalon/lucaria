@@ -6,25 +6,13 @@
 #include <lucaria/public/component_rigidbody.hpp>
 #include <lucaria/public/component_speaker.hpp>
 #include <lucaria/public/component_transform.hpp>
+#include <lucaria/core/user_traits.hpp>
 
 namespace lucaria {
 namespace detail {
 
-    template <typename ComponentType>
-    struct component_emplace_factory {
-        template <typename ArchiveType>
-        static ComponentType& emplace(ArchiveType&, entt::registry& registry, entt::entity entity)
-        {
-            if constexpr (std::is_default_constructible_v<ComponentType>) {
-                return registry.emplace_or_replace<ComponentType>(entity);
-            } else {
-                static_assert(std::is_default_constructible_v<ComponentType>, "Component is not default constructible. Provide component_emplace_factory specialization.");
-            }
-        }
-    };
-
     template <>
-    struct component_emplace_factory<component_rigidbody_passive> {
+    struct entt_emplace_factory<component_rigidbody_passive> {
         template <typename ArchiveType>
         static component_rigidbody_passive& emplace(
             ArchiveType& archive,
@@ -45,7 +33,7 @@ namespace detail {
     };
 
     template <>
-    struct component_emplace_factory<component_rigidbody_kinematic> {
+    struct entt_emplace_factory<component_rigidbody_kinematic> {
         template <typename ArchiveType>
         static component_rigidbody_kinematic& emplace(
             ArchiveType& archive,
@@ -66,7 +54,7 @@ namespace detail {
     };
 
     template <>
-    struct component_emplace_factory<component_rigidbody_dynamic> {
+    struct entt_emplace_factory<component_rigidbody_dynamic> {
         template <typename ArchiveType>
         static component_rigidbody_dynamic& emplace(
             ArchiveType& archive,
@@ -122,7 +110,7 @@ namespace detail {
                                       .at(game_mappings.loading_scene_save_id)
                                       .at(component_save_id);
 
-            ComponentType& component = component_emplace_factory<ComponentType>::emplace(
+            ComponentType& component = entt_emplace_factory<ComponentType>::emplace(
                 archive,
                 game_mappings.loading_scene->components,
                 entity);
@@ -328,13 +316,14 @@ namespace detail {
         }
     };
 
-	// 
+    //
 
     [[nodiscard]] recipe_object_scene make_recipe(const context_game& game, object_scene& scene, const object_scene_type_callbacks& callbacks);
     [[nodiscard]] recipe_manager_scene make_recipe(manager_scene& manager, mappings_manager_scene_save& mappings);
 
-	//
-	
+    //
+
+    // declared in manager_scene.hpp
     template <typename ComponentType>
     void manager_scene::register_component_user(std::string type_id)
     {

@@ -11,8 +11,8 @@ namespace detail {
         manager_input() = default;
         manager_input(const manager_input& other) = delete;
         manager_input& operator=(const manager_input& other) = delete;
-        manager_input(manager_input&& other) = default;
-        manager_input& operator=(manager_input&& other) = default;
+        manager_input(manager_input&& other) = delete;
+        manager_input& operator=(manager_input&& other) = delete;
 
         bool is_keyboard_supported = false;
         bool is_mouse_supported = false;

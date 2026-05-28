@@ -21,8 +21,8 @@ namespace detail {
         system_rendering() = default;
         system_rendering(const system_rendering& other) = delete;
         system_rendering& operator=(const system_rendering& other) = delete;
-        system_rendering(system_rendering&& other) = default;
-        system_rendering& operator=(system_rendering&& other) = default;
+        system_rendering(system_rendering&& other) = delete;
+        system_rendering& operator=(system_rendering&& other) = delete;
 
         const std::vector<float32x3> skybox_positions = {
             float32x3(-1.f, -1.f, -1.f),

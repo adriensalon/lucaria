@@ -189,6 +189,7 @@ namespace detail {
     [[nodiscard]] recipe_manager_object make_recipe(const manager_object& objects, mappings_manager_object_save& mappings);
     void apply_recipe(manager_window& window, manager_object& objects, mappings_manager_object_load& mappings, recipe_manager_object& recipe);
 
+	// declared in manager_object.hpp
     template <typename AssetType>
     void manager_object::register_user_asset(std::string type_id)
     {

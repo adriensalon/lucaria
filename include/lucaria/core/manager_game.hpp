@@ -23,8 +23,8 @@ namespace detail {
         manager_game();
         manager_game(const manager_game& other) = delete;
         manager_game& operator=(const manager_game& other) = delete;
-        manager_game(manager_game&& other) = default;
-        manager_game& operator=(manager_game&& other) = default;
+        manager_game(manager_game&& other) = delete;
+        manager_game& operator=(manager_game&& other) = delete;
 
         manager_input input = {};
         manager_object objects = {};

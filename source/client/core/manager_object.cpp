@@ -25,13 +25,13 @@ namespace detail {
 
     namespace {
 
-        static void _fetch_bytes_impl(manager_object& fetches, const std::filesystem::path& file_path, std::function<void(std::vector<char>)> callback, bool persist)
+        static void _fetch_bytes_impl(manager_object& assets, const std::filesystem::path& file_path, std::function<void(std::vector<char>)> callback, bool persist)
         {
-            fetches.async_fetches_waiting++;
+            assets.async_fetches_waiting++;
             std::filesystem::path _fetch_file_path = file_path;
 
 #if !defined(LUCARIA_PACKAGED_ASSETS)
-            _fetch_file_path = fetches.async_prefix_path / file_path;
+            _fetch_file_path = assets.async_prefix_path / file_path;
 #endif
 
 #if defined(LUCARIA_PLATFORM_WEB) && !defined(LUCARIA_PACKAGED_ASSETS)
@@ -43,19 +43,23 @@ namespace detail {
                 _emscripten_fetch_attr.attributes |= EMSCRIPTEN_FETCH_PERSIST_FILE;
             }
             using _callback_type = std::function<void(std::vector<char>)>;
-            _emscripten_fetch_attr.userData = new _callback_type(std::move(callback));
+            struct _fetch_context {
+                manager_object* assets;
+                _callback_type callback;
+            };
+            _emscripten_fetch_attr.userData = new _fetch_context { &assets, std::move(callback) };
             _emscripten_fetch_attr.onsuccess = [](emscripten_fetch_t* fetch) {
+                _fetch_context* _context = static_cast<_fetch_context*>(fetch->userData);
                 std::vector<char> _buffer(fetch->data, fetch->data + fetch->numBytes); // one copy from fetch->data
-                _callback_type* _callback_ptr = static_cast<_callback_type*>(fetch->userData);
-                (*_callback_ptr)(std::move(_buffer));
-                delete _callback_ptr;
-                fetches.async_fetches_waiting--;
+                (_context->callback)(std::move(_buffer));
+                _context->assets->async_fetches_waiting--;
+                delete _context;
                 emscripten_fetch_close(fetch);
             };
             _emscripten_fetch_attr.onerror = [](emscripten_fetch_t* fetch) {
-                _callback_type* _callback_ptr = static_cast<_callback_type*>(fetch->userData);
+                _fetch_context* _context = static_cast<_fetch_context*>(fetch->userData);
                 std::fprintf(stderr, "fetch_bytes error: %s (%d)\n", fetch->statusText, fetch->status);
-                delete _callback_ptr;
+                delete _context;
                 emscripten_fetch_close(fetch);
                 std::terminate();
             };
@@ -63,21 +67,21 @@ namespace detail {
 #endif
 
 #if defined(LUCARIA_PLATFORM_WEB) && defined(LUCARIA_PACKAGED_ASSETS)
-            struct _async_context {
+            struct _fetch_context {
+                manager_object* assets;
                 std::filesystem::path context_path;
                 std::function<void(const std::vector<char>&)> context_callback;
             };
-            _async_context* _context = new _async_context { _fetch_file_path, callback };
-            emscripten_async_call(+[&fetches](void* user_data) {
-                std::unique_ptr<_async_context> _context_inner(static_cast<_async_context*>(user_data));
-                fetches.load_bytes(_context_inner->context_path, _context_inner->context_callback);
-                fetches.async_fetches_waiting--; }, _context, 0);
+            emscripten_async_call(+[](void* user_data) {
+                _fetch_context* _context = static_cast<_fetch_context*>(user_data);
+                _context->assets->load_bytes(_context->context_path, _context->context_callback);
+                _context->assets->async_fetches_waiting--; }, new _fetch_context { &assets, _fetch_file_path, std::move(callback) }, 0);
 #endif
 
 #if defined(LUCARIA_PLATFORM_ANDROID) || defined(LUCARIA_PLATFORM_GLFW)
-            std::thread([&fetches, _fetch_file_path, callback]() {
-                fetches.load_bytes(_fetch_file_path, callback);
-                fetches.async_fetches_waiting--;
+            std::thread([&assets, _fetch_file_path, callback]() {
+                assets.load_bytes(_fetch_file_path, callback);
+                assets.async_fetches_waiting--;
             }).detach();
 #endif
         }
