@@ -2,7 +2,7 @@
 
 #include <entt/entt.hpp>
 
-#include <lucaria/core/manager_scene.hpp>
+#include <lucaria/core/manager_scenes.hpp>
 #include <lucaria/core/utils_access.hpp>
 
 namespace lucaria {
@@ -163,7 +163,7 @@ private:
     friend struct component_transform;
     friend struct context_object;
     friend struct context_scene;
-    friend struct detail::manager_scene;
+    friend struct detail::manager_scenes;
     friend class cereal::access;
 };
 

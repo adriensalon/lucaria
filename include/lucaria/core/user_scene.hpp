@@ -62,7 +62,7 @@ namespace detail {
     template <typename SceneType>
     inline constexpr bool has_user_scene_stop_v = has_user_scene_stop<SceneType>::value;
 
-    struct object_scene {
+    struct object_user_scene {
         std::string type_id = {};
         bool is_marked_erase = false;
         std::vector<entt::entity> entities_marked_erase = {};

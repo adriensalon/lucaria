@@ -1,7 +1,7 @@
 #include <cereal/archives/json.hpp>
 #include <cereal/archives/portable_binary.hpp>
 
-#include <lucaria/core/manager_object.hpp>
+#include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/object_image.hpp>
 #include <lucaria/core/utils_stream.hpp>
 
@@ -9,7 +9,7 @@ namespace lucaria {
 namespace detail {
 
     std::filesystem::path resolve_profile(
-        manager_object& object,
+        manager_assets& object,
         const std::filesystem::path& path,
         const std::optional<data_image_profile> profile)
     {
@@ -41,7 +41,7 @@ namespace detail {
     }
 
     std::array<std::filesystem::path, 6> resolve_profile(
-        manager_object& object,
+        manager_assets& object,
         const std::array<std::filesystem::path, 6>& paths,
         const std::optional<data_image_profile> profile)
     {
@@ -169,7 +169,7 @@ namespace detail {
         }
 
         static container_async<object_image> _fetch_image_async(
-            manager_object& objects,
+            manager_assets& objects,
             const std::filesystem::path& path)
         {
             std::shared_ptr<std::promise<object_image>> _promise = std::make_shared<std::promise<object_image>>();
@@ -195,7 +195,7 @@ namespace detail {
     }
 
     container_cache<object_image>& fetch(
-        manager_object& objects,
+        manager_assets& objects,
         container_cache_vector<object_image>& cached_vector,
         const std::filesystem::path& path,
         const std::optional<data_image_profile> profile)
@@ -224,7 +224,7 @@ namespace detail {
         }
     }
 
-    container_cache<object_image>* apply_recipe(manager_object& objects, container_cache_vector<object_image>& cached_vector, recipe_object_image& recipe)
+    container_cache<object_image>* apply_recipe(manager_assets& objects, container_cache_vector<object_image>& cached_vector, recipe_object_image& recipe)
     {
         return std::visit([&](auto& value) -> container_cache<object_image>* {
             using RecipeType = std::decay_t<decltype(value)>;

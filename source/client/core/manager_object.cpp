@@ -2,8 +2,8 @@
 #include <fstream>
 #include <iostream>
 
-#include <lucaria/core/manager_object.hpp>
-#include <lucaria/core/manager_scene.hpp>
+#include <lucaria/core/manager_assets.hpp>
+#include <lucaria/core/manager_scenes.hpp>
 #include <lucaria/core/utils_async.hpp>
 
 #if defined(LUCARIA_PLATFORM_WEB)
@@ -25,7 +25,7 @@ namespace detail {
 
     namespace {
 
-        static void _fetch_bytes_impl(manager_object& assets, const std::filesystem::path& file_path, std::function<void(std::vector<char>)> callback, bool persist)
+        static void _fetch_bytes_impl(manager_assets& assets, const std::filesystem::path& file_path, std::function<void(std::vector<char>)> callback, bool persist)
         {
             assets.async_fetches_waiting++;
             std::filesystem::path _fetch_file_path = file_path;
@@ -44,7 +44,7 @@ namespace detail {
             }
             using _callback_type = std::function<void(std::vector<char>)>;
             struct _fetch_context {
-                manager_object* assets;
+                manager_assets* assets;
                 _callback_type callback;
             };
             _emscripten_fetch_attr.userData = new _fetch_context { &assets, std::move(callback) };
@@ -68,7 +68,7 @@ namespace detail {
 
 #if defined(LUCARIA_PLATFORM_WEB) && defined(LUCARIA_PACKAGED_ASSETS)
             struct _fetch_context {
-                manager_object* assets;
+                manager_assets* assets;
                 std::filesystem::path context_path;
                 std::function<void(const std::vector<char>&)> context_callback;
             };
@@ -88,7 +88,7 @@ namespace detail {
 
     }
 
-    void manager_object::load_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback)
+    void manager_assets::load_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback)
     {
         std::string _path_str = file_path.string();
 
@@ -128,12 +128,12 @@ namespace detail {
 #endif
     }
 
-    void manager_object::fetch_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback, bool persist)
+    void manager_assets::fetch_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback, bool persist)
     {
         _fetch_bytes_impl(*this, file_path, [callback](std::vector<char> bytes) { callback(bytes); }, persist);
     }
 
-    void manager_object::fetch_bytes(const std::vector<std::filesystem::path>& file_paths, const std::function<void(const std::vector<std::vector<char>>&)>& callback, bool persist)
+    void manager_assets::fetch_bytes(const std::vector<std::filesystem::path>& file_paths, const std::function<void(const std::vector<std::vector<char>>&)>& callback, bool persist)
     {
         const std::size_t _size = file_paths.size();
 
@@ -156,7 +156,7 @@ namespace detail {
         }
     }
 
-    void manager_object::fetch_bytes(const std::array<std::filesystem::path, 6>& file_paths, const std::function<void(const std::vector<std::vector<char>>&)>& callback, bool persist)
+    void manager_assets::fetch_bytes(const std::array<std::filesystem::path, 6>& file_paths, const std::function<void(const std::vector<std::vector<char>>&)>& callback, bool persist)
     {
         const std::size_t _size = file_paths.size();
 
@@ -179,7 +179,7 @@ namespace detail {
         }
     }
 
-    void manager_object::gc_unused()
+    void manager_assets::gc_unused()
     {
         animations.gc_unused();
         audios.gc_unused();

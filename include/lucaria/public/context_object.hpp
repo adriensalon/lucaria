@@ -1,6 +1,6 @@
 #pragma once
 
-#include <lucaria/core/manager_object.hpp>
+#include <lucaria/core/manager_assets.hpp>
 #include <lucaria/public/handle_animation.hpp>
 #include <lucaria/public/handle_audio.hpp>
 #include <lucaria/public/handle_cubemap.hpp>
@@ -163,7 +163,7 @@ struct context_object {
     uint32 async_fetches_waiting();
 
 private:
-    detail::manager_object* _manager;
+    detail::manager_assets* _manager;
     friend struct access_context;
 };
 

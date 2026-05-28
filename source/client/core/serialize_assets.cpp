@@ -1,10 +1,10 @@
-#include <lucaria/core/manager_object.hpp>
+#include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/serialize_assets.hpp>
 
 namespace lucaria {
 namespace detail {
 
-    recipe_manager_object make_recipe(const manager_object& objects, mappings_manager_object_save& mappings)
+    recipe_manager_object make_recipe(const manager_assets& objects, mappings_manager_object_save& mappings)
     {
         recipe_manager_object _recipes;
 
@@ -25,14 +25,14 @@ namespace detail {
         for (const auto& [_type_id, _callbacks] : objects.user_asset_types) {
             recipe_object_user_asset_group& _group = _recipes.user_assets.emplace_back();
             _group.type_id = _type_id;
-            _group.objects = const_cast<manager_object*>(&objects);
+            _group.objects = const_cast<manager_assets*>(&objects);
             _group.callbacks = const_cast<user_asset_type_callbacks*>(&_callbacks);
         }
 
         return _recipes;
     }
 
-    void apply_recipe(manager_window& window, manager_object& objects, mappings_manager_object_load& mappings, recipe_manager_object& recipe)
+    void apply_recipe(manager_window& window, manager_assets& objects, mappings_manager_object_load& mappings, recipe_manager_object& recipe)
     {
         apply_recipes_for(objects, objects.images, mappings.images, recipe.images);
         apply_recipes_for(objects, objects.textures, mappings.textures, recipe.textures);

@@ -10,7 +10,7 @@ namespace lucaria {
 namespace detail {
 
     struct system_motion;
-    struct manager_object;
+    struct manager_assets;
 
     enum struct object_motion_track_origin {
         path
@@ -33,7 +33,7 @@ namespace detail {
     };
 
     [[nodiscard]] container_cache<object_motion_track>& fetch(
-        manager_object& objects,
+        manager_assets& objects,
         container_cache_vector<object_motion_track>& cached_vector,
         const std::filesystem::path& path);
 
@@ -52,7 +52,7 @@ namespace detail {
     using recipe_object_motion_track = std::variant<recipe_object_motion_track_path>;
 
     [[nodiscard]] recipe_object_motion_track make_recipe(const container_cache<object_motion_track>& cache);
-	[[nodiscard]] container_cache<object_motion_track>* apply_recipe(manager_object& objects, container_cache_vector<object_motion_track>& cached, recipe_object_motion_track& recipe);
+	[[nodiscard]] container_cache<object_motion_track>* apply_recipe(manager_assets& objects, container_cache_vector<object_motion_track>& cached, recipe_object_motion_track& recipe);
 
 }
 }

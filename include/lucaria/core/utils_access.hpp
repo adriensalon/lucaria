@@ -4,8 +4,8 @@ namespace lucaria {
 namespace detail {
     struct manager_game;
     struct manager_input;
-    struct manager_object;
-    struct manager_scene;
+    struct manager_assets;
+    struct manager_scenes;
     struct manager_window;
     struct system_dynamics;
     struct system_mixer;
@@ -31,8 +31,8 @@ struct access_context {
 
     void set(detail::manager_game& manager, context_game& context);
     void set(detail::manager_input& manager, context_input& context);
-    void set(detail::manager_object& manager, context_object& context);
-    void set(detail::manager_scene& manager, context_scene& context);
+    void set(detail::manager_assets& manager, context_object& context);
+    void set(detail::manager_scenes& manager, context_scene& context);
     void set(detail::manager_window& manager, context_window& context);
     void set(detail::system_dynamics& system, context_dynamics& context);
     void set(detail::system_mixer& system, context_mixer& context);

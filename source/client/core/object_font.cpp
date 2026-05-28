@@ -2,7 +2,7 @@
 
 #include <woff2/decode.h>
 
-#include <lucaria/core/manager_object.hpp>
+#include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/manager_window.hpp>
 #include <lucaria/core/object_font.hpp>
 #include <lucaria/core/utils_stream.hpp>
@@ -27,7 +27,7 @@ namespace detail {
             return _font;
         }
 
-        static container_async<object_font> _fetch_font_async(manager_window& window, manager_object& objects, const std::filesystem::path& data_path, const float32 font_size)
+        static container_async<object_font> _fetch_font_async(manager_window& window, manager_assets& objects, const std::filesystem::path& data_path, const float32 font_size)
         {
             std::shared_ptr<std::promise<std::shared_ptr<std::vector<char>>>> _data_promise = std::make_shared<std::promise<std::shared_ptr<std::vector<char>>>>();
             objects.fetch_bytes(data_path, [_data_promise](const std::vector<char>& _data_bytes) {
@@ -56,7 +56,7 @@ namespace detail {
 
     container_cache<object_font>& fetch(
         manager_window& window,
-        manager_object& objects,
+        manager_assets& objects,
         container_cache_vector<object_font>& cached_vector,
         const std::filesystem::path& path,
         const float32 font_size)
@@ -86,7 +86,7 @@ namespace detail {
         }
     }
 
-	container_cache<object_font>* apply_recipe(manager_window& window, manager_object& objects, container_cache_vector<object_font>& cached_vector, recipe_object_font& recipe)
+	container_cache<object_font>* apply_recipe(manager_window& window, manager_assets& objects, container_cache_vector<object_font>& cached_vector, recipe_object_font& recipe)
     {
         return std::visit([&](auto& value) -> container_cache<object_font>* {
             using RecipeType = std::decay_t<decltype(value)>;

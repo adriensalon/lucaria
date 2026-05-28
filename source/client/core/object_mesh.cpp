@@ -1,4 +1,4 @@
-#include <lucaria/core/manager_object.hpp>
+#include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/object_mesh.hpp>
 #include <lucaria/core/utils_stream.hpp>
 
@@ -7,7 +7,7 @@ namespace detail {
 
     namespace {
 
-        static container_async<object_mesh> _fetch_mesh_async(manager_object& objects, const std::filesystem::path& path)
+        static container_async<object_mesh> _fetch_mesh_async(manager_assets& objects, const std::filesystem::path& path)
         {
             std::shared_ptr<std::promise<object_geometry>> _geometry_promise = std::make_shared<std::promise<object_geometry>>();
             objects.fetch_bytes(path, [_geometry_promise](const std::vector<char>& _data_bytes) {
@@ -22,7 +22,7 @@ namespace detail {
     }
 
     container_cache<object_mesh>& fetch(
-        manager_object& objects,
+        manager_assets& objects,
         container_cache_vector<object_mesh>& cached_vector,
         const std::filesystem::path& path)
     {
@@ -50,7 +50,7 @@ namespace detail {
         }
     }
 
-    container_cache<object_mesh>* apply_recipe(manager_object& objects, container_cache_vector<object_mesh>& cached_vector, recipe_object_mesh& recipe)
+    container_cache<object_mesh>* apply_recipe(manager_assets& objects, container_cache_vector<object_mesh>& cached_vector, recipe_object_mesh& recipe)
     {
         return std::visit([&](auto& value) -> container_cache<object_mesh>* {
             using RecipeType = std::decay_t<decltype(value)>;

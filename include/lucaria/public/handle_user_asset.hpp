@@ -1,7 +1,7 @@
 #pragma once
 
-#include <lucaria/core/manager_object.hpp>
-#include <lucaria/core/manager_scene.hpp>
+#include <lucaria/core/manager_assets.hpp>
+#include <lucaria/core/manager_scenes.hpp>
 #include <lucaria/core/utils_access.hpp>
 #include <lucaria/core/utils_cache.hpp>
 

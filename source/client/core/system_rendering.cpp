@@ -325,7 +325,7 @@ namespace detail {
         }
     }
 
-    void system_rendering::update_clear_screen(manager_window& window, manager_scene& scenes)
+    void system_rendering::update_clear_screen(manager_window& window, manager_scenes& scenes)
     {
         if (!scene_framebuffer) {
             scene_framebuffer.emplace();
@@ -353,7 +353,7 @@ namespace detail {
         object_program::clear(true);
     }
 
-    void system_rendering::update_compute_projection(manager_window& window, manager_scene& scenes)
+    void system_rendering::update_compute_projection(manager_window& window, manager_scenes& scenes)
     {
         float32x2 _screen_size = window.screen_size;
         float _fov_rad = glm::radians(camera_fov);
@@ -361,7 +361,7 @@ namespace detail {
         camera_projection = glm::perspective(_fov_rad, _aspect_ratio, camera_near, camera_far);
     }
 
-    void system_rendering::update_apply_camera_rotation(manager_scene& scenes)
+    void system_rendering::update_apply_camera_rotation(manager_scenes& scenes)
     {
         if (!_follow) {
             return;
@@ -389,7 +389,7 @@ namespace detail {
         _follow->set_transform_warp(followW1);
     }
 
-    void system_rendering::update_compute_view_projection(manager_scene& scenes)
+    void system_rendering::update_compute_view_projection(manager_scenes& scenes)
     {
         if (_follow && _follow_animator && !_follow_bone_name.empty()) {
             const float32x4x4 followW = _follow->_transform;
@@ -417,7 +417,7 @@ namespace detail {
         camera_view_projection = camera_projection * camera_view;
     }
 
-    void system_rendering::update_draw_skybox(manager_scene& scenes)
+    void system_rendering::update_draw_skybox(manager_scenes& scenes)
     {
         if (skybox_cubemap) {
             static bool _is_skybox_setup = false;
@@ -451,7 +451,7 @@ namespace detail {
         }
     }
 
-    void system_rendering::update_draw_blockout_meshes(manager_scene& scenes)
+    void system_rendering::update_draw_blockout_meshes(manager_scenes& scenes)
     {
         static bool _is_program_setup = false;
         static std::optional<object_program> _persistent_blockout_program = std::nullopt;
@@ -487,7 +487,7 @@ namespace detail {
         });
     }
 
-    void system_rendering::update_draw_unlit_meshes(manager_scene& scenes)
+    void system_rendering::update_draw_unlit_meshes(manager_scenes& scenes)
     {
         static bool _is_program_setup = false;
         if (!_is_program_setup) {
@@ -526,7 +526,7 @@ namespace detail {
         });
     }
 
-    void system_rendering::update_draw_unlit_skinned_meshes(manager_scene& scenes)
+    void system_rendering::update_draw_unlit_skinned_meshes(manager_scenes& scenes)
     {
         static bool _is_program_setup = false;
         static std::optional<object_program> _persistent_unlit_skinned_program = std::nullopt;
@@ -574,7 +574,7 @@ namespace detail {
         });
     }
 
-    void system_rendering::update_draw_imgui_spatial_interfaces(manager_window& window, manager_input& input, manager_scene& scenes)
+    void system_rendering::update_draw_imgui_spatial_interfaces(manager_window& window, manager_input& input, manager_scenes& scenes)
     {
         scenes.each_view<component_interface_spatial>([this, &window, &input](component_interface_spatial& interface) {
             if (interface._viewport_geometry.has_value()
@@ -650,7 +650,7 @@ namespace detail {
         });
     }
 
-    void system_rendering::update_draw_imgui_screen_interfaces(manager_window& window, manager_scene& scenes)
+    void system_rendering::update_draw_imgui_screen_interfaces(manager_window& window, manager_scenes& scenes)
     {
         ImGui::SetCurrentContext(window.screen_context);
 #if defined(LUCARIA_BACKEND_OPENGL)
@@ -677,7 +677,7 @@ namespace detail {
 #endif
     }
 
-    void system_rendering::update_draw_post_processing(manager_window& window, manager_scene& scenes)
+    void system_rendering::update_draw_post_processing(manager_window& window, manager_scenes& scenes)
     {
         static bool _is_post_processing_setup = false;
         static std::optional<object_mesh> _persistent_post_processing_mesh = std::nullopt;
@@ -726,7 +726,7 @@ namespace detail {
         _post_processing_program.draw(false);
     }
 
-    void system_rendering::update_draw_debug_guizmos(system_dynamics& dynamics, manager_input& input, manager_scene& scenes)
+    void system_rendering::update_draw_debug_guizmos(system_dynamics& dynamics, manager_input& input, manager_scenes& scenes)
     {
 #if defined(LUCARIA_DEBUG)
         dynamics.dynamics_world->setDebugDrawer(&guizmo_draw);

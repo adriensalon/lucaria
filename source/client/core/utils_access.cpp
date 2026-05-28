@@ -2,8 +2,8 @@
 
 #include <lucaria/core/manager_game.hpp>
 #include <lucaria/core/manager_input.hpp>
-#include <lucaria/core/manager_object.hpp>
-#include <lucaria/core/manager_scene.hpp>
+#include <lucaria/core/manager_assets.hpp>
+#include <lucaria/core/manager_scenes.hpp>
 #include <lucaria/core/manager_window.hpp>
 #include <lucaria/core/system_dynamics.hpp>
 #include <lucaria/core/system_mixer.hpp>
@@ -30,12 +30,12 @@ void access_context::set(detail::manager_input& manager, context_input& context)
     context._manager = &manager;
 }
 
-void access_context::set(detail::manager_object& manager, context_object& context)
+void access_context::set(detail::manager_assets& manager, context_object& context)
 {
     context._manager = &manager;
 }
 
-void access_context::set(detail::manager_scene& manager, context_scene& context)
+void access_context::set(detail::manager_scenes& manager, context_scene& context)
 {
     context._manager = &manager;
 }

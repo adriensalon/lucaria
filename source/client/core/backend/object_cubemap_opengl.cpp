@@ -1,5 +1,5 @@
 #include <lucaria/core/object_cubemap.hpp>
-#include <lucaria/core/manager_object.hpp>
+#include <lucaria/core/manager_assets.hpp>
 
 namespace lucaria {
 namespace detail {

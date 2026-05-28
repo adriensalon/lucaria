@@ -9,7 +9,7 @@ namespace detail {
 
     struct object_cubemap;
     struct object_texture;
-    struct manager_object;
+    struct manager_assets;
 
     enum struct object_image_origin {
         path,
@@ -33,17 +33,17 @@ namespace detail {
     };
 
     [[nodiscard]] std::filesystem::path resolve_profile(
-        manager_object& objects,
+        manager_assets& objects,
         const std::filesystem::path& path,
         const std::optional<data_image_profile> profile = std::nullopt);
 
     [[nodiscard]] std::array<std::filesystem::path, 6> resolve_profile(
-        manager_object& objects,
+        manager_assets& objects,
         const std::array<std::filesystem::path, 6>& paths,
         const std::optional<data_image_profile> profile = std::nullopt);
 
     [[nodiscard]] container_cache<object_image>& fetch(
-        manager_object& objects,
+        manager_assets& objects,
         container_cache_vector<object_image>& cache_vector,
         const std::filesystem::path& path,
         const std::optional<data_image_profile> profile = std::nullopt);
@@ -75,7 +75,7 @@ namespace detail {
     using recipe_object_image = std::variant<recipe_object_image_path, recipe_object_image_data>;
 
     [[nodiscard]] recipe_object_image make_recipe(const container_cache<object_image>& cache);
-	[[nodiscard]] container_cache<object_image>* apply_recipe(manager_object& objects, container_cache_vector<object_image>& cached, recipe_object_image& recipe);
+	[[nodiscard]] container_cache<object_image>* apply_recipe(manager_assets& objects, container_cache_vector<object_image>& cached, recipe_object_image& recipe);
 
 }
 }

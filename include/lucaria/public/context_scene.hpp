@@ -1,6 +1,6 @@
 #pragma once
 
-#include <lucaria/core/manager_scene.hpp>
+#include <lucaria/core/manager_scenes.hpp>
 #include <lucaria/public/handle_entity.hpp>
 
 namespace lucaria {
@@ -114,7 +114,7 @@ struct context_scene {
     component_transform& create_transform(const handle_entity entity);
 
     /// @brief Creates a registered user component on an entity.
-    /// @tparam ComponentType User component type registered with manager_scene::register_component_user.
+    /// @tparam ComponentType User component type registered with manager_scene::register_user_component.
     /// @tparam ...Args Constructor argument types.
     /// @param entity Target entity.
     /// @param ...args Constructor arguments forwarded to the component.
@@ -126,7 +126,7 @@ struct context_scene {
     }
 
 private:
-    detail::manager_scene* _manager;
+    detail::manager_scenes* _manager;
 	friend struct access_context;
 };
 

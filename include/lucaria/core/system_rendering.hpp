@@ -1,7 +1,7 @@
 #pragma once
 
 #include <lucaria/core/manager_input.hpp>
-#include <lucaria/core/manager_scene.hpp>
+#include <lucaria/core/manager_scenes.hpp>
 #include <lucaria/core/manager_window.hpp>
 #include <lucaria/core/object_framebuffer.hpp>
 #include <lucaria/core/object_program.hpp>
@@ -93,18 +93,18 @@ namespace detail {
         bool last_show_physics_guizmos_key = false;
 #endif
 
-        void update_clear_screen(manager_window& window, manager_scene& scenes);
-        void update_compute_projection(manager_window& window, manager_scene& scenes);
-        void update_apply_camera_rotation(manager_scene& scenes);
-        void update_compute_view_projection(manager_scene& scenes);
-        void update_draw_skybox(manager_scene& scenes);
-        void update_draw_blockout_meshes(manager_scene& scenes);
-        void update_draw_unlit_meshes(manager_scene& scenes);
-        void update_draw_unlit_skinned_meshes(manager_scene& scenes);
-        void update_draw_imgui_spatial_interfaces(manager_window& window, manager_input& input, manager_scene& scenes);
-        void update_draw_imgui_screen_interfaces(manager_window& window, manager_scene& scenes);
-        void update_draw_post_processing(manager_window& window, manager_scene& scenes);
-        void update_draw_debug_guizmos(system_dynamics& dynamics, manager_input& input, manager_scene& scenes);
+        void update_clear_screen(manager_window& window, manager_scenes& scenes);
+        void update_compute_projection(manager_window& window, manager_scenes& scenes);
+        void update_apply_camera_rotation(manager_scenes& scenes);
+        void update_compute_view_projection(manager_scenes& scenes);
+        void update_draw_skybox(manager_scenes& scenes);
+        void update_draw_blockout_meshes(manager_scenes& scenes);
+        void update_draw_unlit_meshes(manager_scenes& scenes);
+        void update_draw_unlit_skinned_meshes(manager_scenes& scenes);
+        void update_draw_imgui_spatial_interfaces(manager_window& window, manager_input& input, manager_scenes& scenes);
+        void update_draw_imgui_screen_interfaces(manager_window& window, manager_scenes& scenes);
+        void update_draw_post_processing(manager_window& window, manager_scenes& scenes);
+        void update_draw_debug_guizmos(system_dynamics& dynamics, manager_input& input, manager_scenes& scenes);
     };
 
 }

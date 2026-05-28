@@ -1,7 +1,7 @@
 #include <tracy/Tracy.hpp>
 
 #include <lucaria/core/manager_input.hpp>
-#include <lucaria/core/manager_object.hpp>
+#include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/manager_window.hpp>
 #include <lucaria/core/utils_key.hpp>
 #include <lucaria/core/utils_math.hpp>
@@ -167,7 +167,7 @@ namespace detail {
 
     void manager_window::run(
         manager_input& input,
-        manager_object& objects,
+        manager_assets& objects,
         const std::function<void()>& setup_callback,
         const std::function<void()>& update_callback)
     {

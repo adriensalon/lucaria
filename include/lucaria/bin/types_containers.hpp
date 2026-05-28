@@ -4,7 +4,6 @@
 
 #define CEREAL_FUTURE_EXPERIMENTAL
 #include <cereal/archives/adapters.hpp>
-
 #include <cereal/types/array.hpp>
 #include <cereal/types/memory.hpp>
 #include <cereal/types/optional.hpp>

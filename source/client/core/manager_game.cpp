@@ -4,8 +4,8 @@
 #include <cereal/archives/adapters.hpp>
 
 #include <lucaria/core/manager_game.hpp>
-#include <lucaria/core/manager_object.hpp>
-#include <lucaria/core/manager_scene.hpp>
+#include <lucaria/core/manager_assets.hpp>
+#include <lucaria/core/manager_scenes.hpp>
 #include <lucaria/core/utils_access.hpp>
 #include <lucaria/core/utils_register.hpp>
 #include <lucaria/public/component_animator.hpp>

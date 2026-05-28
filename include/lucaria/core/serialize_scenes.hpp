@@ -1,12 +1,14 @@
 #pragma once
 
+#include <lucaria/core/serialize_containers.hpp>
+#include <lucaria/core/serialize_mappings.hpp>
+#include <lucaria/core/user_scene.hpp>
 #include <lucaria/public/component_animator.hpp>
 #include <lucaria/public/component_interface.hpp>
 #include <lucaria/public/component_model.hpp>
 #include <lucaria/public/component_rigidbody.hpp>
 #include <lucaria/public/component_speaker.hpp>
 #include <lucaria/public/component_transform.hpp>
-#include <lucaria/core/user_traits.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -19,7 +21,7 @@ namespace detail {
             entt::registry& registry,
             entt::entity entity)
         {
-            const auto& mappings = cereal::get_user_data<detail::mappings_manager_game_load>(archive);
+            const auto& mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
 
             if (mappings.dynamics == nullptr) {
                 LUCARIA_DEBUG_ERROR("Missing dynamics while loading component_rigidbody_passive");
@@ -40,7 +42,7 @@ namespace detail {
             entt::registry& registry,
             entt::entity entity)
         {
-            const auto& mappings = cereal::get_user_data<detail::mappings_manager_game_load>(archive);
+            const auto& mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
 
             if (mappings.dynamics == nullptr) {
                 LUCARIA_DEBUG_ERROR("Missing dynamics while loading component_rigidbody_kinematic");
@@ -61,7 +63,7 @@ namespace detail {
             entt::registry& registry,
             entt::entity entity)
         {
-            const auto& mappings = cereal::get_user_data<detail::mappings_manager_game_load>(archive);
+            const auto& mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
 
             if (mappings.dynamics == nullptr) {
                 LUCARIA_DEBUG_ERROR("Missing dynamics while loading component_rigidbody_dynamic");
@@ -183,7 +185,7 @@ namespace detail {
 
     struct recipe_object_scene_user_component_group {
         std::string type_id = {};
-        object_scene* scene = nullptr;
+        object_user_scene* scene = nullptr;
         user_component_type_callbacks* component_type_callbacks = nullptr;
 
         template <typename ArchiveType>
@@ -232,8 +234,8 @@ namespace detail {
         std::string type_id = {};
         recipe_object_scene_registry components = {};
         std::vector<recipe_object_scene_user_component_group> user_components = {};
-        object_scene* scene = nullptr;
-        object_scene_type_callbacks* scene_type_callbacks = nullptr;
+        object_user_scene* scene = nullptr;
+        user_scene_type_callbacks* scene_type_callbacks = nullptr;
 
         template <typename ArchiveType>
         void save(ArchiveType& archive) const
@@ -262,7 +264,7 @@ namespace detail {
                 return;
             }
 
-            manager_scene& manager = *game_mappings.loading_scene_manager;
+            manager_scenes& manager = *game_mappings.loading_scene_manager;
 
             auto it = manager.scene_types.find(type_id);
             if (it == manager.scene_types.end()) {
@@ -270,10 +272,10 @@ namespace detail {
                 return;
             }
 
-            std::unique_ptr<object_scene>& scene_ptr = manager.scenes.emplace_back();
-            scene_ptr = std::make_unique<object_scene>();
+            std::unique_ptr<object_user_scene>& scene_ptr = manager.scenes.emplace_back();
+            scene_ptr = std::make_unique<object_user_scene>();
 
-            object_scene& loaded_scene = *scene_ptr;
+            object_user_scene& loaded_scene = *scene_ptr;
             loaded_scene.type_id = type_id;
 
             if (it->second.construct) {
@@ -282,7 +284,7 @@ namespace detail {
 
             game_mappings.scenes.load_map_scenes[scene_save_id] = &loaded_scene.components;
 
-            object_scene* previous_scene = game_mappings.loading_scene;
+            object_user_scene* previous_scene = game_mappings.loading_scene;
             uint32 previous_scene_id = game_mappings.loading_scene_save_id;
 
             game_mappings.loading_scene = &loaded_scene;
@@ -318,19 +320,19 @@ namespace detail {
 
     //
 
-    [[nodiscard]] recipe_object_scene make_recipe(const context_game& game, object_scene& scene, const object_scene_type_callbacks& callbacks);
-    [[nodiscard]] recipe_manager_scene make_recipe(manager_scene& manager, mappings_manager_scene_save& mappings);
+    [[nodiscard]] recipe_object_scene make_recipe(const context_game& game, object_user_scene& scene, const user_scene_type_callbacks& callbacks);
+    [[nodiscard]] recipe_manager_scene make_recipe(manager_scenes& manager, mappings_manager_scene_save& mappings);
 
     //
 
-    // declared in manager_scene.hpp
+    // declared in manager_scenes.hpp
     template <typename ComponentType>
-    void manager_scene::register_component_user(std::string type_id)
+    void manager_scenes::register_user_component(std::string type_id)
     {
         user_component_type_callbacks _component_type = {};
 
-        _component_type.binary_save = [](object_scene& scene, cereal::PortableBinaryOutputArchive& archive) {
-            const detail::mappings_manager_game_save& _mappings = cereal::get_user_data<detail::mappings_manager_game_save>(archive);
+        _component_type.binary_save = [](object_user_scene& scene, cereal::PortableBinaryOutputArchive& archive) {
+            const mappings_manager_game_save& _mappings = cereal::get_user_data<mappings_manager_game_save>(archive);
             std::vector<recipe_object_scene_component<ComponentType>> _components = {};
             scene.components.view<ComponentType>().each(
                 [&](entt::entity entity, ComponentType& component) {
@@ -341,13 +343,13 @@ namespace detail {
             archive(cereal::make_nvp("components", _components));
         };
 
-        _component_type.binary_load = [](object_scene& scene, cereal::PortableBinaryInputArchive& archive) {
+        _component_type.binary_load = [](object_user_scene& scene, cereal::PortableBinaryInputArchive& archive) {
             std::vector<recipe_object_scene_component<ComponentType>> components = {};
             archive(cereal::make_nvp("components", components));
         };
 
-        _component_type.json_save = [](object_scene& scene, cereal::JSONOutputArchive& archive) {
-            const detail::mappings_manager_game_save& _mappings = cereal::get_user_data<detail::mappings_manager_game_save>(archive);
+        _component_type.json_save = [](object_user_scene& scene, cereal::JSONOutputArchive& archive) {
+            const mappings_manager_game_save& _mappings = cereal::get_user_data<mappings_manager_game_save>(archive);
             std::vector<recipe_object_scene_component<ComponentType>> _components = {};
             scene.components.view<ComponentType>().each(
                 [&](entt::entity entity, ComponentType& component) {
@@ -358,7 +360,7 @@ namespace detail {
             archive(cereal::make_nvp("components", _components));
         };
 
-        _component_type.json_load = [](object_scene& scene, cereal::JSONInputArchive& archive) {
+        _component_type.json_load = [](object_user_scene& scene, cereal::JSONInputArchive& archive) {
             std::vector<recipe_object_scene_component<ComponentType>> components = {};
             archive(cereal::make_nvp("components", components));
         };

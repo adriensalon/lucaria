@@ -1,6 +1,8 @@
 #pragma once
 
+#include <lucaria/core/serialize_containers.hpp>
 #include <lucaria/core/serialize_mappings.hpp>
+#include <lucaria/core/user_asset.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -20,7 +22,7 @@ namespace detail {
 
     struct recipe_object_user_asset_group {
         std::string type_id = {};
-        manager_object* objects = nullptr;
+        manager_assets* objects = nullptr;
         user_asset_type_callbacks* callbacks = nullptr;
 
         template <typename ArchiveType>
@@ -103,7 +105,7 @@ namespace detail {
     }
 
     template <typename ObjectType, typename RecipeType>
-    void apply_recipes_for(manager_object& objects, container_cache_vector<ObjectType>& cached_vector, mappings_container_cache_vector_load<ObjectType>& mappings, std::vector<recipe_object_entry<RecipeType>>& recipes)
+    void apply_recipes_for(manager_assets& objects, container_cache_vector<ObjectType>& cached_vector, mappings_container_cache_vector_load<ObjectType>& mappings, std::vector<recipe_object_entry<RecipeType>>& recipes)
     {
         for (auto& entry : recipes) {
             container_cache<ObjectType>* cell = apply_recipe(objects, cached_vector, entry.recipe);
@@ -115,10 +117,10 @@ namespace detail {
         }
     }
 
-    void apply_recipes_for(manager_window& window, manager_object& objects, container_cache_vector<object_font>& cached_vector, mappings_container_cache_vector_load<object_font>& mappings, std::vector<recipe_object_entry<recipe_object_font>>& recipes);
+    void apply_recipes_for(manager_window& window, manager_assets& objects, container_cache_vector<object_font>& cached_vector, mappings_container_cache_vector_load<object_font>& mappings, std::vector<recipe_object_entry<recipe_object_font>>& recipes);
 
     template <typename AssetType, typename ArchiveType>
-    void save_user_asset_group(manager_object& objects, ArchiveType& archive)
+    void save_user_asset_group(manager_assets& objects, ArchiveType& archive)
     {
         auto& mappings = cereal::get_user_data<mappings_manager_game_save>(archive);
         const auto& storage = objects.template get_user_asset_storage<AssetType>();
@@ -128,7 +130,7 @@ namespace detail {
     }
 
     template <typename AssetType, typename ArchiveType>
-    void load_user_asset_group(manager_object& objects, ArchiveType& archive)
+    void load_user_asset_group(manager_assets& objects, ArchiveType& archive)
     {
         mappings_manager_game_load& mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
         auto& storage = objects.template get_user_asset_storage<AssetType>();
@@ -163,7 +165,7 @@ namespace detail {
 
     template <typename AssetType>
     container_cache<object_user_asset<AssetType>>* apply_recipe(
-        manager_object& objects,
+        manager_assets& objects,
         container_cache_vector<object_user_asset<AssetType>>& cached_vector,
         recipe_object_user_asset<AssetType>& recipe)
     {
@@ -186,28 +188,28 @@ namespace detail {
             recipe);
     }
 
-    [[nodiscard]] recipe_manager_object make_recipe(const manager_object& objects, mappings_manager_object_save& mappings);
-    void apply_recipe(manager_window& window, manager_object& objects, mappings_manager_object_load& mappings, recipe_manager_object& recipe);
+    [[nodiscard]] recipe_manager_object make_recipe(const manager_assets& objects, mappings_manager_object_save& mappings);
+    void apply_recipe(manager_window& window, manager_assets& objects, mappings_manager_object_load& mappings, recipe_manager_object& recipe);
 
-	// declared in manager_object.hpp
+    // declared in manager_assets.hpp
     template <typename AssetType>
-    void manager_object::register_user_asset(std::string type_id)
+    void manager_assets::register_user_asset(std::string type_id)
     {
         user_asset_type_callbacks callbacks = {};
 
-        callbacks.binary_save = [](manager_object& objects, cereal::PortableBinaryOutputArchive& archive) {
+        callbacks.binary_save = [](manager_assets& objects, cereal::PortableBinaryOutputArchive& archive) {
             save_user_asset_group<AssetType>(objects, archive);
         };
 
-        callbacks.binary_load = [](manager_object& objects, cereal::PortableBinaryInputArchive& archive) {
+        callbacks.binary_load = [](manager_assets& objects, cereal::PortableBinaryInputArchive& archive) {
             load_user_asset_group<AssetType>(objects, archive);
         };
 
-        callbacks.json_save = [](manager_object& objects, cereal::JSONOutputArchive& archive) {
+        callbacks.json_save = [](manager_assets& objects, cereal::JSONOutputArchive& archive) {
             save_user_asset_group<AssetType>(objects, archive);
         };
 
-        callbacks.json_load = [](manager_object& objects, cereal::JSONInputArchive& archive) {
+        callbacks.json_load = [](manager_assets& objects, cereal::JSONInputArchive& archive) {
             load_user_asset_group<AssetType>(objects, archive);
         };
 

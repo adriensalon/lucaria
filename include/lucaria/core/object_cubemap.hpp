@@ -14,7 +14,7 @@
 namespace lucaria {
 namespace detail {
 
-	struct manager_object;
+	struct manager_assets;
 
     enum struct object_cubemap_origin {
         path,
@@ -45,7 +45,7 @@ namespace detail {
     };
 
     [[nodiscard]] container_cache<object_cubemap>& fetch(
-		manager_object& objects,
+		manager_assets& objects,
         container_cache_vector<object_cubemap>& cached_vector,
         const std::array<std::filesystem::path, 6>& paths,
         const std::optional<data_image_profile> profile = std::nullopt);
@@ -77,7 +77,7 @@ namespace detail {
     using recipe_object_cubemap = std::variant<recipe_object_cubemap_path, recipe_object_cubemap_data>;
 
     [[nodiscard]] recipe_object_cubemap make_recipe(const container_cache<object_cubemap>& cache);
-	[[nodiscard]] container_cache<object_cubemap>* apply_recipe(manager_object& objects, container_cache_vector<object_cubemap>& cached, recipe_object_cubemap& recipe);
+	[[nodiscard]] container_cache<object_cubemap>* apply_recipe(manager_assets& objects, container_cache_vector<object_cubemap>& cached, recipe_object_cubemap& recipe);
 
 }
 }

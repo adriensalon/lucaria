@@ -77,7 +77,7 @@ namespace detail {
         dynamics_world->setGravity(btVector3(0.f, -9.81f, 0.f));
     }
 
-    void system_dynamics::update_step_simulation(manager_window& window, manager_scene& scenes)
+    void system_dynamics::update_step_simulation(manager_window& window, manager_scenes& scenes)
     {
         // update collider transforms
         scenes.each_view<component_rigidbody_passive>(entt::exclude<component_transform>, [](component_rigidbody_passive& collider) {
@@ -161,7 +161,7 @@ namespace detail {
         dynamics_world->stepSimulation(_delta_time, 0);
     }
 
-    void system_dynamics::update_compute_collisions(manager_scene& scenes)
+    void system_dynamics::update_compute_collisions(manager_scenes& scenes)
     {
         // collect collisions from kinematic rigidbodies
         btManifoldArray _manifold_array;
@@ -207,7 +207,7 @@ namespace detail {
         });
     }
 
-    void system_dynamics::update_collect_debug_guizmos(system_rendering& rendering, manager_scene& scenes)
+    void system_dynamics::update_collect_debug_guizmos(system_rendering& rendering, manager_scenes& scenes)
     {
 #if defined(LUCARIA_DEBUG)
         scenes.each_view<component_transform, component_rigidbody_kinematic>([&](component_transform& transform, component_rigidbody_kinematic& rigidbody) {

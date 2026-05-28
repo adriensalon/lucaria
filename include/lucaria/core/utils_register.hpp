@@ -48,17 +48,17 @@ namespace detail {
 
     struct pending_user_asset_registration {
         std::string type_id;
-        void (*register_into)(manager_object&, std::string);
+        void (*register_into)(manager_assets&, std::string);
     };
 
     struct pending_component_registration {
         std::string type_id;
-        void (*register_into)(manager_scene&, std::string);
+        void (*register_into)(manager_scenes&, std::string);
     };
 
     struct pending_scene_registration {
         std::string type_id;
-        void (*register_into)(manager_scene&, std::string);
+        void (*register_into)(manager_scenes&, std::string);
     };
 
     struct pending_main_scene_registration {
@@ -93,7 +93,7 @@ namespace detail {
     void enqueue_user_asset_registration(std::string type_id)
     {
         global_pending_user_asset_registrations().push_back({ std::move(type_id),
-            [](manager_object& objects, std::string type_id) {
+            [](manager_assets& objects, std::string type_id) {
                 objects.register_user_asset<AssetType>(std::move(type_id));
             } });
     }
@@ -102,8 +102,8 @@ namespace detail {
     void enqueue_component_registration(std::string type_id)
     {
         global_pending_component_registrations().push_back({ std::move(type_id),
-            [](manager_scene& scenes, std::string type_id) {
-                scenes.register_component_user<ComponentType>(std::move(type_id));
+            [](manager_scenes& scenes, std::string type_id) {
+                scenes.register_user_component<ComponentType>(std::move(type_id));
             } });
     }
 
@@ -111,8 +111,8 @@ namespace detail {
     void enqueue_scene_registration(std::string type_id)
     {
         global_pending_scene_registrations().push_back({ std::move(type_id),
-            [](manager_scene& scenes, std::string type_id) {
-                scenes.register_scene<SceneType>(std::move(type_id));
+            [](manager_scenes& scenes, std::string type_id) {
+                scenes.register_user_scene<SceneType>(std::move(type_id));
             } });
     }
 
@@ -126,21 +126,21 @@ namespace detail {
         };
     }
 
-    inline void apply_user_asset_registrations(manager_object& objects)
+    inline void apply_user_asset_registrations(manager_assets& objects)
     {
         for (pending_user_asset_registration& _asset : global_pending_user_asset_registrations()) {
             _asset.register_into(objects, _asset.type_id);
         }
     }
 
-    inline void apply_component_registrations(manager_scene& scenes)
+    inline void apply_component_registrations(manager_scenes& scenes)
     {
         for (pending_component_registration& _component : global_pending_component_registrations()) {
             _component.register_into(scenes, _component.type_id);
         }
     }
 
-    inline void apply_scene_registrations(manager_scene& scenes)
+    inline void apply_scene_registrations(manager_scenes& scenes)
     {
         for (pending_scene_registration& _scene : global_pending_scene_registrations()) {
             _scene.register_into(scenes, _scene.type_id);

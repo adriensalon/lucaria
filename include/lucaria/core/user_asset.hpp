@@ -6,13 +6,12 @@
 namespace lucaria {
 namespace detail {
 
-    struct manager_object;
+    struct manager_assets;
 
-	
     template <typename SceneType>
     inline constexpr bool is_user_asset_v = is_bytes_compatible_v<SceneType> && is_cereal_compatible_v<SceneType>;
 
-	template <typename SceneType>
+    template <typename SceneType>
     inline constexpr void static_assert_user_asset()
     {
         if constexpr (!is_user_asset_v<SceneType>) {
@@ -54,10 +53,10 @@ namespace detail {
         container_cache_vector<object_user_asset<AssetType>> assets;
     };
 
-    // implemented in manager_object.hpp
+    // implemented in manager_assets.hpp
     template <typename AssetType>
     [[nodiscard]] container_cache<object_user_asset<AssetType>>& fetch(
-        manager_object& objects,
+        manager_assets& objects,
         container_cache_vector<object_user_asset<AssetType>>& cached_vector,
         const std::filesystem::path& path);
 

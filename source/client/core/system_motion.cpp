@@ -61,7 +61,7 @@ namespace detail {
 
     }
 
-    void system_motion::update_advance_controllers(manager_window& window, manager_scene& scenes)
+    void system_motion::update_advance_controllers(manager_window& window, manager_scenes& scenes)
     {
         const float32 _delta_time = static_cast<float32>(window.time_delta_seconds);
         scenes.each_view<component_animator>([_delta_time](component_animator& animator) {
@@ -94,7 +94,7 @@ namespace detail {
         });
     }
 
-    void system_motion::update_apply_animations(manager_scene& scenes)
+    void system_motion::update_apply_animations(manager_scenes& scenes)
     {
         scenes.each_view<component_animator>([](component_animator& animator) {
             if (animator._skeleton) {
@@ -145,7 +145,7 @@ namespace detail {
         });
     }
 
-    void system_motion::update_apply_motion_tracks(manager_window& window, manager_scene& scenes)
+    void system_motion::update_apply_motion_tracks(manager_window& window, manager_scenes& scenes)
     {
         // apply to transform if no dynamic rigidbody
         scenes.each_view<const component_animator, component_transform>(entt::exclude<component_rigidbody_dynamic>, [](const component_animator& _animator, component_transform& _transform) {
@@ -231,7 +231,7 @@ namespace detail {
         });
     }
 
-    void system_motion::update_collect_debug_guizmos(system_rendering& rendering, manager_scene& scenes)
+    void system_motion::update_collect_debug_guizmos(system_rendering& rendering, manager_scenes& scenes)
     {
 #if defined(LUCARIA_DEBUG)
         scenes.each_view<component_transform>([&rendering](component_transform& transform) {

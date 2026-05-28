@@ -1,4 +1,4 @@
-#include <lucaria/core/manager_object.hpp>
+#include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/object_skeleton.hpp>
 #include <lucaria/core/utils_stream.hpp>
 
@@ -18,7 +18,7 @@ namespace detail {
             _ozz_archive >> handle;
         }
 
-        static container_async<object_skeleton> _fetch_skeleton_async(manager_object& objects, const std::filesystem::path& path)
+        static container_async<object_skeleton> _fetch_skeleton_async(manager_assets& objects, const std::filesystem::path& path)
         {
             std::shared_ptr<std::promise<object_skeleton>> _promise = std::make_shared<std::promise<object_skeleton>>();
             objects.fetch_bytes(path, [_promise](const std::vector<char>& _bytes) {
@@ -44,7 +44,7 @@ namespace detail {
     }
 
     container_cache<object_skeleton>& fetch(
-		manager_object& objects,
+		manager_assets& objects,
         container_cache_vector<object_skeleton>& cached_vector,
         const std::filesystem::path& path)
     {
@@ -67,7 +67,7 @@ namespace detail {
         }
     }
 
-	container_cache<object_skeleton>* apply_recipe(manager_object& objects, container_cache_vector<object_skeleton>& cached_vector, recipe_object_skeleton& recipe)
+	container_cache<object_skeleton>* apply_recipe(manager_assets& objects, container_cache_vector<object_skeleton>& cached_vector, recipe_object_skeleton& recipe)
     {
         return std::visit([&](auto& value) -> container_cache<object_skeleton>* {
             using RecipeType = std::decay_t<decltype(value)>;

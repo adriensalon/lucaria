@@ -9,7 +9,7 @@
 namespace lucaria {
 namespace detail {
 
-    struct manager_object;
+    struct manager_assets;
 
     enum struct object_shape_algorithm {
         convex_hull,
@@ -46,7 +46,7 @@ namespace detail {
     };
 
     [[nodiscard]] container_cache<object_shape>& fetch(
-        manager_object& objects,
+        manager_assets& objects,
         container_cache_vector<object_shape>& cached_vector,
         const std::filesystem::path& path,
         const object_shape_algorithm algorithm);
@@ -130,7 +130,7 @@ namespace detail {
         recipe_object_shape_cone>;
 
     [[nodiscard]] recipe_object_shape make_recipe(const container_cache<object_shape>& cache);
-	[[nodiscard]] container_cache<object_shape>* apply_recipe(manager_object& objects, container_cache_vector<object_shape>& cached, recipe_object_shape& recipe);
+	[[nodiscard]] container_cache<object_shape>* apply_recipe(manager_assets& objects, container_cache_vector<object_shape>& cached, recipe_object_shape& recipe);
 
 }
 }

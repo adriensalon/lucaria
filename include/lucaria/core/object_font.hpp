@@ -11,7 +11,7 @@
 namespace lucaria {
 namespace detail {
 	
-	struct manager_object;
+	struct manager_assets;
 	struct manager_window;
 
     enum struct object_font_origin {
@@ -33,7 +33,7 @@ namespace detail {
 
     [[nodiscard]] container_cache<object_font>& fetch(
 		manager_window& window, 
-        manager_object& objects,
+        manager_assets& objects,
         container_cache_vector<object_font>& cached_vector,
         const std::filesystem::path& path,
         const float32 font_size);
@@ -55,7 +55,7 @@ namespace detail {
     using recipe_object_font = std::variant<recipe_object_font_path>;
 
     [[nodiscard]] recipe_object_font make_recipe(const container_cache<object_font>& cache);
-	[[nodiscard]] container_cache<object_font>* apply_recipe(manager_window& window, manager_object& objects, container_cache_vector<object_font>& cached, recipe_object_font& recipe);
+	[[nodiscard]] container_cache<object_font>* apply_recipe(manager_window& window, manager_assets& objects, container_cache_vector<object_font>& cached, recipe_object_font& recipe);
 
 }
 }

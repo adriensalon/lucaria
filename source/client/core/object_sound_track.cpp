@@ -1,7 +1,7 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 
-#include <lucaria/core/manager_object.hpp>
+#include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/object_sound_track.hpp>
 #include <lucaria/core/utils_stream.hpp>
 
@@ -10,7 +10,7 @@ namespace detail {
 
     namespace {
 
-        container_async<object_sound_track> _fetch_sound_track_async(manager_object& objects, const std::filesystem::path& path)
+        container_async<object_sound_track> _fetch_sound_track_async(manager_assets& objects, const std::filesystem::path& path)
         {
             std::shared_ptr<std::promise<object_audio>> _audio_promise = std::make_shared<std::promise<object_audio>>();
             objects.fetch_bytes(path, [_audio_promise](const std::vector<char>& _bytes) {
@@ -52,7 +52,7 @@ namespace detail {
     }
 
     container_cache<object_sound_track>& fetch(
-        manager_object& objects,
+        manager_assets& objects,
         container_cache_vector<object_sound_track>& cached_vector,
         const std::filesystem::path& path)
     {
@@ -80,7 +80,7 @@ namespace detail {
         }
     }
 
-    container_cache<object_sound_track>* apply_recipe(manager_object& objects, container_cache_vector<object_sound_track>& cached_vector, recipe_object_sound_track& recipe)
+    container_cache<object_sound_track>* apply_recipe(manager_assets& objects, container_cache_vector<object_sound_track>& cached_vector, recipe_object_sound_track& recipe)
     {
         return std::visit([&](auto& value) -> container_cache<object_sound_track>* {
             using RecipeType = std::decay_t<decltype(value)>;

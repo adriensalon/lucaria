@@ -8,7 +8,7 @@
 namespace lucaria {
 namespace detail {
 	
-    struct manager_object;
+    struct manager_assets;
 
     enum struct object_sound_track_origin {
         path,
@@ -33,7 +33,7 @@ namespace detail {
     };
 
     [[nodiscard]] container_cache<object_sound_track>& fetch(
-		manager_object& objects,
+		manager_assets& objects,
         container_cache_vector<object_sound_track>& cached_vector,
         const std::filesystem::path& path);
 
@@ -62,7 +62,7 @@ namespace detail {
     using recipe_object_sound_track = std::variant<recipe_object_sound_track_path, recipe_object_sound_track_data>;
 
     [[nodiscard]] recipe_object_sound_track make_recipe(const container_cache<object_sound_track>& cache);
-	[[nodiscard]] container_cache<object_sound_track>* apply_recipe(manager_object& objects, container_cache_vector<object_sound_track>& cached, recipe_object_sound_track& recipe);
+	[[nodiscard]] container_cache<object_sound_track>* apply_recipe(manager_assets& objects, container_cache_vector<object_sound_track>& cached, recipe_object_sound_track& recipe);
 
 }
 }

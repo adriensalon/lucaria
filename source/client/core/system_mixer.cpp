@@ -6,7 +6,7 @@
 namespace lucaria {
 namespace detail {
 
-    void system_mixer::update_apply_speaker_transforms(manager_scene& scenes)
+    void system_mixer::update_apply_speaker_transforms(manager_scenes& scenes)
     {
         if (listener_transform) {
             scenes.each_view<component_speaker_spatial>([](component_speaker_spatial& _speaker) {
@@ -39,7 +39,7 @@ namespace detail {
         }
     }
 
-    void system_mixer::update_apply_listener_transform(manager_scene& scenes)
+    void system_mixer::update_apply_listener_transform(manager_scenes& scenes)
     {
         if (listener_transform) {
             const float32x3 _position = listener_transform->get_position();

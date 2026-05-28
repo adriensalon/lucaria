@@ -1,7 +1,7 @@
 #include <cereal/archives/json.hpp>
 #include <cereal/archives/portable_binary.hpp>
 
-#include <lucaria/core/manager_object.hpp>
+#include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/object_shader.hpp>
 #include <lucaria/core/utils_stream.hpp>
 

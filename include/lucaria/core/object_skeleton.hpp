@@ -9,7 +9,7 @@ namespace lucaria {
 namespace detail {
 
     struct system_motion;
-    struct manager_object;
+    struct manager_assets;
 
     enum struct object_skeleton_origin {
         path
@@ -30,7 +30,7 @@ namespace detail {
     };
 
     [[nodiscard]] container_cache<object_skeleton>& fetch(
-		manager_object& objects,
+		manager_assets& objects,
         container_cache_vector<object_skeleton>& cached_vector,
         const std::filesystem::path& path);
 
@@ -49,7 +49,7 @@ namespace detail {
     using recipe_object_skeleton = std::variant<recipe_object_skeleton_path>;
 
     [[nodiscard]] recipe_object_skeleton make_recipe(const container_cache<object_skeleton>& cache);
-	[[nodiscard]] container_cache<object_skeleton>* apply_recipe(manager_object& objects, container_cache_vector<object_skeleton>& cached, recipe_object_skeleton& recipe);
+	[[nodiscard]] container_cache<object_skeleton>* apply_recipe(manager_assets& objects, container_cache_vector<object_skeleton>& cached, recipe_object_skeleton& recipe);
 
 }
 }

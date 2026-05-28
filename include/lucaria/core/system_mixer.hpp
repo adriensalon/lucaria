@@ -18,8 +18,8 @@ namespace detail {
         component_transform* listener_transform = nullptr;
         // handle_entity listener_entity = {};
 
-        void update_apply_speaker_transforms(manager_scene& scenes);
-        void update_apply_listener_transform(manager_scene& scenes);
+        void update_apply_speaker_transforms(manager_scenes& scenes);
+        void update_apply_listener_transform(manager_scenes& scenes);
     };
 
 }

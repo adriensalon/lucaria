@@ -11,33 +11,34 @@
 #include <lucaria/core/object_sound_track.hpp>
 #include <lucaria/core/object_texture.hpp>
 #include <lucaria/core/serialize_mappings.hpp>
+#include <lucaria/core/serialize_containers.hpp>
 #include <lucaria/core/user_asset.hpp>
 
 namespace lucaria {
 namespace detail {
 
-    struct manager_window;
-    struct manager_object;
+    struct manager_assets;
 
     struct user_asset_type_callbacks {
-        std::function<void(manager_object&, cereal::PortableBinaryOutputArchive&)> binary_save = nullptr;
-        std::function<void(manager_object&, cereal::PortableBinaryInputArchive&)> binary_load = nullptr;
-        std::function<void(manager_object&, cereal::JSONOutputArchive&)> json_save = nullptr;
-        std::function<void(manager_object&, cereal::JSONInputArchive&)> json_load = nullptr;
+        std::function<void(manager_assets&, cereal::PortableBinaryOutputArchive&)> binary_save = nullptr;
+        std::function<void(manager_assets&, cereal::PortableBinaryInputArchive&)> binary_load = nullptr;
+        std::function<void(manager_assets&, cereal::JSONOutputArchive&)> json_save = nullptr;
+        std::function<void(manager_assets&, cereal::JSONInputArchive&)> json_load = nullptr;
     };
 
-    struct manager_object {
-        manager_object() = default;
-        manager_object(const manager_object& other) = delete;
-        manager_object& operator=(const manager_object& other) = delete;
-        manager_object(manager_object&& other) = delete;
-        manager_object& operator=(manager_object&& other) = delete;
+    struct manager_assets {
+        manager_assets() = default;
+        manager_assets(const manager_assets& other) = delete;
+        manager_assets& operator=(const manager_assets& other) = delete;
+        manager_assets(manager_assets&& other) = delete;
+        manager_assets& operator=(manager_assets&& other) = delete;
 
         bool is_etc2_supported = false;
         bool is_s3tc_supported = false;
+		data_image_profile supported_image_profiles = {}; // TODO replace bools with bitfields
+
         std::atomic<uint32> async_fetches_waiting = 0;
         std::filesystem::path async_prefix_path = {};
-
         container_cache_vector<object_animation> animations = {};
         container_cache_vector<object_audio> audios = {};
         container_cache_vector<object_cubemap> cubemaps = {};
@@ -62,15 +63,15 @@ namespace detail {
         template <typename AssetType>
         storage_user_asset<AssetType>& get_user_asset_storage()
         {
-            const std::type_index type = std::type_index(typeid(AssetType));
-            auto it = user_assets.find(type);
-            if (it == user_assets.end()) {
-                auto storage = std::make_unique<storage_user_asset<AssetType>>();
+            const std::type_index _type = std::type_index(typeid(AssetType));
+            typename std::unordered_map<std::type_index, std::unique_ptr<storage_user_asset_base>>::const_iterator _iterator = user_assets.find(_type);
+            if (_iterator == user_assets.end()) {
+                std::unique_ptr<storage_user_asset<AssetType>> storage = std::make_unique<storage_user_asset<AssetType>>();
                 storage_user_asset<AssetType>* raw = storage.get();
-                user_assets.emplace(type, std::move(storage));
+                user_assets.emplace(_type, std::move(storage));
                 return *raw;
             }
-            return *static_cast<storage_user_asset<AssetType>*>(it->second.get());
+            return *static_cast<storage_user_asset<AssetType>*>(_iterator->second.get());
         }
 
         void load_bytes(const std::filesystem::path& path, const std::function<void(const std::vector<char>&)>& callback);
@@ -80,9 +81,10 @@ namespace detail {
         void gc_unused();
     };
 
+	// defined in user_asset.hpp
     template <typename AssetType>
     [[nodiscard]] container_cache<object_user_asset<AssetType>>& fetch(
-        manager_object& objects,
+        manager_assets& objects,
         container_cache_vector<object_user_asset<AssetType>>& cached_vector,
         const std::filesystem::path& path)
     {
@@ -95,5 +97,6 @@ namespace detail {
             return container_async<object_user_asset<AssetType>>(_promise->get_future());
         });
     }
+
 }
 }

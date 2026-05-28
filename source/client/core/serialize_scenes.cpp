@@ -1,5 +1,5 @@
 #include <lucaria/core/manager_game.hpp>
-#include <lucaria/core/manager_scene.hpp>
+#include <lucaria/core/manager_scenes.hpp>
 #include <lucaria/public/component_animator.hpp>
 #include <lucaria/public/component_interface.hpp>
 #include <lucaria/public/component_model.hpp>
@@ -28,19 +28,19 @@ namespace detail {
         }
     }
 
-    void manager_scene::start_scene(context_game& game, object_scene& scene)
+    void manager_scenes::start_scene(context_game& game, object_user_scene& scene)
     {
-        object_scene_type_callbacks& _callbacks = scene_types.at(scene.type_id);
+        user_scene_type_callbacks& _callbacks = scene_types.at(scene.type_id);
         if (_callbacks.start) {
             current_scene = &scene;
             _callbacks.start(game, scene);
         }
     }
 
-    void manager_scene::update_callbacks(context_game& game)
+    void manager_scenes::update_callbacks(context_game& game)
     {
-        for (std::unique_ptr<object_scene>& _scene : scenes) {
-            object_scene_type_callbacks& _callbacks = scene_types.at(_scene->type_id);
+        for (std::unique_ptr<object_user_scene>& _scene : scenes) {
+            user_scene_type_callbacks& _callbacks = scene_types.at(_scene->type_id);
             if (_callbacks.update) {
                 current_scene = _scene.get();
                 _callbacks.update(game, *_scene.get());
@@ -48,7 +48,7 @@ namespace detail {
         }
     }
 
-    void manager_scene::update_systems(manager_game& game)
+    void manager_scenes::update_systems(manager_game& game)
     {
         game.rendering.update_apply_camera_rotation(game.scenes);
         game.motion.update_advance_controllers(game.window, game.scenes);
@@ -75,7 +75,7 @@ namespace detail {
 
     void apply_recipes_for(
         manager_window& window,
-        manager_object& objects,
+        manager_assets& objects,
         container_cache_vector<object_font>& cached_vector,
         mappings_container_cache_vector_load<object_font>& mappings,
         std::vector<recipe_object_entry<recipe_object_font>>& recipes)
@@ -90,7 +90,7 @@ namespace detail {
         }
     }
 
-    recipe_manager_scene make_recipe(manager_scene& manager, mappings_manager_scene_save& mappings)
+    recipe_manager_scene make_recipe(manager_scenes& manager, mappings_manager_scene_save& mappings)
     {
         recipe_manager_scene recipe;
 
@@ -99,7 +99,7 @@ namespace detail {
 
         uint32 next_scene_id = 1;
 
-        for (std::unique_ptr<object_scene>& scene : manager.scenes) {
+        for (std::unique_ptr<object_user_scene>& scene : manager.scenes) {
             entt::registry* registry = &scene->components;
             mappings.save_map_scene_ids.emplace(registry, next_scene_id++);
             auto& entity_ids = mappings.save_map_scene_entities[registry];
@@ -110,7 +110,7 @@ namespace detail {
             }
         }
 
-        for (std::unique_ptr<object_scene>& scene : manager.scenes) {
+        for (std::unique_ptr<object_user_scene>& scene : manager.scenes) {
             entt::registry* registry = &scene->components;
             const std::unordered_map<entt::entity, lucaria::uint32>& entity_ids = mappings.save_map_scene_entities.at(registry);
 

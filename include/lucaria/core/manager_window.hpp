@@ -25,7 +25,7 @@
 namespace lucaria {
 namespace detail {
 
-    struct manager_object;
+    struct manager_assets;
 
     struct manager_window {
         manager_window() = default;
@@ -79,13 +79,13 @@ namespace detail {
         void run(
             android_app* app,
             manager_input& input,
-            manager_object& objects,
+            manager_assets& objects,
             const std::function<void()>& setup_callback,
             const std::function<void()>& update_callback);
 #else
         void run(
             manager_input& input,
-            manager_object& objects,
+            manager_assets& objects,
             const std::function<void()>& setup_callback,
             const std::function<void()>& update_callback);
 #endif

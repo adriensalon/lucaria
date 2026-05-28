@@ -15,7 +15,7 @@ namespace lucaria {
 namespace detail {
 
     struct system_rendering;
-    struct manager_object;
+    struct manager_assets;
 
     enum struct object_mesh_attribute {
         position,
@@ -89,7 +89,7 @@ namespace detail {
     };
 
     [[nodiscard]] container_cache<object_mesh>& fetch(
-        manager_object& objects,
+        manager_assets& objects,
         container_cache_vector<object_mesh>& cached_vector,
         const std::filesystem::path& path);
 
@@ -118,7 +118,7 @@ namespace detail {
     using recipe_object_mesh = std::variant<recipe_object_mesh_path, recipe_object_mesh_data>;
 
     [[nodiscard]] recipe_object_mesh make_recipe(const container_cache<object_mesh>& cache);
-	[[nodiscard]] container_cache<object_mesh>* apply_recipe(manager_object& objects, container_cache_vector<object_mesh>& cached, recipe_object_mesh& recipe);
+	[[nodiscard]] container_cache<object_mesh>* apply_recipe(manager_assets& objects, container_cache_vector<object_mesh>& cached, recipe_object_mesh& recipe);
 
 }
 }

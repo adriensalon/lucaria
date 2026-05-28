@@ -11,9 +11,9 @@ struct context_dynamics;
 
 namespace detail {
 
-    struct manager_object;
-    struct manager_scene;
-    struct object_scene;
+    struct manager_assets;
+    struct manager_scenes;
+    struct object_user_scene;
 
     struct mappings_user_asset_base_save {
         virtual ~mappings_user_asset_base_save() = default;
@@ -145,10 +145,10 @@ namespace detail {
     struct mappings_manager_game_load {
         mappings_manager_object_load objects = {};
         mappings_manager_scene_load scenes = {};
-        manager_object* loading_objects = nullptr;
+        manager_assets* loading_objects = nullptr;
         context_dynamics* dynamics = nullptr;
-        manager_scene* loading_scene_manager = nullptr;
-        object_scene* loading_scene = nullptr;
+        manager_scenes* loading_scene_manager = nullptr;
+        object_user_scene* loading_scene = nullptr;
         uint32 loading_scene_save_id = 0;
     };
 

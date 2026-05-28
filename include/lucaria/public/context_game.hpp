@@ -1,7 +1,6 @@
 #pragma once
 
 #include <lucaria/core/manager_game.hpp>
-#include <lucaria/core/utils_aggregate.hpp>
 #include <lucaria/public/context_dynamics.hpp>
 #include <lucaria/public/context_input.hpp>
 #include <lucaria/public/context_mixer.hpp>
@@ -39,7 +38,7 @@ struct context_game {
     template <typename SceneType>
     SceneType& create_scene()
     {
-        std::pair<SceneType&, detail::object_scene&> _scene = _manager->scenes.construct_scene<SceneType>();
+        std::pair<SceneType&, detail::object_user_scene&> _scene = _manager->scenes.construct_scene<SceneType>();
 		_manager->scenes.start_scene(*this, _scene.second);
 		return _scene.first;
     }

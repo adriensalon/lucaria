@@ -1,7 +1,7 @@
 #include <cereal/archives/json.hpp>
 #include <cereal/archives/portable_binary.hpp>
 
-#include <lucaria/core/manager_object.hpp>
+#include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/object_geometry.hpp>
 #include <lucaria/core/utils_stream.hpp>
 
@@ -21,7 +21,7 @@ namespace detail {
             _archive(data);
         }
 
-        static container_async<object_geometry> _fetch_geometry_async(manager_object& objects, const std::filesystem::path& data_path)
+        static container_async<object_geometry> _fetch_geometry_async(manager_assets& objects, const std::filesystem::path& data_path)
         {
             std::shared_ptr<std::promise<object_geometry>> _promise = std::make_shared<std::promise<object_geometry>>();
             objects.fetch_bytes(data_path, [_promise](const std::vector<char>& _bytes) {
@@ -45,7 +45,7 @@ namespace detail {
     }
 
     container_cache<object_geometry>& fetch(
-        manager_object& objects,
+        manager_assets& objects,
         container_cache_vector<object_geometry>& cached_vector,
         const std::filesystem::path& path)
     {
@@ -70,7 +70,7 @@ namespace detail {
         }
     }
 
-    container_cache<object_geometry>* apply_recipe(manager_object& objects, container_cache_vector<object_geometry>& cached_vector, recipe_object_geometry& recipe)
+    container_cache<object_geometry>* apply_recipe(manager_assets& objects, container_cache_vector<object_geometry>& cached_vector, recipe_object_geometry& recipe)
     {
         return std::visit([&](auto& value) -> container_cache<object_geometry>* {
             using RecipeType = std::decay_t<decltype(value)>;
