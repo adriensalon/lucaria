@@ -123,8 +123,8 @@ namespace detail {
             const float32x3 _error_velocity_xy = project_on_plane(rigidbody._target_linear_velocity - _bullet_linear_velocity, world_up);
             float32x3 _force_xy = rigidbody._linear_kp * _error_position_xy + rigidbody._linear_kd * _error_velocity_xy;
             const float32 _force_length_xy = glm::length(_force_xy);
-            if (_force_length_xy > glm::pow(rigidbody._linear_max_force, 2.f)) {
-                _force_xy *= rigidbody._linear_max_force / glm::sqrt(_force_length_xy);
+            if (_force_length_xy > rigidbody._linear_max_force && _force_length_xy > 0.f) {
+                _force_xy *= rigidbody._linear_max_force / _force_length_xy;
             }
             rigidbody._linear_forces += _force_xy;
 
