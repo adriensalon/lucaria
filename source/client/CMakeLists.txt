@@ -46,7 +46,6 @@ endif()
 set(lucaria_client_core_sources
 	"core/manager_game.cpp"
 	"core/manager_object.cpp"
-	"core/manager_scene.cpp"
 	"core/manager_window.cpp"
 	"core/object_animation.cpp"
 	"core/object_audio.cpp"
@@ -63,6 +62,8 @@ set(lucaria_client_core_sources
 	"core/object_skeleton.cpp"
 	"core/object_sound_track.cpp"
 	"core/object_texture.cpp"
+	"core/serialize_assets.cpp"
+	"core/serialize_scenes.cpp"
 	"core/system_dynamics.cpp"
 	"core/system_mixer.cpp"
 	"core/system_motion.cpp"

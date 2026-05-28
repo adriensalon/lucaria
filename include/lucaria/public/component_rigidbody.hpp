@@ -48,21 +48,6 @@ private:
         use_shape(_shape);
     }
 
-    // template <class Archive>
-    // static void load_and_construct(Archive& archive, cereal::construct<component_rigidbody_passive>& construct)
-    // {
-    //     const detail::mappings_manager_game_load& _mappings = cereal::get_user_data<detail::mappings_manager_game_load>(archive);
-    //     if (_mappings.dynamics == nullptr) {
-    //         LUCARIA_DEBUG_ERROR("Missing system_dynamics while loading component_rigidbody_passive");
-    //         return;
-    //     }
-    //     construct(*_mappings.dynamics);
-    //     archive(cereal::make_nvp("shape", construct->_shape));
-    //     archive(cereal::make_nvp("group", construct->_group));
-    //     archive(cereal::make_nvp("mask", construct->_mask));
-    //     construct->use_shape(construct->_shape);
-    // }
-
     friend struct detail::system_dynamics;
     friend class cereal::access;
 };
@@ -114,23 +99,6 @@ private:
         archive(cereal::make_nvp("rotation_speed", _rotation_speed));
         use_shape(_shape);
     }
-
-    // template <class Archive>
-    // static void load_and_construct(Archive& archive, cereal::construct<component_rigidbody_kinematic>& construct)
-    // {
-    //     const detail::mappings_manager_game_load& _mappings = cereal::get_user_data<detail::mappings_manager_game_load>(archive);
-    //     if (_mappings.dynamics == nullptr) {
-    //         LUCARIA_DEBUG_ERROR("Missing system_dynamics while loading component_rigidbody_kinematic");
-    //         return;
-    //     }
-    //     construct(*_mappings.dynamics);
-    //     archive(cereal::make_nvp("shape", construct->_shape));
-    //     archive(cereal::make_nvp("group", construct->_group));
-    //     archive(cereal::make_nvp("mask", construct->_mask));
-    //     archive(cereal::make_nvp("translation_speed", construct->_translation_speed));
-    //     archive(cereal::make_nvp("rotation_speed", construct->_rotation_speed));
-    //     construct->use_shape(construct->_shape);
-    // }
 
     friend struct detail::system_dynamics;
     friend class cereal::access;
@@ -255,70 +223,4 @@ private:
     friend class cereal::access;
 };
 
-namespace detail {
-
-    template <>
-    struct component_emplace_factory<component_rigidbody_passive> {
-        template <typename ArchiveType>
-        static component_rigidbody_passive& emplace(
-            ArchiveType& archive,
-            entt::registry& registry,
-            entt::entity entity)
-        {
-            const auto& mappings = cereal::get_user_data<detail::mappings_manager_game_load>(archive);
-
-            if (mappings.dynamics == nullptr) {
-                LUCARIA_DEBUG_ERROR("Missing dynamics while loading component_rigidbody_passive");
-                throw std::runtime_error("Missing dynamics while loading component_rigidbody_passive");
-            }
-
-            return registry.emplace_or_replace<component_rigidbody_passive>(
-                entity,
-                *mappings.dynamics);
-        }
-    };
-
-    template <>
-    struct component_emplace_factory<component_rigidbody_kinematic> {
-        template <typename ArchiveType>
-        static component_rigidbody_kinematic& emplace(
-            ArchiveType& archive,
-            entt::registry& registry,
-            entt::entity entity)
-        {
-            const auto& mappings = cereal::get_user_data<detail::mappings_manager_game_load>(archive);
-
-            if (mappings.dynamics == nullptr) {
-                LUCARIA_DEBUG_ERROR("Missing dynamics while loading component_rigidbody_kinematic");
-                throw std::runtime_error("Missing dynamics while loading component_rigidbody_kinematic");
-            }
-
-            return registry.emplace_or_replace<component_rigidbody_kinematic>(
-                entity,
-                *mappings.dynamics);
-        }
-    };
-
-    template <>
-    struct component_emplace_factory<component_rigidbody_dynamic> {
-        template <typename ArchiveType>
-        static component_rigidbody_dynamic& emplace(
-            ArchiveType& archive,
-            entt::registry& registry,
-            entt::entity entity)
-        {
-            const auto& mappings = cereal::get_user_data<detail::mappings_manager_game_load>(archive);
-
-            if (mappings.dynamics == nullptr) {
-                LUCARIA_DEBUG_ERROR("Missing dynamics while loading component_rigidbody_dynamic");
-                throw std::runtime_error("Missing dynamics while loading component_rigidbody_dynamic");
-            }
-
-            return registry.emplace_or_replace<component_rigidbody_dynamic>(
-                entity,
-                *mappings.dynamics);
-        }
-    };
-
-}
 }

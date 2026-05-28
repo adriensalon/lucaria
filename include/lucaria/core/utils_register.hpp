@@ -1,6 +1,5 @@
 #pragma once
 
-#include <lucaria/core/manager_scene.hpp>
 #include <lucaria/core/utils_reload.hpp>
 #include <lucaria/public/context_game.hpp>
 

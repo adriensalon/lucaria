@@ -42,7 +42,9 @@ namespace detail {
 
         window.run(input, objects,
 
-            [this, &_game]() { __lucaria_plugin_start(&_game); }, [this, &_game]() {
+            [this, &_game]() { __lucaria_plugin_start(&_game); },
+
+            [this, &_game]() {
 			scenes.update_callbacks(_game);
 			scenes.update_systems(*this); 
 			objects.gc_unused(); });
@@ -50,15 +52,16 @@ namespace detail {
 
     void manager_game::save_snapshot(const std::filesystem::path& path)
     {
-        recipe_manager_game _recipe = {};
+        recipe_manager_object _objects = {};
+        recipe_manager_scene _scenes = {};
         mappings_manager_game_save _mappings = {};
-        _recipe.objects = make_recipe(objects, _mappings.objects);
-        _recipe.scenes = make_recipe(scenes, _mappings.scenes);
+        _objects = make_recipe(objects, _mappings.objects);
+        _scenes = make_recipe(scenes, _mappings.scenes);
 
         std::ofstream _ofstream(path, std::ios::binary);
         archive_json_output _archive(_mappings, _ofstream);
-        _archive(cereal::make_nvp("assets", _recipe.objects));
-        _archive(cereal::make_nvp("components", _recipe.scenes));
+        _archive(cereal::make_nvp("assets", _objects));
+        _archive(cereal::make_nvp("components", _scenes));
     }
 
     void manager_game::load_snapshot(const std::filesystem::path& path)
@@ -71,15 +74,16 @@ namespace detail {
         std::ifstream _ifstream(path, std::ios::binary);
         archive_json_input _archive(_mappings, _ifstream);
 
-        recipe_manager_game _recipe = {};
+        recipe_manager_object _objects = {};
+        recipe_manager_scene _scenes = {};
 
-        _archive(cereal::make_nvp("assets", _recipe.objects));
-        apply_recipe(window, objects, _mappings.objects, _recipe.objects);
+        _archive(cereal::make_nvp("assets", _objects));
+        apply_recipe(window, objects, _mappings.objects, _objects);
 
         // scenes.scenes.clear();
         scenes.current_scene = nullptr;
 
-        _archive(cereal::make_nvp("components", _recipe.scenes));
+        _archive(cereal::make_nvp("components", _scenes));
     }
 
 }

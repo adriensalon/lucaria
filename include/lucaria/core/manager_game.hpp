@@ -8,6 +8,10 @@
 #include <lucaria/core/system_motion.hpp>
 #include <lucaria/core/system_mixer.hpp>
 #include <lucaria/core/system_rendering.hpp>
+#include <lucaria/core/serialize_archives.hpp>
+#include <lucaria/core/serialize_assets.hpp>
+#include <lucaria/core/serialize_mappings.hpp>
+#include <lucaria/core/serialize_scenes.hpp>
 
 namespace lucaria {
 
@@ -35,26 +39,6 @@ namespace detail {
         void save_snapshot(const std::filesystem::path& path);
         void load_snapshot(const std::filesystem::path& path);
     };
-
-    // recipes
-
-    struct recipe_manager_game {
-        recipe_manager_object objects = {};
-        recipe_manager_scene scenes = {};
-        recipe_manager_window window = {};
-        // etc
-
-        template <typename ArchiveType>
-        void serialize(ArchiveType& archive)
-        {
-            archive(cereal::make_nvp("objects", objects));
-            archive(cereal::make_nvp("scenes", scenes));
-            archive(cereal::make_nvp("window", window));
-            // etc
-        }
-    };
-
-    // [[nodiscard]] recipe_manager_game make_recipe(mappings_manager_game& mappings);
 
 }
 }

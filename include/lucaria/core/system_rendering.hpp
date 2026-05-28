@@ -9,13 +9,13 @@
 #include <lucaria/public/handle_cubemap.hpp>
 
 namespace lucaria {
+	
+struct component_animator;
+struct component_transform;
+
 namespace detail {
 
     struct system_dynamics;
-
-	
-        
-
 
     struct system_rendering {
         system_rendering() = default;
@@ -24,7 +24,7 @@ namespace detail {
         system_rendering(system_rendering&& other) = default;
         system_rendering& operator=(system_rendering&& other) = default;
 
-		const std::vector<float32x3> skybox_positions = {
+        const std::vector<float32x3> skybox_positions = {
             float32x3(-1.f, -1.f, -1.f),
             float32x3(1.f, -1.f, -1.f),
             float32x3(1.f, 1.f, -1.f),
