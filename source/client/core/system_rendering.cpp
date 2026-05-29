@@ -475,7 +475,7 @@ namespace detail {
             }
         });
 
-        scenes.each_view<component_model_blockout>(entt::exclude<component_transform>, [&](component_model_blockout& _model) {
+        scenes.each_view<component_model_blockout>(exclude<component_transform>, [&](component_model_blockout& _model) {
             if (_model._mesh) {
                 const object_mesh& _mesh = _model._mesh._cached->fetched.value();
                 _blockout_program.use();
@@ -498,7 +498,7 @@ namespace detail {
         }
 
         object_program& _unlit_program = _persistent_unlit_program.value();
-        scenes.each_view<component_model_unlit, component_transform>(entt::exclude<component_animator>, [&](component_model_unlit& _model, component_transform& _transform) {
+        scenes.each_view<component_model_unlit, component_transform>(exclude<component_animator>, [&](component_model_unlit& _model, component_transform& _transform) {
             if (_model._mesh && _model._color) {
                 const float32x4x4 _model_view_projection = camera_view_projection * _transform._transform;
                 const object_mesh& _mesh = _model._mesh._cached->fetched.value();
@@ -512,7 +512,7 @@ namespace detail {
             }
         });
 
-        scenes.each_view<component_model_unlit>(entt::exclude<component_transform, component_animator>, [&](component_model_unlit& _model) {
+        scenes.each_view<component_model_unlit>(exclude<component_transform, component_animator>, [&](component_model_unlit& _model) {
             if (_model._mesh && _model._color) {
                 const object_mesh& _mesh = _model._mesh._cached->fetched.value();
                 const object_texture& _color = _model._color._cached->fetched.value();
@@ -556,7 +556,7 @@ namespace detail {
             }
         });
 
-        scenes.each_view<component_model_unlit, component_animator>(entt::exclude<component_transform>, [&](component_model_unlit& _model, component_animator& animator) {
+        scenes.each_view<component_model_unlit, component_animator>(exclude<component_transform>, [&](component_model_unlit& _model, component_animator& animator) {
             if (_model._mesh && _model._color && animator._skeleton.has_value()) {
                 const object_mesh& _mesh = _model._mesh._cached->fetched.value();
                 const object_texture& _color = _model._color._cached->fetched.value();

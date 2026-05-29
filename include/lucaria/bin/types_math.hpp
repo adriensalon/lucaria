@@ -96,8 +96,12 @@ namespace lucaria {
 // scalar
 using int16 = glm::int16;
 using int32 = glm::int32;
+
 using uint8 = glm::uint8;
+using uint16 = glm::uint16;
 using uint32 = glm::uint32;
+using uint64 = glm::uint64;
+
 using float32 = glm::float32;
 using float64 = glm::float64;
 

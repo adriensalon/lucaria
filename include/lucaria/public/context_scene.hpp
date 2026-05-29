@@ -36,7 +36,7 @@ struct context_scene {
     /// @param exclude
     /// @param callback
     template <typename... ComponentTypes, typename... ExcludeComponentTypes, typename Callback>
-    void each_view(entt::exclude_t<ExcludeComponentTypes...> exclude, Callback&& callback)
+    void each_view(detail::exclude_t<ExcludeComponentTypes...> exclude, Callback&& callback)
     {
         _manager->each_view<ComponentTypes...>(exclude, std::forward<Callback>(callback));
     }
@@ -45,11 +45,11 @@ struct context_scene {
     /// @tparam ...ComponentTypes
     /// @tparam Callback
     /// @param callback
-    template <typename... ComponentTypes, typename Callback>
-    void each_view_self(Callback&& callback)
-    {
-        _manager->current_scene->components.view<ComponentTypes...>().each(std::forward<Callback>(callback));
-    }
+    // template <typename... ComponentTypes, typename Callback>
+    // void each_view_self(Callback&& callback)
+    // {
+    //     _manager->current_scene->components.view<ComponentTypes...>().each(std::forward<Callback>(callback));
+    // }
 
     /// @brief
     /// @tparam ...ComponentTypes
@@ -57,11 +57,11 @@ struct context_scene {
     /// @tparam Callback
     /// @param exclude
     /// @param callback
-    template <typename... ComponentTypes, typename... ExcludeComponentTypes, typename Callback>
-    void each_view_self(entt::exclude_t<ExcludeComponentTypes...> exclude, Callback&& callback)
-    {
-        _manager->current_scene->components.view<ComponentTypes...>(exclude).each(std::forward<Callback>(callback));
-    }
+    // template <typename... ComponentTypes, typename... ExcludeComponentTypes, typename Callback>
+    // void each_view_self(detail::exclude_t<ExcludeComponentTypes...> exclude, Callback&& callback)
+    // {
+    //     _manager->current_scene->components.view<ComponentTypes...>(exclude).each(std::forward<Callback>(callback));
+    // }
 
     /// @brief
     /// @param entity
@@ -122,7 +122,7 @@ struct context_scene {
     template <typename ComponentType, typename... Args>
     ComponentType& create_component_user(const handle_entity entity, Args&&... args)
     {
-        return _manager->current_scene->components.emplace<ComponentType>(entity._entity, std::forward<Args>(args)...);
+        return _manager->segment_registry_cpu.emplace<ComponentType>(entity._entity, std::forward<Args>(args)...);
     }
 
 private:

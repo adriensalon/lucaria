@@ -80,7 +80,7 @@ namespace detail {
     void system_dynamics::update_step_simulation(manager_window& window, manager_scenes& scenes)
     {
         // update collider transforms
-        scenes.each_view<component_rigidbody_passive>(entt::exclude<component_transform>, [](component_rigidbody_passive& collider) {
+        scenes.each_view<component_rigidbody_passive>(exclude<component_transform>, [](component_rigidbody_passive& collider) {
             const bool _collected = collider._shape.has_value(); // colliders can have no transform
             (void)_collected;
         });

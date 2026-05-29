@@ -1,7 +1,5 @@
 #pragma once
 
-#include <entt/entt.hpp>
-
 #include <lucaria/core/manager_scenes.hpp>
 #include <lucaria/core/utils_access.hpp>
 
@@ -80,7 +78,7 @@ struct handle_entity {
     template <typename ComponentType>
     bool has_component_user() const
     {
-        return _registry && _registry->all_of<ComponentType>(_entity);
+        return _manager && _manager->segment_registry_cpu.contains<ComponentType>(_entity);
     }
 
     /// @brief Gets a user component from this entity.
@@ -88,7 +86,7 @@ struct handle_entity {
     template <typename ComponentType>
     [[nodiscard]] ComponentType& get_component_user() const
     {
-        return _registry->get<ComponentType>(_entity);
+        return _manager->segment_registry_cpu.get<ComponentType>(_entity);
     }
 
     /// @brief Removes a user component from this entity if present.
@@ -96,21 +94,22 @@ struct handle_entity {
     template <typename ComponentType>
     void remove_component_user() const
     {
-        if (_registry) {
-            _registry->remove<ComponentType>(_entity);
+        if (_manager) {
+            _manager->segment_registry_cpu.remove<ComponentType>(_entity);
         }
     }
 
 private:
-    entt::entity _entity = entt::null;
-    entt::registry* _registry = nullptr;
+    detail::object_entity _entity = {};
+    detail::manager_scenes* _manager = nullptr;
 
     template <typename ArchiveType>
     void save(ArchiveType& archive) const
     {
         const detail::mappings_manager_game_save& _mappings = cereal::get_user_data<detail::mappings_manager_game_save>(archive);
-        const uint32 _scene_id = _mappings.scenes.save_map_scene_ids.at(_registry);
-        const uint32 _entity_id = _mappings.scenes.save_map_scene_entities.at(_registry).at(_entity);
+        const auto scene = detail::entity_scene(_entity);
+        const uint32 _scene_id = _mappings.scenes.save_map_scene_ids.at(scene);
+        const uint32 _entity_id = _mappings.scenes.save_map_scene_entities.at(scene).at(_entity);
         archive(cereal::make_nvp("scene_save_id", _scene_id));
         archive(cereal::make_nvp("entity_save_id", _entity_id));
     }
@@ -125,8 +124,8 @@ private:
         archive(cereal::make_nvp("entity_save_id", entity_id));
 
         if (scene_id == 0 || entity_id == 0) {
-            _registry = nullptr;
-            _entity = entt::null;
+            _manager = nullptr;
+            _entity = {};
             return;
         }
 
@@ -135,28 +134,37 @@ private:
         auto scene_it = mappings.scenes.load_map_scenes.find(scene_id);
         if (scene_it == mappings.scenes.load_map_scenes.end()) {
             LUCARIA_DEBUG_ERROR("Failed to resolve scene while loading entity handle");
-            _registry = nullptr;
-            _entity = entt::null;
+            _manager = nullptr;
+            _entity = {};
             return;
         }
 
         auto entities_it = mappings.scenes.load_map_scene_entities.find(scene_id);
         if (entities_it == mappings.scenes.load_map_scene_entities.end()) {
             LUCARIA_DEBUG_ERROR("Failed to resolve scene entity map while loading entity handle");
-            _registry = nullptr;
-            _entity = entt::null;
+            _manager = nullptr;
+            _entity = {};
             return;
         }
 
         auto entity_it = entities_it->second.find(entity_id);
         if (entity_it == entities_it->second.end()) {
             LUCARIA_DEBUG_ERROR("Failed to resolve entity while loading entity handle");
-            _registry = nullptr;
-            _entity = entt::null;
+            _manager = nullptr;
+            _entity = {};
             return;
         }
 
-        _registry = scene_it->second;
+        if (detail::entity_scene(entity_it->second) != scene_it->second
+            || mappings.loading_scene_manager == nullptr
+            || !mappings.loading_scene_manager->segment_registry_cpu.valid(entity_it->second)) {
+            LUCARIA_DEBUG_ERROR("Failed to resolve valid entity while loading entity handle");
+            _manager = nullptr;
+            _entity = {};
+            return;
+        }
+
+        _manager = mappings.loading_scene_manager;
         _entity = entity_it->second;
     }
 

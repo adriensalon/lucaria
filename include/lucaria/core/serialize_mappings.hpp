@@ -1,9 +1,8 @@
 #pragma once
 
-#include <entt/entt.hpp>
-
-#include <lucaria/core/utils_cache.hpp>
+#include <lucaria/core/storage_entity.hpp>
 #include <lucaria/core/user_asset.hpp>
+#include <lucaria/core/utils_cache.hpp>
 
 namespace lucaria {
 
@@ -128,13 +127,14 @@ namespace detail {
     };
 
     struct mappings_manager_scene_save {
-        std::unordered_map<const entt::registry*, uint32> save_map_scene_ids = {};
-        std::unordered_map<const entt::registry*, std::unordered_map<entt::entity, uint32>> save_map_scene_entities = {};
+        manager_scenes* saving_scene_manager = nullptr;
+        std::unordered_map<object_entity_scene_index, uint32> save_map_scene_ids = {};
+        std::unordered_map<object_entity_scene_index, std::unordered_map<object_entity, uint32>> save_map_scene_entities = {};
     };
 
     struct mappings_manager_scene_load {
-        std::unordered_map<uint32, entt::registry*> load_map_scenes = {};
-        std::unordered_map<uint32, std::unordered_map<uint32, entt::entity>> load_map_scene_entities = {};
+        std::unordered_map<uint32, object_entity_scene_index> load_map_scenes = {};
+        std::unordered_map<uint32, std::unordered_map<uint32, object_entity>> load_map_scene_entities = {};
     };
 
     struct mappings_manager_game_save {

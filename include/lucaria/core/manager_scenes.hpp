@@ -1,8 +1,12 @@
 #pragma once
 
+#include <cassert>
+#include <limits>
 #include <typeindex>
 
 #include <lucaria/core/manager_assets.hpp>
+#include <lucaria/core/storage_registry.hpp>
+#include <lucaria/core/storage_vector.hpp>
 #include <lucaria/core/user_scene.hpp>
 
 namespace lucaria {
@@ -12,6 +16,19 @@ struct context_game;
 namespace detail {
 
     struct manager_game;
+
+    struct entt_emplace_factory_default_tag { };
+
+    template <typename ComponentType>
+    struct entt_emplace_factory : entt_emplace_factory_default_tag {
+
+        template <typename ArchiveType>
+        static ComponentType& emplace(ArchiveType&, container_segment_registry_cpu& registry, object_entity entity)
+        {
+            static_assert(std::is_default_constructible_v<ComponentType>, "Component is not default constructible. Provide entt_emplace_factory specialization");
+            return registry.emplace_or_replace<ComponentType>(entity);
+        }
+    };
 
     struct user_component_type_callbacks {
         std::function<void(object_user_scene&, cereal::PortableBinaryOutputArchive&)> binary_save = nullptr;
@@ -38,27 +55,26 @@ namespace detail {
         manager_scenes(manager_scenes&& other) = delete;
         manager_scenes& operator=(manager_scenes&& other) = delete;
 
-        std::vector<std::unique_ptr<object_user_scene>> scenes = {};
+        std::vector<object_user_scene> scenes = {};
+        container_segment_registry_cpu segment_registry_cpu = {};
+        container_segment_registry_gpu segment_registry_gpu = {};
+        object_entity_scene_index index_for_context = 0;
+
         std::unordered_map<std::string, user_scene_type_callbacks> scene_types = {};
         std::unordered_map<std::type_index, std::string> scene_type_ids = {};
         std::unordered_map<std::string, user_component_type_callbacks> user_component_types = {};
         std::unordered_map<std::type_index, std::string> user_component_type_ids = {};
-        object_user_scene* current_scene = nullptr;
 
         template <typename... ComponentTypes, typename Callback>
         void each_view(Callback&& callback)
         {
-            for (std::unique_ptr<object_user_scene>& _scene : scenes) {
-                _scene->components.view<ComponentTypes...>().each(std::forward<Callback>(callback));
-            }
+            segment_registry_cpu.view<ComponentTypes...>().each(std::forward<Callback>(callback));
         }
 
         template <typename... ComponentTypes, typename... ExcludeComponentTypes, typename Callback>
-        void each_view(entt::exclude_t<ExcludeComponentTypes...> exclude, Callback&& callback)
+        void each_view(exclude_t<ExcludeComponentTypes...> exclude, Callback&& callback)
         {
-            for (std::unique_ptr<object_user_scene>& _scene : scenes) {
-                _scene->components.view<ComponentTypes...>(exclude).each(std::forward<Callback>(callback));
-            }
+            segment_registry_cpu.view<ComponentTypes...>(exclude).each(std::forward<Callback>(callback));
         }
 
         template <typename SceneType>
@@ -120,11 +136,14 @@ namespace detail {
         template <typename SceneType>
         [[nodiscard]] std::pair<SceneType&, object_user_scene&> construct_scene()
         {
-            std::unique_ptr<object_user_scene>& _scene = scenes.emplace_back();
-            _scene = std::make_unique<object_user_scene>();
-            _scene->type_id = scene_type_ids.at(std::type_index(typeid(SceneType)));
-            SceneType& _typed_scene = _scene->user_data.emplace<SceneType>();
-            return { _typed_scene, *_scene.get() };
+            assert(scenes.size() <= std::numeric_limits<object_entity_scene_index>::max());
+
+            index_for_context = scenes.size();
+            object_user_scene& scene = scenes.emplace_back();
+            scene.type_id = scene_type_ids.at(std::type_index(typeid(SceneType)));
+			scene.index_for_context = index_for_context;
+            SceneType& typed_scene = scene.user_data.emplace<SceneType>();
+            return { typed_scene, scene };
         }
 
         void start_scene(context_game& game, object_user_scene& scene);

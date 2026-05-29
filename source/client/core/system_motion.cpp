@@ -148,7 +148,7 @@ namespace detail {
     void system_motion::update_apply_motion_tracks(manager_window& window, manager_scenes& scenes)
     {
         // apply to transform if no dynamic rigidbody
-        scenes.each_view<const component_animator, component_transform>(entt::exclude<component_rigidbody_dynamic>, [](const component_animator& _animator, component_transform& _transform) {
+        scenes.each_view<const component_animator, component_transform>(exclude<component_rigidbody_dynamic>, [](const component_animator& _animator, component_transform& _transform) {
             for (const std::pair<const std::string, handle_motion_track>& _pair : _animator._motion_tracks) {
                 if (_pair.second) {
                     const component_animator_controller& _controller = _animator._controllers.at(_pair.first);
@@ -249,7 +249,7 @@ namespace detail {
         });
 
         // animator guizmos without transforms
-        scenes.each_view<component_animator>(entt::exclude<component_transform>, [&rendering](component_animator& animator) {
+        scenes.each_view<component_animator>(exclude<component_transform>, [&rendering](component_animator& animator) {
             if (animator._skeleton) {
                 const ozz::vector<ozz::math::Float4x4>& _model_transforms = animator._model_transforms;
                 if (_model_transforms.empty()) {

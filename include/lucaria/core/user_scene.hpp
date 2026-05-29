@@ -3,6 +3,7 @@
 #include <any>
 
 #include <lucaria/bin/types_containers.hpp>
+#include <lucaria/core/storage_entity.hpp>
 #include <lucaria/core/user_traits.hpp>
 
 namespace lucaria {
@@ -65,9 +66,9 @@ namespace detail {
     struct object_user_scene {
         std::string type_id = {};
         bool is_marked_erase = false;
-        std::vector<entt::entity> entities_marked_erase = {};
-        entt::registry components = {};
+        std::vector<object_entity> entities_marked_erase = {};
         std::any user_data = {};
+        object_entity_scene_index index_for_context = 0;
     };
 
 }

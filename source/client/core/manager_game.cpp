@@ -81,7 +81,7 @@ namespace detail {
         apply_recipe(window, objects, _mappings.objects, _objects);
 
         // scenes.scenes.clear();
-        scenes.current_scene = nullptr;
+        // scenes.current_scene = nullptr;
 
         _archive(cereal::make_nvp("components", _scenes));
     }

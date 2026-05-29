@@ -42,21 +42,13 @@ namespace detail {
 
     // entt traits
 
-    struct entt_emplace_factory_default_tag { };
-
-    template <typename ComponentType>
-    struct entt_emplace_factory : entt_emplace_factory_default_tag {
-
-        template <typename ArchiveType>
-        static ComponentType& emplace(ArchiveType&, entt::registry& registry, entt::entity entity)
-        {
-            static_assert(std::is_default_constructible_v<ComponentType>, "Component is not default constructible. Provide entt_emplace_factory specialization");
-            return registry.emplace_or_replace<ComponentType>(entity);
-        }
-    };
+	struct entt_emplace_factory_default_tag;
+	
+    template <typename T>
+	struct entt_emplace_factory;
 
     template <typename T>
-    struct has_default_entt_emplace_factory : std::is_base_of<detail::entt_emplace_factory_default_tag, entt_emplace_factory<T>> { };
+    struct has_default_entt_emplace_factory : std::is_base_of<entt_emplace_factory_default_tag, entt_emplace_factory<T>> { };
 
     template <typename T>
     inline constexpr bool has_default_entt_emplace_factory_v = has_default_entt_emplace_factory<T>::value;

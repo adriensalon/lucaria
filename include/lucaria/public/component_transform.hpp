@@ -60,9 +60,8 @@ struct component_transform {
 
 private:
     float32x4x4 _transform = float32x4x4(1);
-    std::optional<handle_entity> _parent_entity = std::nullopt;
-    std::optional<std::reference_wrapper<component_transform>> _parent_transform = {};
-    std::vector<std::reference_wrapper<component_transform>> _children = {};
+    std::optional<handle_entity> _parent = std::nullopt;
+    std::vector<handle_entity> _children = {};
 
     void _apply_delta_to_children(const float32x4x4& delta);
 
@@ -70,7 +69,8 @@ private:
     void serialize(Archive& archive)
     {
         archive(cereal::make_nvp("transform", _transform));
-        archive(cereal::make_nvp("parent", _parent_entity));
+        archive(cereal::make_nvp("parent", _parent));
+        archive(cereal::make_nvp("children", _children));
     }
 
     friend struct detail::system_dynamics;

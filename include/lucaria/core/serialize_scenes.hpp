@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cassert>
+#include <limits>
+
 #include <lucaria/core/serialize_containers.hpp>
 #include <lucaria/core/serialize_mappings.hpp>
 #include <lucaria/core/user_scene.hpp>
@@ -18,8 +21,8 @@ namespace detail {
         template <typename ArchiveType>
         static component_rigidbody_passive& emplace(
             ArchiveType& archive,
-            entt::registry& registry,
-            entt::entity entity)
+            container_segment_registry_cpu& registry,
+            object_entity entity)
         {
             const auto& mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
 
@@ -39,8 +42,8 @@ namespace detail {
         template <typename ArchiveType>
         static component_rigidbody_kinematic& emplace(
             ArchiveType& archive,
-            entt::registry& registry,
-            entt::entity entity)
+            container_segment_registry_cpu& registry,
+            object_entity entity)
         {
             const auto& mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
 
@@ -60,8 +63,8 @@ namespace detail {
         template <typename ArchiveType>
         static component_rigidbody_dynamic& emplace(
             ArchiveType& archive,
-            entt::registry& registry,
-            entt::entity entity)
+            container_segment_registry_cpu& registry,
+            object_entity entity)
         {
             const auto& mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
 
@@ -103,18 +106,18 @@ namespace detail {
 
             auto& game_mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
 
-            if (game_mappings.loading_scene == nullptr) {
+            if (game_mappings.loading_scene == nullptr || game_mappings.loading_scene_manager == nullptr) {
                 LUCARIA_DEBUG_ERROR("Missing scene while loading component");
                 return;
             }
 
-            entt::entity entity = game_mappings.scenes.load_map_scene_entities
-                                      .at(game_mappings.loading_scene_save_id)
-                                      .at(component_save_id);
+            object_entity entity = game_mappings.scenes.load_map_scene_entities
+                                       .at(game_mappings.loading_scene_save_id)
+                                       .at(component_save_id);
 
             ComponentType& component = entt_emplace_factory<ComponentType>::emplace(
                 archive,
-                game_mappings.loading_scene->components,
+                game_mappings.loading_scene_manager->segment_registry_cpu,
                 entity);
 
             archive(cereal::make_nvp("component", component));
@@ -157,7 +160,7 @@ namespace detail {
 
             auto& game_mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
 
-            if (game_mappings.loading_scene == nullptr) {
+            if (game_mappings.loading_scene == nullptr || game_mappings.loading_scene_manager == nullptr) {
                 LUCARIA_DEBUG_ERROR("Missing scene while loading scene registry");
                 return;
             }
@@ -166,7 +169,8 @@ namespace detail {
                                    [game_mappings.loading_scene_save_id];
 
             for (uint32 entity_save_id : entity_save_ids) {
-                entt::entity entity = game_mappings.loading_scene->components.create();
+                object_entity entity = game_mappings.loading_scene_manager->segment_registry_cpu.create(
+                    game_mappings.loading_scene->index_for_context);
                 entity_map[entity_save_id] = entity;
             }
 
@@ -272,17 +276,18 @@ namespace detail {
                 return;
             }
 
-            std::unique_ptr<object_user_scene>& scene_ptr = manager.scenes.emplace_back();
-            scene_ptr = std::make_unique<object_user_scene>();
+            const auto scene_index = static_cast<object_entity_scene_index>(manager.scenes.size());
+            assert(manager.scenes.size() <= std::numeric_limits<object_entity_scene_index>::max());
 
-            object_user_scene& loaded_scene = *scene_ptr;
+            object_user_scene& loaded_scene = manager.scenes.emplace_back();
             loaded_scene.type_id = type_id;
+            loaded_scene.index_for_context = scene_index;
 
             if (it->second.construct) {
                 it->second.construct(loaded_scene);
             }
 
-            game_mappings.scenes.load_map_scenes[scene_save_id] = &loaded_scene.components;
+            game_mappings.scenes.load_map_scenes[scene_save_id] = loaded_scene.index_for_context;
 
             object_user_scene* previous_scene = game_mappings.loading_scene;
             uint32 previous_scene_id = game_mappings.loading_scene_save_id;
@@ -334,12 +339,12 @@ namespace detail {
         _component_type.binary_save = [](object_user_scene& scene, cereal::PortableBinaryOutputArchive& archive) {
             const mappings_manager_game_save& _mappings = cereal::get_user_data<mappings_manager_game_save>(archive);
             std::vector<recipe_object_scene_component<ComponentType>> _components = {};
-            scene.components.view<ComponentType>().each(
-                [&](entt::entity entity, ComponentType& component) {
-                    recipe_object_scene_component<ComponentType>& _back = _components.emplace_back();
-                    _back.component_save_id = _mappings.scenes.save_map_scene_entities.at(&scene.components).at(entity);
-                    _back.component_save = &component;
-                });
+            assert(_mappings.scenes.saving_scene_manager != nullptr);
+            _mappings.scenes.saving_scene_manager->segment_registry_cpu.view<ComponentType>(scene.index_for_context, exclude<>).each([&](object_entity entity, ComponentType& component) {
+                recipe_object_scene_component<ComponentType>& _back = _components.emplace_back();
+                _back.component_save_id = _mappings.scenes.save_map_scene_entities.at(scene.index_for_context).at(entity);
+                _back.component_save = &component;
+            });
             archive(cereal::make_nvp("components", _components));
         };
 
@@ -351,12 +356,12 @@ namespace detail {
         _component_type.json_save = [](object_user_scene& scene, cereal::JSONOutputArchive& archive) {
             const mappings_manager_game_save& _mappings = cereal::get_user_data<mappings_manager_game_save>(archive);
             std::vector<recipe_object_scene_component<ComponentType>> _components = {};
-            scene.components.view<ComponentType>().each(
-                [&](entt::entity entity, ComponentType& component) {
-                    recipe_object_scene_component<ComponentType>& _back = _components.emplace_back();
-                    _back.component_save_id = _mappings.scenes.save_map_scene_entities.at(&scene.components).at(entity);
-                    _back.component_save = &component;
-                });
+            assert(_mappings.scenes.saving_scene_manager != nullptr);
+            _mappings.scenes.saving_scene_manager->segment_registry_cpu.view<ComponentType>(scene.index_for_context, exclude<>).each([&](object_entity entity, ComponentType& component) {
+                recipe_object_scene_component<ComponentType>& _back = _components.emplace_back();
+                _back.component_save_id = _mappings.scenes.save_map_scene_entities.at(scene.index_for_context).at(entity);
+                _back.component_save = &component;
+            });
             archive(cereal::make_nvp("components", _components));
         };
 
