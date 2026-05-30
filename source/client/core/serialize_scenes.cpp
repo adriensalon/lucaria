@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include <lucaria/core/manager_game.hpp>
 #include <lucaria/core/manager_scenes.hpp>
 #include <lucaria/public/component_animator.hpp>
@@ -21,12 +23,11 @@ namespace detail {
         {
             std::vector<recipe_object_scene_component<ComponentType>> components = {};
 
-            registry.view<ComponentType>(scene, exclude<>).each(
-                [&](object_entity entity, ComponentType& component) {
-                    recipe_object_scene_component<ComponentType>& back = components.emplace_back();
-                    back.component_save_id = entity_ids.at(entity);
-                    back.component_save = &component;
-                });
+            registry.view<ComponentType>(scene, exclude<>).each([&](object_entity entity, ComponentType& component) {
+                recipe_object_scene_component<ComponentType>& back = components.emplace_back();
+                back.component_save_id = entity_ids.at(entity);
+                back.component_save = &component;
+            });
 
             return components;
         }
@@ -38,7 +39,7 @@ namespace detail {
         user_scene_type_callbacks& callbacks = scene_types.at(scene.type_id);
 
         if (callbacks.start) {
-			// index_for_context is set by manager_scenes::construct
+            // index_for_context is set by manager_scenes::construct
             callbacks.start(game, scene);
         }
     }
@@ -51,8 +52,8 @@ namespace detail {
             user_scene_type_callbacks& callbacks = scene_types.at(scene.type_id);
 
             if (callbacks.update) {
-				index_for_context = static_cast<uint16>(index);
-				scene.index_for_context = index_for_context;
+                index_for_context = static_cast<uint16>(index);
+                scene.index_for_context = index_for_context;
                 callbacks.update(game, scene);
             }
         }
@@ -120,10 +121,40 @@ namespace detail {
 
             uint32 next_entity_id = 1;
 
-            for (object_entity entity : manager.segment_registry_cpu.raw_registry_for_tests().storage<object_entity>()) {
-                if (entity_scene(entity) == segment) {
-                    entity_ids.emplace(entity, next_entity_id++);
+            if (segment >= manager.segment_registry_cpu.scene_allocators.size()) {
+                continue;
+            }
+
+            const auto& allocator = manager.segment_registry_cpu.scene_allocators[segment];
+
+            std::vector<bool> is_free(
+                static_cast<std::size_t>(allocator.next_local),
+                false);
+
+            for (const object_entity_local_index local : allocator.free_list) {
+                if (local < is_free.size()) {
+                    is_free[local] = true;
                 }
+            }
+
+            for (
+                object_entity_local_index local = 0;
+                local < allocator.next_local;
+                ++local) {
+                if (is_free[local]) {
+                    continue;
+                }
+
+                const object_entity entity = make_entity(
+                    segment,
+                    local,
+                    allocator.generations[local]);
+
+                if (!manager.segment_registry_cpu.valid(entity)) {
+                    continue;
+                }
+
+                entity_ids.emplace(entity, next_entity_id++);
             }
         }
 
