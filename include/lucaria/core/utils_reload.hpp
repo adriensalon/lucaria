@@ -26,6 +26,7 @@
         if (!game) {                                                                            \
             return false;                                                                       \
         }                                                                                       \
+        ::lucaria::detail::apply_lgsl_system_registrations(game->scenes);                       \
         ::lucaria::detail::apply_user_asset_registrations(game->objects);                       \
         ::lucaria::detail::apply_component_registrations(game->scenes);                         \
         ::lucaria::detail::apply_scene_registrations(game->scenes);                             \

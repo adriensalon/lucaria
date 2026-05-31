@@ -4,6 +4,7 @@
 #include <type_traits>
 
 #include <lucaria/core/storage_segment.hpp>
+#include <lucaria/public/handle_entity.hpp>
 
 namespace entt {
 
@@ -75,7 +76,7 @@ namespace detail {
                     if (_has_excluded(_current_segment.scene, _entity)) {
                         continue;
                     }
-                    _call(std::forward<CallbackType>(callback), _current_segment.scene, _entity, _current_segment.components[i]);
+                    _call(std::forward<CallbackType>(callback), _current_segment.scene, handle_entity { _entity }, _current_segment.components[i]);
                 }
             }
         }
@@ -152,7 +153,7 @@ namespace detail {
         }
 
         template <typename CallbackType>
-        void _call(CallbackType&& callback, object_entity_scene_index scene, object_entity entity, lead_component_type& lead) const
+        void _call(CallbackType&& callback, object_entity_scene_index scene, handle_entity entity, lead_component_type& lead) const
         {
             view_reference_type<LeadComponentType> _lead_reference = lead;
             if constexpr (sizeof...(RestComponentTypes) == 0) {
@@ -168,25 +169,21 @@ namespace detail {
                     entity,
                     _lead_reference,
                     static_cast<view_reference_type<RestComponentTypes>>(
-                        std::get<storage_type<RestComponentTypes>*>(_rest_storage)->get(scene, entity))...);
+                        std::get<storage_type<RestComponentTypes>*>(_rest_storage)->get(scene, entity._entity))...);
             }
         }
 
         template <typename CallbackType, typename... Components>
-        void _call_with_rest(CallbackType&& callback, object_entity_scene_index scene, object_entity entity, Components&&... components) const
+        void _call_with_rest(CallbackType&& callback, object_entity_scene_index scene, handle_entity entity, Components&&... components) const
         {
-            if constexpr (std::is_invocable_v<CallbackType, object_entity_scene_index, object_entity, Components...>) {
-                std::forward<CallbackType>(callback)(scene, entity, std::forward<Components>(components)...);
-            } else if constexpr (std::is_invocable_v<CallbackType, object_entity, Components...>) {
+            if constexpr (std::is_invocable_v<CallbackType, object_entity, Components...>) { // for detail::
+                std::forward<CallbackType>(callback)(entity._entity, std::forward<Components>(components)...);
+            } else if constexpr (std::is_invocable_v<CallbackType, handle_entity, Components...>) {
                 std::forward<CallbackType>(callback)(entity, std::forward<Components>(components)...);
             } else if constexpr (std::is_invocable_v<CallbackType, Components...>) {
                 std::forward<CallbackType>(callback)(std::forward<Components>(components)...);
             } else {
-                static_assert(
-                    std::is_invocable_v<CallbackType, object_entity_scene_index, object_entity, Components...>
-                        || std::is_invocable_v<CallbackType, object_entity, Components...>
-                        || std::is_invocable_v<CallbackType, Components...>,
-                    "Invalid view callback signature.");
+                static_assert(false, "Invalid view callback signature.");
             }
         }
     };

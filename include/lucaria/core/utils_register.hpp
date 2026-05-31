@@ -1,7 +1,20 @@
 #pragma once
 
+#include <lucaria/core/execution_system.hpp>
 #include <lucaria/core/utils_reload.hpp>
 #include <lucaria/public/context_game.hpp>
+
+#define LUCARIA_REGISTER_LGSL_IMPLEMENTATION(SystemFunction)                      \
+    struct SystemFunction##_lgsl_system_registration {                            \
+        SystemFunction##_lgsl_system_registration()                               \
+        {                                                                         \
+            ::lucaria::detail::enqueue_lgsl_system_registration<&SystemFunction>( \
+                #SystemFunction,                                                  \
+                __FILE__,                                                         \
+                __LINE__);                                                        \
+        }                                                                         \
+    };                                                                            \
+    static SystemFunction##_lgsl_system_registration SystemFunction##_lgsl_system_registration_instance;
 
 #define LUCARIA_REGISTER_USER_ASSET_IMPLEMENTATION(AssetType)                          \
     struct AssetType##_user_asset_registration {                                       \
@@ -46,6 +59,13 @@ struct context_game;
 
 namespace detail {
 
+    struct pending_lgsl_system_registration {
+        const char* name;
+        const char* file;
+        int line;
+        void (*register_into)(manager_scenes&, const char*, const char*, int);
+    };
+
     struct pending_user_asset_registration {
         std::string type_id;
         void (*register_into)(manager_assets&, std::string);
@@ -64,6 +84,12 @@ namespace detail {
     struct pending_main_scene_registration {
         void (*emplace_into)(context_game&);
     };
+
+    inline std::vector<pending_lgsl_system_registration>& global_pending_lgsl_system_registrations()
+    {
+        static std::vector<pending_lgsl_system_registration> _systems = {};
+        return _systems;
+    }
 
     inline std::vector<pending_user_asset_registration>& global_pending_user_asset_registrations()
     {
@@ -87,6 +113,15 @@ namespace detail {
     {
         static pending_main_scene_registration _main_scene = {};
         return _main_scene;
+    }
+
+    template <auto FunctionPtr>
+    void enqueue_lgsl_system_registration(const char* name, const char* file, int line)
+    {
+        global_pending_lgsl_system_registrations().push_back({ name, file, line,
+            [](manager_scenes& scenes, const char* name, const char* file, int line) {
+                scenes.template register_lgsl_system<FunctionPtr>(name, file, line);
+            } });
     }
 
     template <typename AssetType>
@@ -126,6 +161,13 @@ namespace detail {
         };
     }
 
+    inline void apply_lgsl_system_registrations(manager_scenes& scenes)
+    {
+        for (pending_lgsl_system_registration& _system : global_pending_lgsl_system_registrations()) {
+            _system.register_into(scenes, _system.name, _system.file, _system.line);
+        }
+    }
+
     inline void apply_user_asset_registrations(manager_assets& objects)
     {
         for (pending_user_asset_registration& _asset : global_pending_user_asset_registrations()) {
@@ -158,6 +200,7 @@ namespace detail {
 
     inline void clear_pending_type_registrations()
     {
+        global_pending_lgsl_system_registrations().clear();
         global_pending_user_asset_registrations().clear();
         global_pending_component_registrations().clear();
         global_pending_scene_registrations().clear();

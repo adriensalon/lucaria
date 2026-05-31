@@ -2,6 +2,12 @@
 
 #include <lucaria/core/manager_scenes.hpp>
 #include <lucaria/public/handle_entity.hpp>
+#include <lucaria/public/component_animator.hpp>
+#include <lucaria/public/component_interface.hpp>
+#include <lucaria/public/component_model.hpp>
+#include <lucaria/public/component_rigidbody.hpp>
+#include <lucaria/public/component_speaker.hpp>
+#include <lucaria/public/component_transform.hpp>
 
 namespace lucaria {
 
@@ -18,6 +24,12 @@ struct context_scene {
 
     /// @brief Schedules the current scene for erasure at the end of the current frame. The scene will be removed from the engine and all its resources will be freed.
     void mark_erase_self();
+
+    template <auto SystemFunction>
+    void run_dispatch_compute()
+    {
+        _manager->run_dispatch_compute<SystemFunction>();
+    }
 
     /// @brief
     /// @tparam ...ComponentTypes
@@ -125,9 +137,88 @@ struct context_scene {
         return _manager->segment_registry_cpu.emplace<ComponentType>(entity._entity, std::forward<Args>(args)...);
     }
 
+	
+
+    /// @brief
+    /// @param entity
+    /// @return
+    [[nodiscard]] component_animator& get_animator(const handle_entity entity) const;
+
+    /// @brief
+    /// @param entity
+    /// @return
+    [[nodiscard]] component_interface_screen& get_screen_interface(const handle_entity entity) const;
+
+    /// @brief
+    /// @param entity
+    /// @return
+    [[nodiscard]] component_interface_spatial& get_spatial_interface(const handle_entity entity) const;
+
+    /// @brief
+    /// @param entity
+    /// @return
+    [[nodiscard]] component_model_blockout& get_blockout_model(const handle_entity entity) const;
+
+    /// @brief
+    /// @param entity
+    /// @return
+    [[nodiscard]] component_model_unlit& get_unlit_model(const handle_entity entity) const;
+
+    /// @brief
+    /// @param entity
+    /// @return
+    [[nodiscard]] component_rigidbody_passive& get_passive_rigidbody(const handle_entity entity) const;
+
+    /// @brief
+    /// @param entity
+    /// @return
+    [[nodiscard]] component_rigidbody_kinematic& get_kinematic_rigidbody(const handle_entity entity) const;
+
+    /// @brief
+    /// @param entity
+    /// @return
+    [[nodiscard]] component_rigidbody_dynamic& get_dynamic_rigidbody(const handle_entity entity) const;
+
+    /// @brief
+    /// @param entity
+    /// @return
+    [[nodiscard]] component_speaker_spatial& get_speaker(const handle_entity entity) const;
+
+    /// @brief
+    /// @param entity
+    /// @return
+    [[nodiscard]] component_transform& get_transform(const handle_entity entity) const;
+
+    /// @brief Returns true if this entity owns the requested user component.
+    /// @tparam ComponentType User component type.
+    /// @return true if the entity has the component, false otherwise.
+    template <typename ComponentType>
+    bool has_component_user(const handle_entity entity) const
+    {
+        return _manager->segment_registry_cpu.contains<ComponentType>(entity._entity);
+    }
+
+    /// @brief Gets a user component from this entity.
+    /// @tparam ComponentType User component type.
+    template <typename ComponentType>
+    [[nodiscard]] ComponentType& get_component_user(const handle_entity entity) const
+    {
+        return _manager->segment_registry_cpu.get<ComponentType>(entity._entity);
+    }
+
+    /// @brief Removes a user component from this entity if present.
+    /// @tparam ComponentType User component type.
+    template <typename ComponentType>
+    void remove_component_user(const handle_entity entity) const
+    {
+        if (_manager) {
+            _manager->segment_registry_cpu.remove<ComponentType>(entity._entity);
+        }
+    }
+
 private:
     detail::manager_scenes* _manager;
-	friend struct access_context;
+    friend struct access_context;
 };
 
 }

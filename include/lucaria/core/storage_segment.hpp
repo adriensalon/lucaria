@@ -1,6 +1,9 @@
 #pragma once
 
+#include <entt/entt.hpp>
+
 #include <lucaria/core/storage_entity.hpp>
+#include <lucaria/core/utils_error.hpp>
 
 namespace lucaria {
 namespace detail {

@@ -2,15 +2,16 @@
 #include <glm/gtc/quaternion.hpp>
 
 #include <lucaria/public/component_transform.hpp>
+#include <lucaria/public/context_scene.hpp>
 
 namespace lucaria {
 
 void component_transform::_apply_delta_to_children(const float32x4x4& delta)
 {
     for (const handle_entity& _child_entity : _children) {
-        component_transform& _child = _child_entity.get_transform();
-        _child._transform = delta * _child._transform;
-        _child._apply_delta_to_children(delta);
+        // component_transform& _child = _child_entity.get_transform();
+        // _child._transform = delta * _child._transform;
+        // _child._apply_delta_to_children(delta);
     }
 }
 
@@ -34,11 +35,11 @@ component_transform& component_transform::use_parent()
     return *this;
 }
 
-component_transform& component_transform::use_parent(handle_entity parent_entity)
+component_transform& component_transform::use_parent(context_scene& scenes, handle_entity parent_entity)
 {
     _parent = parent_entity;
-    component_transform& _transform = parent_entity.get_transform();
-    // _transform._children.emplace_back(std::ref(*this));
+    component_transform& _transform = scenes.get_transform(parent_entity);
+    // _transform._children.emplace_back(std::ref(*this)); get_entity
     return *this;
 }
 

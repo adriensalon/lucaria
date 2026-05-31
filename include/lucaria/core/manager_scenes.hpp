@@ -4,6 +4,7 @@
 #include <limits>
 #include <typeindex>
 
+#include <lucaria/core/execution_engine.hpp>
 #include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/storage_registry.hpp>
 #include <lucaria/core/user_scene.hpp>
@@ -59,6 +60,7 @@ namespace detail {
         // container_segment_registry_gpu segment_registry_gpu = {};
         object_entity_scene_index index_for_context = 0;
 
+        std::vector<execution_system_info> execution_systems = {};
         std::unordered_map<std::string, user_scene_type_callbacks> scene_types = {};
         std::unordered_map<std::type_index, std::string> scene_type_ids = {};
         std::unordered_map<std::string, user_component_type_callbacks> user_component_types = {};
@@ -74,6 +76,29 @@ namespace detail {
         void each_view(exclude_t<ExcludeComponentTypes...> exclude, Callback&& callback)
         {
             segment_registry_cpu.view<ComponentTypes...>(exclude).each(std::forward<Callback>(callback));
+        }
+
+        template <auto SystemFunction>
+        void run_dispatch_compute()
+        {
+            using components_type = lgsl_system_component_list_t<SystemFunction>;
+            detail::run_dispatch_compute_cpu_fallback<SystemFunction>(segment_registry_cpu, components_type {});
+        }
+
+        template <auto FunctionPtr>
+        void register_lgsl_system(const char* name, const char* file, int line)
+        {
+            using metadata_type = execution_system_metadata<FunctionPtr>;
+            const auto& _parameters = metadata_type::parameters();
+            execution_system_info _system_info = {};
+            _system_info.name = name;
+            _system_info.stable_id = make_stable_lgsl_system_id(name);
+            _system_info.file = file;
+            _system_info.line = line;
+            _system_info.function_ptr = reinterpret_cast<void*>(FunctionPtr);
+            _system_info.parameters = _parameters.data();
+            _system_info.parameter_count = _parameters.size();
+            execution_systems.push_back(_system_info);
         }
 
         template <typename SceneType>
@@ -140,7 +165,7 @@ namespace detail {
             index_for_context = static_cast<uint16>(scenes.size());
             object_user_scene& scene = scenes.emplace_back();
             scene.type_id = scene_type_ids.at(std::type_index(typeid(SceneType)));
-			scene.index_for_context = index_for_context;
+            scene.index_for_context = index_for_context;
             SceneType& typed_scene = scene.user_data.emplace<SceneType>();
             return { typed_scene, scene };
         }

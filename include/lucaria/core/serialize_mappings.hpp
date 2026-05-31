@@ -2,7 +2,19 @@
 
 #include <lucaria/core/storage_entity.hpp>
 #include <lucaria/core/user_asset.hpp>
-#include <lucaria/core/utils_cache.hpp>
+#include <lucaria/core/object_animation.hpp>
+#include <lucaria/core/object_audio.hpp>
+#include <lucaria/core/object_cubemap.hpp>
+#include <lucaria/core/object_event_track.hpp>
+#include <lucaria/core/object_font.hpp>
+#include <lucaria/core/object_geometry.hpp>
+#include <lucaria/core/object_image.hpp>
+#include <lucaria/core/object_mesh.hpp>
+#include <lucaria/core/object_motion_track.hpp>
+#include <lucaria/core/object_shape.hpp>
+#include <lucaria/core/object_skeleton.hpp>
+#include <lucaria/core/object_sound_track.hpp>
+#include <lucaria/core/object_texture.hpp>
 
 namespace lucaria {
 

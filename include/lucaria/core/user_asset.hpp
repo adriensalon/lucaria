@@ -2,6 +2,7 @@
 
 #include <lucaria/bin/types_containers.hpp>
 #include <lucaria/core/user_traits.hpp>
+#include <lucaria/core/utils_cache.hpp>
 
 namespace lucaria {
 namespace detail {

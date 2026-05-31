@@ -4,6 +4,8 @@
 
 namespace lucaria {
 
+struct context_scene;
+
 /// @brief
 struct component_transform {
     component_transform() = default;
@@ -20,7 +22,7 @@ struct component_transform {
     /// @brief
     /// @param parent_transform
     /// @return this instance for chaining methods
-    component_transform& use_parent(handle_entity parent_entity);
+    component_transform& use_parent(context_scene& scenes, handle_entity parent_entity);
 
     /// @brief
     /// @param position
