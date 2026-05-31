@@ -1,0 +1,16 @@
+// clang-format off
+
+#pragma once
+
+namespace lucaria {
+namespace detail {
+    namespace generated {
+        inline constexpr const char @LUCARIA_GSLC_IDENT@_id[] = "@LUCARIA_GSLC_ID@";
+        inline constexpr const char @LUCARIA_GSLC_IDENT@_source[] = R"LGSL(
+@LUCARIA_GSLC_CONTENT@
+)LGSL";
+    }
+}
+}
+
+// clang-format on

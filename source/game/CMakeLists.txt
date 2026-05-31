@@ -3,11 +3,22 @@ project(${LUCARIA_TARGET})
 
 add_subdirectory("${LUCARIA_SOURCE_DIR}/client" "${LUCARIA_BINARY_DIR}/client/${LUCARIA_TARGET_PLATFORM}")
 
+# filter out shaders
+set(LUCARIA_GSLC_SOURCES ${LUCARIA_TARGET_SOURCES})
+list(FILTER LUCARIA_GSLC_SOURCES INCLUDE REGEX "\\.gslc$")
+set(LUCARIA_NORMAL_SOURCES ${LUCARIA_TARGET_SOURCES})
+list(FILTER LUCARIA_NORMAL_SOURCES EXCLUDE REGEX "\\.gslc$")
+
 if(ANDROID)
-    add_library(${LUCARIA_TARGET} SHARED ${LUCARIA_TARGET_SOURCES})
+    add_library(${LUCARIA_TARGET} SHARED ${LUCARIA_NORMAL_SOURCES})
 else()
-    add_executable(${LUCARIA_TARGET} ${LUCARIA_TARGET_SOURCES})
+    add_executable(${LUCARIA_TARGET} ${LUCARIA_NORMAL_SOURCES})
 endif()
+
+# append shader sources
+foreach(gslc_source IN LISTS LUCARIA_GSLC_SOURCES)
+	embed_gslc(${LUCARIA_TARGET} ${gslc_source})
+endforeach()
 
 if(PSP)
 	create_pbp_file(

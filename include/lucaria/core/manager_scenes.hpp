@@ -55,12 +55,13 @@ namespace detail {
         manager_scenes(manager_scenes&& other) = delete;
         manager_scenes& operator=(manager_scenes&& other) = delete;
 
+        std::vector<execution_system_info> gsl_systems = {};
+
         std::vector<object_user_scene> scenes = {};
         container_segment_registry_cpu segment_registry_cpu = {};
         // container_segment_registry_gpu segment_registry_gpu = {};
         object_entity_scene_index index_for_context = 0;
 
-        std::vector<execution_system_info> execution_systems = {};
         std::unordered_map<std::string, user_scene_type_callbacks> scene_types = {};
         std::unordered_map<std::type_index, std::string> scene_type_ids = {};
         std::unordered_map<std::string, user_component_type_callbacks> user_component_types = {};
@@ -86,19 +87,20 @@ namespace detail {
         }
 
         template <auto FunctionPtr>
-        void register_lgsl_system(const char* name, const char* file, int line)
+        void register_gsl_system(const char* function_name, const char* gsl_id, const char* gsl_source, const char* file, int line)
         {
             using metadata_type = execution_system_metadata<FunctionPtr>;
             const auto& _parameters = metadata_type::parameters();
-            execution_system_info _system_info = {};
-            _system_info.name = name;
-            _system_info.stable_id = make_stable_lgsl_system_id(name);
-            _system_info.file = file;
-            _system_info.line = line;
-            _system_info.function_ptr = reinterpret_cast<void*>(FunctionPtr);
-            _system_info.parameters = _parameters.data();
-            _system_info.parameter_count = _parameters.size();
-            execution_systems.push_back(_system_info);
+            execution_system_info _info = {};
+            _info.name = function_name;
+            _info.gsl_id = gsl_id;
+            _info.gsl_source = gsl_source;
+            _info.file = file;
+            _info.line = line;
+            _info.function_ptr = reinterpret_cast<void*>(FunctionPtr);
+            _info.parameters = _parameters.data();
+            _info.parameter_count = _parameters.size();
+            gsl_systems.push_back(_info);
         }
 
         template <typename SceneType>

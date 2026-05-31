@@ -1,20 +1,28 @@
 #pragma once
 
-#include <lucaria/core/execution_system.hpp>
 #include <lucaria/core/utils_reload.hpp>
 #include <lucaria/public/context_game.hpp>
 
-#define LUCARIA_REGISTER_LGSL_IMPLEMENTATION(SystemFunction)                      \
-    struct SystemFunction##_lgsl_system_registration {                            \
-        SystemFunction##_lgsl_system_registration()                               \
-        {                                                                         \
-            ::lucaria::detail::enqueue_lgsl_system_registration<&SystemFunction>( \
-                #SystemFunction,                                                  \
-                __FILE__,                                                         \
-                __LINE__);                                                        \
-        }                                                                         \
-    };                                                                            \
-    static SystemFunction##_lgsl_system_registration SystemFunction##_lgsl_system_registration_instance;
+// #ifndef LUCARIA_CURRENT_GSL_ID
+// #error "LUCARIA_REGISTER_GSL must be used inside a generated .gslc wrapper"
+// #endif
+
+// #ifndef LUCARIA_CURRENT_GSL_SOURCE
+// #error "LUCARIA_REGISTER_GSL must be used inside a generated .gslc wrapper"
+// #endif
+
+#define LUCARIA_REGISTER_GSL_IMPLEMENTATION(SystemFunction)                                      \
+    struct SystemFunction##_gsl_registration {                                                   \
+        SystemFunction##_gsl_registration()                                                      \
+        {                                                                                        \
+            ::lucaria::detail::enqueue_gsl_system_registration<&SystemFunction>(#SystemFunction, \
+                LUCARIA_CURRENT_GSL_ID,                                                          \
+                LUCARIA_CURRENT_GSL_SOURCE,                                                      \
+                __FILE__,                                                                        \
+                __LINE__);                                                                       \
+        }                                                                                        \
+    };                                                                                           \
+    static SystemFunction##_gsl_registration SystemFunction##_gsl_registration_instance;
 
 #define LUCARIA_REGISTER_USER_ASSET_IMPLEMENTATION(AssetType)                          \
     struct AssetType##_user_asset_registration {                                       \
@@ -59,11 +67,13 @@ struct context_game;
 
 namespace detail {
 
-    struct pending_lgsl_system_registration {
-        const char* name;
+    struct pending_gsl_system_registration {
+        const char* function_name;
+        const char* gsl_id;
+        const char* gsl_source;
         const char* file;
         int line;
-        void (*register_into)(manager_scenes&, const char*, const char*, int);
+        void (*register_into)(manager_scenes&, const char* function_name, const char* gsl_id, const char* gsl_source, const char* file, int line);
     };
 
     struct pending_user_asset_registration {
@@ -85,9 +95,9 @@ namespace detail {
         void (*emplace_into)(context_game&);
     };
 
-    inline std::vector<pending_lgsl_system_registration>& global_pending_lgsl_system_registrations()
+    inline std::vector<pending_gsl_system_registration>& global_pending_gsl_system_registrations()
     {
-        static std::vector<pending_lgsl_system_registration> _systems = {};
+        static std::vector<pending_gsl_system_registration> _systems = {};
         return _systems;
     }
 
@@ -115,12 +125,12 @@ namespace detail {
         return _main_scene;
     }
 
-    template <auto FunctionPtr>
-    void enqueue_lgsl_system_registration(const char* name, const char* file, int line)
+    template <auto SystemType>
+    void enqueue_gsl_system_registration(const char* function_name, const char* gsl_id, const char* gsl_source, const char* file, int line)
     {
-        global_pending_lgsl_system_registrations().push_back({ name, file, line,
-            [](manager_scenes& scenes, const char* name, const char* file, int line) {
-                scenes.template register_lgsl_system<FunctionPtr>(name, file, line);
+        global_pending_gsl_system_registrations().push_back({ function_name, gsl_id, gsl_source, file, line,
+            [](manager_scenes& scenes, const char* function_name, const char* gsl_id, const char* gsl_source, const char* file, int line) {
+                scenes.template register_gsl_system<SystemType>(function_name, gsl_id, gsl_source, file, line);
             } });
     }
 
@@ -161,10 +171,10 @@ namespace detail {
         };
     }
 
-    inline void apply_lgsl_system_registrations(manager_scenes& scenes)
+    inline void apply_gsl_system_registrations(manager_scenes& scenes)
     {
-        for (pending_lgsl_system_registration& _system : global_pending_lgsl_system_registrations()) {
-            _system.register_into(scenes, _system.name, _system.file, _system.line);
+        for (pending_gsl_system_registration& _system : global_pending_gsl_system_registrations()) {
+            _system.register_into(scenes, _system.function_name, _system.gsl_id, _system.gsl_source, _system.file, _system.line);
         }
     }
 
@@ -200,7 +210,7 @@ namespace detail {
 
     inline void clear_pending_type_registrations()
     {
-        global_pending_lgsl_system_registrations().clear();
+        global_pending_gsl_system_registrations().clear();
         global_pending_user_asset_registrations().clear();
         global_pending_component_registrations().clear();
         global_pending_scene_registrations().clear();

@@ -18,6 +18,32 @@ add_subdirectory(${LUCARIA_EXTERNAL_DIR}/tracy ${CMAKE_CURRENT_BINARY_DIR}/exter
 add_subdirectory(${LUCARIA_EXTERNAL_DIR}/vorbis ${CMAKE_CURRENT_BINARY_DIR}/external/vorbis)
 add_subdirectory(${LUCARIA_EXTERNAL_DIR}/woff ${CMAKE_CURRENT_BINARY_DIR}/external/woff)
 
+
+function(embed_gslc target gslc_file)
+	get_filename_component(gslc_file_name "${gslc_file}" NAME)
+    string(SHA1 LUCARIA_GSLC_ID_HASH "${gslc_file}")
+    string(SUBSTRING "${LUCARIA_GSLC_ID_HASH}" 0 16 LUCARIA_GSLC_ID)
+    string(MAKE_C_IDENTIFIER "gsl_template_${LUCARIA_GSLC_ID}" LUCARIA_GSLC_IDENT)
+    set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated/lucaria/core")
+    file(MAKE_DIRECTORY "${generated_dir}")
+    set(LUCARIA_GSLC_FILE "${gslc_file}")
+    set(embed_hpp "${generated_dir}/${LUCARIA_GSLC_IDENT}.hpp")
+    set(wrapper_cpp "${generated_dir}/${gslc_file_name}")
+    file(READ "${gslc_file}" LUCARIA_GSLC_CONTENT)
+    configure_file(
+        "${LUCARIA_INCLUDE_DIR}/lucaria/core/gsl_template.hpp.in"
+        "${embed_hpp}"
+        @ONLY)
+    set(LUCARIA_GSLC_EMBED_HPP "${embed_hpp}")
+    configure_file(
+        "${LUCARIA_SOURCE_DIR}/client/core/gsl_template.cpp.in"
+        "${wrapper_cpp}"
+        @ONLY)
+    target_sources(${target} PRIVATE "${wrapper_cpp}")
+	set_source_files_properties(${wrapper_cpp} PROPERTIES LANGUAGE CXX)
+endfunction()
+
+
 if(NOT LUCARIA_DISABLE_RELOAD)
 	set(LUCARIA_RELOAD_SOURCE_DIR "${CMAKE_SOURCE_DIR}")
 	set(LUCARIA_RELOAD_BUILD_DIR "${CMAKE_BINARY_DIR}")
