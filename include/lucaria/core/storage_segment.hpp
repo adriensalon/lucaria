@@ -1,14 +1,77 @@
 #pragma once
 
-#include <lucaria/core/storage_page.hpp>
+#include <lucaria/core/storage_entity.hpp>
 
 namespace lucaria {
 namespace detail {
 
+    template <typename PageType, typename Allocator>
+    struct object_page_pool_cpu {
+        using allocator_type = typename std::allocator_traits<Allocator>::template rebind_alloc<PageType>;
+        using allocator_traits = std::allocator_traits<allocator_type>;
+
+        explicit object_page_pool_cpu(const Allocator& alloc = Allocator {})
+            : _allocator { alloc }
+        {
+        }
+
+        ~object_page_pool_cpu()
+        {
+            clear_memory();
+        }
+
+        object_page_pool_cpu(const object_page_pool_cpu&) = delete;
+        object_page_pool_cpu& operator=(const object_page_pool_cpu&) = delete;
+
+        PageType* acquire()
+        {
+            PageType* _ptr = nullptr;
+
+            if (!_free.empty()) {
+                _ptr = _free.back();
+                _free.pop_back();
+
+            } else {
+                _ptr = allocator_traits::allocate(_allocator, 1);
+                allocator_traits::construct(_allocator, _ptr);
+                _allocated.push_back(_ptr);
+            }
+
+            return _ptr;
+        }
+
+        void release(PageType* ptr) noexcept
+        {
+            if (ptr == nullptr) {
+                return;
+            }
+
+            // PageType remains constructed
+            // caller must have reset its runtime contents
+            _free.push_back(ptr);
+        }
+
+        void clear_memory() noexcept
+        {
+            for (PageType* _ptr : _allocated) {
+                allocator_traits::destroy(_allocator, _ptr);
+                allocator_traits::deallocate(_allocator, _ptr, 1);
+            }
+
+            _allocated.clear();
+            _free.clear();
+        }
+
+    private:
+        allocator_type _allocator = {};
+        std::vector<PageType*> _allocated = {};
+        std::vector<PageType*> _free = {};
+    };
+
     template <typename T, typename Entity, typename Allocator>
     struct object_segment_storage_cpu : public entt::basic_sparse_set<Entity, typename std::allocator_traits<Allocator>::template rebind_alloc<Entity>> {
-        using alloc_traits = std::allocator_traits<Allocator>;
-        using entity_allocator_type = typename alloc_traits::template rebind_alloc<Entity>;
+        using alloc_traits_type = std::allocator_traits<Allocator>;
+        using entity_allocator_type = typename alloc_traits_type::template rebind_alloc<Entity>;
         using value_type = T;
         using entity_type = Entity;
         using allocator_type = Allocator;
@@ -20,181 +83,82 @@ namespace detail {
         static constexpr std::uint32_t page_size = 4u;
 
         struct segment {
-            object_entity_scene_index scene;
-            entity_type* entities;
-            T* components;
-            std::uint32_t count;
+            object_entity_scene_index scene = {};
+            entity_type* entities = nullptr;
+            T* components = nullptr;
+            std::uint32_t count = {};
         };
 
         struct const_segment {
-            object_entity_scene_index scene {};
-            const entity_type* entities {};
-            const value_type* components {};
-            std::uint32_t count {};
+            object_entity_scene_index scene = {};
+            const entity_type* entities = nullptr;
+            const value_type* components = nullptr;
+            std::uint32_t count = {};
         };
 
-        template <typename Fn>
-        void each_segment(object_entity_scene_index scene, Fn&& fn) noexcept
-        {
-            if (scene >= partitions.size()) {
-                return;
-            }
-
-            auto& part = partitions[scene];
-
-            for (page* pg : part.pages) {
-                if (pg->count != 0u) {
-                    fn(segment {
-                        .scene = scene,
-                        .entities = pg->entities,
-                        .components = pg->components(),
-                        .count = pg->count });
-                }
-            }
-        }
-
-        template <typename Fn>
-        void each_segment(Fn&& fn) noexcept
-        {
-            for (object_entity_scene_index scene = 0; scene < partitions.size(); ++scene) {
-                each_segment(scene, fn);
-            }
-        }
-
-        template <typename Fn>
-        void each_segment(object_entity_scene_index scene, Fn&& fn) const noexcept
-        {
-            if (scene >= partitions.size()) {
-                return;
-            }
-
-            const auto& part = partitions[scene];
-
-            for (const auto& pg_ptr : part.pages) {
-                const auto& pg = *pg_ptr;
-
-                if (pg.count != 0u) {
-                    fn(const_segment {
-                        .scene = scene,
-                        .entities = pg.entities,
-                        .components = pg.components(),
-                        .count = pg.count });
-                }
-            }
-        }
-
-        template <typename Fn>
-        void each_segment(Fn&& fn) const noexcept
-        {
-            for (object_entity_scene_index scene = 0; scene < partitions.size(); ++scene) {
-                each_segment(scene, fn);
-            }
-        }
-
-    private:
-        struct location {
-            object_entity_scene_index scene {};
-            std::uint32_t page {};
-            std::uint32_t offset {};
-        };
-
-        struct page {
-            entity_type entities[page_size];
-            alignas(value_type) std::byte raw[sizeof(value_type) * page_size];
-            std::uint32_t count {};
-
-            value_type* components() noexcept
-            {
-                return std::launder(reinterpret_cast<value_type*>(raw));
-            }
-
-            const value_type* components() const noexcept
-            {
-                return std::launder(reinterpret_cast<const value_type*>(raw));
-            }
-        };
-
-        using page_pool_type = object_page_pool_cpu<page, allocator_type>;
-
-        page_pool_type page_pool;
-
-        struct partition {
-            std::vector<page*> pages;
-        };
-
-    public:
         object_segment_storage_cpu()
             : object_segment_storage_cpu { allocator_type {} }
         {
         }
 
-        explicit object_segment_storage_cpu(const allocator_type& alloc)
+        explicit object_segment_storage_cpu(const allocator_type& allocator)
             : base_type {
                 entt::type_id<value_type>(),
                 entt::deletion_policy { entt::deletion_policy::swap_and_pop },
-                entity_allocator_type { alloc }
+                entity_allocator_type { allocator }
             }
-            , allocator { alloc }
-            , page_pool { alloc }
+            , _allocator { allocator }
+            , _page_pool { allocator }
         {
         }
+
+        object_segment_storage_cpu(const object_segment_storage_cpu&) = delete;
+        object_segment_storage_cpu& operator=(const object_segment_storage_cpu&) = delete;
 
         ~object_segment_storage_cpu() override
         {
             clear_payload();
         }
 
-        object_segment_storage_cpu(const object_segment_storage_cpu&) = delete;
-        object_segment_storage_cpu& operator=(const object_segment_storage_cpu&) = delete;
-
         allocator_type get_allocator() const noexcept
         {
-            return allocator;
+            return _allocator;
         }
 
         template <typename... Args>
         value_type& emplace(entity_type entity, Args&&... args)
         {
-            const auto scene = entity_scene(entity);
-
-            auto it = base_type::try_emplace(entity, false);
-            const auto base_index = static_cast<std::size_t>(it.index());
-
-            if (locations_by_index.size() <= base_index) {
-                locations_by_index.resize(base_index + 1u);
+            const object_entity_scene_index _scene = entity_scene(entity);
+            auto _iterator = base_type::try_emplace(entity, false);
+            const std::size_t _base_index = static_cast<std::size_t>(_iterator.index());
+            if (_locations_by_index.size() <= _base_index) {
+                _locations_by_index.resize(_base_index + 1u);
             }
-
-            auto& part = assure_partition(scene);
-            auto [page_index, pg] = assure_page(part);
-
-            const auto offset = pg->count++;
-            pg->entities[offset] = entity;
-
-            T* ptr = pg->components() + offset;
-            std::construct_at(ptr, std::forward<Args>(args)...);
-
-            locations_by_index[base_index] = location {
-                .scene = scene,
-                .page = page_index,
-                .offset = offset
+            partition& _partition = assure_partition(_scene);
+            auto [_page_index, _page] = assure_page(_partition);
+            const std::size_t _offset = _page->count++;
+            _page->entities[_offset] = entity;
+            T* _ptr = _page->components() + _offset;
+            std::construct_at(_ptr, std::forward<Args>(args)...);
+            _locations_by_index[_base_index] = location {
+                .scene = _scene,
+                .page = _page_index,
+                .offset = static_cast<std::uint32_t>(_offset)
             };
-
-            return *ptr;
+            return *_ptr;
         }
 
         void clear()
         {
-            scratch_entities_.clear();
-            scratch_entities_.reserve(base_type::size());
-
-            for (auto it = base_type::begin(); it != base_type::end(); ++it) {
-                scratch_entities_.push_back(*it);
+            _scratch_entities.clear();
+            _scratch_entities.reserve(base_type::size());
+            for (auto _iterator = base_type::begin(); _iterator != base_type::end(); ++_iterator) {
+                _scratch_entities.push_back(*_iterator);
             }
-
-            for (const auto entity : scratch_entities_) {
-                erase_one(entity);
+            for (const auto _entity : _scratch_entities) {
+                erase_one(_entity);
             }
-            scratch_entities_.clear();
+            _scratch_entities.clear();
         }
 
         [[nodiscard]] bool contains(entity_type entity) const noexcept
@@ -204,54 +168,45 @@ namespace detail {
 
         [[nodiscard]] bool contains(object_entity_scene_index scene, entity_type entity) const noexcept
         {
-            if (scene >= partitions.size()) {
+            if (scene >= _partitions.size()) {
                 return false;
             }
-
             if (!base_type::contains(entity)) {
                 return false;
             }
-
-            const auto index = base_type::index(entity);
-            const auto loc = locations_by_index[index];
-
-            return loc.scene == scene;
+            const auto _index = base_type::index(entity);
+            const auto _location = _locations_by_index[_index];
+            return _location.scene == scene;
         }
 
         value_type& get(entity_type entity) noexcept
         {
-            const auto index = base_type::index(entity);
-            auto loc = locations_by_index[index];
-
-            return partitions[loc.scene].pages[loc.page]->components()[loc.offset];
+            const auto _index = base_type::index(entity);
+            auto _location = _locations_by_index[_index];
+            return _partitions[_location.scene].pages[_location.page]->components()[_location.offset];
         }
 
         const value_type& get(entity_type entity) const noexcept
         {
-            const auto index = base_type::index(entity);
-            auto loc = locations_by_index[index];
-
-            return partitions[loc.scene].pages[loc.page]->components()[loc.offset];
+            const auto _index = base_type::index(entity);
+            auto _location = _locations_by_index[_index];
+            return _partitions[_location.scene].pages[_location.page]->components()[_location.offset];
         }
 
         [[nodiscard]] value_type& get(object_entity_scene_index scene, entity_type entity) noexcept
         {
-            assert(contains(scene, entity));
-
-            const auto index = base_type::index(entity);
-            const auto loc = locations_by_index[index];
-
-            return partitions[scene].pages[loc.page]->components()[loc.offset];
+            LUCARIA_DEBUG_ASSERT(contains(scene, entity), "Entity is not contained in the scene");
+            const auto _index = base_type::index(entity);
+            const auto _location = _locations_by_index[_index];
+            return _partitions[scene].pages[_location.page]->components()[_location.offset];
         }
 
         [[nodiscard]] const value_type& get(object_entity_scene_index scene, entity_type entity) const noexcept
         {
-            assert(contains(scene, entity));
-
-            const auto index = base_type::index(entity);
-            const auto loc = locations_by_index[index];
-
-            return partitions[scene].pages[loc.page]->components()[loc.offset];
+            LUCARIA_DEBUG_ASSERT(contains(scene, entity), "Entity is not contained in the scene");
+            const auto _index = base_type::index(entity);
+            const auto _location = _locations_by_index[_index];
+            return _partitions[scene].pages[_location.page]->components()[_location.offset];
         }
 
         std::tuple<value_type&> get_as_tuple(entity_type entity) noexcept
@@ -272,140 +227,210 @@ namespace detail {
         template <typename... Func>
         value_type& patch(entity_type entity, Func&&... func)
         {
-            auto& value = get(entity);
-
-            (std::forward<Func>(func)(value), ...);
-
-            return value;
+            auto& _value = get(entity);
+            (std::forward<Func>(func)(_value), ...);
+            return _value;
         }
 
         void erase_one(entity_type entity)
         {
-            const auto erased_index = base_type::index(entity);
-            const auto last_index = base_type::size() - 1u;
-            const auto moved_entity = base_type::data()[last_index];
-
-            erase_payload_at_base_index(erased_index);
-
+            const auto _erased_index = base_type::index(entity);
+            const auto _last_index = base_type::size() - 1u;
+            const auto _moved_entity = base_type::data()[_last_index];
+            erase_payload_at_base_index(_erased_index);
             base_type::swap_and_pop(base_type::find(entity));
-
-            if (erased_index != last_index) {
-                locations_by_index[erased_index] = locations_by_index[last_index];
+            if (_erased_index != _last_index) {
+                _locations_by_index[_erased_index] = _locations_by_index[_last_index];
             }
-
-            locations_by_index.pop_back();
+            _locations_by_index.pop_back();
         }
 
         void pop(typename base_type::iterator first, typename base_type::iterator last) override
         {
-            scratch_entities_.clear();
-
+            _scratch_entities.clear();
             for (; first != last; ++first) {
-                scratch_entities_.push_back(*first);
+                _scratch_entities.push_back(*first);
             }
-
-            for (auto entity : scratch_entities_) {
-                erase_one(entity);
+            for (auto _entity : _scratch_entities) {
+                erase_one(_entity);
             }
-
-            scratch_entities_.clear();
+            _scratch_entities.clear();
         }
 
         void erase_payload_at_base_index(std::size_t base_index)
         {
-            const auto loc = locations_by_index[base_index];
-
-            auto& pg = *partitions[loc.scene].pages[loc.page];
-            auto* comps = pg.components();
-
-            const auto last = pg.count - 1u;
-
-            std::destroy_at(comps + loc.offset);
-
-            if (loc.offset != last) {
-                std::construct_at(comps + loc.offset, std::move(comps[last]));
-                std::destroy_at(comps + last);
-
-                const auto moved_entity = pg.entities[last];
-                pg.entities[loc.offset] = moved_entity;
-
-                const auto moved_base_index = base_type::index(moved_entity);
-                locations_by_index[moved_base_index] = location {
-                    .scene = loc.scene,
-                    .page = loc.page,
-                    .offset = loc.offset
+            const auto _location = _locations_by_index[base_index];
+            auto& _page = *_partitions[_location.scene].pages[_location.page];
+            auto* _components = _page.components();
+            const auto last = _page.count - 1u;
+            std::destroy_at(_components + _location.offset);
+            if (_location.offset != last) {
+                std::construct_at(_components + _location.offset, std::move(_components[last]));
+                std::destroy_at(_components + last);
+                const auto _moved_entity = _page.entities[last];
+                _page.entities[_location.offset] = _moved_entity;
+                const auto _moved_base_index = base_type::index(_moved_entity);
+                _locations_by_index[_moved_base_index] = location {
+                    .scene = _location.scene,
+                    .page = _location.page,
+                    .offset = _location.offset
                 };
             }
+            --_page.count;
+        }
 
-            --pg.count;
+        template <typename CallbackType>
+        void each_segment(object_entity_scene_index scene, CallbackType&& callback) noexcept
+        {
+            if (scene >= _partitions.size()) {
+                return;
+            }
+            auto& _partition = _partitions[scene];
+            for (page* _page : _partition.pages) {
+                if (_page->count != 0u) {
+                    callback(segment {
+                        .scene = scene,
+                        .entities = _page->entities,
+                        .components = _page->components(),
+                        .count = _page->count });
+                }
+            }
+        }
+
+        template <typename CallbackType>
+        void each_segment(CallbackType&& callback) noexcept
+        {
+            for (object_entity_scene_index _scene = 0; _scene < _partitions.size(); ++_scene) {
+                each_segment(_scene, callback);
+            }
+        }
+
+        template <typename CallbackType>
+        void each_segment(object_entity_scene_index scene, CallbackType&& callback) const noexcept
+        {
+            if (scene >= _partitions.size()) {
+                return;
+            }
+            const auto& _partition = _partitions[scene];
+            for (const auto& _page_ptr : _partition.pages) {
+                const auto& _page = *_page_ptr;
+                if (_page.count != 0u) {
+                    callback(const_segment {
+                        .scene = scene,
+                        .entities = _page.entities,
+                        .components = _page.components(),
+                        .count = _page.count });
+                }
+            }
+        }
+
+        template <typename CallbackType>
+        void each_segment(CallbackType&& callback) const noexcept
+        {
+            for (object_entity_scene_index _scene = 0; _scene < _partitions.size(); ++_scene) {
+                each_segment(_scene, callback);
+            }
+        }
+
+        void erase_scene(object_entity_scene_index scene)
+        {
+            if (scene >= _partitions.size()) {
+                return;
+            }
+            _scratch_entities.clear();
+            auto& _partition = _partitions[scene];
+            for (page* pg : _partition.pages) {
+                for (std::uint32_t i = 0; i < pg->count; ++i) {
+                    _scratch_entities.push_back(pg->entities[i]);
+                }
+            }
+            for (auto entity : _scratch_entities) {
+                if (base_type::contains(entity)) {
+                    erase_one(entity);
+                }
+            }
+            for (page* pg : _partition.pages) {
+                LUCARIA_DEBUG_ASSERT(pg->count == 0, "After erase_one all components in these pages should be gone");
+                _page_pool.release(pg);
+            }
+            _partition.pages.clear();
         }
 
     private:
-        allocator_type allocator;
-        std::vector<partition> partitions;
-        std::vector<location> locations_by_index;
-        std::vector<entity_type> scratch_entities_;
+        struct location {
+            object_entity_scene_index scene = {};
+            std::uint32_t page = {};
+            std::uint32_t offset = {};
+        };
+
+        struct page {
+            entity_type entities[page_size];
+            alignas(value_type) std::byte raw[sizeof(value_type) * page_size];
+            std::uint32_t count = {};
+
+            value_type* components() noexcept
+            {
+                return std::launder(reinterpret_cast<value_type*>(raw));
+            }
+
+            const value_type* components() const noexcept
+            {
+                return std::launder(reinterpret_cast<const value_type*>(raw));
+            }
+        };
+
+        struct partition {
+            std::vector<page*> pages = {};
+        };
+
+        allocator_type _allocator = {};
+        std::vector<partition> _partitions = {};
+        std::vector<location> _locations_by_index = {};
+        std::vector<entity_type> _scratch_entities = {};
+        object_page_pool_cpu<page, allocator_type> _page_pool = {};
 
         void clear_payload()
         {
-            for (auto& part : partitions) {
-                for (page* pg : part.pages) {
-                    auto* comps = pg->components();
-
-                    for (std::uint32_t i = 0; i < pg->count; ++i) {
-                        std::destroy_at(comps + i);
+            for (partition& _partition : _partitions) {
+                for (page* _page : _partition.pages) {
+                    auto* _components = _page->components();
+                    for (std::uint32_t _page_index = 0; _page_index < _page->count; ++_page_index) {
+                        std::destroy_at(_components + _page_index);
                     }
-
-                    pg->count = 0;
-                    page_pool.release(pg);
+                    _page->count = 0;
+                    _page_pool.release(_page);
                 }
-
-                part.pages.clear();
+                _partition.pages.clear();
             }
-
-            partitions.clear();
-            locations_by_index.clear();
+            _partitions.clear();
+            _locations_by_index.clear();
         }
 
         partition& assure_partition(object_entity_scene_index scene)
         {
-            if (partitions.size() <= static_cast<std::size_t>(scene)) {
-                partitions.resize(static_cast<std::size_t>(scene) + 1u);
+            if (_partitions.size() <= static_cast<std::size_t>(scene)) {
+                _partitions.resize(static_cast<std::size_t>(scene) + 1u);
             }
-
-            return partitions[scene];
+            return _partitions[scene];
         }
 
         std::pair<std::uint32_t, page*> assure_page(partition& part)
         {
             if (part.pages.empty() || part.pages.back()->count == page_size) {
-                auto* pg = page_pool.acquire();
-                pg->count = 0;
-                part.pages.push_back(pg);
+                auto* _page = _page_pool.acquire();
+                _page->count = 0;
+                part.pages.push_back(_page);
             }
-
-            const auto index = static_cast<std::uint32_t>(part.pages.size() - 1u);
-            return { index, part.pages.back() };
+            const std::uint32_t _index = static_cast<std::uint32_t>(part.pages.size() - 1u);
+            return { _index, part.pages.back() };
         }
 
-        template <bool Const>
-        class basic_each_iterator {
-            using storage_type = std::conditional_t<
-                Const,
-                const object_segment_storage_cpu,
-                object_segment_storage_cpu>;
+        template <bool IsConst>
+        struct basic_each_iterator {
+            using storage_type = std::conditional_t<IsConst, const object_segment_storage_cpu, object_segment_storage_cpu>;
+            using base_iterator_type = std::conditional_t<IsConst, typename base_type::const_iterator, typename base_type::iterator>;
+            using component_ref = std::conditional_t<IsConst, const value_type&, value_type&>;
 
-            using base_iterator_type = std::conditional_t<
-                Const,
-                typename base_type::const_iterator,
-                typename base_type::iterator>;
-
-            using component_ref = std::conditional_t<
-                Const,
-                const value_type&,
-                value_type&>;
-
-        public:
             using difference_type = std::ptrdiff_t;
             using value_type_tuple = std::tuple<entity_type, component_ref>;
             using value_type = value_type_tuple;
@@ -416,33 +441,33 @@ namespace detail {
             basic_each_iterator() = default;
 
             basic_each_iterator(storage_type* storage, base_iterator_type it)
-                : storage { storage }
-                , it { it }
+                : _storage { storage }
+                , _it { it }
             {
             }
 
             basic_each_iterator& operator++() noexcept
             {
-                ++it;
+                ++_it;
                 return *this;
             }
 
             basic_each_iterator operator++(int) noexcept
             {
-                auto copy = *this;
+                auto _copy = *this;
                 ++(*this);
-                return copy;
+                return _copy;
             }
 
             reference operator*() const noexcept
             {
-                const auto entity = *it;
-                return { entity, storage->get(entity) };
+                const auto _entity = *_it;
+                return { _entity, _storage->get(_entity) };
             }
 
             bool operator==(const basic_each_iterator& other) const noexcept
             {
-                return it == other.it;
+                return _it == other._it;
             }
 
             bool operator!=(const basic_each_iterator& other) const noexcept
@@ -451,24 +476,20 @@ namespace detail {
             }
 
         private:
-            storage_type* storage {};
-            base_iterator_type it {};
+            storage_type* _storage = nullptr;
+            base_iterator_type _it = {};
         };
 
-        template <bool Const>
+        template <bool IsConst>
         struct basic_each_range {
-            using storage_type = std::conditional_t<
-                Const,
-                const object_segment_storage_cpu,
-                object_segment_storage_cpu>;
+            using storage_type = std::conditional_t<IsConst, const object_segment_storage_cpu, object_segment_storage_cpu>;
+            using iterator = basic_each_iterator<IsConst>;
 
-            using iterator = basic_each_iterator<Const>;
-
-            storage_type* storage {};
+            storage_type* storage = {};
 
             iterator begin() const noexcept
             {
-                if constexpr (Const) {
+                if constexpr (IsConst) {
                     return iterator { storage, storage->base_type::cbegin() };
                 } else {
                     return iterator { storage, storage->base_type::begin() };
@@ -477,7 +498,7 @@ namespace detail {
 
             iterator end() const noexcept
             {
-                if constexpr (Const) {
+                if constexpr (IsConst) {
                     return iterator { storage, storage->base_type::cend() };
                 } else {
                     return iterator { storage, storage->base_type::end() };
@@ -499,7 +520,6 @@ namespace detail {
             }
         };
 
-    public:
         using iterable = basic_each_range<false>;
         using const_iterable = basic_each_range<true>;
 
@@ -512,295 +532,6 @@ namespace detail {
         {
             return const_iterable { this };
         }
-
-        void erase_scene(object_entity_scene_index scene)
-        {
-            if (scene >= partitions.size()) {
-                return;
-            }
-
-            scratch_entities_.clear();
-
-            auto& part = partitions[scene];
-
-            for (page* pg : part.pages) {
-                for (std::uint32_t i = 0; i < pg->count; ++i) {
-                    scratch_entities_.push_back(pg->entities[i]);
-                }
-            }
-
-            for (auto entity : scratch_entities_) {
-                if (base_type::contains(entity)) {
-                    erase_one(entity);
-                }
-            }
-
-            // After erase_one, all components in these pages should be gone.
-            for (page* pg : part.pages) {
-                assert(pg->count == 0);
-                page_pool.release(pg);
-            }
-
-            part.pages.clear();
-        }
-    };
-
-    template <typename T>
-    struct object_segment_storage_gpu {
-        using value_type = T;
-        using entity_type = object_entity;
-        using size_type = std::uint32_t;
-
-        template <typename... Args>
-        void emplace(entity_type entity, Args&&... args)
-        {
-            assert(!contains(entity));
-
-            const auto dense = dense_count++;
-
-            dense_entities.push_back(entity);
-            staging_components.emplace_back(std::forward<Args>(args)...);
-
-            locations[entity_raw(entity)] = location {
-                .dense_index = dense,
-                .version = entity_version(entity)
-            };
-
-            entity_dirty.include(dense);
-            component_dirty.include(dense);
-            location_dirty = true;
-        }
-
-        template <typename... Args>
-        void emplace_or_replace(entity_type entity, Args&&... args)
-        {
-            if (auto* ptr = try_stage(entity)) {
-                *ptr = value_type { std::forward<Args>(args)... };
-                const auto dense = locations[entity_raw(entity)].dense_index;
-                component_dirty.include(dense);
-                return;
-            }
-
-            emplace(entity, std::forward<Args>(args)...);
-        }
-
-        void remove(entity_type entity)
-        {
-            const auto it = locations.find(entity_raw(entity));
-            if (it == locations.end()) {
-                return;
-            }
-
-            const auto dense = it->second.dense_index;
-            const auto last = dense_count - 1u;
-
-            locations.erase(it);
-
-            if (dense != last) {
-                dense_entities[dense] = dense_entities[last];
-                staging_components[dense] = std::move(staging_components[last]);
-
-                auto moved_it = locations.find(entity_raw(dense_entities[dense]));
-                assert(moved_it != locations.end());
-                moved_it->second.dense_index = dense;
-
-                entity_dirty.include(dense);
-                component_dirty.include(dense);
-            }
-
-            --dense_count;
-            dense_entities.pop_back();
-            staging_components.pop_back();
-
-            // Removing a dense item changes the valid entity set. Conservatively
-            // re-upload the compact arrays and location table on the next upload().
-            entity_dirty.include_all(dense_count);
-            component_dirty.include_all(dense_count);
-            location_dirty = true;
-        }
-
-        [[nodiscard]] bool contains(entity_type entity) const noexcept
-        {
-            const auto it = locations.find(entity_raw(entity));
-            if (it == locations.end()) {
-                return false;
-            }
-
-            const auto dense = it->second.dense_index;
-
-            return dense < dense_count
-                && it->second.version == entity_version(entity)
-                && dense_entities[dense] == entity;
-        }
-
-        [[nodiscard]] std::span<const entity_type> entities() const noexcept
-        {
-            return { dense_entities.data(), dense_count };
-        }
-
-        [[nodiscard]] std::span<const value_type> staged() const noexcept
-        {
-            return { staging_components.data(), dense_count };
-        }
-
-        [[nodiscard]] std::span<const entity_type> uploaded_entities() const noexcept
-        {
-            return { uploaded_entities_.data(), uploaded_entities_.size() };
-        }
-
-        [[nodiscard]] std::span<const value_type> uploaded() const noexcept
-        {
-            return { uploaded_components.data(), uploaded_components.size() };
-        }
-
-        [[nodiscard]] std::span<const entity_type> downloaded_entities() const noexcept
-        {
-            return { downloaded_entities_.data(), downloaded_entities_.size() };
-        }
-
-        [[nodiscard]] std::span<const value_type> readback() const noexcept
-        {
-            return { downloaded_components.data(), downloaded_components.size() };
-        }
-
-        [[nodiscard]] std::optional<value_type> readback(entity_type entity) const
-        {
-            for (std::size_t i = 0; i < downloaded_entities_.size(); ++i) {
-                if (downloaded_entities_[i] == entity) {
-                    return downloaded_components[i];
-                }
-            }
-
-            return std::nullopt;
-        }
-
-        [[nodiscard]] size_type size() const noexcept
-        {
-            return dense_count;
-        }
-
-        [[nodiscard]] bool empty() const noexcept
-        {
-            return dense_count == 0u;
-        }
-
-        void clear()
-        {
-            dense_entities.clear();
-            staging_components.clear();
-            uploaded_entities_.clear();
-            uploaded_components.clear();
-            downloaded_entities_.clear();
-            downloaded_components.clear();
-            locations.clear();
-            dense_count = 0u;
-            entity_dirty.clear();
-            component_dirty.clear();
-            location_dirty = false;
-        }
-
-        void erase_scene(object_entity_scene_index scene)
-        {
-            scratch_entities.clear();
-
-            for (std::uint32_t i = 0; i < dense_count; ++i) {
-                if (entity_scene(dense_entities[i]) == scene) {
-                    scratch_entities.push_back(dense_entities[i]);
-                }
-            }
-
-            for (auto entity : scratch_entities) {
-                remove(entity);
-            }
-
-            scratch_entities.clear();
-        }
-
-        void upload()
-        {
-            uploaded_entities_.assign(dense_entities.begin(), dense_entities.end());
-            uploaded_components.assign(staging_components.begin(), staging_components.end());
-            entity_dirty.clear();
-            component_dirty.clear();
-            location_dirty = false;
-        }
-
-        template <typename Command>
-        void upload(Command&&)
-        {
-            upload();
-        }
-
-        void download()
-        {
-            downloaded_entities_.assign(uploaded_entities_.begin(), uploaded_entities_.end());
-            downloaded_components.assign(uploaded_components.begin(), uploaded_components.end());
-        }
-
-        template <typename Command>
-        void download(Command&&)
-        {
-            download();
-        }
-
-        [[nodiscard]] bool has_pending_upload() const noexcept
-        {
-            return entity_dirty.any() || component_dirty.any() || location_dirty;
-        }
-
-        [[nodiscard]] object_component_upload_snapshot_gpu<T> upload_snapshot() const noexcept
-        {
-            return {
-                .entities = entities(),
-                .components = staged()
-            };
-        }
-
-        [[nodiscard]] object_component_download_snapshot_gpu<T> download_snapshot() const noexcept
-        {
-            return {
-                .entities = uploaded_entities(),
-                .components = uploaded()
-            };
-        }
-
-    private:
-        struct location {
-            std::uint32_t dense_index {};
-            object_entity_version version {};
-        };
-
-        value_type* try_stage(entity_type entity)
-        {
-            const auto it = locations.find(entity_raw(entity));
-            if (it == locations.end()) {
-                return nullptr;
-            }
-
-            const auto dense = it->second.dense_index;
-            if (dense >= dense_count || it->second.version != entity_version(entity)) {
-                return nullptr;
-            }
-
-            return std::addressof(staging_components[dense]);
-        }
-
-        std::vector<entity_type> dense_entities;
-        std::vector<value_type> staging_components;
-
-        std::vector<entity_type> uploaded_entities_;
-        std::vector<value_type> uploaded_components;
-
-        std::vector<entity_type> downloaded_entities_;
-        std::vector<value_type> downloaded_components;
-
-        std::unordered_map<std::uint64_t, location> locations;
-        std::vector<entity_type> scratch_entities;
-
-        std::uint32_t dense_count {};
-        object_dirty_range_gpu entity_dirty {};
-        object_dirty_range_gpu component_dirty {};
-        bool location_dirty {};
     };
 
 }

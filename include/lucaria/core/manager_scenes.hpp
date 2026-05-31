@@ -6,7 +6,6 @@
 
 #include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/storage_registry.hpp>
-#include <lucaria/core/storage_vector.hpp>
 #include <lucaria/core/user_scene.hpp>
 
 namespace lucaria {
@@ -57,7 +56,7 @@ namespace detail {
 
         std::vector<object_user_scene> scenes = {};
         container_segment_registry_cpu segment_registry_cpu = {};
-        container_segment_registry_gpu segment_registry_gpu = {};
+        // container_segment_registry_gpu segment_registry_gpu = {};
         object_entity_scene_index index_for_context = 0;
 
         std::unordered_map<std::string, user_scene_type_callbacks> scene_types = {};
@@ -138,7 +137,7 @@ namespace detail {
         {
             assert(scenes.size() <= std::numeric_limits<object_entity_scene_index>::max());
 
-            index_for_context = scenes.size();
+            index_for_context = static_cast<uint16>(scenes.size());
             object_user_scene& scene = scenes.emplace_back();
             scene.type_id = scene_type_ids.at(std::type_index(typeid(SceneType)));
 			scene.index_for_context = index_for_context;

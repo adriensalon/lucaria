@@ -11,10 +11,7 @@ template <typename T, typename Allocator>
     requires(!std::is_same_v<T, ::lucaria::detail::object_entity>)
 struct storage_type<T, ::lucaria::detail::object_entity, Allocator> {
     using type = sigh_mixin<
-        ::lucaria::detail::object_segment_storage_cpu<
-            T,
-            ::lucaria::detail::object_entity,
-            Allocator>>;
+        ::lucaria::detail::object_segment_storage_cpu<T, ::lucaria::detail::object_entity, Allocator>>;
 };
 
 }
@@ -29,290 +26,168 @@ namespace detail {
     template <typename... T>
     inline constexpr exclude_t<T...> exclude {};
 
-    template <typename ExcludeList, typename Lead, typename... Rest>
+    template <typename ExcludedComponentTypesList, typename LeadComponentType, typename... RestComponentTypes>
     struct object_registry_view_cpu;
 
-    template <typename... Excluded, typename Lead, typename... Rest>
-    struct object_registry_view_cpu<exclude_t<Excluded...>, Lead, Rest...> {
+    template <typename... ExcludedComponentTypes, typename LeadComponentType, typename... RestComponentTypes>
+    struct object_registry_view_cpu<exclude_t<ExcludedComponentTypes...>, LeadComponentType, RestComponentTypes...> {
 
         template <typename T>
         using storage_component_type = std::remove_cvref_t<T>;
-
-        using lead_component_type = storage_component_type<Lead>;
-
-        using lead_storage_type = object_segment_storage_cpu<
-            lead_component_type,
-            object_entity,
-            std::allocator<lead_component_type>>;
+        using lead_component_type = storage_component_type<LeadComponentType>;
+        using lead_storage_type = object_segment_storage_cpu<lead_component_type, object_entity, std::allocator<lead_component_type>>;
 
         template <typename T>
-        using storage_type = object_segment_storage_cpu<
-            storage_component_type<T>,
-            object_entity,
-            std::allocator<storage_component_type<T>>>;
-
+        using storage_type = object_segment_storage_cpu<storage_component_type<T>, object_entity, std::allocator<storage_component_type<T>>>;
         using segment_type = typename lead_storage_type::segment;
-        using segment_buffer = std::vector<segment_type>;
+        using segment_buffer_type = std::vector<segment_type>;
 
         template <typename T>
-        using view_ref_t = std::conditional_t<
-            std::is_const_v<std::remove_reference_t<T>>,
-            const storage_component_type<T>&,
-            storage_component_type<T>&>;
+        using view_reference_type = std::conditional_t<std::is_const_v<std::remove_reference_t<T>>, const storage_component_type<T>&, storage_component_type<T>&>;
 
         object_registry_view_cpu(
-            std::shared_ptr<const segment_buffer> segments,
+            std::shared_ptr<const segment_buffer_type> segments,
             std::size_t begin,
             std::size_t end,
             std::uint64_t entity_count,
-            std::tuple<storage_type<Rest>*...> rest,
-            std::tuple<storage_type<Excluded>*...> excluded)
-            : segments_ { std::move(segments) }
-            , begin_ { begin }
-            , end_ { end }
-            , rest_ { rest }
-            , excluded_ { excluded }
-            , entity_count_ { entity_count }
+            std::tuple<storage_type<RestComponentTypes>*...> rest,
+            std::tuple<storage_type<ExcludedComponentTypes>*...> excluded)
+            : _segments { std::move(segments) }
+            , _begin { begin }
+            , _end { end }
+            , _rest_storage { rest }
+            , _excluded_storage { excluded }
+            , _entity_count { entity_count }
         {
         }
 
-        template <typename Fn>
-        void each(Fn&& fn) const
+        template <typename CallbackType>
+        void each(CallbackType&& callback) const
         {
-            const auto& segments = *segments_;
-
-            for (std::size_t s = begin_; s < end_; ++s) {
-                const auto& seg = segments[s];
-
-                for (std::uint32_t i = 0; i < seg.count; ++i) {
-                    const auto entity = seg.entities[i];
-
-                    if (!has_required(seg.scene, entity)) {
+            const auto& _segments_reference = *_segments;
+            for (std::size_t _segment_index = _begin; _segment_index < _end; ++_segment_index) {
+                const auto& _current_segment = _segments_reference[_segment_index];
+                for (std::uint32_t i = 0; i < _current_segment.count; ++i) {
+                    const auto _entity = _current_segment.entities[i];
+                    if (!_has_required(_current_segment.scene, _entity)) {
                         continue;
                     }
-
-                    if (has_excluded(seg.scene, entity)) {
+                    if (_has_excluded(_current_segment.scene, _entity)) {
                         continue;
                     }
-
-                    call(
-                        std::forward<Fn>(fn),
-                        seg.scene,
-                        entity,
-                        seg.components[i]);
+                    _call(std::forward<CallbackType>(callback), _current_segment.scene, _entity, _current_segment.components[i]);
                 }
             }
         }
 
         [[nodiscard]] std::vector<object_registry_view_cpu> split(std::size_t requested_count) const
         {
-            std::vector<object_registry_view_cpu> result;
-
+            std::vector<object_registry_view_cpu> _result = {};
             if (requested_count == 0 || empty()) {
-                return result;
+                return _result;
             }
-
             if (requested_count == 1) {
-                result.push_back(*this);
-                return result;
+                _result.push_back(*this);
+                return _result;
             }
-
-            const std::uint64_t total = entity_count_;
-            const std::uint64_t target = (total + requested_count - 1u) / requested_count;
-
-            result.reserve(requested_count);
-
-            std::size_t part_begin = begin_;
-            std::uint64_t current_count = 0;
-
-            for (std::size_t s = begin_; s < end_; ++s) {
-                current_count += (*segments_)[s].count;
-
-                const bool should_cut = current_count >= target
-                    && result.size() + 1u < requested_count
-                    && s + 1u < end_;
-
-                if (should_cut) {
-                    result.emplace_back(
-                        segments_,
-                        part_begin,
-                        s + 1u,
-                        current_count,
-                        rest_,
-                        excluded_);
-
-                    part_begin = s + 1u;
-                    current_count = 0;
+            const std::uint64_t _total = _entity_count;
+            const std::uint64_t _target = (_total + requested_count - 1u) / requested_count;
+            _result.reserve(requested_count);
+            std::size_t _part_begin = _begin;
+            std::uint64_t _current_count = 0;
+            for (std::size_t _segment_index = _begin; _segment_index < _end; ++_segment_index) {
+                _current_count += (*_segments)[_segment_index].count;
+                const bool _should_cut = (_current_count >= _target) && (_result.size() + 1u < requested_count) && (_segment_index + 1u < _end);
+                if (_should_cut) {
+                    _result.emplace_back(_segments, _part_begin, _segment_index + 1u, _current_count, _rest_storage, _excluded_storage);
+                    _part_begin = _segment_index + 1u;
+                    _current_count = 0;
                 }
             }
-
-            if (part_begin < end_) {
-                result.emplace_back(
-                    segments_,
-                    part_begin,
-                    end_,
-                    current_count,
-                    rest_,
-                    excluded_);
+            if (_part_begin < _end) {
+                _result.emplace_back(_segments, _part_begin, _end, _current_count, _rest_storage, _excluded_storage);
             }
-
-            return result;
+            return _result;
         }
 
         [[nodiscard]] std::uint64_t total_count() const noexcept
         {
-            return entity_count_;
+            return _entity_count;
         }
 
         [[nodiscard]] std::uint64_t size() const noexcept
         {
-            return entity_count_;
+            return _entity_count;
         }
 
         [[nodiscard]] bool empty() const noexcept
         {
-            return entity_count_ == 0;
+            return _entity_count == 0;
         }
 
     private:
-        [[nodiscard]] bool has_required(
-            object_entity_scene_index scene,
-            object_entity entity) const
+        std::shared_ptr<const segment_buffer_type> _segments = {};
+        std::size_t _begin = {};
+        std::size_t _end = {};
+        std::tuple<storage_type<RestComponentTypes>*...> _rest_storage = {};
+        std::tuple<storage_type<ExcludedComponentTypes>*...> _excluded_storage = {};
+        std::uint64_t _entity_count = {};
+
+        [[nodiscard]] bool _has_required(object_entity_scene_index scene, object_entity entity) const
         {
-            if constexpr (sizeof...(Rest) == 0) {
+            if constexpr (sizeof...(RestComponentTypes) == 0) {
                 return true;
             } else {
-                return (std::get<storage_type<Rest>*>(rest_)->contains(scene, entity) && ...);
+                return (std::get<storage_type<RestComponentTypes>*>(_rest_storage)->contains(scene, entity) && ...);
             }
         }
 
-        [[nodiscard]] bool has_excluded(
-            object_entity_scene_index scene,
-            object_entity entity) const
+        [[nodiscard]] bool _has_excluded(object_entity_scene_index scene, object_entity entity) const
         {
-            if constexpr (sizeof...(Excluded) == 0) {
+            if constexpr (sizeof...(ExcludedComponentTypes) == 0) {
                 return false;
             } else {
-                return (std::get<storage_type<Excluded>*>(excluded_)->contains(scene, entity) || ...);
+                return (std::get<storage_type<ExcludedComponentTypes>*>(_excluded_storage)->contains(scene, entity) || ...);
             }
         }
 
-        template <typename Fn>
-        void call(
-            Fn&& fn,
-            object_entity_scene_index scene,
-            object_entity entity,
-            lead_component_type& lead) const
+        template <typename CallbackType>
+        void _call(CallbackType&& callback, object_entity_scene_index scene, object_entity entity, lead_component_type& lead) const
         {
-            view_ref_t<Lead> lead_ref = lead;
-
-            if constexpr (sizeof...(Rest) == 0) {
-                call_with_rest(
-                    std::forward<Fn>(fn),
+            view_reference_type<LeadComponentType> _lead_reference = lead;
+            if constexpr (sizeof...(RestComponentTypes) == 0) {
+                _call_with_rest(
+                    std::forward<CallbackType>(callback),
                     scene,
                     entity,
-                    lead_ref);
+                    _lead_reference);
             } else {
-                call_with_rest(
-                    std::forward<Fn>(fn),
+                _call_with_rest(
+                    std::forward<CallbackType>(callback),
                     scene,
                     entity,
-                    lead_ref,
-                    static_cast<view_ref_t<Rest>>(
-                        std::get<storage_type<Rest>*>(rest_)->get(scene, entity))...);
+                    _lead_reference,
+                    static_cast<view_reference_type<RestComponentTypes>>(
+                        std::get<storage_type<RestComponentTypes>*>(_rest_storage)->get(scene, entity))...);
             }
         }
 
-        template <typename Fn, typename... Components>
-        void call_with_rest(
-            Fn&& fn,
-            object_entity_scene_index scene,
-            object_entity entity,
-            Components&&... components) const
+        template <typename CallbackType, typename... Components>
+        void _call_with_rest(CallbackType&& callback, object_entity_scene_index scene, object_entity entity, Components&&... components) const
         {
-            if constexpr (std::is_invocable_v<Fn, object_entity_scene_index, object_entity, Components...>) {
-                std::forward<Fn>(fn)(scene, entity, std::forward<Components>(components)...);
-            } else if constexpr (std::is_invocable_v<Fn, object_entity, Components...>) {
-                std::forward<Fn>(fn)(entity, std::forward<Components>(components)...);
-            } else if constexpr (std::is_invocable_v<Fn, Components...>) {
-                std::forward<Fn>(fn)(std::forward<Components>(components)...);
+            if constexpr (std::is_invocable_v<CallbackType, object_entity_scene_index, object_entity, Components...>) {
+                std::forward<CallbackType>(callback)(scene, entity, std::forward<Components>(components)...);
+            } else if constexpr (std::is_invocable_v<CallbackType, object_entity, Components...>) {
+                std::forward<CallbackType>(callback)(entity, std::forward<Components>(components)...);
+            } else if constexpr (std::is_invocable_v<CallbackType, Components...>) {
+                std::forward<CallbackType>(callback)(std::forward<Components>(components)...);
             } else {
                 static_assert(
-                    std::is_invocable_v<Fn, object_entity_scene_index, object_entity, Components...>
-                        || std::is_invocable_v<Fn, object_entity, Components...>
-                        || std::is_invocable_v<Fn, Components...>,
+                    std::is_invocable_v<CallbackType, object_entity_scene_index, object_entity, Components...>
+                        || std::is_invocable_v<CallbackType, object_entity, Components...>
+                        || std::is_invocable_v<CallbackType, Components...>,
                     "Invalid view callback signature.");
             }
-        }
-
-    private:
-        std::shared_ptr<const segment_buffer> segments_;
-        std::size_t begin_ {};
-        std::size_t end_ {};
-        std::tuple<storage_type<Rest>*...> rest_;
-        std::tuple<storage_type<Excluded>*...> excluded_;
-        std::uint64_t entity_count_ {};
-    };
-
-    template <typename T>
-    struct object_component_readback_gpu {
-        object_entity entity {};
-        T component {};
-    };
-
-    template <typename T>
-    struct object_component_upload_snapshot_gpu {
-        std::span<const object_entity> entities;
-        std::span<const T> components;
-    };
-
-    template <typename T>
-    struct object_component_download_snapshot_gpu {
-        std::span<const object_entity> entities;
-        std::span<const T> components;
-    };
-
-    struct object_dirty_range_gpu {
-        std::uint32_t begin {};
-        std::uint32_t end {};
-
-        [[nodiscard]] bool any() const noexcept
-        {
-            return begin < end;
-        }
-
-        [[nodiscard]] std::uint32_t count() const noexcept
-        {
-            return end - begin;
-        }
-
-        void include(std::uint32_t index) noexcept
-        {
-            if (!any()) {
-                begin = index;
-                end = index + 1u;
-                return;
-            }
-
-            if (index < begin) {
-                begin = index;
-            }
-
-            if (index + 1u > end) {
-                end = index + 1u;
-            }
-        }
-
-        void include_all(std::uint32_t count_) noexcept
-        {
-            begin = 0u;
-            end = count_;
-        }
-
-        void clear() noexcept
-        {
-            begin = 0u;
-            end = 0u;
         }
     };
 
