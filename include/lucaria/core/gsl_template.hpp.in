@@ -6,9 +6,11 @@ namespace lucaria {
 namespace detail {
     namespace generated {
         inline constexpr const char @LUCARIA_GSLC_IDENT@_id[] = "@LUCARIA_GSLC_ID@";
+#if !defined(LUCARIA_DISABLE_COMPUTE)
         inline constexpr const char @LUCARIA_GSLC_IDENT@_source[] = R"LGSL(
 @LUCARIA_GSLC_CONTENT@
 )LGSL";
+#endif
     }
 }
 }

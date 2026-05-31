@@ -7,11 +7,11 @@ namespace lucaria {
 namespace detail {
 
     template <auto SystemFunction>
-    struct lgsl_cpu_fallback_invoker {
+    struct gsl_fallback_invoker {
         template <typename... ComponentRefs>
         void operator()(handle_entity entity, ComponentRefs&&... components) const
         {
-            using traits = typename function_pointer_traits<SystemFunction>::type;
+            using traits = typename gsl_system_pointer_traits<SystemFunction>::type;
             _invoke_implementation<traits>(std::make_index_sequence<traits::arity> {}, entity, std::forward<ComponentRefs>(components)...);
         }
 
@@ -62,14 +62,11 @@ namespace detail {
     };
 
     template <auto SystemFunction, typename... ComponentTypes>
-    void run_dispatch_compute_cpu_fallback(container_segment_registry_cpu& registry, type_list<ComponentTypes...>)
+    void run_dispatch_compute_cpu_fallback(container_segment_registry_cpu& registry, gsl_type_list<ComponentTypes...>)
     {
-        static_assert(
-            sizeof...(ComponentTypes) > 0,
-            "LGSL CPU fallback needs at least one component argument for now");
-
-        auto view = registry.view<ComponentTypes...>();
-        view.each(lgsl_cpu_fallback_invoker<SystemFunction> {});
+        static_assert(sizeof...(ComponentTypes) > 0, "LGSL CPU fallback needs at least one component argument for now");
+        auto _view = registry.view<ComponentTypes...>();
+        _view.each(gsl_fallback_invoker<SystemFunction> {});
     }
 
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cassert>
+#include <deque>
 #include <limits>
 #include <typeindex>
 
@@ -55,7 +56,7 @@ namespace detail {
         manager_scenes(manager_scenes&& other) = delete;
         manager_scenes& operator=(manager_scenes&& other) = delete;
 
-        std::vector<execution_system_info> gsl_systems = {};
+        std::deque<gsl_system_info> gsl_systems = {};
 
         std::vector<object_user_scene> scenes = {};
         container_segment_registry_cpu segment_registry_cpu = {};
@@ -86,21 +87,20 @@ namespace detail {
             detail::run_dispatch_compute_cpu_fallback<SystemFunction>(segment_registry_cpu, components_type {});
         }
 
-        template <auto FunctionPtr>
-        void register_gsl_system(const char* function_name, const char* gsl_id, const char* gsl_source, const char* file, int line)
+        template <auto SystemFunction>
+        void register_gsl_system(const char* name, const char* gsl_id, const char* gsl_source, gsl_system_info** info_slot, const char* file, int line)
         {
-            using metadata_type = execution_system_metadata<FunctionPtr>;
-            const auto& _parameters = metadata_type::parameters();
-            execution_system_info _info = {};
-            _info.name = function_name;
+            gsl_system_info _info = {};
+            _info.name = name;
             _info.gsl_id = gsl_id;
             _info.gsl_source = gsl_source;
             _info.file = file;
             _info.line = line;
-            _info.function_ptr = reinterpret_cast<void*>(FunctionPtr);
-            _info.parameters = _parameters.data();
-            _info.parameter_count = _parameters.size();
+            _info.function_ptr = reinterpret_cast<void*>(SystemFunction);
             gsl_systems.push_back(_info);
+            if (info_slot) {
+                *info_slot = &gsl_systems.back();
+            }
         }
 
         template <typename SceneType>
