@@ -86,7 +86,7 @@ else()
 endif()
 
 add_library(lucaria_external_glslang STATIC ${GLSLANG_SOURCES})
-target_include_directories(lucaria_external_glslang	PUBLIC "upstream/glslang" "${GLSLANG_GENERATED_DIR}")
+target_include_directories(lucaria_external_glslang	PUBLIC "upstream" "upstream/glslang" "${GLSLANG_GENERATED_DIR}")
 target_compile_features(lucaria_external_glslang PUBLIC cxx_std_17)
 target_compile_definitions(lucaria_external_glslang	PUBLIC ENABLE_SPIRV)
 set_target_properties(lucaria_external_glslang PROPERTIES POSITION_INDEPENDENT_CODE ON)

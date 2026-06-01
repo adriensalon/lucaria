@@ -9,6 +9,7 @@
 #include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/storage_registry.hpp>
 #include <lucaria/core/user_scene.hpp>
+#include <lucaria/core/gsl_compiler.hpp>
 
 namespace lucaria {
 
@@ -56,6 +57,7 @@ namespace detail {
         manager_scenes(manager_scenes&& other) = delete;
         manager_scenes& operator=(manager_scenes&& other) = delete;
 
+		std::unique_ptr<gsl_compiler> compiler = nullptr; // -> move to threads manager
         std::vector<gsl_system_info> gsl_systems = {}; // -> move to threads manager
 
         // ecs

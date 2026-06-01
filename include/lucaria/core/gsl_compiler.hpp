@@ -3,6 +3,7 @@
 #include <unordered_map>
 
 #include <lucaria/core/gsl_reflection.hpp>
+#include <lucaria/core/storage_compute.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -14,12 +15,10 @@ namespace detail {
         gsl_compiler(gsl_compiler&& other) = delete;
         gsl_compiler& operator=(gsl_compiler&& other) = delete;
 
-        gsl_compiler(std::vector<gsl_system_info>& reflected);
-
-		void clear();
-
+        gsl_compiler(const std::vector<gsl_system_info>& reflected);
+		
     private:
-        std::vector<gsl_system_info>*;
+       	const std::vector<gsl_system_info>* _infos = {};
     };
 
 }

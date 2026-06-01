@@ -6,6 +6,12 @@
 namespace lucaria {
 namespace detail {
 
+    template <std::size_t ComponentCount>
+    struct gsl_texture_dispatch_item {
+        std::uint32_t entity = {};
+        std::array<std::uint32_t, ComponentCount> component_indices = {};
+    };
+
     template <auto SystemFunction>
     struct gsl_fallback_invoker {
         template <typename... ComponentRefs>
@@ -61,12 +67,84 @@ namespace detail {
         }
     };
 
+    template <typename... ComponentTypes>
+    struct gsl_texture_dispatch_builder {
+        using item_type = gsl_texture_dispatch_item<sizeof...(ComponentTypes)>;
+
+        template <typename ComputeView>
+        static std::vector<item_type> build(ComputeView& view)
+        {
+            std::vector<item_type> items = {};
+            items.reserve(static_cast<std::size_t>(view.size()));
+            view.each_segment([&](auto segment) {
+                for (std::uint32_t i = 0; i < segment.count(); ++i) {
+                    item_type item = {};
+                    item.entity = static_cast<std::uint32_t>(segment.entity(i));
+                    fill_indices<ComponentTypes...>(segment, i, item);
+                    items.push_back(item);
+                }
+            });
+            return items;
+        }
+
+    private:
+        template <typename... Ts, typename Segment>
+        static void fill_indices(Segment& segment, std::uint32_t i, item_type& item)
+        {
+            fill_indices_impl<Ts...>(
+                segment,
+                i,
+                item,
+                std::index_sequence_for<Ts...> {});
+        }
+
+        template <typename... Ts, typename Segment, std::size_t... Indices>
+        static void fill_indices_impl(Segment& segment, std::uint32_t i, item_type& item, std::index_sequence<Indices...>)
+        {
+            (
+                (item.component_indices[Indices] = segment.template index<std::remove_cvref_t<Ts>>(i)),
+                ...);
+        }
+    };
+
     template <auto SystemFunction, typename... ComponentTypes>
     void run_dispatch_compute_cpu_fallback(storage_registry& registry, gsl_type_list<ComponentTypes...>)
     {
         static_assert(sizeof...(ComponentTypes) > 0, "LGSL CPU fallback needs at least one component argument for now");
         auto _view = registry.view<ComponentTypes...>();
         _view.each(gsl_fallback_invoker<SystemFunction> {});
+    }
+
+    struct gsl_opengl_texture_dispatch_context {
+        const char* system_name = nullptr;
+        const char* gsl_id = nullptr;
+        const char* gsl_source = nullptr;
+        std::uint32_t dispatch_count = {};
+        std::uint32_t dispatch_width = {};
+        std::uint32_t dispatch_height = {};
+        GLuint dispatch_texture = {};
+        GLuint framebuffer = {};
+        GLuint program = {};
+    };
+
+    template <auto SystemFunction, typename... ComponentTypes>
+    void run_dispatch_compute_opengl_texture(storage_registry& registry, gsl_type_list<ComponentTypes...>)
+    {
+        static_assert(sizeof...(ComponentTypes) > 0, "GSL OpenGL texture dispatch needs at least one component argument");
+        static_assert((traits::component_compute_enable_v<std::remove_cvref_t<ComponentTypes>> && ...), "OpenGL texture dispatch requires compute-enabled components");
+        auto _view = registry.view_compute<ComponentTypes...>();
+        using builder_type = gsl_texture_dispatch_builder<std::remove_cvref_t<ComponentTypes>...>;
+        auto _dispatch_items = builder_type::build(_view);
+        gsl_opengl_texture_dispatch_context _context = {};
+        _context.system_name = gsl_system_stub<SystemFunction>::name;
+        _context.gsl_id = gsl_system_stub<SystemFunction>::gsl_id;
+        _context.gsl_source = gsl_system_stub<SystemFunction>::gsl_source;
+
+        // Upload dispatch item texture.
+        // Bind input component textures.
+        // Bind output framebuffer.
+        // Draw fullscreen rect/triangle.
+        // dispatch_opengl_texture_system<SystemFunction, ComponentTypes...>(registry, _view, _dispatch_items, _context);
     }
 
 }

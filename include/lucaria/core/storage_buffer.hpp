@@ -2,12 +2,17 @@
 
 #include <vector>
 
-#include <lucaria/core/storage_allocator.hpp>
+#include <lucaria/core/storage_compute.hpp>
 #include <lucaria/core/storage_page.hpp>
 #include <lucaria/public/traits_component.hpp>
 
 namespace lucaria {
 namespace detail {
+
+    template <typename Component, typename Entity>
+	using default_compute_allocator = storage_compute_allocator_opengl_texture<Component, Entity>;
+
+	//
 
     template <typename Component, typename Entity, typename Allocator>
     struct storage_buffer : public entt::basic_sparse_set<Entity, typename std::allocator_traits<Allocator>::template rebind_alloc<Entity>> {
@@ -474,12 +479,12 @@ namespace detail {
             return const_iterable { this };
         }
     };
-
+	
     template <typename ExcludedComponentTypesList, typename LeadComponentType, typename... RestComponentTypes>
     struct storage_view_compute;
 
     template <typename Component, typename Entity, typename Allocator,
-        typename ComputeAllocator = storage_component_allocator_compute_DEBUG<Component, Entity>,
+        typename ComputeAllocator = default_compute_allocator<Component, Entity>,
         typename PageType = storage_page_compute<Component, Entity, ComputeAllocator>>
     struct storage_buffer_compute : public entt::basic_sparse_set<Entity, typename std::allocator_traits<Allocator>::template rebind_alloc<Entity>> {
         using alloc_traits_type = std::allocator_traits<Allocator>;
