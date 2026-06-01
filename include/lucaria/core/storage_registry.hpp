@@ -6,7 +6,7 @@
 namespace lucaria {
 namespace detail {
 
-    struct object_entity_allocator {
+    struct storage_entity_allocator {
         object_entity_local_index next_local = {};
         std::vector<object_entity_version> generations = {};
         std::vector<object_entity_local_index> free_list = {};
@@ -50,13 +50,13 @@ namespace detail {
         }
     };
 
-    struct container_segment_registry_cpu {
-        std::vector<object_entity_allocator> scene_allocators = {};
+    struct storage_registry {
+        std::vector<storage_entity_allocator> scene_allocators = {};
         std::vector<std::function<void(object_entity_scene_index)>> scene_erasers {};
 
         [[nodiscard]] object_entity create(object_entity_scene_index scene)
         {
-            object_entity_allocator& _allocator = _assure_scene_allocator(scene);
+            storage_entity_allocator& _allocator = _assure_scene_allocator(scene);
             object_entity _entity = _allocator.create(scene);
             object_entity _created = _registry.create(_entity);
             LUCARIA_DEBUG_ASSERT(_created == _entity, "Invalid new entity handle");
@@ -70,27 +70,45 @@ namespace detail {
             }
             _registry.destroy(entity);
             const object_entity_scene_index _scene = entity_scene(entity);
-            object_entity_allocator& _allocator = _assure_scene_allocator(_scene);
+            storage_entity_allocator& _allocator = _assure_scene_allocator(_scene);
             _allocator.destroy(entity);
         }
 
         [[nodiscard]] bool valid(object_entity entity) const
         {
             const object_entity_scene_index _scene = entity_scene(entity);
-            const object_entity_allocator* _allocator = _find_scene_allocator(_scene);
+            const storage_entity_allocator* _allocator = _find_scene_allocator(_scene);
             return (_allocator != nullptr) && (_allocator->alive(entity)) && (_registry.valid(entity));
         }
 
         template <typename T, typename... Args>
         T& emplace(object_entity entity, Args&&... args)
         {
+            static_assert(!traits::component_compute_enable_v<T>, "Compute components must be created with emplace_compute");
             LUCARIA_DEBUG_ASSERT(valid(entity), "Invalid entity");
             return _registry.emplace<T>(entity, std::forward<Args>(args)...);
         }
 
         template <typename T, typename... Args>
+        void emplace_compute(object_entity entity, Args&&... args)
+        {
+            static_assert(traits::component_compute_enable_v<T>, "Standard components must be created with emplace_compute");
+            LUCARIA_DEBUG_ASSERT(valid(entity), "Invalid entity");
+            _registry.template storage<T>().emplace(entity, std::forward<Args>(args)...);
+        }
+
+        template <typename T, typename... Args>
         T& emplace_or_replace(object_entity entity, Args&&... args)
         {
+            static_assert(!traits::component_compute_enable_v<T>, "Compute components must be created with emplace_or_replace_compute");
+            LUCARIA_DEBUG_ASSERT(valid(entity), "Invalid entity");
+            return _registry.emplace_or_replace<T>(entity, std::forward<Args>(args)...);
+        }
+
+        template <typename T, typename... Args>
+        T& emplace_or_replace_compute(object_entity entity, Args&&... args)
+        {
+            static_assert(traits::component_compute_enable_v<T>, "Standard components must be created with emplace_or_replace");
             LUCARIA_DEBUG_ASSERT(valid(entity), "Invalid entity");
             return _registry.emplace_or_replace<T>(entity, std::forward<Args>(args)...);
         }
@@ -106,6 +124,7 @@ namespace detail {
         template <typename T>
         [[nodiscard]] T& get(object_entity entity)
         {
+            static_assert(!traits::component_compute_enable_v<T>, "Compute components can't use get");
             LUCARIA_DEBUG_ASSERT(valid(entity), "Invalid entity");
             return _registry.get<T>(entity);
         }
@@ -113,6 +132,7 @@ namespace detail {
         template <typename T>
         [[nodiscard]] const T& get(object_entity entity) const
         {
+            static_assert(!traits::component_compute_enable_v<T>, "Compute components can't use get");
             LUCARIA_DEBUG_ASSERT(valid(entity), "Invalid entity");
             return _registry.get<T>(entity);
         }
@@ -120,6 +140,7 @@ namespace detail {
         template <typename T>
         [[nodiscard]] T* try_get(object_entity entity)
         {
+            static_assert(!traits::component_compute_enable_v<T>, "Compute components can't use try_get");
             if (!valid(entity)) {
                 return nullptr;
             }
@@ -129,6 +150,7 @@ namespace detail {
         template <typename T>
         [[nodiscard]] const T* try_get(object_entity entity) const
         {
+            static_assert(!traits::component_compute_enable_v<T>, "Compute components can't use try_get");
             if (!valid(entity)) {
                 return nullptr;
             }
@@ -154,14 +176,15 @@ namespace detail {
             for (std::function<void(object_entity_scene_index)>& _erase : scene_erasers) {
                 _erase(scene);
             }
-            object_entity_allocator& _allocator = _assure_scene_allocator(scene);
+            storage_entity_allocator& _allocator = _assure_scene_allocator(scene);
             _allocator.erase_all();
         }
 
         template <typename Lead, typename... Rest, typename... Excluded>
         [[nodiscard]] auto view(exclude_t<Excluded...> = {})
         {
-            using view_type = object_registry_view_cpu<exclude_t<Excluded...>, Lead, Rest...>;
+            static_assert(!traits::component_compute_enable_v<Lead>, "Compute view must be created with view_compute");
+            using view_type = storage_view<exclude_t<Excluded...>, Lead, Rest...>;
             using segment_type = typename view_type::segment_type;
             using segment_buffer_type = typename view_type::segment_buffer_type;
             using lead_component_type = std::remove_cvref_t<Lead>;
@@ -185,7 +208,8 @@ namespace detail {
         template <typename Lead, typename... Rest, typename... Excluded>
         [[nodiscard]] auto view(object_entity_scene_index scene, exclude_t<Excluded...> = {})
         {
-            using view_type = object_registry_view_cpu<exclude_t<Excluded...>, Lead, Rest...>;
+            static_assert(!traits::component_compute_enable_v<Lead>, "Compute view must be created with view_compute");
+            using view_type = storage_view<exclude_t<Excluded...>, Lead, Rest...>;
             using segment_type = typename view_type::segment_type;
             using segment_buffer_type = typename view_type::segment_buffer_type;
             using lead_component_type = std::remove_cvref_t<Lead>;
@@ -214,19 +238,66 @@ namespace detail {
         template <typename Lead, typename... Rest>
         [[nodiscard]] auto view()
         {
+            static_assert(!traits::component_compute_enable_v<Lead>, "Compute view must be created with view_compute");
             return view<Lead, Rest...>(exclude<>);
         }
 
         template <typename Lead, typename... Rest>
         [[nodiscard]] auto view(object_entity_scene_index scene)
         {
+            static_assert(!traits::component_compute_enable_v<Lead>, "Compute view must be created with view_compute");
             return view<Lead, Rest...>(scene, exclude<>);
+        }
+
+        template <typename LeadComponentType, typename... RestComponentTypes, typename... ExcludedComponentTypes>
+        [[nodiscard]] auto view_compute(exclude_t<ExcludedComponentTypes...> = {})
+        {
+            static_assert(traits::component_compute_enable_v<LeadComponentType>, "Standard view must be created with view");
+            using view_type = storage_view_compute<exclude_t<ExcludedComponentTypes...>, LeadComponentType, RestComponentTypes...>;
+            using lead_component_type = std::remove_cvref_t<LeadComponentType>;
+            using lead_storage_type = typename view_type::lead_storage_type;
+            using segment_buffer_type = typename view_type::segment_buffer_type;
+            auto* lead_storage = &_registry.template storage<lead_component_type>();
+            auto segments = std::make_shared<segment_buffer_type>();
+            std::uint64_t entity_count = 0;
+            lead_storage->each_compute_segment([&](auto segment) {
+                segments->push_back(segment);
+                entity_count += segment.count;
+            });
+            return view_type {
+                segments, 0, segments->size(), entity_count, lead_storage,
+                std::tuple { &_registry.template storage<std::remove_cvref_t<RestComponentTypes>>()... },
+                std::tuple { &_registry.template storage<std::remove_cvref_t<ExcludedComponentTypes>>()... }
+            };
+        }
+
+        template <typename LeadComponentType, typename... RestComponentTypes, typename... ExcludedComponentTypes>
+        [[nodiscard]] auto view_compute(object_entity_scene_index scene, exclude_t<ExcludedComponentTypes...> = {})
+        {
+            static_assert(traits::component_compute_enable_v<LeadComponentType>, "Standard view must be created with view");
+            using view_type = storage_view_compute<exclude_t<ExcludedComponentTypes...>, LeadComponentType, RestComponentTypes...>;
+            using lead_component_type = std::remove_cvref_t<LeadComponentType>;
+            using lead_storage_type = typename view_type::lead_storage_type;
+            using segment_buffer_type = typename view_type::segment_buffer_type;
+            auto* lead_storage = &_registry.template storage<lead_component_type>();
+            auto segments = std::make_shared<segment_buffer_type>();
+            std::uint64_t entity_count = 0;
+            lead_storage->each_compute_segment(scene, [&](auto segment) {
+                segments->push_back(segment);
+                entity_count += segment.count;
+            });
+
+            return view_type {
+                segments, 0, segments->size(), entity_count, lead_storage,
+                std::tuple { &_registry.template storage<std::remove_cvref_t<RestComponentTypes>>()... },
+                std::tuple { &_registry.template storage<std::remove_cvref_t<ExcludedComponentTypes>>()... }
+            };
         }
 
     private:
         entt::basic_registry<object_entity> _registry = {};
 
-        [[nodiscard]] object_entity_allocator& _assure_scene_allocator(object_entity_scene_index scene)
+        [[nodiscard]] storage_entity_allocator& _assure_scene_allocator(object_entity_scene_index scene)
         {
             if (scene_allocators.size() <= static_cast<std::size_t>(scene)) {
                 scene_allocators.resize(static_cast<std::size_t>(scene) + 1u);
@@ -234,7 +305,7 @@ namespace detail {
             return scene_allocators[scene];
         }
 
-        [[nodiscard]] const object_entity_allocator* _find_scene_allocator(object_entity_scene_index scene) const
+        [[nodiscard]] const storage_entity_allocator* _find_scene_allocator(object_entity_scene_index scene) const
         {
             if (scene >= scene_allocators.size()) {
                 return nullptr;

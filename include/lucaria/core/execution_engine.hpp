@@ -62,7 +62,7 @@ namespace detail {
     };
 
     template <auto SystemFunction, typename... ComponentTypes>
-    void run_dispatch_compute_cpu_fallback(container_segment_registry_cpu& registry, gsl_type_list<ComponentTypes...>)
+    void run_dispatch_compute_cpu_fallback(storage_registry& registry, gsl_type_list<ComponentTypes...>)
     {
         static_assert(sizeof...(ComponentTypes) > 0, "LGSL CPU fallback needs at least one component argument for now");
         auto _view = registry.view<ComponentTypes...>();

@@ -24,7 +24,7 @@ namespace detail {
     struct entt_emplace_factory : entt_emplace_factory_default_tag {
 
         template <typename ArchiveType>
-        static ComponentType& emplace(ArchiveType&, container_segment_registry_cpu& registry, object_entity entity)
+        static ComponentType& emplace(ArchiveType&, storage_registry& registry, object_entity entity)
         {
             static_assert(std::is_default_constructible_v<ComponentType>, "Component is not default constructible. Provide entt_emplace_factory specialization");
             return registry.emplace_or_replace<ComponentType>(entity);
@@ -56,13 +56,14 @@ namespace detail {
         manager_scenes(manager_scenes&& other) = delete;
         manager_scenes& operator=(manager_scenes&& other) = delete;
 
-        std::deque<gsl_system_info> gsl_systems = {};
+        std::vector<gsl_system_info> gsl_systems = {}; // -> move to threads manager
 
-        std::vector<object_user_scene> scenes = {};
-        container_segment_registry_cpu segment_registry_cpu = {};
-        // container_segment_registry_gpu segment_registry_gpu = {};
+        // ecs
         object_entity_scene_index index_for_context = 0;
+        std::vector<object_user_scene> scenes = {};
+        storage_registry registry = {};
 
+        // user
         std::unordered_map<std::string, user_scene_type_callbacks> scene_types = {};
         std::unordered_map<std::type_index, std::string> scene_type_ids = {};
         std::unordered_map<std::string, user_component_type_callbacks> user_component_types = {};
@@ -71,20 +72,20 @@ namespace detail {
         template <typename... ComponentTypes, typename Callback>
         void each_view(Callback&& callback)
         {
-            segment_registry_cpu.view<ComponentTypes...>().each(std::forward<Callback>(callback));
+            registry.view<ComponentTypes...>().each(std::forward<Callback>(callback));
         }
 
         template <typename... ComponentTypes, typename... ExcludeComponentTypes, typename Callback>
         void each_view(exclude_t<ExcludeComponentTypes...> exclude, Callback&& callback)
         {
-            segment_registry_cpu.view<ComponentTypes...>(exclude).each(std::forward<Callback>(callback));
+            registry.view<ComponentTypes...>(exclude).each(std::forward<Callback>(callback));
         }
 
         template <auto SystemFunction>
         void run_dispatch_compute()
         {
             using components_type = lgsl_system_component_list_t<SystemFunction>;
-            detail::run_dispatch_compute_cpu_fallback<SystemFunction>(segment_registry_cpu, components_type {});
+            detail::run_dispatch_compute_cpu_fallback<SystemFunction>(registry, components_type {});
         }
 
         template <auto SystemFunction>

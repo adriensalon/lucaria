@@ -17,7 +17,7 @@ namespace detail {
 
         template <typename ComponentType>
         [[nodiscard]] std::vector<recipe_object_scene_component<ComponentType>> _save_component_group(
-            container_segment_registry_cpu& registry,
+            storage_registry& registry,
             object_entity_scene_index scene,
             const std::unordered_map<object_entity, uint32>& entity_ids)
         {
@@ -121,11 +121,11 @@ namespace detail {
 
             uint32 next_entity_id = 1;
 
-            if (segment >= manager.segment_registry_cpu.scene_allocators.size()) {
+            if (segment >= manager.registry.scene_allocators.size()) {
                 continue;
             }
 
-            const auto& allocator = manager.segment_registry_cpu.scene_allocators[segment];
+            const auto& allocator = manager.registry.scene_allocators[segment];
 
             std::vector<bool> is_free(
                 static_cast<std::size_t>(allocator.next_local),
@@ -150,7 +150,7 @@ namespace detail {
                     local,
                     allocator.generations[local]);
 
-                if (!manager.segment_registry_cpu.valid(entity)) {
+                if (!manager.registry.valid(entity)) {
                     continue;
                 }
 
@@ -174,16 +174,16 @@ namespace detail {
             saved.scene = &scene;
             saved.scene_type_callbacks = &manager.scene_types.at(scene.type_id);
 
-            saved.components.animators = _save_component_group<component_animator>(manager.segment_registry_cpu, segment, entity_ids);
-            saved.components.screen_interfaces = _save_component_group<component_interface_screen>(manager.segment_registry_cpu, segment, entity_ids);
-            saved.components.spatial_interfaces = _save_component_group<component_interface_spatial>(manager.segment_registry_cpu, segment, entity_ids);
-            saved.components.blockout_models = _save_component_group<component_model_blockout>(manager.segment_registry_cpu, segment, entity_ids);
-            saved.components.unlit_models = _save_component_group<component_model_unlit>(manager.segment_registry_cpu, segment, entity_ids);
-            saved.components.passive_rigidbodies = _save_component_group<component_rigidbody_passive>(manager.segment_registry_cpu, segment, entity_ids);
-            saved.components.kinematic_rigidbodies = _save_component_group<component_rigidbody_kinematic>(manager.segment_registry_cpu, segment, entity_ids);
-            saved.components.dynamic_rigidbodies = _save_component_group<component_rigidbody_dynamic>(manager.segment_registry_cpu, segment, entity_ids);
-            saved.components.speakers = _save_component_group<component_speaker_spatial>(manager.segment_registry_cpu, segment, entity_ids);
-            saved.components.transforms = _save_component_group<component_transform>(manager.segment_registry_cpu, segment, entity_ids);
+            saved.components.animators = _save_component_group<component_animator>(manager.registry, segment, entity_ids);
+            saved.components.screen_interfaces = _save_component_group<component_interface_screen>(manager.registry, segment, entity_ids);
+            saved.components.spatial_interfaces = _save_component_group<component_interface_spatial>(manager.registry, segment, entity_ids);
+            saved.components.blockout_models = _save_component_group<component_model_blockout>(manager.registry, segment, entity_ids);
+            saved.components.unlit_models = _save_component_group<component_model_unlit>(manager.registry, segment, entity_ids);
+            saved.components.passive_rigidbodies = _save_component_group<component_rigidbody_passive>(manager.registry, segment, entity_ids);
+            saved.components.kinematic_rigidbodies = _save_component_group<component_rigidbody_kinematic>(manager.registry, segment, entity_ids);
+            saved.components.dynamic_rigidbodies = _save_component_group<component_rigidbody_dynamic>(manager.registry, segment, entity_ids);
+            saved.components.speakers = _save_component_group<component_speaker_spatial>(manager.registry, segment, entity_ids);
+            saved.components.transforms = _save_component_group<component_transform>(manager.registry, segment, entity_ids);
 
             for (auto& [type_id, callbacks] : manager.user_component_types) {
                 recipe_object_scene_user_component_group& user_component = saved.user_components.emplace_back();

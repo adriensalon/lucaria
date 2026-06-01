@@ -29,6 +29,7 @@
 #include <lucaria/public/handle_skeleton.hpp>
 #include <lucaria/public/handle_sound_track.hpp>
 #include <lucaria/public/handle_texture.hpp>
+#include <lucaria/public/traits_component.hpp>
 
 #include <lucaria/public/utils_key.hpp>
 #include <lucaria/public/utils_register.hpp>

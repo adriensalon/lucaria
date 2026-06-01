@@ -65,7 +65,7 @@ struct handle_entity {
 
         if (detail::entity_scene(entity_it->second) != scene_it->second
             || mappings.loading_scene_manager == nullptr
-            || !mappings.loading_scene_manager->segment_registry_cpu.valid(entity_it->second)) {
+            || !mappings.loading_scene_manager->registry.valid(entity_it->second)) {
             LUCARIA_DEBUG_ERROR("Failed to resolve valid entity while loading entity handle");
             _entity = {};
             return;

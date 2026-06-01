@@ -134,7 +134,15 @@ struct context_scene {
     template <typename ComponentType, typename... Args>
     ComponentType& create_component_user(const handle_entity entity, Args&&... args)
     {
-        return _manager->segment_registry_cpu.emplace<ComponentType>(entity._entity, std::forward<Args>(args)...);
+		static_assert(!traits::component_compute_enable_v<ComponentType>, "Compute user components must be created with emplace_compute_user");
+        return _manager->registry.emplace<ComponentType>(entity._entity, std::forward<Args>(args)...);
+    }
+
+    template <typename ComponentType, typename... Args>
+    void emplace_compute_user(const handle_entity entity, Args&&... args)
+    {
+		static_assert(traits::component_compute_enable_v<ComponentType>, "Standard user components must be created with emplace_user");
+        _manager->registry.emplace_compute<ComponentType>(entity._entity, std::forward<Args>(args)...);
     }
 
 	
@@ -195,7 +203,7 @@ struct context_scene {
     template <typename ComponentType>
     bool has_component_user(const handle_entity entity) const
     {
-        return _manager->segment_registry_cpu.contains<ComponentType>(entity._entity);
+        return _manager->registry.contains<ComponentType>(entity._entity);
     }
 
     /// @brief Gets a user component from this entity.
@@ -203,7 +211,7 @@ struct context_scene {
     template <typename ComponentType>
     [[nodiscard]] ComponentType& get_component_user(const handle_entity entity) const
     {
-        return _manager->segment_registry_cpu.get<ComponentType>(entity._entity);
+        return _manager->registry.get<ComponentType>(entity._entity);
     }
 
     /// @brief Removes a user component from this entity if present.
@@ -212,7 +220,7 @@ struct context_scene {
     void remove_component_user(const handle_entity entity) const
     {
         if (_manager) {
-            _manager->segment_registry_cpu.remove<ComponentType>(entity._entity);
+            _manager->registry.remove<ComponentType>(entity._entity);
         }
     }
 
