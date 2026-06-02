@@ -30,9 +30,9 @@ namespace detail {
 
     }
 
-    container_cache<object_cubemap>& fetch(
+    assets_cell<object_cubemap>& fetch(
         manager_assets& objects,
-        container_cache_vector<object_cubemap>& cached_vector,
+        assets_buffer<object_cubemap>& cached_vector,
         const std::array<std::filesystem::path, 6>& paths,
         const std::optional<data_image_profile> profile)
     {
@@ -42,7 +42,7 @@ namespace detail {
         });
     }
 
-    recipe_object_cubemap make_recipe(const container_cache<object_cubemap>& container)
+    recipe_object_cubemap make_recipe(const assets_cell<object_cubemap>& container)
     {
         const object_cubemap& _cubemap = container.fetched.value();
 
@@ -62,9 +62,9 @@ namespace detail {
         }
     }
 
-    container_cache<object_cubemap>* apply_recipe(manager_assets& objects, container_cache_vector<object_cubemap>& cached_vector, recipe_object_cubemap& recipe)
+    assets_cell<object_cubemap>* apply_recipe(manager_assets& objects, assets_buffer<object_cubemap>& cached_vector, recipe_object_cubemap& recipe)
     {
-        return std::visit([&](auto& value) -> container_cache<object_cubemap>* {
+        return std::visit([&](auto& value) -> assets_cell<object_cubemap>* {
             using RecipeType = std::decay_t<decltype(value)>;
 
             if constexpr (std::is_same_v<RecipeType, recipe_object_cubemap_path>) {

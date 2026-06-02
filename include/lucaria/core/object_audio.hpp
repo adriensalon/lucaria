@@ -1,7 +1,7 @@
 #pragma once
 
 #include <lucaria/bin/data_audio.hpp>
-#include <lucaria/core/utils_cache.hpp>
+#include <lucaria/core/assets_buffer.hpp>
 #include <lucaria/core/utils_compiler.hpp>
 
 namespace lucaria {
@@ -30,9 +30,9 @@ namespace detail {
         data_audio data;
     };
 
-    [[nodiscard]] container_cache<object_audio>& fetch(
+    [[nodiscard]] assets_cell<object_audio>& fetch(
         manager_assets& objects,
-        container_cache_vector<object_audio>& cached_vector,
+        assets_buffer<object_audio>& cached_vector,
         const std::filesystem::path& path);
 
     // recipes
@@ -59,7 +59,7 @@ namespace detail {
 
     using recipe_object_audio = std::variant<recipe_object_audio_path, recipe_object_audio_data>;
 
-    [[nodiscard]] recipe_object_audio make_recipe(const container_cache<object_audio>& cache);
-	[[nodiscard]] container_cache<object_audio>* apply_recipe(manager_assets& objects, container_cache_vector<object_audio>& cached, recipe_object_audio& recipe);
+    [[nodiscard]] recipe_object_audio make_recipe(const assets_cell<object_audio>& cache);
+	[[nodiscard]] assets_cell<object_audio>* apply_recipe(manager_assets& objects, assets_buffer<object_audio>& cached, recipe_object_audio& recipe);
 }
 }

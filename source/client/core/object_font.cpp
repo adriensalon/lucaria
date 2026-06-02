@@ -54,10 +54,10 @@ namespace detail {
 
     }
 
-    container_cache<object_font>& fetch(
+    assets_cell<object_font>& fetch(
         manager_window& window,
         manager_assets& objects,
-        container_cache_vector<object_font>& cached_vector,
+        assets_buffer<object_font>& cached_vector,
         const std::filesystem::path& path,
         const float32 font_size)
     {
@@ -72,7 +72,7 @@ namespace detail {
         font = _load_font_bytes(window, bytes, font_size);
     }
 
-    recipe_object_font make_recipe(const container_cache<object_font>& cached)
+    recipe_object_font make_recipe(const assets_cell<object_font>& cached)
     {
         const object_font& _font = cached.fetched.value();
 
@@ -86,9 +86,9 @@ namespace detail {
         }
     }
 
-	container_cache<object_font>* apply_recipe(manager_window& window, manager_assets& objects, container_cache_vector<object_font>& cached_vector, recipe_object_font& recipe)
+	assets_cell<object_font>* apply_recipe(manager_window& window, manager_assets& objects, assets_buffer<object_font>& cached_vector, recipe_object_font& recipe)
     {
-        return std::visit([&](auto& value) -> container_cache<object_font>* {
+        return std::visit([&](auto& value) -> assets_cell<object_font>* {
             using RecipeType = std::decay_t<decltype(value)>;
 
             if constexpr (std::is_same_v<RecipeType, recipe_object_font_path>) {

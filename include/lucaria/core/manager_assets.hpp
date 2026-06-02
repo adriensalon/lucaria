@@ -13,6 +13,7 @@
 #include <lucaria/core/serialize_mappings.hpp>
 #include <lucaria/core/serialize_containers.hpp>
 #include <lucaria/core/user_asset.hpp>
+#include <lucaria/core/assets_buffer.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -39,19 +40,19 @@ namespace detail {
 
         std::atomic<uint32> async_fetches_waiting = 0;
         std::filesystem::path async_prefix_path = {};
-        container_cache_vector<object_animation> animations = {};
-        container_cache_vector<object_audio> audios = {};
-        container_cache_vector<object_cubemap> cubemaps = {};
-        container_cache_vector<object_event_track> event_tracks = {};
-        container_cache_vector<object_font> fonts = {};
-        container_cache_vector<object_geometry> geometries = {};
-        container_cache_vector<object_image> images = {};
-        container_cache_vector<object_mesh> meshes = {};
-        container_cache_vector<object_motion_track> motion_tracks = {};
-        container_cache_vector<object_shape> shapes = {};
-        container_cache_vector<object_skeleton> skeletons = {};
-        container_cache_vector<object_sound_track> sound_tracks = {};
-        container_cache_vector<object_texture> textures = {};
+        assets_buffer<object_animation> animations = {};
+        assets_buffer<object_audio> audios = {};
+        assets_buffer<object_cubemap> cubemaps = {};
+        assets_buffer<object_event_track> event_tracks = {};
+        assets_buffer<object_font> fonts = {};
+        assets_buffer<object_geometry> geometries = {};
+        assets_buffer<object_image> images = {};
+        assets_buffer<object_mesh> meshes = {};
+        assets_buffer<object_motion_track> motion_tracks = {};
+        assets_buffer<object_shape> shapes = {};
+        assets_buffer<object_skeleton> skeletons = {};
+        assets_buffer<object_sound_track> sound_tracks = {};
+        assets_buffer<object_texture> textures = {};
         std::unordered_map<std::type_index, std::unique_ptr<storage_user_asset_base>> user_assets = {};
         std::unordered_map<std::string, user_asset_type_callbacks> user_asset_types = {};
         std::unordered_map<std::type_index, std::string> user_asset_type_ids = {};
@@ -83,9 +84,9 @@ namespace detail {
 
 	// defined in user_asset.hpp
     template <typename AssetType>
-    [[nodiscard]] container_cache<object_user_asset<AssetType>>& fetch(
+    [[nodiscard]] assets_cell<object_user_asset<AssetType>>& fetch(
         manager_assets& objects,
-        container_cache_vector<object_user_asset<AssetType>>& cached_vector,
+        assets_buffer<object_user_asset<AssetType>>& cached_vector,
         const std::filesystem::path& path)
     {
         return *cached_vector.get_or_create_by_path(path, [&objects, path] {

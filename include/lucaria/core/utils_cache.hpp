@@ -9,133 +9,134 @@
 #include <lucaria/bin/types_math.hpp>
 #include <lucaria/core/utils_async.hpp>
 #include <lucaria/core/utils_refcount.hpp>
+#include <lucaria/core/assets_buffer.hpp>
 
 namespace lucaria {
 namespace detail {
 
-    template <typename ObjectType>
-    struct container_cache {
-        container_async<ObjectType> fetched = {};
-        std::optional<std::filesystem::path> origin_path = {};
-        std::atomic<uint32> current_version = { 0 };
-        flag_refcount_control refs = {};
-    };
+    // template <typename ObjectType>
+    // struct assets_cell {
+    //     container_async<ObjectType> fetched = {};
+    //     std::optional<std::filesystem::path> origin_path = {};
+    //     std::atomic<uint32> current_version = { 0 };
+    //     flag_refcount_control refs = {};
+    // };
 
-    template <typename ObjectType>
-    struct container_cache_vector {
-        std::vector<std::unique_ptr<container_cache<ObjectType>>> cells = {};
-        std::unordered_map<std::filesystem::path, container_cache<ObjectType>*> cells_by_path = {};
-        std::mutex set_mutex = {};
+    // template <typename ObjectType>
+    // struct assets_buffer {
+    //     std::vector<std::unique_ptr<assets_cell<ObjectType>>> cells = {};
+    //     std::unordered_map<std::filesystem::path, assets_cell<ObjectType>*> cells_by_path = {};
+    //     std::mutex set_mutex = {};
 
-        void set_cell(container_cache<ObjectType>* cell, container_async<ObjectType>&& value, std::optional<std::filesystem::path> path = std::nullopt)
-        {
-            std::lock_guard _lock(set_mutex);
+    //     void set_cell(assets_cell<ObjectType>* cell, container_async<ObjectType>&& value, std::optional<std::filesystem::path> path = std::nullopt)
+    //     {
+    //         std::lock_guard _lock(set_mutex);
 
-            if (cell->origin_path) {
-                cells_by_path.erase(*cell->origin_path);
-            }
-            cell->fetched = std::move(value);
-            cell->origin_path = std::move(path);
-            cell->fetched.on_ready([cell]() {
-                cell->current_version.fetch_add(1, std::memory_order_release);
-            });
+    //         if (cell->origin_path) {
+    //             cells_by_path.erase(*cell->origin_path);
+    //         }
+    //         cell->fetched = std::move(value);
+    //         cell->origin_path = std::move(path);
+    //         cell->fetched.on_ready([cell]() {
+    //             cell->current_version.fetch_add(1, std::memory_order_release);
+    //         });
 
-            if (cell->origin_path) {
-                cells_by_path.emplace(*cell->origin_path, cell);
-            }
-        }
+    //         if (cell->origin_path) {
+    //             cells_by_path.emplace(*cell->origin_path, cell);
+    //         }
+    //     }
 
-        container_cache<ObjectType>* create_cell()
-        {
-            std::unique_ptr<container_cache<ObjectType>> _cell = std::make_unique<container_cache<ObjectType>>();
-            container_cache<ObjectType>* _raw_cell = _cell.get();
-            cells.emplace_back(std::move(_cell));
-            return _raw_cell;
-        }
+    //     assets_cell<ObjectType>* create_cell()
+    //     {
+    //         std::unique_ptr<assets_cell<ObjectType>> _cell = std::make_unique<assets_cell<ObjectType>>();
+    //         assets_cell<ObjectType>* _raw_cell = _cell.get();
+    //         cells.emplace_back(std::move(_cell));
+    //         return _raw_cell;
+    //     }
 
-        container_cache<ObjectType>* create_cell(container_async<ObjectType>&& value, std::optional<std::filesystem::path> path = std::nullopt)
-        {
-            container_cache<ObjectType>* _cell = create_cell();
-            set_cell(_cell, std::move(value), std::move(path));
-            return _cell;
-        }
+    //     assets_cell<ObjectType>* create_cell(container_async<ObjectType>&& value, std::optional<std::filesystem::path> path = std::nullopt)
+    //     {
+    //         assets_cell<ObjectType>* _cell = create_cell();
+    //         set_cell(_cell, std::move(value), std::move(path));
+    //         return _cell;
+    //     }
 
-        [[nodiscard]] container_cache<ObjectType>* find_by_path(const std::filesystem::path& path) const
-        {
-            typename std::unordered_map<std::filesystem::path, container_cache<ObjectType>*>::const_iterator _iterator = cells_by_path.find(path);
-            return _iterator == cells_by_path.end() ? nullptr : _iterator->second;
-        }
+    //     [[nodiscard]] assets_cell<ObjectType>* find_by_path(const std::filesystem::path& path) const
+    //     {
+    //         typename std::unordered_map<std::filesystem::path, assets_cell<ObjectType>*>::const_iterator _iterator = cells_by_path.find(path);
+    //         return _iterator == cells_by_path.end() ? nullptr : _iterator->second;
+    //     }
 
-        [[nodiscard]] container_cache<ObjectType>* get_or_create_by_path(const std::filesystem::path& path, std::function<container_async<ObjectType>()> create_fetch)
-        {
-            if (container_cache<ObjectType>* _existing = find_by_path(path)) {
-                return _existing;
-            }
+    //     [[nodiscard]] assets_cell<ObjectType>* get_or_create_by_path(const std::filesystem::path& path, std::function<container_async<ObjectType>()> create_fetch)
+    //     {
+    //         if (assets_cell<ObjectType>* _existing = find_by_path(path)) {
+    //             return _existing;
+    //         }
 
-            return create_cell(create_fetch(), path);
-        }
+    //         return create_cell(create_fetch(), path);
+    //     }
 
-        void destroy_cell(container_cache<ObjectType>* cell)
-        {
-            if (!cell) {
-                return;
-            }
+    //     void destroy_cell(assets_cell<ObjectType>* cell)
+    //     {
+    //         if (!cell) {
+    //             return;
+    //         }
 
-            if (cell->origin_path) {
-                cells_by_path.erase(*cell->origin_path);
-            }
+    //         if (cell->origin_path) {
+    //             cells_by_path.erase(*cell->origin_path);
+    //         }
 
-            std::erase_if(cells, [cell](const auto& ptr) {
-                return ptr.get() == cell;
-            });
-        }
+    //         std::erase_if(cells, [cell](const auto& ptr) {
+    //             return ptr.get() == cell;
+    //         });
+    //     }
 
-        void clear()
-        {
-            cells_by_path.clear();
-            cells.clear();
-        }
+    //     void clear()
+    //     {
+    //         cells_by_path.clear();
+    //         cells.clear();
+    //     }
 
-        void gc_unused()
-        {
-            std::lock_guard _lock(set_mutex);
-            std::erase_if(cells, [this](const std::unique_ptr<container_cache<ObjectType>>& _cached_ptr) {
-                container_cache<ObjectType>* _cached = _cached_ptr.get();
-                if (!_cached->fetched.has_value()) {
-                    return false;
-                }
-                if (_cached->refs.count.load(std::memory_order_acquire) != 0) {
-                    return false;
-                }
+    //     void gc_unused()
+    //     {
+    //         std::lock_guard _lock(set_mutex);
+    //         std::erase_if(cells, [this](const std::unique_ptr<assets_cell<ObjectType>>& _cached_ptr) {
+    //             assets_cell<ObjectType>* _cached = _cached_ptr.get();
+    //             if (!_cached->fetched.has_value()) {
+    //                 return false;
+    //             }
+    //             if (_cached->refs.count.load(std::memory_order_acquire) != 0) {
+    //                 return false;
+    //             }
 
-                if (_cached->origin_path) {
-                    auto it = cells_by_path.find(*_cached->origin_path);
-                    if (it != cells_by_path.end() && it->second == _cached) {
-                        cells_by_path.erase(it);
-                    }
-                }
-                return true;
-            });
-        }
-    };
+    //             if (_cached->origin_path) {
+    //                 auto it = cells_by_path.find(*_cached->origin_path);
+    //                 if (it != cells_by_path.end() && it->second == _cached) {
+    //                     cells_by_path.erase(it);
+    //                 }
+    //             }
+    //             return true;
+    //         });
+    //     }
+    // };
 
-    // mappings
+    // // mappings
 
     template <typename ObjectType>
     struct mappings_container_cache_vector_save {
 
-        [[nodiscard]] uint32 get(const container_cache<ObjectType>* resource) const
+        [[nodiscard]] uint32 get(const assets_cell<ObjectType>* resource) const
         {
             LUCARIA_DEBUG_ASSERT(resource, "Object implementation was nullptr");
-            typename std::unordered_map<const container_cache<ObjectType>*, uint32>::const_iterator _iterator = _asset_ids.find(resource);
+            typename std::unordered_map<const assets_cell<ObjectType>*, uint32>::const_iterator _iterator = _asset_ids.find(resource);
             LUCARIA_DEBUG_ASSERT(_iterator != _asset_ids.end(), "Object was not registered before component recipe save");
             return _iterator->second;
         }
 
-        [[nodiscard]] uint32 get_or_create(const container_cache<ObjectType>* resource)
+        [[nodiscard]] uint32 get_or_create(const assets_cell<ObjectType>* resource)
         {
             LUCARIA_DEBUG_ASSERT(resource, "Object implementation was nullptr");
-            typename std::unordered_map<const container_cache<ObjectType>*, uint32>::const_iterator _iterator = _asset_ids.find(resource);
+            typename std::unordered_map<const assets_cell<ObjectType>*, uint32>::const_iterator _iterator = _asset_ids.find(resource);
             if (_iterator != _asset_ids.end()) {
                 return _iterator->second;
             }
@@ -145,28 +146,28 @@ namespace detail {
         }
 
     private:
-        std::unordered_map<const container_cache<ObjectType>*, uint32> _asset_ids = {};
+        std::unordered_map<const assets_cell<ObjectType>*, uint32> _asset_ids = {};
         uint32 _next_id = 1;
     };
 
     template <typename ObjectType>
     struct mappings_container_cache_vector_load {
 
-        void set(const uint32 id, container_cache<ObjectType>* asset)
+        void set(const uint32 id, assets_cell<ObjectType>* asset)
         {
             LUCARIA_DEBUG_ASSERT(id != 0 && asset != nullptr, "Invalid object load mapping");
             _assets[id] = asset;
         }
 
-        [[nodiscard]] container_cache<ObjectType>* get(const uint32 id) const
+        [[nodiscard]] assets_cell<ObjectType>* get(const uint32 id) const
         {
-            typename std::unordered_map<uint32, container_cache<ObjectType>*>::const_iterator _iterator = _assets.find(id);
+            typename std::unordered_map<uint32, assets_cell<ObjectType>*>::const_iterator _iterator = _assets.find(id);
             LUCARIA_DEBUG_ASSERT(_iterator != _assets.end(), "Object save id was not loaded before handle load");
             return _iterator->second;
         }
 
     private:
-        std::unordered_map<uint32, container_cache<ObjectType>*> _assets = {};
+        std::unordered_map<uint32, assets_cell<ObjectType>*> _assets = {};
     };
 }
 }

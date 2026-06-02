@@ -4,7 +4,7 @@
 
 #include <lucaria/bin/types_containers.hpp>
 #include <lucaria/bin/types_math.hpp>
-#include <lucaria/core/utils_cache.hpp>
+#include <lucaria/core/assets_buffer.hpp>
 #include <lucaria/core/utils_compiler.hpp>
 #include <lucaria/core/utils_refcount.hpp>
 
@@ -31,10 +31,10 @@ namespace detail {
         ImFont* font;
     };
 
-    [[nodiscard]] container_cache<object_font>& fetch(
+    [[nodiscard]] assets_cell<object_font>& fetch(
 		manager_window& window, 
         manager_assets& objects,
-        container_cache_vector<object_font>& cached_vector,
+        assets_buffer<object_font>& cached_vector,
         const std::filesystem::path& path,
         const float32 font_size);
 
@@ -54,8 +54,8 @@ namespace detail {
 
     using recipe_object_font = std::variant<recipe_object_font_path>;
 
-    [[nodiscard]] recipe_object_font make_recipe(const container_cache<object_font>& cache);
-	[[nodiscard]] container_cache<object_font>* apply_recipe(manager_window& window, manager_assets& objects, container_cache_vector<object_font>& cached, recipe_object_font& recipe);
+    [[nodiscard]] recipe_object_font make_recipe(const assets_cell<object_font>& cache);
+	[[nodiscard]] assets_cell<object_font>* apply_recipe(manager_window& window, manager_assets& objects, assets_buffer<object_font>& cached, recipe_object_font& recipe);
 
 }
 }

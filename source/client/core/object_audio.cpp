@@ -142,9 +142,9 @@ namespace detail {
     {
     }
 
-    container_cache<object_audio>& fetch(
+    assets_cell<object_audio>& fetch(
         manager_assets& objects,
-        container_cache_vector<object_audio>& cached_vector,
+        assets_buffer<object_audio>& cached_vector,
         const std::filesystem::path& path)
     {
         return *cached_vector.get_or_create_by_path(path, [&objects, path] {
@@ -152,7 +152,7 @@ namespace detail {
         });
     }
 
-    recipe_object_audio make_recipe(const container_cache<object_audio>& cached)
+    recipe_object_audio make_recipe(const assets_cell<object_audio>& cached)
     {
         const object_audio& _audio = cached.fetched.value();
 
@@ -170,9 +170,9 @@ namespace detail {
         }
     }
 
-	container_cache<object_audio>* apply_recipe(manager_assets& objects, container_cache_vector<object_audio>& cached_vector, recipe_object_audio& recipe)
+	assets_cell<object_audio>* apply_recipe(manager_assets& objects, assets_buffer<object_audio>& cached_vector, recipe_object_audio& recipe)
     {
-        return std::visit([&](auto& value) -> container_cache<object_audio>* {
+        return std::visit([&](auto& value) -> assets_cell<object_audio>* {
             using RecipeType = std::decay_t<decltype(value)>;
 
             if constexpr (std::is_same_v<RecipeType, recipe_object_audio_path>) {

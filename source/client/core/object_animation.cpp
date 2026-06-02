@@ -44,9 +44,9 @@ namespace detail {
     {
     }
 
-    container_cache<object_animation>& fetch(
+    assets_cell<object_animation>& fetch(
 		manager_assets& objects,
-        container_cache_vector<object_animation>& cached_vector,
+        assets_buffer<object_animation>& cached_vector,
         const std::filesystem::path& path)
     {
         return *cached_vector.get_or_create_by_path(path, [&objects, path] {
@@ -54,7 +54,7 @@ namespace detail {
         });
     }
 
-    recipe_object_animation make_recipe(const container_cache<object_animation>& cached)
+    recipe_object_animation make_recipe(const assets_cell<object_animation>& cached)
     {
         const object_animation& _animation = cached.fetched.value();
 
@@ -67,9 +67,9 @@ namespace detail {
         }
     }
 
-	container_cache<object_animation>* apply_recipe(manager_assets& objects, container_cache_vector<object_animation>& cached_vector, recipe_object_animation& recipe)
+	assets_cell<object_animation>* apply_recipe(manager_assets& objects, assets_buffer<object_animation>& cached_vector, recipe_object_animation& recipe)
     {
-        return std::visit([&](auto& value) -> container_cache<object_animation>* {
+        return std::visit([&](auto& value) -> assets_cell<object_animation>* {
             using RecipeType = std::decay_t<decltype(value)>;
 
             if constexpr (std::is_same_v<RecipeType, recipe_object_animation_path>) {

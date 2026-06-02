@@ -73,9 +73,9 @@ namespace detail {
         return convert(_position_end - _position_start);
     }
 
-    container_cache<object_motion_track>& fetch(
+    assets_cell<object_motion_track>& fetch(
         manager_assets& objects,
-        container_cache_vector<object_motion_track>& cached_vector,
+        assets_buffer<object_motion_track>& cached_vector,
         const std::filesystem::path& path)
     {
         return *cached_vector.get_or_create_by_path(path, [&objects, path] {
@@ -83,7 +83,7 @@ namespace detail {
         });
     }
 
-    recipe_object_motion_track make_recipe(const container_cache<object_motion_track>& cached)
+    recipe_object_motion_track make_recipe(const assets_cell<object_motion_track>& cached)
     {
         const object_motion_track& _motion_track = cached.fetched.value();
 
@@ -97,9 +97,9 @@ namespace detail {
         }
     }
 
-	container_cache<object_motion_track>* apply_recipe(manager_assets& objects, container_cache_vector<object_motion_track>& cached_vector, recipe_object_motion_track& recipe)
+	assets_cell<object_motion_track>* apply_recipe(manager_assets& objects, assets_buffer<object_motion_track>& cached_vector, recipe_object_motion_track& recipe)
     {
-        return std::visit([&](auto& value) -> container_cache<object_motion_track>* {
+        return std::visit([&](auto& value) -> assets_cell<object_motion_track>* {
             using RecipeType = std::decay_t<decltype(value)>;
 
             if constexpr (std::is_same_v<RecipeType, recipe_object_motion_track_path>) {

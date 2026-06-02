@@ -96,19 +96,18 @@ namespace detail {
     };
 
     template <typename ObjectType, typename RecipeType>
-    void make_recipes_for(std::vector<recipe_object_entry<RecipeType>>& recipes, const container_cache_vector<ObjectType>& cached_vector, mappings_container_cache_vector_save<ObjectType>& ids)
+    void make_recipes_for(std::vector<recipe_object_entry<RecipeType>>& recipes, const assets_buffer<ObjectType>& cached_vector, mappings_container_cache_vector_save<ObjectType>& ids)
     {
-        for (const std::unique_ptr<container_cache<ObjectType>>& _cached_ptr : cached_vector.cells) {
-            const container_cache<ObjectType>* _cached = _cached_ptr.get();
-            recipes.push_back(recipe_object_entry<RecipeType> { ids.get_or_create(_cached), make_recipe(*_cached) });
-        }
+		cached_vector.for_each_cell([&] (assets_cell<ObjectType>& cell) {
+            recipes.push_back(recipe_object_entry<RecipeType> { ids.get_or_create(&cell), make_recipe(cell) });
+		});
     }
 
     template <typename ObjectType, typename RecipeType>
-    void apply_recipes_for(manager_assets& objects, container_cache_vector<ObjectType>& cached_vector, mappings_container_cache_vector_load<ObjectType>& mappings, std::vector<recipe_object_entry<RecipeType>>& recipes)
+    void apply_recipes_for(manager_assets& objects, assets_buffer<ObjectType>& cached_vector, mappings_container_cache_vector_load<ObjectType>& mappings, std::vector<recipe_object_entry<RecipeType>>& recipes)
     {
         for (auto& entry : recipes) {
-            container_cache<ObjectType>* cell = apply_recipe(objects, cached_vector, entry.recipe);
+            assets_cell<ObjectType>* cell = apply_recipe(objects, cached_vector, entry.recipe);
             if (cell == nullptr) {
                 LUCARIA_DEBUG_ERROR("Failed to apply object recipe");
                 continue;
@@ -117,7 +116,7 @@ namespace detail {
         }
     }
 
-    void apply_recipes_for(manager_window& window, manager_assets& objects, container_cache_vector<object_font>& cached_vector, mappings_container_cache_vector_load<object_font>& mappings, std::vector<recipe_object_entry<recipe_object_font>>& recipes);
+    void apply_recipes_for(manager_window& window, manager_assets& objects, assets_buffer<object_font>& cached_vector, mappings_container_cache_vector_load<object_font>& mappings, std::vector<recipe_object_entry<recipe_object_font>>& recipes);
 
     template <typename AssetType, typename ArchiveType>
     void save_user_asset_group(manager_assets& objects, ArchiveType& archive)
@@ -137,7 +136,7 @@ namespace detail {
         std::vector<recipe_object_entry<recipe_object_user_asset<AssetType>>> recipes = {};
         archive(cereal::make_nvp("assets", recipes));
         for (auto& entry : recipes) {
-            container_cache<object_user_asset<AssetType>>* cell = apply_recipe(objects, storage.assets, entry.recipe);
+            assets_cell<object_user_asset<AssetType>>* cell = apply_recipe(objects, storage.assets, entry.recipe);
             if (cell == nullptr) {
                 LUCARIA_DEBUG_ERROR("Failed to apply user asset recipe");
                 continue;
@@ -147,7 +146,7 @@ namespace detail {
     }
 
     template <typename AssetType>
-    [[nodiscard]] recipe_object_user_asset<AssetType> make_recipe(const container_cache<object_user_asset<AssetType>>& cache)
+    [[nodiscard]] recipe_object_user_asset<AssetType> make_recipe(const assets_cell<object_user_asset<AssetType>>& cache)
     {
         const object_user_asset<AssetType>& _asset = cache.fetched.value();
 
@@ -164,12 +163,12 @@ namespace detail {
     }
 
     template <typename AssetType>
-    container_cache<object_user_asset<AssetType>>* apply_recipe(
+    assets_cell<object_user_asset<AssetType>>* apply_recipe(
         manager_assets& objects,
-        container_cache_vector<object_user_asset<AssetType>>& cached_vector,
+        assets_buffer<object_user_asset<AssetType>>& cached_vector,
         recipe_object_user_asset<AssetType>& recipe)
     {
-        return std::visit([&](auto& value) -> container_cache<object_user_asset<AssetType>>* {
+        return std::visit([&](auto& value) -> assets_cell<object_user_asset<AssetType>>* {
             using RecipeType = std::decay_t<decltype(value)>;
 
             if constexpr (std::is_same_v<RecipeType, recipe_object_user_asset_path<AssetType>>) {
@@ -188,7 +187,7 @@ namespace detail {
             recipe);
     }
 
-    [[nodiscard]] recipe_manager_object make_recipe(const manager_assets& objects, mappings_manager_object_save& mappings);
+    [[nodiscard]] recipe_manager_object make_recipe(manager_assets& objects, mappings_manager_object_save& mappings);
     void apply_recipe(manager_window& window, manager_assets& objects, mappings_manager_object_load& mappings, recipe_manager_object& recipe);
 
     // declared in manager_assets.hpp

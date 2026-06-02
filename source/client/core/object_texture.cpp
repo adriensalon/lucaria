@@ -24,9 +24,9 @@ namespace detail {
 
     }
 
-    container_cache<object_texture>& fetch(
+    assets_cell<object_texture>& fetch(
         manager_assets& objects,
-        container_cache_vector<object_texture>& cached_vector,
+        assets_buffer<object_texture>& cached_vector,
         const std::filesystem::path& path,
         const std::optional<data_image_profile> profile)
     {
@@ -36,7 +36,7 @@ namespace detail {
         });
     }
 
-    recipe_object_texture make_recipe(const container_cache<object_texture>& cached)
+    recipe_object_texture make_recipe(const assets_cell<object_texture>& cached)
     {
         const object_texture& _texture = cached.fetched.value();
 
@@ -58,9 +58,9 @@ namespace detail {
         }
     }
 
-    container_cache<object_texture>* apply_recipe(manager_assets& objects, container_cache_vector<object_texture>& cached_vector, recipe_object_texture& recipe)
+    assets_cell<object_texture>* apply_recipe(manager_assets& objects, assets_buffer<object_texture>& cached_vector, recipe_object_texture& recipe)
     {
-        return std::visit([&](auto& value) -> container_cache<object_texture>* {
+        return std::visit([&](auto& value) -> assets_cell<object_texture>* {
             using RecipeType = std::decay_t<decltype(value)>;
 
             if constexpr (std::is_same_v<RecipeType, recipe_object_texture_path>) {

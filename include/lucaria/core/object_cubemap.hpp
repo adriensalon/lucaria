@@ -44,9 +44,9 @@ namespace detail {
 #endif
     };
 
-    [[nodiscard]] container_cache<object_cubemap>& fetch(
+    [[nodiscard]] assets_cell<object_cubemap>& fetch(
 		manager_assets& objects,
-        container_cache_vector<object_cubemap>& cached_vector,
+        assets_buffer<object_cubemap>& cached_vector,
         const std::array<std::filesystem::path, 6>& paths,
         const std::optional<data_image_profile> profile = std::nullopt);
 
@@ -76,8 +76,8 @@ namespace detail {
 
     using recipe_object_cubemap = std::variant<recipe_object_cubemap_path, recipe_object_cubemap_data>;
 
-    [[nodiscard]] recipe_object_cubemap make_recipe(const container_cache<object_cubemap>& cache);
-	[[nodiscard]] container_cache<object_cubemap>* apply_recipe(manager_assets& objects, container_cache_vector<object_cubemap>& cached, recipe_object_cubemap& recipe);
+    [[nodiscard]] recipe_object_cubemap make_recipe(const assets_cell<object_cubemap>& cache);
+	[[nodiscard]] assets_cell<object_cubemap>* apply_recipe(manager_assets& objects, assets_buffer<object_cubemap>& cached, recipe_object_cubemap& recipe);
 
 }
 }

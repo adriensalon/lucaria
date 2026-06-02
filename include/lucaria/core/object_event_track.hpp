@@ -1,7 +1,7 @@
 #pragma once
 
 #include <lucaria/bin/data_event_track.hpp>
-#include <lucaria/core/utils_cache.hpp>
+#include <lucaria/core/assets_buffer.hpp>
 #include <lucaria/core/utils_compiler.hpp>
 
 namespace lucaria {
@@ -28,9 +28,9 @@ namespace detail {
         data_event_track data;
     };
 
-    [[nodiscard]] container_cache<object_event_track>& fetch(
+    [[nodiscard]] assets_cell<object_event_track>& fetch(
 		manager_assets& objects, 
-        container_cache_vector<object_event_track>& cached_vector,
+        assets_buffer<object_event_track>& cached_vector,
         const std::filesystem::path& path);
 
     // recipes
@@ -57,8 +57,8 @@ namespace detail {
 
     using recipe_object_event_track = std::variant<recipe_object_event_track_path, recipe_object_event_track_data>;
 
-    [[nodiscard]] recipe_object_event_track make_recipe(const container_cache<object_event_track>& cache);
-	[[nodiscard]] container_cache<object_event_track>* apply_recipe(manager_assets& objects, container_cache_vector<object_event_track>& cached, recipe_object_event_track& recipe);
+    [[nodiscard]] recipe_object_event_track make_recipe(const assets_cell<object_event_track>& cache);
+	[[nodiscard]] assets_cell<object_event_track>* apply_recipe(manager_assets& objects, assets_buffer<object_event_track>& cached, recipe_object_event_track& recipe);
 
 }
 }

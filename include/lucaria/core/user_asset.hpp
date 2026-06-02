@@ -51,14 +51,14 @@ namespace detail {
 
     template <typename AssetType>
     struct storage_user_asset final : storage_user_asset_base {
-        container_cache_vector<object_user_asset<AssetType>> assets;
+        assets_buffer<object_user_asset<AssetType>> assets;
     };
 
     // implemented in manager_assets.hpp
     template <typename AssetType>
-    [[nodiscard]] container_cache<object_user_asset<AssetType>>& fetch(
+    [[nodiscard]] assets_cell<object_user_asset<AssetType>>& fetch(
         manager_assets& objects,
-        container_cache_vector<object_user_asset<AssetType>>& cached_vector,
+        assets_buffer<object_user_asset<AssetType>>& cached_vector,
         const std::filesystem::path& path);
 
     template <typename AssetType>

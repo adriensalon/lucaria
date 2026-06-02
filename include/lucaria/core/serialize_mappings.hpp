@@ -52,7 +52,7 @@ namespace detail {
         }
 
         template <typename AssetType>
-        [[nodiscard]] uint32 get_or_create(const container_cache<object_user_asset<AssetType>>* cell)
+        [[nodiscard]] uint32 get_or_create(const assets_cell<object_user_asset<AssetType>>* cell)
         {
             return get_mapping<AssetType>().get(cell);
         }
@@ -87,13 +87,13 @@ namespace detail {
         }
 
         template <typename AssetType>
-        void set(uint32 id, container_cache<object_user_asset<AssetType>>* cell)
+        void set(uint32 id, assets_cell<object_user_asset<AssetType>>* cell)
         {
             get_mapping<AssetType>().set(id, cell);
         }
 
         template <typename AssetType>
-        [[nodiscard]] container_cache<object_user_asset<AssetType>>* get(uint32 id)
+        [[nodiscard]] assets_cell<object_user_asset<AssetType>>* get(uint32 id)
         {
             return get_mapping<AssetType>().get(id);
         }

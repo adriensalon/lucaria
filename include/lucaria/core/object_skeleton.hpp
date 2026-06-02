@@ -2,7 +2,7 @@
 
 #include <ozz/animation/runtime/skeleton.h>
 
-#include <lucaria/core/utils_cache.hpp>
+#include <lucaria/core/assets_buffer.hpp>
 #include <lucaria/core/utils_compiler.hpp>
 
 namespace lucaria {
@@ -29,9 +29,9 @@ namespace detail {
         ozz::animation::Skeleton skeleton;
     };
 
-    [[nodiscard]] container_cache<object_skeleton>& fetch(
+    [[nodiscard]] assets_cell<object_skeleton>& fetch(
 		manager_assets& objects,
-        container_cache_vector<object_skeleton>& cached_vector,
+        assets_buffer<object_skeleton>& cached_vector,
         const std::filesystem::path& path);
 
     // recipes
@@ -48,8 +48,8 @@ namespace detail {
 
     using recipe_object_skeleton = std::variant<recipe_object_skeleton_path>;
 
-    [[nodiscard]] recipe_object_skeleton make_recipe(const container_cache<object_skeleton>& cache);
-	[[nodiscard]] container_cache<object_skeleton>* apply_recipe(manager_assets& objects, container_cache_vector<object_skeleton>& cached, recipe_object_skeleton& recipe);
+    [[nodiscard]] recipe_object_skeleton make_recipe(const assets_cell<object_skeleton>& cache);
+	[[nodiscard]] assets_cell<object_skeleton>* apply_recipe(manager_assets& objects, assets_buffer<object_skeleton>& cached, recipe_object_skeleton& recipe);
 
 }
 }

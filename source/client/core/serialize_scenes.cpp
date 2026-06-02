@@ -87,12 +87,12 @@ namespace detail {
     void apply_recipes_for(
         manager_window& window,
         manager_assets& objects,
-        container_cache_vector<object_font>& cached_vector,
+        assets_buffer<object_font>& cached_vector,
         mappings_container_cache_vector_load<object_font>& mappings,
         std::vector<recipe_object_entry<recipe_object_font>>& recipes)
     {
         for (auto& entry : recipes) {
-            container_cache<object_font>* cell = apply_recipe(window, objects, cached_vector, entry.recipe);
+            assets_cell<object_font>* cell = apply_recipe(window, objects, cached_vector, entry.recipe);
 
             if (cell == nullptr) {
                 LUCARIA_DEBUG_ERROR("Failed to apply font recipe");

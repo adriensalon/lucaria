@@ -4,7 +4,7 @@
 namespace lucaria {
 namespace detail {
 
-    recipe_manager_object make_recipe(const manager_assets& objects, mappings_manager_object_save& mappings)
+    recipe_manager_object make_recipe(manager_assets& objects, mappings_manager_object_save& mappings)
     {
         recipe_manager_object _recipes;
 

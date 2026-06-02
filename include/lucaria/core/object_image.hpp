@@ -1,7 +1,7 @@
 #pragma once
 
 #include <lucaria/bin/data_image.hpp>
-#include <lucaria/core/utils_cache.hpp>
+#include <lucaria/core/assets_buffer.hpp>
 #include <lucaria/core/utils_compiler.hpp>
 
 namespace lucaria {
@@ -42,9 +42,9 @@ namespace detail {
         const std::array<std::filesystem::path, 6>& paths,
         const std::optional<data_image_profile> profile = std::nullopt);
 
-    [[nodiscard]] container_cache<object_image>& fetch(
+    [[nodiscard]] assets_cell<object_image>& fetch(
         manager_assets& objects,
-        container_cache_vector<object_image>& cache_vector,
+        assets_buffer<object_image>& cache_vector,
         const std::filesystem::path& path,
         const std::optional<data_image_profile> profile = std::nullopt);
 
@@ -74,8 +74,8 @@ namespace detail {
 
     using recipe_object_image = std::variant<recipe_object_image_path, recipe_object_image_data>;
 
-    [[nodiscard]] recipe_object_image make_recipe(const container_cache<object_image>& cache);
-	[[nodiscard]] container_cache<object_image>* apply_recipe(manager_assets& objects, container_cache_vector<object_image>& cached, recipe_object_image& recipe);
+    [[nodiscard]] recipe_object_image make_recipe(const assets_cell<object_image>& cache);
+	[[nodiscard]] assets_cell<object_image>* apply_recipe(manager_assets& objects, assets_buffer<object_image>& cached, recipe_object_image& recipe);
 
 }
 }

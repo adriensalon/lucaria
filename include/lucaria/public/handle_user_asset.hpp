@@ -22,7 +22,7 @@ struct handle_user_asset {
 
 private:
     detail::flag_refcount _refcount = {};
-    detail::container_cache<detail::object_user_asset<AssetType>>* _cached = nullptr;
+    detail::assets_cell<detail::object_user_asset<AssetType>>* _cached = nullptr;
 
     template <typename ArchiveType>
     void save(ArchiveType& archive) const

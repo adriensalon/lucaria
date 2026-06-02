@@ -32,9 +32,9 @@ namespace detail {
         uint32 samples_count;
     };
 
-    [[nodiscard]] container_cache<object_sound_track>& fetch(
+    [[nodiscard]] assets_cell<object_sound_track>& fetch(
 		manager_assets& objects,
-        container_cache_vector<object_sound_track>& cached_vector,
+        assets_buffer<object_sound_track>& cached_vector,
         const std::filesystem::path& path);
 
     // recipes
@@ -61,8 +61,8 @@ namespace detail {
 
     using recipe_object_sound_track = std::variant<recipe_object_sound_track_path, recipe_object_sound_track_data>;
 
-    [[nodiscard]] recipe_object_sound_track make_recipe(const container_cache<object_sound_track>& cache);
-	[[nodiscard]] container_cache<object_sound_track>* apply_recipe(manager_assets& objects, container_cache_vector<object_sound_track>& cached, recipe_object_sound_track& recipe);
+    [[nodiscard]] recipe_object_sound_track make_recipe(const assets_cell<object_sound_track>& cache);
+	[[nodiscard]] assets_cell<object_sound_track>* apply_recipe(manager_assets& objects, assets_buffer<object_sound_track>& cached, recipe_object_sound_track& recipe);
 
 }
 }

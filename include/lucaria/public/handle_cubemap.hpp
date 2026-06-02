@@ -18,7 +18,7 @@ struct handle_cubemap {
 
 private:
     detail::flag_refcount _refcount = {};
-    detail::container_cache<detail::object_cubemap>* _cached = nullptr;
+    detail::assets_cell<detail::object_cubemap>* _cached = nullptr;
 
     template <typename ArchiveType>
     void save(ArchiveType& archive) const
@@ -34,7 +34,7 @@ private:
 		uint32 _asset_id = 0;
         archive(cereal::make_nvp("object_save_id", _asset_id));
         detail::mappings_manager_game_load& _mappings = cereal::get_user_data<detail::mappings_manager_game_load>(archive);
-        detail::container_cache<detail::object_cubemap>* _cached_cell = _mappings.objects.cubemaps.get(_asset_id);
+        detail::assets_cell<detail::object_cubemap>* _cached_cell = _mappings.objects.cubemaps.get(_asset_id);
         if (_cached_cell == nullptr) {
             LUCARIA_DEBUG_ERROR("Failed to resolve cubemap handle while loading");
             _cached = nullptr;

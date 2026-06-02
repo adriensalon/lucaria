@@ -44,9 +44,9 @@ namespace detail {
     {
     }
 
-    container_cache<object_geometry>& fetch(
+    assets_cell<object_geometry>& fetch(
         manager_assets& objects,
-        container_cache_vector<object_geometry>& cached_vector,
+        assets_buffer<object_geometry>& cached_vector,
         const std::filesystem::path& path)
     {
         return *cached_vector.get_or_create_by_path(path, [&objects, path] {
@@ -54,7 +54,7 @@ namespace detail {
         });
     }
 
-    recipe_object_geometry make_recipe(const container_cache<object_geometry>& cached)
+    recipe_object_geometry make_recipe(const assets_cell<object_geometry>& cached)
     {
         const object_geometry& _geometry = cached.fetched.value();
 
@@ -70,9 +70,9 @@ namespace detail {
         }
     }
 
-    container_cache<object_geometry>* apply_recipe(manager_assets& objects, container_cache_vector<object_geometry>& cached_vector, recipe_object_geometry& recipe)
+    assets_cell<object_geometry>* apply_recipe(manager_assets& objects, assets_buffer<object_geometry>& cached_vector, recipe_object_geometry& recipe)
     {
-        return std::visit([&](auto& value) -> container_cache<object_geometry>* {
+        return std::visit([&](auto& value) -> assets_cell<object_geometry>* {
             using RecipeType = std::decay_t<decltype(value)>;
 
             if constexpr (std::is_same_v<RecipeType, recipe_object_geometry_path>) {

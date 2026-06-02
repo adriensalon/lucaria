@@ -89,9 +89,9 @@ namespace detail {
         center_to_feet = glm::translate(float32x4x4(1), float32x3(0, -zdistance, 0));
     }
 
-    container_cache<object_shape>& fetch(
+    assets_cell<object_shape>& fetch(
         manager_assets& objects,
-        container_cache_vector<object_shape>& cached_vector,
+        assets_buffer<object_shape>& cached_vector,
         const std::filesystem::path& path,
         const object_shape_algorithm algorithm)
     {
@@ -100,7 +100,7 @@ namespace detail {
         });
     }
 
-    recipe_object_shape make_recipe(const container_cache<object_shape>& cached)
+    recipe_object_shape make_recipe(const assets_cell<object_shape>& cached)
     {
         const object_shape& _shape = cached.fetched.value();
 
@@ -144,9 +144,9 @@ namespace detail {
         }
     }
 
-    container_cache<object_shape>* apply_recipe(manager_assets& objects, container_cache_vector<object_shape>& cached_vector, recipe_object_shape& recipe)
+    assets_cell<object_shape>* apply_recipe(manager_assets& objects, assets_buffer<object_shape>& cached_vector, recipe_object_shape& recipe)
     {
-        return std::visit([&](auto& value) -> container_cache<object_shape>* {
+        return std::visit([&](auto& value) -> assets_cell<object_shape>* {
             using RecipeType = std::decay_t<decltype(value)>;
 
             if constexpr (std::is_same_v<RecipeType, recipe_object_shape_path>) {

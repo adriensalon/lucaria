@@ -3,13 +3,13 @@
 #include <ozz/animation/runtime/animation.h>
 
 #include <lucaria/bin/types_containers.hpp>
-#include <lucaria/core/utils_cache.hpp>
+#include <lucaria/core/assets_buffer.hpp>
 #include <lucaria/core/utils_compiler.hpp>
 
 namespace lucaria {
 namespace detail {
 
-	struct manager_assets;
+    struct manager_assets;
 
     enum struct object_animation_origin {
         path
@@ -29,9 +29,9 @@ namespace detail {
         ozz::animation::Animation animation;
     };
 
-    [[nodiscard]] container_cache<object_animation>& fetch(
-		manager_assets& objects,
-        container_cache_vector<object_animation>& cached_vector,
+    [[nodiscard]] assets_cell<object_animation>& fetch(
+        manager_assets& objects,
+        assets_buffer<object_animation>& cached_vector,
         const std::filesystem::path& path);
 
     // recipes
@@ -48,8 +48,8 @@ namespace detail {
 
     using recipe_object_animation = std::variant<recipe_object_animation_path>;
 
-    [[nodiscard]] recipe_object_animation make_recipe(const container_cache<object_animation>& cache);
-	[[nodiscard]] container_cache<object_animation>* apply_recipe(manager_assets& objects, container_cache_vector<object_animation>& cached, recipe_object_animation& recipe);
+    [[nodiscard]] recipe_object_animation make_recipe(const assets_cell<object_animation>& cache);
+    [[nodiscard]] assets_cell<object_animation>* apply_recipe(manager_assets& objects, assets_buffer<object_animation>& cached, recipe_object_animation& recipe);
 
 }
 }

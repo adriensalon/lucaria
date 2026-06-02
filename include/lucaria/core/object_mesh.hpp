@@ -88,9 +88,9 @@ namespace detail {
 #endif
     };
 
-    [[nodiscard]] container_cache<object_mesh>& fetch(
+    [[nodiscard]] assets_cell<object_mesh>& fetch(
         manager_assets& objects,
-        container_cache_vector<object_mesh>& cached_vector,
+        assets_buffer<object_mesh>& cached_vector,
         const std::filesystem::path& path);
 
     // recipes
@@ -117,8 +117,8 @@ namespace detail {
 
     using recipe_object_mesh = std::variant<recipe_object_mesh_path, recipe_object_mesh_data>;
 
-    [[nodiscard]] recipe_object_mesh make_recipe(const container_cache<object_mesh>& cache);
-	[[nodiscard]] container_cache<object_mesh>* apply_recipe(manager_assets& objects, container_cache_vector<object_mesh>& cached, recipe_object_mesh& recipe);
+    [[nodiscard]] recipe_object_mesh make_recipe(const assets_cell<object_mesh>& cache);
+	[[nodiscard]] assets_cell<object_mesh>* apply_recipe(manager_assets& objects, assets_buffer<object_mesh>& cached, recipe_object_mesh& recipe);
 
 }
 }

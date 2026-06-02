@@ -1,7 +1,7 @@
 #pragma once
 
 #include <lucaria/bin/data_geometry.hpp>
-#include <lucaria/core/utils_cache.hpp>
+#include <lucaria/core/assets_buffer.hpp>
 #include <lucaria/core/utils_compiler.hpp>
 
 namespace lucaria {
@@ -32,9 +32,9 @@ namespace detail {
         data_geometry data;
     };
 
-    [[nodiscard]] container_cache<object_geometry>& fetch(
+    [[nodiscard]] assets_cell<object_geometry>& fetch(
 		manager_assets& objects, 
-        container_cache_vector<object_geometry>& cached_vector,
+        assets_buffer<object_geometry>& cached_vector,
 		const std::filesystem::path& path);
 
 	// recipes
@@ -61,8 +61,8 @@ namespace detail {
 
     using recipe_object_geometry = std::variant<recipe_object_geometry_path, recipe_object_geometry_data>;
 
-    [[nodiscard]] recipe_object_geometry make_recipe(const container_cache<object_geometry>& cache);
-	[[nodiscard]] container_cache<object_geometry>* apply_recipe(manager_assets& objects, container_cache_vector<object_geometry>& cached, recipe_object_geometry& recipe);
+    [[nodiscard]] recipe_object_geometry make_recipe(const assets_cell<object_geometry>& cache);
+	[[nodiscard]] assets_cell<object_geometry>* apply_recipe(manager_assets& objects, assets_buffer<object_geometry>& cached, recipe_object_geometry& recipe);
 
 }
 }

@@ -3,7 +3,7 @@
 #include <ozz/animation/runtime/track.h>
 
 #include <lucaria/bin/types_containers.hpp>
-#include <lucaria/core/utils_cache.hpp>
+#include <lucaria/core/assets_buffer.hpp>
 #include <lucaria/core/utils_compiler.hpp>
 
 namespace lucaria {
@@ -32,9 +32,9 @@ namespace detail {
         ozz::animation::QuaternionTrack rotation_track;
     };
 
-    [[nodiscard]] container_cache<object_motion_track>& fetch(
+    [[nodiscard]] assets_cell<object_motion_track>& fetch(
         manager_assets& objects,
-        container_cache_vector<object_motion_track>& cached_vector,
+        assets_buffer<object_motion_track>& cached_vector,
         const std::filesystem::path& path);
 
     // recipes
@@ -51,8 +51,8 @@ namespace detail {
 
     using recipe_object_motion_track = std::variant<recipe_object_motion_track_path>;
 
-    [[nodiscard]] recipe_object_motion_track make_recipe(const container_cache<object_motion_track>& cache);
-	[[nodiscard]] container_cache<object_motion_track>* apply_recipe(manager_assets& objects, container_cache_vector<object_motion_track>& cached, recipe_object_motion_track& recipe);
+    [[nodiscard]] recipe_object_motion_track make_recipe(const assets_cell<object_motion_track>& cache);
+	[[nodiscard]] assets_cell<object_motion_track>* apply_recipe(manager_assets& objects, assets_buffer<object_motion_track>& cached, recipe_object_motion_track& recipe);
 
 }
 }
