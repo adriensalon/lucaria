@@ -28,6 +28,8 @@ namespace detail {
         object_font(manager_window& window, const std::vector<char>& data_bytes, const float32 font_size);
 
         object_font_origin origin;
+		std::optional<std::filesystem::path> origin_path;
+
         ImFont* font;
     };
 

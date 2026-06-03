@@ -42,6 +42,7 @@ namespace detail {
         }
 
         object_user_asset_origin origin;
+		std::optional<std::filesystem::path> origin_path;
         AssetType data;
     };
 

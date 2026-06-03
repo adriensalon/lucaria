@@ -151,7 +151,7 @@ namespace detail {
         const object_user_asset<AssetType>& _asset = cache.fetched.value();
 
         if (_asset.origin == object_user_asset_origin::path) {
-            return recipe_object_user_asset_path<AssetType> { cache.origin_path.value() };
+            return recipe_object_user_asset_path<AssetType> { _asset.origin_path.value() };
 
         } else if (_asset.origin == object_user_asset_origin::data) {
             return recipe_object_user_asset_data<AssetType> { _asset.data };

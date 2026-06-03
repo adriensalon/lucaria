@@ -44,6 +44,8 @@ namespace detail {
         object_mesh(const object_geometry& geometry);
 
         object_mesh_origin origin;
+		std::optional<std::filesystem::path> origin_path;
+		
         std::vector<float32x4x4> invposes;
         uint32 size;
 

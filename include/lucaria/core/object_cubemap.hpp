@@ -32,6 +32,8 @@ namespace detail {
         object_cubemap(const std::array<object_image, 6>& images);
 
         object_cubemap_origin origin;
+		std::optional<std::array<std::filesystem::path, 6>> origin_paths;
+		std::optional<data_image_profile> origin_profile;
 
 #if defined(LUCARIA_BACKEND_OPENGL)
         flag_owning ownership = {};

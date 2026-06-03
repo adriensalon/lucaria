@@ -97,7 +97,7 @@ struct context_object {
     {
         handle_user_asset<AssetType> _user_asset = {};
         _user_asset._cached = &detail::fetch(*_manager, _manager->get_user_asset_storage<AssetType>().assets, path);
-        _user_asset._refcount = detail::flag_refcount(&_user_asset._cached->refs);
+        _user_asset._refcount = detail::flag_refcount(&_user_asset._cached->refcount_control);
         return _user_asset;
     }
 
@@ -144,7 +144,7 @@ struct context_object {
         handle_user_asset<AssetType> _user_asset = {};
         _user_asset._cached = _manager->get_user_asset_storage<AssetType>().assets.create_cell();
         _user_asset._cached->fetched = detail::object_user_asset<AssetType>(std::forward<AssetTypeArgs>(args)...);
-        _user_asset._refcount = detail::flag_refcount(&_user_asset._cached->refs);
+        _user_asset._refcount = detail::flag_refcount(&_user_asset._cached->refcount_control);
         return _user_asset;
     }
 

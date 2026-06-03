@@ -39,6 +39,9 @@ namespace detail {
         [[nodiscard]] ImTextureID imgui_texture() const;
 
         object_texture_origin origin;
+		std::optional<std::filesystem::path> origin_path;
+		std::optional<data_image_profile> origin_profile;
+		
         uint32x2 size;
 
 #if defined(LUCARIA_BACKEND_OPENGL)

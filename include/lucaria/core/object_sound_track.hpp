@@ -26,6 +26,8 @@ namespace detail {
         object_sound_track(const object_audio& from);
 
         object_sound_track_origin origin;
+		std::optional<std::filesystem::path> origin_path;
+		
         flag_owning ownership = {};
         ALuint id;
         uint32 sample_rate;

@@ -84,112 +84,88 @@ namespace detail {
         return paths;
     }
 
-    namespace {
-
-        static void _load_image_bytes(data_image& data, const std::vector<char>& bytes)
-        {
-            const std::vector<uint8_t>& _content = *(reinterpret_cast<const std::vector<uint8_t>*>(&bytes));
-            const uint32_t* _data32 = (uint32_t*)_content.data();
-            data.profile = data_image_profile::binary;
-
-            // PVR
-            if (*_data32 == 0x03525650) {
-                switch (*(_data32 + 2)) {
-                case 7:
-                    // std::cout << "PVR DXT1 RGB" << std::endl;
-                    data.channels = 3;
-                    data.profile = data_image_profile::s3tc_compressed;
-                    break;
-                case 11:
-                    // std::cout << "PVR DXT5 RGBA" << std::endl;
-                    data.channels = 4;
-                    data.profile = data_image_profile::s3tc_compressed;
-                    break;
-                case 22:
-                    // std::cout << "PVR ETC2 RGB" << std::endl;
-                    data.channels = 3;
-                    data.profile = data_image_profile::etc2_compressed;
-                    break;
-                case 23:
-                    // std::cout << "PVR ETC2 RGBA" << std::endl;
-                    data.channels = 4;
-                    data.profile = data_image_profile::etc2_compressed;
-                    break;
-                default:
-                    LUCARIA_DEBUG_ERROR("Invalid S3TC image data")
-                    break;
-                }
-                const std::size_t _offset = 52 + *(_data32 + 12);
-                const glm::uint8* _data_ptr = _content.data() + _offset;
-                const std::size_t _data_size = _content.size() - _offset;
-                data.pixels = std::vector<glm::uint8>(_data_ptr, _data_ptr + _data_size);
-                data.height = *(_data32 + 6);
-                data.width = *(_data32 + 7);
-
-                // KTX
-            } else if (*_data32 == 0x58544BAB) {
-                switch (*(_data32 + 7)) {
-                case 0x9274:
-                    // std::cout << "KTX ETC2 RGB" << std::endl;
-                    data.channels = 3;
-                    data.profile = data_image_profile::etc2_compressed;
-                    break;
-                case 0x9278:
-                    // std::cout << "KTX ETC2 RGBA" << std::endl;
-                    data.channels = 4;
-                    data.profile = data_image_profile::etc2_compressed;
-                    break;
-                default:
-                    LUCARIA_DEBUG_ERROR("Invalid ETC2 image data")
-                    break;
-                }
-
-                const std::uint8_t* _bytes = reinterpret_cast<const std::uint8_t*>(_content.data());
-                const std::uint32_t _header_size = sizeof(std::uint32_t) * 16;
-                const std::uint32_t _bytes_of_key_value = *(_data32 + 15);
-                std::size_t _offset = _header_size + _bytes_of_key_value;
-                const std::uint32_t _image_size = *reinterpret_cast<const std::uint32_t*>(_bytes + _offset);
-                _offset += sizeof(std::uint32_t);
-                const glm::uint8* _data_ptr = _bytes + _offset;
-                const std::size_t _data_size = _image_size;
-                data.pixels = std::vector<glm::uint8>(_data_ptr, _data_ptr + _data_size);
-                data.width = *(_data32 + 9);
-                data.height = *(_data32 + 10);
-
-                // binary raw format
-            } else {
-                bytes_stream _stream(bytes);
-#if defined(LUCARIA_JSON_ASSETS)
-                cereal::JSONInputArchive _archive(_stream);
-#else
-                cereal::PortableBinaryInputArchive _archive(_stream);
-#endif
-                _archive(data);
-            }
-        }
-
-        static container_async<object_image> _fetch_image_async(
-            manager_assets& objects,
-            const std::filesystem::path& path)
-        {
-            std::shared_ptr<std::promise<object_image>> _promise = std::make_shared<std::promise<object_image>>();
-            objects.fetch_bytes(path, [_promise](const std::vector<char>& _bytes) {
-				object_image _image(_bytes);
-				_promise->set_value(std::move(_image)); }, true);
-
-            return container_async<object_image>(_promise->get_future());
-        }
-
-    }
-
     object_image::object_image(const std::vector<char>& bytes)
         : origin(object_image_origin::path)
     {
-        _load_image_bytes(data, bytes);
+        const std::vector<uint8_t>& _content = *(reinterpret_cast<const std::vector<uint8_t>*>(&bytes));
+        const uint32_t* _data32 = (uint32_t*)_content.data();
+        data.profile = data_image_profile::binary;
+
+        // PVR
+        if (*_data32 == 0x03525650) {
+            switch (*(_data32 + 2)) {
+            case 7:
+                // std::cout << "PVR DXT1 RGB" << std::endl;
+                data.channels = 3;
+                data.profile = data_image_profile::s3tc_compressed;
+                break;
+            case 11:
+                // std::cout << "PVR DXT5 RGBA" << std::endl;
+                data.channels = 4;
+                data.profile = data_image_profile::s3tc_compressed;
+                break;
+            case 22:
+                // std::cout << "PVR ETC2 RGB" << std::endl;
+                data.channels = 3;
+                data.profile = data_image_profile::etc2_compressed;
+                break;
+            case 23:
+                // std::cout << "PVR ETC2 RGBA" << std::endl;
+                data.channels = 4;
+                data.profile = data_image_profile::etc2_compressed;
+                break;
+            default:
+                LUCARIA_DEBUG_ERROR("Invalid S3TC image data")
+                break;
+            }
+            const std::size_t _offset = 52 + *(_data32 + 12);
+            const glm::uint8* _data_ptr = _content.data() + _offset;
+            const std::size_t _data_size = _content.size() - _offset;
+            data.pixels = std::vector<glm::uint8>(_data_ptr, _data_ptr + _data_size);
+            data.height = *(_data32 + 6);
+            data.width = *(_data32 + 7);
+
+            // KTX
+        } else if (*_data32 == 0x58544BAB) {
+            switch (*(_data32 + 7)) {
+            case 0x9274:
+                // std::cout << "KTX ETC2 RGB" << std::endl;
+                data.channels = 3;
+                data.profile = data_image_profile::etc2_compressed;
+                break;
+            case 0x9278:
+                // std::cout << "KTX ETC2 RGBA" << std::endl;
+                data.channels = 4;
+                data.profile = data_image_profile::etc2_compressed;
+                break;
+            default:
+                LUCARIA_DEBUG_ERROR("Invalid ETC2 image data")
+                break;
+            }
+
+            const std::uint8_t* _bytes = reinterpret_cast<const std::uint8_t*>(_content.data());
+            const std::uint32_t _header_size = sizeof(std::uint32_t) * 16;
+            const std::uint32_t _bytes_of_key_value = *(_data32 + 15);
+            std::size_t _offset = _header_size + _bytes_of_key_value;
+            const std::uint32_t _image_size = *reinterpret_cast<const std::uint32_t*>(_bytes + _offset);
+            _offset += sizeof(std::uint32_t);
+            const glm::uint8* _data_ptr = _bytes + _offset;
+            const std::size_t _data_size = _image_size;
+            data.pixels = std::vector<glm::uint8>(_data_ptr, _data_ptr + _data_size);
+            data.width = *(_data32 + 9);
+            data.height = *(_data32 + 10);
+
+            // binary raw format
+        } else {
+            bytes_stream _stream(bytes);
+            cereal::PortableBinaryInputArchive _archive(_stream);
+            _archive(data);
+        }
     }
 
     object_image::object_image(data_image&& data)
         : origin(object_image_origin::data)
+        , origin_profile(data.profile)
         , data(std::move(data))
     {
     }
@@ -200,9 +176,16 @@ namespace detail {
         const std::filesystem::path& path,
         const std::optional<data_image_profile> profile)
     {
-        const std::filesystem::path _resolved_path = resolve_profile(objects, path, profile);
-        return *cached_vector.get_or_create_by_path(_resolved_path, [&objects, _resolved_path] {
-            return _fetch_image_async(objects, _resolved_path);
+        const std::string _cache_id = path.string();
+        return *cached_vector.get_or_create_by_id(_cache_id, [&objects, path, profile] {
+            const std::filesystem::path _resolved_path = resolve_profile(objects, path, profile);
+            std::shared_ptr<std::promise<object_image>> _promise = std::make_shared<std::promise<object_image>>();
+            objects.fetch_bytes(_resolved_path, [_promise, path](const std::vector<char>& _bytes) {
+				object_image _image(_bytes);
+				_image.origin_path = path;
+				_promise->set_value(std::move(_image)); }, true);
+
+            return container_async<object_image>(_promise->get_future());
         });
     }
 
@@ -211,7 +194,7 @@ namespace detail {
         const object_image& _image = cached.fetched.value();
 
         if (_image.origin == object_image_origin::path) {
-            return recipe_object_image_path { cached.origin_path.value(), _image.data.profile };
+            return recipe_object_image_path { _image.origin_path.value(), _image.data.profile };
         }
 
         else if (_image.origin == object_image_origin::data) {

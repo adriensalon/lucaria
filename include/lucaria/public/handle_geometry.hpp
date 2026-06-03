@@ -45,7 +45,7 @@ private:
             return;
         }
         _cached = _cached_cell;
-        _refcount = detail::flag_refcount(&_cached->refs);
+        _refcount = detail::flag_refcount(&_cached->refcount_control);
     }
 
     friend struct context_object;

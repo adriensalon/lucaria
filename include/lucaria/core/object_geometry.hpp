@@ -29,6 +29,8 @@ namespace detail {
         object_geometry(data_geometry&& data);
 
         object_geometry_origin origin;
+		std::optional<std::filesystem::path> origin_path;
+		
         data_geometry data;
     };
 

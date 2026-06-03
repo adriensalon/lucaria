@@ -23,9 +23,10 @@ namespace detail {
         object_skeleton& operator=(object_skeleton&& other) = default;
 
         object_skeleton(const std::vector<char>& bytes);
-        object_skeleton(ozz::animation::Skeleton&& skeleton);
 
         object_skeleton_origin origin;
+		std::optional<std::filesystem::path> origin_path;
+		
         ozz::animation::Skeleton skeleton;
     };
 

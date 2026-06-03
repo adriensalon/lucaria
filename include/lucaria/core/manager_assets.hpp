@@ -89,7 +89,8 @@ namespace detail {
         assets_buffer<object_user_asset<AssetType>>& cached_vector,
         const std::filesystem::path& path)
     {
-        return *cached_vector.get_or_create_by_path(path, [&objects, path] {
+		const std::string _cache_id = path.string();
+        return *cached_vector.get_or_create_by_id(_cache_id, [&objects, path] {
             std::shared_ptr<std::promise<object_user_asset<AssetType>>> _promise = std::make_shared<std::promise<object_user_asset<AssetType>>>();
             objects.fetch_bytes(path, [_promise](const std::vector<char>& _bytes) {
 				object_user_asset<AssetType> _asset(_bytes);

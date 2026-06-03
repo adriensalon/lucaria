@@ -33,20 +33,6 @@ namespace detail {
             handle = std::make_unique<btBvhTriangleMeshShape>(triangle_handle.get(), true);
         }
 
-        // todo impact triangle mesh
-
-        static container_async<object_shape> _fetch_shape_async(manager_assets& objects, const std::filesystem::path& path, const object_shape_algorithm algorithm)
-        {
-            std::shared_ptr<std::promise<object_shape>> _promise = std::make_shared<std::promise<object_shape>>();
-            objects.fetch_bytes(path, [_promise, algorithm](const std::vector<char>& _data_bytes) {
-				object_geometry _geometry(_data_bytes);
-				object_shape _shape(_geometry, algorithm);
-				_promise->set_value(std::move(_shape)); }, true);
-
-            // creating bullet collision shapes on worker thread is safe
-            return container_async<object_shape>(_promise->get_future());
-        }
-
     }
 
     object_shape::object_shape(const object_geometry& from, const object_shape_algorithm algorithm)
@@ -63,24 +49,39 @@ namespace detail {
             LUCARIA_DEBUG_ERROR("Impact triangle mesh not implemented") // TODO
         }
 
-        glm::float32 _zdistance = 0.f; // lets compute ?
+        glm::float32 _zdistance = 0.f;
         feet_to_center = glm::translate(float32x4x4(1), float32x3(0, +_zdistance, 0));
         center_to_feet = glm::inverse(feet_to_center);
     }
 
     object_shape::object_shape(btCollisionShape* handle, const glm::float32 zdistance)
         : algorithm(std::nullopt)
+		, origin_extents(float32x3(0))
     {
         const int _shape_type = handle->getShapeType();
         if (_shape_type == BOX_SHAPE_PROXYTYPE) {
+            btBoxShape* _casted_shape = static_cast<btBoxShape*>(handle);
             origin = object_shape_origin::box;
-        } else if (_shape_type == SPHERE_SHAPE_PROXYTYPE) {
+            origin_extents = convert(_casted_shape->getHalfExtentsWithoutMargin());
+        
+		} else if (_shape_type == SPHERE_SHAPE_PROXYTYPE) {
+            btSphereShape* _casted_shape = static_cast<btSphereShape*>(handle);
             origin = object_shape_origin::sphere;
-        } else if (_shape_type == CAPSULE_SHAPE_PROXYTYPE) {
+            origin_extents->x = static_cast<float32>(_casted_shape->getRadius());
+        
+		} else if (_shape_type == CAPSULE_SHAPE_PROXYTYPE) {
+            btCapsuleShape* _casted_shape = static_cast<btCapsuleShape*>(handle);
             origin = object_shape_origin::capsule;
-        } else if (_shape_type == CONE_SHAPE_PROXYTYPE) {
+            origin_extents->x = static_cast<float32>(_casted_shape->getRadius());
+            origin_extents->y = 2.f * static_cast<float32>(_casted_shape->getHalfHeight());
+        
+		} else if (_shape_type == CONE_SHAPE_PROXYTYPE) {
+            btConeShape* _casted_shape = static_cast<btConeShape*>(handle);
             origin = object_shape_origin::cone;
-        } else {
+            origin_extents->x = static_cast<float32>(_casted_shape->getRadius());
+            origin_extents->y = static_cast<float32>(_casted_shape->getHeight());
+        
+		} else {
             LUCARIA_DEBUG_ERROR("Implementation error");
         }
 
@@ -95,8 +96,17 @@ namespace detail {
         const std::filesystem::path& path,
         const object_shape_algorithm algorithm)
     {
-        return *cached_vector.get_or_create_by_path(path, [&objects, path, algorithm] {
-            return _fetch_shape_async(objects, path, algorithm);
+        const std::string _cache_id = path.string();
+        return *cached_vector.get_or_create_by_id(_cache_id, [&objects, path, algorithm] {
+            std::shared_ptr<std::promise<object_shape>> _promise = std::make_shared<std::promise<object_shape>>();
+            objects.fetch_bytes(path, [_promise, algorithm, path](const std::vector<char>& _data_bytes) {
+				object_geometry _geometry(_data_bytes);
+				object_shape _shape(_geometry, algorithm);
+				_shape.origin_path = path;
+				_promise->set_value(std::move(_shape)); }, true);
+
+            // creating bullet collision shapes on worker thread is safe
+            return container_async<object_shape>(_promise->get_future());
         });
     }
 
@@ -105,7 +115,7 @@ namespace detail {
         const object_shape& _shape = cached.fetched.value();
 
         if (_shape.origin == object_shape_origin::path) {
-            return recipe_object_shape_path { cached.origin_path.value(), _shape.algorithm.value() };
+            return recipe_object_shape_path { _shape.origin_path.value(), _shape.algorithm.value() };
 
         } else if (_shape.origin == object_shape_origin::data) {
             return {}; // TODO

@@ -4,14 +4,17 @@
 namespace lucaria {
 namespace detail {
 
-    namespace {
-
-        static container_async<object_cubemap> _fetch_cubemap_async(
-            manager_assets& objects,
-            const std::array<std::filesystem::path, 6>& paths)
-        {
+    assets_cell<object_cubemap>& fetch(
+        manager_assets& objects,
+        assets_buffer<object_cubemap>& cached_vector,
+        const std::array<std::filesystem::path, 6>& paths,
+        const std::optional<data_image_profile> profile)
+    {
+        const std::string _cache_id = paths[0].string(); // TODO CONCATENATE
+        const std::array<std::filesystem::path, 6> _resolved_paths = resolve_profile(objects, paths, profile);
+        return *cached_vector.get_or_create_by_id(_cache_id, [&objects, _resolved_paths, paths] {
             std::shared_ptr<std::promise<std::array<object_image, 6>>> _images_promise = std::make_shared<std::promise<std::array<object_image, 6>>>();
-            objects.fetch_bytes(paths, [_images_promise](const std::vector<std::vector<char>>& _bytes) {
+            objects.fetch_bytes(_resolved_paths, [_images_promise](const std::vector<std::vector<char>>& _bytes) {
 				std::array<object_image, 6> _images = {
 					object_image(_bytes[0]),
 					object_image(_bytes[1]),
@@ -23,22 +26,11 @@ namespace detail {
 				_images_promise->set_value(std::move(_images)); }, true);
 
             // create cubemap on main thread
-            return container_async<object_cubemap>(_images_promise->get_future(), [](const std::array<object_image, 6>& _images) {
-                return object_cubemap(_images);
+            return container_async<object_cubemap>(_images_promise->get_future(), [paths](const std::array<object_image, 6>& _images) {
+                object_cubemap _cubemap(_images);
+				_cubemap.origin_paths = paths;
+				return _cubemap;
             });
-        }
-
-    }
-
-    assets_cell<object_cubemap>& fetch(
-        manager_assets& objects,
-        assets_buffer<object_cubemap>& cached_vector,
-        const std::array<std::filesystem::path, 6>& paths,
-        const std::optional<data_image_profile> profile)
-    {
-        const std::array<std::filesystem::path, 6> _resolved_paths = resolve_profile(objects, paths, profile);
-        return *cached_vector.get_or_create_by_path(_resolved_paths[0], [&objects, _resolved_paths] {
-            return _fetch_cubemap_async(objects, _resolved_paths);
         });
     }
 

@@ -5,34 +5,26 @@
 namespace lucaria {
 namespace detail {
 
-    namespace {
-
-        static container_async<object_texture> _fetch_texture_async(
-            manager_assets& objects,
-            const std::filesystem::path& path)
-        {
-            std::shared_ptr<std::promise<object_image>> _image_promise = std::make_shared<std::promise<object_image>>();
-            objects.fetch_bytes(path, [_image_promise](const std::vector<char>& _bytes) {
-				object_image _image(_bytes);
-				_image_promise->set_value(std::move(_image)); }, true);
-
-            // create texture on main thread
-            return container_async<object_texture>(_image_promise->get_future(), [](const object_image& _from) {
-                return object_texture(_from);
-            });
-        }
-
-    }
-
     assets_cell<object_texture>& fetch(
         manager_assets& objects,
         assets_buffer<object_texture>& cached_vector,
         const std::filesystem::path& path,
         const std::optional<data_image_profile> profile)
     {
-        const std::filesystem::path _resolved_path = resolve_profile(objects, path, profile);
-        return *cached_vector.get_or_create_by_path(_resolved_path, [&objects, _resolved_path] {
-            return _fetch_texture_async(objects, _resolved_path);
+		const std::string _cached_id = path.string();
+        return *cached_vector.get_or_create_by_id(_cached_id, [&objects, path, profile] {
+            const std::filesystem::path _resolved_path = resolve_profile(objects, path, profile);
+            std::shared_ptr<std::promise<object_image>> _image_promise = std::make_shared<std::promise<object_image>>();
+            objects.fetch_bytes(_resolved_path, [_image_promise](const std::vector<char>& _bytes) {
+				object_image _image(_bytes);
+				_image_promise->set_value(std::move(_image)); }, true);
+
+            // create texture on main thread
+            return container_async<object_texture>(_image_promise->get_future(), [path](const object_image& _from) {
+                object_texture _texture(_from);
+                _texture.origin_path = path;
+				return _texture;
+            });
         });
     }
 
@@ -41,7 +33,7 @@ namespace detail {
         const object_texture& _texture = cached.fetched.value();
 
         if (_texture.origin == object_texture_origin::path) {
-            return recipe_object_texture_path { cached.origin_path.value() };
+            return recipe_object_texture_path { _texture.origin_path.value() };
         }
 
         // else if (_texture.origin == object_texture_origin::data) {
@@ -78,7 +70,7 @@ namespace detail {
 
             } else {
                 LUCARIA_DEBUG_ERROR("Implementation error");
-				return nullptr;
+                return nullptr;
             }
         },
             recipe);

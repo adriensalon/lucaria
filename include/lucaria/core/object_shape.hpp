@@ -37,7 +37,10 @@ namespace detail {
         object_shape(btCollisionShape* collision_shape, const glm::float32 half_height = 0.f);
 
         object_shape_origin origin;
+		std::optional<std::filesystem::path> origin_path;
+        std::optional<float32x3> origin_extents;
         std::optional<object_shape_algorithm> algorithm;
+		
         std::unique_ptr<btCollisionShape> collision_shape;
         std::unique_ptr<btTriangleMesh> triangle_geometry;
         glm::mat4 feet_to_center;

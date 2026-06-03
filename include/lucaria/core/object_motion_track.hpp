@@ -24,10 +24,11 @@ namespace detail {
         object_motion_track& operator=(object_motion_track&& other) = default;
 
         object_motion_track(const std::vector<char>& bytes);
-        object_motion_track(ozz::animation::Float3Track&& translation_track, ozz::animation::QuaternionTrack&& rotation_track);
         [[nodiscard]] float32x3 get_total_translation() const;
 
         object_motion_track_origin origin;
+		std::optional<std::filesystem::path> origin_path;
+		
         ozz::animation::Float3Track translation_track;
         ozz::animation::QuaternionTrack rotation_track;
     };

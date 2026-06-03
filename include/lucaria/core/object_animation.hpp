@@ -23,9 +23,10 @@ namespace detail {
         object_animation& operator=(object_animation&& other) = default;
 
         object_animation(const std::vector<char>& bytes);
-        object_animation(ozz::animation::Animation&& animation);
 
         object_animation_origin origin;
+		std::optional<std::filesystem::path> origin_path;
+		
         ozz::animation::Animation animation;
     };
 

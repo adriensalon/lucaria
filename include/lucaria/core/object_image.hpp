@@ -29,6 +29,9 @@ namespace detail {
         // object_image(const object_cubemap& cubemap, const uint32 face_index);
 
         object_image_origin origin;
+		std::optional<std::filesystem::path> origin_path;
+		std::optional<data_image_profile> origin_profile;
+		
         data_image data;
     };
 

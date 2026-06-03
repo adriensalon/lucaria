@@ -27,6 +27,8 @@ namespace detail {
         // object_audio(const object_sound_track& sound_track); // NOT IMPLEMENTED YET
 
         object_audio_origin origin;
+		std::optional<std::filesystem::path> origin_path;
+		
         data_audio data;
     };
 

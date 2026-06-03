@@ -5,29 +5,24 @@
 namespace lucaria {
 namespace detail {
 
-    namespace {
-
-        static container_async<object_mesh> _fetch_mesh_async(manager_assets& objects, const std::filesystem::path& path)
-        {
+    assets_cell<object_mesh>& fetch(
+        manager_assets& objects,
+        assets_buffer<object_mesh>& cached_vector,
+        const std::filesystem::path& path)
+    {
+		const std::string _cache_id = path.string();
+        return *cached_vector.get_or_create_by_id(_cache_id, [&objects, path] {
             std::shared_ptr<std::promise<object_geometry>> _geometry_promise = std::make_shared<std::promise<object_geometry>>();
             objects.fetch_bytes(path, [_geometry_promise](const std::vector<char>& _data_bytes) {
 				object_geometry _geometry(_data_bytes);
 				_geometry_promise->set_value(std::move(_geometry)); }, true);
 
             // create mesh on main thread
-            return container_async<object_mesh>(_geometry_promise->get_future(), [](const object_geometry& _from) {
-                return object_mesh(_from);
+            return container_async<object_mesh>(_geometry_promise->get_future(), [path](const object_geometry& _from) {
+                object_mesh _mesh(_from);
+				_mesh.origin_path = path;
+				return _mesh;
             });
-        }
-    }
-
-    assets_cell<object_mesh>& fetch(
-        manager_assets& objects,
-        assets_buffer<object_mesh>& cached_vector,
-        const std::filesystem::path& path)
-    {
-        return *cached_vector.get_or_create_by_path(path, [&objects, path] {
-            return _fetch_mesh_async(objects, path);
         });
     }
 
@@ -36,7 +31,7 @@ namespace detail {
         const object_mesh& _mesh = cached.fetched.value();
 
         if (_mesh.origin == object_mesh_origin::path) {
-            return recipe_object_mesh_path { cached.origin_path.value() };
+            return recipe_object_mesh_path { _mesh.origin_path.value() };
         }
 
         // else if (_mesh.origin == object_mesh_origin::data) {

@@ -42,6 +42,7 @@ namespace detail {
 
     object_cubemap::object_cubemap(const std::array<object_image, 6>& images)
         : origin(images[0].origin == object_image_origin::path ? object_cubemap_origin::path : object_cubemap_origin::data)
+		, origin_profile(images[0].origin_profile)
     {
         glGenTextures(1, &id);
         glBindTexture(GL_TEXTURE_CUBE_MAP, id);

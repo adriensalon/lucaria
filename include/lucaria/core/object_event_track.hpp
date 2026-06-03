@@ -25,6 +25,8 @@ namespace detail {
         object_event_track(data_event_track&& data);
 
         object_event_track_origin origin;
+		std::optional<std::filesystem::path> origin_path;
+		
         data_event_track data;
     };
 

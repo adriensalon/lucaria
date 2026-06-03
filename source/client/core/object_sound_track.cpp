@@ -8,23 +8,6 @@
 namespace lucaria {
 namespace detail {
 
-    namespace {
-
-        container_async<object_sound_track> _fetch_sound_track_async(manager_assets& objects, const std::filesystem::path& path)
-        {
-            std::shared_ptr<std::promise<object_audio>> _audio_promise = std::make_shared<std::promise<object_audio>>();
-            objects.fetch_bytes(path, [_audio_promise](const std::vector<char>& _bytes) {
-				object_audio _audio(_bytes);
-				_audio_promise->set_value(std::move(_audio)); }, true);
-
-            // create sound on main thread
-            return container_async<object_sound_track>(_audio_promise->get_future(), [](const object_audio& _audio) {
-                return object_sound_track(_audio);
-            });
-        }
-
-    }
-
     object_sound_track::~object_sound_track()
     {
         if (ownership.owns()) {
@@ -45,9 +28,6 @@ namespace detail {
         }
 #endif
         alBufferData(id, alGetEnumValue("AL_FORMAT_MONO_FLOAT32"), from.data.samples.data(), static_cast<ALsizei>(from.data.samples.size() * sizeof(glm::float32)), from.data.sample_rate);
-        // #if defined(LUCARIA_DEBUG)
-        //         std::cout << "Created sound buffer of size " << from.data.samples.size() << " with id " << id << std::endl;
-        // #endif
         ownership.emplace();
     }
 
@@ -56,8 +36,19 @@ namespace detail {
         assets_buffer<object_sound_track>& cached_vector,
         const std::filesystem::path& path)
     {
-        return *cached_vector.get_or_create_by_path(path, [&objects, path] {
-            return _fetch_sound_track_async(objects, path);
+		const std::string _cache_id = path.string();
+        return *cached_vector.get_or_create_by_id(_cache_id, [&objects, path] {
+            std::shared_ptr<std::promise<object_audio>> _audio_promise = std::make_shared<std::promise<object_audio>>();
+            objects.fetch_bytes(path, [_audio_promise](const std::vector<char>& _bytes) {
+				object_audio _audio(_bytes);
+				_audio_promise->set_value(std::move(_audio)); }, true);
+
+            // create sound on main thread
+            return container_async<object_sound_track>(_audio_promise->get_future(), [path](const object_audio& _audio) {
+                object_sound_track _sound_track(_audio);
+				_sound_track.origin_path = path;
+				return _sound_track;
+            });
         });
     }
 
@@ -66,7 +57,7 @@ namespace detail {
         const object_sound_track& _sound_track = cached.fetched.value();
 
         if (_sound_track.origin == object_sound_track_origin::path) {
-            return recipe_object_sound_track_path { cached.origin_path.value() };
+            return recipe_object_sound_track_path { _sound_track.origin_path.value() };
         }
 
         // else if (_sound_track.origin == object_sound_track_origin::data) {
