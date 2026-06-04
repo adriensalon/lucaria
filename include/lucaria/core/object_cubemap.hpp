@@ -85,41 +85,5 @@ namespace detail {
         std::array<object_texture_pspgu, 6> faces = {};
 #endif
     };
-
-    [[nodiscard]] assets_cell<object_cubemap>& fetch(
-        manager_assets& objects,
-        assets_buffer<object_cubemap>& cached_vector,
-        const std::array<std::filesystem::path, 6>& paths,
-        const std::optional<data_image_profile> profile = std::nullopt);
-
-    // recipes
-
-    struct recipe_object_cubemap_path {
-        std::array<std::filesystem::path, 6> paths;
-        data_image_profile profile;
-
-        template <typename ArchiveType>
-        void serialize(ArchiveType& archive)
-        {
-            archive(cereal::make_nvp("paths", paths));
-            archive(cereal::make_nvp("profile", profile));
-        }
-    };
-
-    struct recipe_object_cubemap_data {
-        std::array<data_image, 6> datas;
-
-        template <typename ArchiveType>
-        void serialize(ArchiveType& archive)
-        {
-            archive(cereal::make_nvp("datas", datas));
-        }
-    };
-
-    using recipe_object_cubemap = std::variant<recipe_object_cubemap_path, recipe_object_cubemap_data>;
-
-    [[nodiscard]] recipe_object_cubemap make_recipe(const assets_cell<object_cubemap>& cache);
-    [[nodiscard]] assets_cell<object_cubemap>* apply_recipe(manager_assets& objects, assets_buffer<object_cubemap>& cached, recipe_object_cubemap& recipe);
-
 }
 }

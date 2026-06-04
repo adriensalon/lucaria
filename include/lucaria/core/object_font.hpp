@@ -68,13 +68,6 @@ namespace detail {
 
     };
 
-    [[nodiscard]] assets_cell<object_font>& fetch(
-        manager_window& window,
-        manager_assets& objects,
-        assets_buffer<object_font>& cached_vector,
-        const std::filesystem::path& path,
-        const float32 font_size);
-
 	//
 	//
 	//
@@ -84,24 +77,5 @@ namespace detail {
 	//
 	//
 	//
-    // recipes
-
-    struct recipe_object_font_path {
-        std::filesystem::path path;
-        float32 font_size;
-
-        template <typename ArchiveType>
-        void serialize(ArchiveType& archive)
-        {
-            archive(cereal::make_nvp("path", path));
-            archive(cereal::make_nvp("font_size", font_size));
-        }
-    };
-
-    using recipe_object_font = std::variant<recipe_object_font_path>;
-
-    [[nodiscard]] recipe_object_font make_recipe(const assets_cell<object_font>& cache);
-    [[nodiscard]] assets_cell<object_font>* apply_recipe(manager_window& window, manager_assets& objects, assets_buffer<object_font>& cached, recipe_object_font& recipe);
-
 }
 }

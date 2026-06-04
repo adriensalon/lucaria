@@ -46,58 +46,5 @@ namespace detail {
         window.reupload_shared_imgui_font_texture();
     }
 
-    assets_cell<object_font>& fetch(
-        manager_window& window,
-        manager_assets& objects,
-        assets_buffer<object_font>& cached_vector,
-        const std::filesystem::path& path,
-        const float32 font_size)
-    {
-        const std::string _cache_id = path.string();
-        return *cached_vector.get_or_create_by_id(_cache_id, [&window, &objects, path, font_size] {
-            std::shared_ptr<std::promise<std::shared_ptr<std::vector<char>>>> _data_promise = std::make_shared<std::promise<std::shared_ptr<std::vector<char>>>>();
-            objects.fetch_bytes(path, [_data_promise](const std::vector<char>& _data_bytes) {
-                std::shared_ptr<std::vector<char>> _shared_output = std::make_shared<std::vector<char>>(decode_font_bytes(_data_bytes));
-                _data_promise->set_value(std::move(_shared_output)); }, true);
-
-            // create font on main thread
-            return container_async<object_font>(_data_promise->get_future(), [&window, font_size, path](const std::shared_ptr<std::vector<char>>& bytes) {
-                object_font _font(window, *bytes, font_size);
-				_font.origin_path = path;
-				return _font;
-            });
-        });
-    }
-
-    recipe_object_font make_recipe(const assets_cell<object_font>& cached)
-    {
-        const object_font& _font = cached.fetched.value();
-
-        if (_font.origin == object_font_origin::path) {
-            return recipe_object_font_path { cached.fetched.value().origin_path, _font.font->FontSize };
-        }
-
-        else {
-            LUCARIA_DEBUG_ERROR("Implementation error");
-            return {};
-        }
-    }
-
-    assets_cell<object_font>* apply_recipe(manager_window& window, manager_assets& objects, assets_buffer<object_font>& cached_vector, recipe_object_font& recipe)
-    {
-        return std::visit([&](auto& value) -> assets_cell<object_font>* {
-            using RecipeType = std::decay_t<decltype(value)>;
-
-            if constexpr (std::is_same_v<RecipeType, recipe_object_font_path>) {
-                return &fetch(window, objects, cached_vector, value.path, value.font_size);
-
-            } else {
-                LUCARIA_DEBUG_ERROR("Implementation error");
-                return nullptr;
-            }
-        },
-            recipe);
-    }
-
 }
 }

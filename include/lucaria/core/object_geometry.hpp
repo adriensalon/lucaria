@@ -64,38 +64,5 @@ namespace detail {
         }
 
     };
-
-    [[nodiscard]] assets_cell<object_geometry>& fetch(
-		manager_assets& objects, 
-        assets_buffer<object_geometry>& cached_vector,
-		const std::filesystem::path& path);
-
-	// recipes
-
-    struct recipe_object_geometry_path {
-        std::filesystem::path path;
-
-        template <typename ArchiveType>
-        void serialize(ArchiveType& archive)
-        {
-            archive(cereal::make_nvp("path", path));
-        }
-    };
-
-    struct recipe_object_geometry_data {
-        data_geometry data;
-
-        template <typename ArchiveType>
-        void serialize(ArchiveType& archive)
-        {
-            archive(cereal::make_nvp("data", data));
-        }
-    };
-
-    using recipe_object_geometry = std::variant<recipe_object_geometry_path, recipe_object_geometry_data>;
-
-    [[nodiscard]] recipe_object_geometry make_recipe(const assets_cell<object_geometry>& cache);
-	[[nodiscard]] assets_cell<object_geometry>* apply_recipe(manager_assets& objects, assets_buffer<object_geometry>& cached, recipe_object_geometry& recipe);
-
 }
 }

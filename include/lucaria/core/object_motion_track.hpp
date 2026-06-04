@@ -57,28 +57,5 @@ namespace detail {
         }
 
     };
-
-    [[nodiscard]] assets_cell<object_motion_track>& fetch(
-        manager_assets& objects,
-        assets_buffer<object_motion_track>& cached_vector,
-        const std::filesystem::path& path);
-
-    // recipes
-
-    struct recipe_object_motion_track_path {
-        std::filesystem::path path;
-
-        template <typename ArchiveType>
-        void serialize(ArchiveType& archive)
-        {
-            archive(cereal::make_nvp("path", path));
-        }
-    };
-
-    using recipe_object_motion_track = std::variant<recipe_object_motion_track_path>;
-
-    [[nodiscard]] recipe_object_motion_track make_recipe(const assets_cell<object_motion_track>& cache);
-	[[nodiscard]] assets_cell<object_motion_track>* apply_recipe(manager_assets& objects, assets_buffer<object_motion_track>& cached, recipe_object_motion_track& recipe);
-
 }
 }

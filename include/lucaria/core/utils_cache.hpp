@@ -129,7 +129,7 @@ namespace detail {
         {
             LUCARIA_DEBUG_ASSERT(resource, "Object implementation was nullptr");
             typename std::unordered_map<const assets_cell<ObjectType>*, uint32>::const_iterator _iterator = _asset_ids.find(resource);
-            LUCARIA_DEBUG_ASSERT(_iterator != _asset_ids.end(), "Object was not registered before component recipe save");
+            LUCARIA_DEBUG_ASSERT(_iterator != _asset_ids.end(), "Object was not registered before component snapshot save");
             return _iterator->second;
         }
 

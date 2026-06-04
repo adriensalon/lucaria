@@ -106,20 +106,7 @@ namespace detail {
 
         std::atomic<uint32> async_fetches_waiting = 0;
         std::filesystem::path async_prefix_path = {};
-        assets_buffer<object_animation> animations = {};
-        assets_buffer<object_audio> audios = {};
-        assets_buffer<object_cubemap> cubemaps = {};
-        assets_buffer<object_event_track> event_tracks = {};
-        assets_buffer<object_font> fonts = {};
-        assets_buffer<object_geometry> geometries = {};
-        assets_buffer<object_image> images = {};
-        assets_buffer<object_mesh> meshes = {};
-        assets_buffer<object_motion_track> motion_tracks = {};
-        assets_buffer<object_shape> shapes = {};
-        assets_buffer<object_skeleton> skeletons = {};
-        assets_buffer<object_sound_track> sound_tracks = {};
-        assets_buffer<object_texture> textures = {};
-        std::unordered_map<std::type_index, std::unique_ptr<storage_user_asset_base>> user_assets = {};
+        assets_registry assets = {};
         std::unordered_map<std::string, user_asset_type_callbacks> user_asset_types = {};
         std::unordered_map<std::type_index, std::string> user_asset_type_ids = {};
         std::vector<std::shared_ptr<load_storage_context_base>> active_load_contexts = {};
@@ -129,17 +116,15 @@ namespace detail {
         void register_user_asset(std::string type_id);
 
         template <typename AssetType>
-        storage_user_asset<AssetType>& get_user_asset_storage()
+        assets_buffer<AssetType>& get_asset_buffer()
         {
-            const std::type_index _type = std::type_index(typeid(AssetType));
-            typename std::unordered_map<std::type_index, std::unique_ptr<storage_user_asset_base>>::const_iterator _iterator = user_assets.find(_type);
-            if (_iterator == user_assets.end()) {
-                std::unique_ptr<storage_user_asset<AssetType>> storage = std::make_unique<storage_user_asset<AssetType>>();
-                storage_user_asset<AssetType>* raw = storage.get();
-                user_assets.emplace(_type, std::move(storage));
-                return *raw;
-            }
-            return *static_cast<storage_user_asset<AssetType>*>(_iterator->second.get());
+            return assets.template get<AssetType>();
+        }
+
+        template <typename AssetType>
+        const assets_buffer<AssetType>& get_asset_buffer() const
+        {
+            return assets.template get<AssetType>();
         }
 
         template <typename AssetType, typename ArchiveType>
@@ -186,8 +171,39 @@ namespace detail {
         void fetch_bytes(const std::vector<std::filesystem::path>& paths, const std::function<void(const std::vector<std::vector<char>>&)>& callback, bool must_persist = true);
         void fetch_bytes(const std::array<std::filesystem::path, 6>& paths, const std::function<void(const std::vector<std::vector<char>>&)>& callback, bool must_persist = true);
         void poll_load_contexts();
+        void save(storage_save_context& context);
+        void load(storage_load_context& context);
         void gc_unused();
     };
+
+
+    template <typename Asset, typename Configure>
+    assets_cell<Asset>& assets_registry::fetch(
+        manager_assets& objects,
+        std::string cache_id,
+        Configure&& configure,
+        manager_window* window)
+    {
+        assets_buffer<Asset>& buffer = get<Asset>();
+
+        if (assets_cell<Asset>* existing = buffer.find_by_id(cache_id)) {
+            return *existing;
+        }
+
+        assets_cell<Asset>* cell = buffer.create_cell(
+            container_async<Asset>::pending(Asset {}),
+            std::move(cache_id));
+
+        Asset& asset = cell->fetched.emplaced_value();
+        std::forward<Configure>(configure)(asset);
+
+        std::shared_ptr<runtime_storage_context<Asset>> context =
+            objects.template make_runtime_storage_context<Asset>(cell, asset, window);
+        load_user_asset_value(asset, *context);
+        context->close();
+
+        return *cell;
+    }
 
     template <typename Callback>
     void asset_fetch_context::fetch_worker(const std::filesystem::path& path, Callback&& callback, bool must_persist)
@@ -307,31 +323,6 @@ namespace detail {
         _context->close();
     }
 
-	// declared in user_asset.hpp
-    template <typename AssetType>
-    [[nodiscard]] assets_cell<AssetType>& fetch(
-        manager_assets& objects,
-        assets_buffer<AssetType>& cached_vector,
-        const std::filesystem::path& path)
-    {
-        static_assert_user_asset<AssetType>();
-
-		const std::string _cache_id = path.string();
-        return *cached_vector.get_or_create_by_id(_cache_id, [&objects, path, _cache_id] {
-            container_async<AssetType> _async = container_async<AssetType>::pending(AssetType {});
-            objects.fetch_bytes(path, [&objects, path, _cache_id](const std::vector<char>& _bytes) {
-                assets_cell<AssetType>* _cell = objects.get_user_asset_storage<AssetType>().assets.find_by_id(_cache_id);
-                if (_cell == nullptr || !_cell->fetched.has_emplaced_value()) {
-                    return;
-                }
-                load_user_asset_from_bytes(objects, _cell->fetched.emplaced_value(), _bytes, [_cell]() {
-                    _cell->fetched.mark_ready();
-                });
-            }, true);
-
-            return _async;
-        });
-    }
 
 }
 }

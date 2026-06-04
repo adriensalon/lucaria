@@ -54,28 +54,5 @@ namespace detail {
         }
 
     };
-
-    [[nodiscard]] assets_cell<object_skeleton>& fetch(
-		manager_assets& objects,
-        assets_buffer<object_skeleton>& cached_vector,
-        const std::filesystem::path& path);
-
-    // recipes
-
-    struct recipe_object_skeleton_path {
-        std::filesystem::path path;
-
-        template <typename ArchiveType>
-        void serialize(ArchiveType& archive)
-        {
-            archive(cereal::make_nvp("path", path));
-        }
-    };
-
-    using recipe_object_skeleton = std::variant<recipe_object_skeleton_path>;
-
-    [[nodiscard]] recipe_object_skeleton make_recipe(const assets_cell<object_skeleton>& cache);
-	[[nodiscard]] assets_cell<object_skeleton>* apply_recipe(manager_assets& objects, assets_buffer<object_skeleton>& cached, recipe_object_skeleton& recipe);
-
 }
 }

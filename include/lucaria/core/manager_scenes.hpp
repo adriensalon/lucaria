@@ -225,6 +225,9 @@ namespace detail {
         void start_scene(context_game& game, object_user_scene& scene);
         void update_callbacks(context_game& game);
         void update_systems(manager_game& game);
+
+        void save(game_save_context& context);
+        void load(game_load_context& context);
     };
 
 }

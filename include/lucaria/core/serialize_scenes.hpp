@@ -83,7 +83,7 @@ namespace detail {
     //
 
     template <typename ComponentType>
-    struct recipe_object_scene_component {
+    struct snapshot_object_scene_component {
         uint32 component_save_id = 0;
         ComponentType* component_save = nullptr;
 
@@ -93,7 +93,7 @@ namespace detail {
             archive(cereal::make_nvp("component_save_id", component_save_id));
 
             if (component_save == nullptr) {
-                LUCARIA_DEBUG_ERROR("Missing component while saving scene component recipe");
+                LUCARIA_DEBUG_ERROR("Missing component while saving scene component snapshot");
                 return;
             }
 
@@ -144,17 +144,17 @@ namespace detail {
         }
     };
 
-    struct recipe_object_scene_registry {
-        std::vector<recipe_object_scene_component<component_animator>> animators = {};
-        std::vector<recipe_object_scene_component<component_interface_screen>> screen_interfaces = {};
-        std::vector<recipe_object_scene_component<component_interface_spatial>> spatial_interfaces = {};
-        std::vector<recipe_object_scene_component<component_model_blockout>> blockout_models = {};
-        std::vector<recipe_object_scene_component<component_model_unlit>> unlit_models = {};
-        std::vector<recipe_object_scene_component<component_rigidbody_passive>> passive_rigidbodies = {};
-        std::vector<recipe_object_scene_component<component_rigidbody_kinematic>> kinematic_rigidbodies = {};
-        std::vector<recipe_object_scene_component<component_rigidbody_dynamic>> dynamic_rigidbodies = {};
-        std::vector<recipe_object_scene_component<component_speaker_spatial>> speakers = {};
-        std::vector<recipe_object_scene_component<component_transform>> transforms = {};
+    struct snapshot_object_scene_registry {
+        std::vector<snapshot_object_scene_component<component_animator>> animators = {};
+        std::vector<snapshot_object_scene_component<component_interface_screen>> screen_interfaces = {};
+        std::vector<snapshot_object_scene_component<component_interface_spatial>> spatial_interfaces = {};
+        std::vector<snapshot_object_scene_component<component_model_blockout>> blockout_models = {};
+        std::vector<snapshot_object_scene_component<component_model_unlit>> unlit_models = {};
+        std::vector<snapshot_object_scene_component<component_rigidbody_passive>> passive_rigidbodies = {};
+        std::vector<snapshot_object_scene_component<component_rigidbody_kinematic>> kinematic_rigidbodies = {};
+        std::vector<snapshot_object_scene_component<component_rigidbody_dynamic>> dynamic_rigidbodies = {};
+        std::vector<snapshot_object_scene_component<component_speaker_spatial>> speakers = {};
+        std::vector<snapshot_object_scene_component<component_transform>> transforms = {};
         std::vector<uint32> entity_save_ids = {};
 
         template <typename ArchiveType>
@@ -207,7 +207,7 @@ namespace detail {
         }
     };
 
-    struct recipe_object_scene_user_component_group {
+    struct snapshot_object_scene_user_component_group {
         std::string type_id = {};
         object_user_scene* scene = nullptr;
         user_component_type_callbacks* component_type_callbacks = nullptr;
@@ -253,11 +253,11 @@ namespace detail {
         }
     };
 
-    struct recipe_object_scene {
+    struct snapshot_object_scene {
         uint32 scene_save_id = 0;
         std::string type_id = {};
-        recipe_object_scene_registry components = {};
-        std::vector<recipe_object_scene_user_component_group> user_components = {};
+        snapshot_object_scene_registry components = {};
+        std::vector<snapshot_object_scene_user_component_group> user_components = {};
         object_user_scene* scene = nullptr;
         user_scene_type_callbacks* scene_type_callbacks = nullptr;
 
@@ -333,8 +333,8 @@ namespace detail {
         }
     };
 
-    struct recipe_manager_scene {
-        std::vector<recipe_object_scene> scenes = {};
+    struct snapshot_manager_scene {
+        std::vector<snapshot_object_scene> scenes = {};
 
         template <typename ArchiveType>
         void serialize(ArchiveType& archive)
@@ -345,8 +345,40 @@ namespace detail {
 
     //
 
-    [[nodiscard]] recipe_object_scene make_recipe(const context_game& game, object_user_scene& scene, const user_scene_type_callbacks& callbacks);
-    [[nodiscard]] recipe_manager_scene make_recipe(manager_scenes& manager, mappings_manager_scene_save& mappings);
+    [[nodiscard]] snapshot_object_scene make_snapshot(const context_game& game, object_user_scene& scene, const user_scene_type_callbacks& callbacks);
+    [[nodiscard]] snapshot_manager_scene make_snapshot(manager_scenes& manager, mappings_manager_scene_save& mappings);
+
+    struct snapshot_scenes {
+        manager_scenes& scenes;
+
+        template <typename ArchiveType>
+        void save(ArchiveType& archive) const
+        {
+            mappings_manager_game_save& mappings = cereal::get_user_data<mappings_manager_game_save>(archive);
+
+            if (mappings.saving_objects == nullptr) {
+                LUCARIA_DEBUG_ERROR("Missing manager_assets while saving snapshot scenes");
+                return;
+            }
+
+            game_save_context context { archive, *mappings.saving_objects, scenes, mappings };
+            scenes.save(context);
+        }
+
+        template <typename ArchiveType>
+        void load(ArchiveType& archive)
+        {
+            mappings_manager_game_load& mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
+
+            if (mappings.loading_objects == nullptr || mappings.loading_scene_manager == nullptr) {
+                LUCARIA_DEBUG_ERROR("Missing game managers while loading snapshot scenes");
+                return;
+            }
+
+            game_load_context context { archive, *mappings.loading_objects, scenes, mappings.dynamics, mappings };
+            scenes.load(context);
+        }
+    };
 
     //
 
@@ -360,10 +392,10 @@ namespace detail {
 
             _component_type.binary_save = [](object_user_scene& scene, cereal::PortableBinaryOutputArchive& archive) {
                 const mappings_manager_game_save& _mappings = cereal::get_user_data<mappings_manager_game_save>(archive);
-                std::vector<recipe_object_scene_component<ComponentType>> _components = {};
+                std::vector<snapshot_object_scene_component<ComponentType>> _components = {};
                 assert(_mappings.scenes.saving_scene_manager != nullptr);
                 _mappings.scenes.saving_scene_manager->registry.view<ComponentType>(scene.index_for_context, exclude<>).each([&](object_entity entity, ComponentType& component) {
-                    recipe_object_scene_component<ComponentType>& _back = _components.emplace_back();
+                    snapshot_object_scene_component<ComponentType>& _back = _components.emplace_back();
                     _back.component_save_id = _mappings.scenes.save_map_scene_entities.at(scene.index_for_context).at(entity);
                     _back.component_save = &component;
                 });
@@ -371,16 +403,16 @@ namespace detail {
             };
 
             _component_type.binary_load = [](object_user_scene& scene, cereal::PortableBinaryInputArchive& archive) {
-                std::vector<recipe_object_scene_component<ComponentType>> components = {};
+                std::vector<snapshot_object_scene_component<ComponentType>> components = {};
                 archive(cereal::make_nvp("components", components));
             };
 
             _component_type.json_save = [](object_user_scene& scene, cereal::JSONOutputArchive& archive) {
                 const mappings_manager_game_save& _mappings = cereal::get_user_data<mappings_manager_game_save>(archive);
-                std::vector<recipe_object_scene_component<ComponentType>> _components = {};
+                std::vector<snapshot_object_scene_component<ComponentType>> _components = {};
                 assert(_mappings.scenes.saving_scene_manager != nullptr);
                 _mappings.scenes.saving_scene_manager->registry.view<ComponentType>(scene.index_for_context, exclude<>).each([&](object_entity entity, ComponentType& component) {
-                    recipe_object_scene_component<ComponentType>& _back = _components.emplace_back();
+                    snapshot_object_scene_component<ComponentType>& _back = _components.emplace_back();
                     _back.component_save_id = _mappings.scenes.save_map_scene_entities.at(scene.index_for_context).at(entity);
                     _back.component_save = &component;
                 });
@@ -388,7 +420,7 @@ namespace detail {
             };
 
             _component_type.json_load = [](object_user_scene& scene, cereal::JSONInputArchive& archive) {
-                std::vector<recipe_object_scene_component<ComponentType>> components = {};
+                std::vector<snapshot_object_scene_component<ComponentType>> components = {};
                 archive(cereal::make_nvp("components", components));
             };
 		}

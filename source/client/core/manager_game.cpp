@@ -60,8 +60,7 @@ namespace detail {
         _mappings.saving_objects = &objects;
 
         snapshot_assets _objects { objects };
-        recipe_manager_scene _scenes = {};
-        _scenes = make_recipe(scenes, _mappings.scenes);
+        snapshot_scenes _scenes { scenes };
 
         std::ofstream _ofstream(path, std::ios::binary);
         archive_json_output _archive(_mappings, _ofstream);
@@ -81,13 +80,9 @@ namespace detail {
         archive_json_input _archive(_mappings, _ifstream);
 
         snapshot_assets _objects { objects };
-        recipe_manager_scene _scenes = {};
+        snapshot_scenes _scenes { scenes };
 
         _archive(cereal::make_nvp("assets", _objects));
-
-        // scenes.scenes.clear();
-        // scenes.current_scene = nullptr;
-
         _archive(cereal::make_nvp("components", _scenes));
     }
 

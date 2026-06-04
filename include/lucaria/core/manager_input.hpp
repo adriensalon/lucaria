@@ -23,7 +23,7 @@ namespace detail {
         float32x2 mouse_position_delta = float32x2(0);
     };
 
-    // no recipe needed for now
+    // no snapshot needed for now
 
 }
 }

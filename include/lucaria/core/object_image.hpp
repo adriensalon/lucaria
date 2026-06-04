@@ -43,8 +43,8 @@ namespace detail {
         // object_image(const object_cubemap& cubemap, const uint32 face_index);
 
         object_image_origin origin;
-        std::filesystem::path origin_path;
-        data_image_profile profile;
+		std::filesystem::path origin_path;		
+		data_image_profile profile;
         data_image data;
 
         void save(storage_save_context& context) const
@@ -77,42 +77,7 @@ namespace detail {
                 context.field("origin_data", data);
             }
         }
+
     };
-
-    [[nodiscard]] assets_cell<object_image>& fetch(
-        manager_assets& objects,
-        assets_buffer<object_image>& cache_vector,
-        const std::filesystem::path& path,
-        const std::optional<data_image_profile> profile = std::nullopt);
-
-    // recipes
-
-    struct recipe_object_image_path {
-        std::filesystem::path path;
-        data_image_profile profile;
-
-        template <typename ArchiveType>
-        void serialize(ArchiveType& archive)
-        {
-            archive(cereal::make_nvp("path", path));
-            archive(cereal::make_nvp("profile", profile));
-        }
-    };
-
-    struct recipe_object_image_data {
-        data_image data;
-
-        template <typename ArchiveType>
-        void serialize(ArchiveType& archive)
-        {
-            archive(cereal::make_nvp("data", data));
-        }
-    };
-
-    using recipe_object_image = std::variant<recipe_object_image_path, recipe_object_image_data>;
-
-    [[nodiscard]] recipe_object_image make_recipe(const assets_cell<object_image>& cache);
-    [[nodiscard]] assets_cell<object_image>* apply_recipe(manager_assets& objects, assets_buffer<object_image>& cached, recipe_object_image& recipe);
-
 }
 }

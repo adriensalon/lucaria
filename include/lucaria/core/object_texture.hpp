@@ -96,51 +96,5 @@ namespace detail {
         bool is_swizzled = false;
 #endif
     };
-
-    [[nodiscard]] assets_cell<object_texture>& fetch(
-        manager_assets& objects,
-        assets_buffer<object_texture>& cache_vector,
-        const std::filesystem::path& path,
-        const std::optional<data_image_profile> profile = std::nullopt);
-
-    // recipes
-
-    struct recipe_object_texture_path {
-        std::filesystem::path path;
-        data_image_profile profile;
-
-        template <typename ArchiveType>
-        void serialize(ArchiveType& archive)
-        {
-            archive(cereal::make_nvp("path", path));
-            archive(cereal::make_nvp("profile", profile));
-        }
-    };
-
-    struct recipe_object_texture_data {
-        data_image data;
-
-        template <typename ArchiveType>
-        void serialize(ArchiveType& archive)
-        {
-            archive(cereal::make_nvp("data", data));
-        }
-    };
-
-    struct recipe_object_texture_size {
-        uint32x2 size;
-
-        template <typename ArchiveType>
-        void serialize(ArchiveType& archive)
-        {
-            archive(cereal::make_nvp("size", size));
-        }
-    };
-
-    using recipe_object_texture = std::variant<recipe_object_texture_path, recipe_object_texture_data, recipe_object_texture_size>;
-
-    [[nodiscard]] recipe_object_texture make_recipe(const assets_cell<object_texture>& cache);
-    [[nodiscard]] assets_cell<object_texture>* apply_recipe(manager_assets& objects, assets_buffer<object_texture>& cached, recipe_object_texture& recipe);
-
 }
 }

@@ -49,28 +49,5 @@ namespace detail {
             });
         }
     };
-
-    [[nodiscard]] assets_cell<object_animation>& fetch(
-        manager_assets& objects,
-        assets_buffer<object_animation>& cached_vector,
-        const std::filesystem::path& path);
-
-    // recipes
-
-    struct recipe_object_animation_path {
-        std::filesystem::path path;
-
-        template <typename ArchiveType>
-        void serialize(ArchiveType& archive)
-        {
-            archive(cereal::make_nvp("path", path));
-        }
-    };
-
-    using recipe_object_animation = std::variant<recipe_object_animation_path>;
-
-    [[nodiscard]] recipe_object_animation make_recipe(const assets_cell<object_animation>& cache);
-    [[nodiscard]] assets_cell<object_animation>* apply_recipe(manager_assets& objects, assets_buffer<object_animation>& cached, recipe_object_animation& recipe);
-
 }
 }

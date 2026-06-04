@@ -91,9 +91,9 @@ namespace detail {
 #endif
     };
 
-    // recipes
+    // snapshots
 
-    struct recipe_manager_window {
+    struct snapshot_manager_window {
         bool is_locked;
         float64 time_delta;
         float32x2 screen_size;
@@ -107,7 +107,7 @@ namespace detail {
         }
     };
 
-    [[nodiscard]] recipe_manager_window make_recipe();
+    [[nodiscard]] snapshot_manager_window make_snapshot();
 
 }
 }

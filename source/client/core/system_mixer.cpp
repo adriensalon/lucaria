@@ -1,6 +1,7 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 
+#include <lucaria/core/manager_scenes.hpp>
 #include <lucaria/public/context_mixer.hpp>
 
 namespace lucaria {

@@ -229,19 +229,7 @@ namespace detail {
 
     void manager_assets::gc_unused()
     {
-        animations.gc_unused();
-        audios.gc_unused();
-        cubemaps.gc_unused();
-        event_tracks.gc_unused();
-        fonts.gc_unused();
-        geometries.gc_unused();
-        images.gc_unused();
-        meshes.gc_unused();
-        motion_tracks.gc_unused();
-        shapes.gc_unused();
-        skeletons.gc_unused();
-        sound_tracks.gc_unused();
-        textures.gc_unused();
+        assets.gc_unused();
         poll_load_contexts();
     }
 

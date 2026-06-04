@@ -62,37 +62,5 @@ namespace detail {
         }
 
     };
-
-    [[nodiscard]] assets_cell<object_audio>& fetch(
-        manager_assets& objects,
-        assets_buffer<object_audio>& cached_vector,
-        const std::filesystem::path& path);
-
-    // recipes
-
-    struct recipe_object_audio_path {
-        std::filesystem::path path;
-
-        template <typename ArchiveType>
-        void serialize(ArchiveType& archive)
-        {
-            archive(cereal::make_nvp("path", path));
-        }
-    };
-
-    struct recipe_object_audio_data {
-        data_audio data;
-
-        template <typename ArchiveType>
-        void serialize(ArchiveType& archive)
-        {
-            archive(cereal::make_nvp("data", data));
-        }
-    };
-
-    using recipe_object_audio = std::variant<recipe_object_audio_path, recipe_object_audio_data>;
-
-    [[nodiscard]] recipe_object_audio make_recipe(const assets_cell<object_audio>& cache);
-    [[nodiscard]] assets_cell<object_audio>* apply_recipe(manager_assets& objects, assets_buffer<object_audio>& cached, recipe_object_audio& recipe);
 }
 }

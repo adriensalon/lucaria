@@ -15,6 +15,7 @@
 #include <lucaria/public/handle_sound_track.hpp>
 #include <lucaria/public/handle_texture.hpp>
 #include <lucaria/public/handle_user_asset.hpp>
+#include <lucaria/public/context_window.hpp>
 
 namespace lucaria {
 
@@ -23,79 +24,78 @@ struct context_window;
 /// @brief
 struct context_object {
 
-    /// @brief
-    /// @param path
-    /// @return
+    template <typename AssetType, typename Configure>
+    handle_asset<AssetType> fetch_asset(
+        std::string cache_id,
+        Configure&& configure,
+        context_window* window = nullptr)
+    {
+        detail::assets_cell<AssetType>& _cell = _manager->assets.template fetch<AssetType>(
+            *_manager,
+            std::move(cache_id),
+            std::forward<Configure>(configure),
+            window != nullptr ? window->_manager : nullptr);
+
+        handle_asset<AssetType> _handle = {};
+        _handle._cached = &_cell;
+        _handle._refcount = detail::flag_refcount(&_cell.refcount_control);
+        return _handle;
+    }
+
+    template <typename HandleType, typename AssetType, typename Configure>
+    HandleType fetch_asset(
+        std::string cache_id,
+        Configure&& configure,
+        context_window* window = nullptr)
+    {
+        detail::assets_cell<AssetType>& _cell = _manager->assets.template fetch<AssetType>(
+            *_manager,
+            std::move(cache_id),
+            std::forward<Configure>(configure),
+            window != nullptr ? window->_manager : nullptr);
+
+        HandleType _handle = {};
+        _handle._cached = &_cell;
+        _handle._refcount = detail::flag_refcount(&_cell.refcount_control);
+        return _handle;
+    }
+
+    template <typename AssetType, typename... AssetTypeArgs>
+    handle_asset<AssetType> create_asset(AssetTypeArgs&&... args)
+    {
+        handle_asset<AssetType> _handle = {};
+        _handle._cached = &_manager->assets.template create<AssetType>(std::forward<AssetTypeArgs>(args)...);
+        _handle._refcount = detail::flag_refcount(&_handle._cached->refcount_control);
+        return _handle;
+    }
+
+    template <typename HandleType, typename AssetType, typename... AssetTypeArgs>
+    HandleType create_asset(AssetTypeArgs&&... args)
+    {
+        HandleType _handle = {};
+        _handle._cached = &_manager->assets.template create<AssetType>(std::forward<AssetTypeArgs>(args)...);
+        _handle._refcount = detail::flag_refcount(&_handle._cached->refcount_control);
+        return _handle;
+    }
+
     handle_animation fetch_animation(const std::filesystem::path& path);
-
-    /// @brief
-    /// @param path
-    /// @return
     handle_audio fetch_audio(const std::filesystem::path& path);
-
-    /// @brief
-    /// @param paths
-    /// @param profile
-    /// @return
     handle_cubemap fetch_cubemap(const std::array<std::filesystem::path, 6>& paths, const std::optional<data_image_profile> profile = std::nullopt);
-
-    /// @brief
-    /// @param path
-    /// @return
     handle_event_track fetch_event_track(const std::filesystem::path& path);
-
-    /// @brief
-    /// @param path
-    /// @param font_size
-    /// @return
     handle_font fetch_font(context_window& window, const std::filesystem::path& path, const float32 font_size);
-
-    /// @brief
-    /// @param path
-    /// @return
     handle_geometry fetch_geometry(const std::filesystem::path& path);
-
-    /// @brief
-    /// @param paths
-    /// @param profile
-    /// @return
     handle_image fetch_image(const std::filesystem::path& path, const std::optional<data_image_profile> profile = std::nullopt);
-
-    /// @brief
-    /// @param path
-    /// @return
     handle_mesh fetch_mesh(const std::filesystem::path& path);
-
-    /// @brief
-    /// @param path
-    /// @return
     handle_motion_track fetch_motion_track(const std::filesystem::path& path);
-
-    /// @brief
-    /// @param path
-    /// @return
     handle_shape fetch_shape(const std::filesystem::path& path, const detail::object_shape_algorithm algorithm = detail::object_shape_algorithm::triangle_mesh);
-
-    /// @brief
-    /// @param path
-    /// @return
     handle_skeleton fetch_skeleton(const std::filesystem::path& path);
-
-    /// @brief
-    /// @param path
-    /// @return
     handle_sound_track fetch_sound_track(const std::filesystem::path& path);
-
-    /// @brief Loads an image from a file asynchronously and uploads directly to the device,
-    /// lets the runtime choose the best format it can use without downloading the others
-    /// @param path path to load uncompressed image version from
-    /// @param profile
     handle_texture fetch_texture(const std::filesystem::path& path, const std::optional<data_image_profile> profile = std::nullopt);
 
     template <typename AssetType>
     handle_user_asset<AssetType> fetch_user_asset(const std::filesystem::path& path)
     {
-        detail::assets_buffer<AssetType>& _assets = _manager->get_user_asset_storage<AssetType>().assets;
+        detail::assets_buffer<AssetType>& _assets = _manager->get_asset_buffer<AssetType>();
         const std::string _cache_id = path.string();
 
         detail::assets_cell<AssetType>* _cell = _assets.find_by_id(_cache_id);
@@ -160,7 +160,7 @@ struct context_object {
     handle_user_asset<AssetType> create_user_asset(AssetTypeArgs&&... args)
     {
         handle_user_asset<AssetType> _user_asset = {};
-        _user_asset._cached = _manager->get_user_asset_storage<AssetType>().assets.create_cell(
+        _user_asset._cached = _manager->get_asset_buffer<AssetType>().create_cell(
             detail::container_async<AssetType>(AssetType(std::forward<AssetTypeArgs>(args)...)));
         _user_asset._refcount = detail::flag_refcount(&_user_asset._cached->refcount_control);
         return _user_asset;

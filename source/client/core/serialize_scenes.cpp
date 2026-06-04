@@ -16,15 +16,15 @@ namespace detail {
     namespace {
 
         template <typename ComponentType>
-        [[nodiscard]] std::vector<recipe_object_scene_component<ComponentType>> _save_component_group(
+        [[nodiscard]] std::vector<snapshot_object_scene_component<ComponentType>> _save_component_group(
             storage_registry& registry,
             object_entity_scene_index scene,
             const std::unordered_map<object_entity, uint32>& entity_ids)
         {
-            std::vector<recipe_object_scene_component<ComponentType>> components = {};
+            std::vector<snapshot_object_scene_component<ComponentType>> components = {};
 
             registry.view<ComponentType>(scene, exclude<>).each([&](object_entity entity, ComponentType& component) {
-                recipe_object_scene_component<ComponentType>& back = components.emplace_back();
+                snapshot_object_scene_component<ComponentType>& back = components.emplace_back();
                 back.component_save_id = entity_ids.at(entity);
                 back.component_save = &component;
             });
@@ -84,28 +84,9 @@ namespace detail {
         game.rendering.update_draw_debug_guizmos(game.dynamics, game.input, game.scenes);
     }
 
-    void apply_recipes_for(
-        manager_window& window,
-        manager_assets& objects,
-        assets_buffer<object_font>& cached_vector,
-        mappings_container_cache_vector_load<object_font>& mappings,
-        std::vector<recipe_object_entry<recipe_object_font>>& recipes)
+    snapshot_manager_scene make_snapshot(manager_scenes& manager, mappings_manager_scene_save& mappings)
     {
-        for (auto& entry : recipes) {
-            assets_cell<object_font>* cell = apply_recipe(window, objects, cached_vector, entry.recipe);
-
-            if (cell == nullptr) {
-                LUCARIA_DEBUG_ERROR("Failed to apply font recipe");
-                continue;
-            }
-
-            mappings.set(entry.save_id, cell);
-        }
-    }
-
-    recipe_manager_scene make_recipe(manager_scenes& manager, mappings_manager_scene_save& mappings)
-    {
-        recipe_manager_scene recipe;
+        snapshot_manager_scene snapshot;
 
         mappings.saving_scene_manager = &manager;
         mappings.save_map_scene_ids.clear();
@@ -162,7 +143,7 @@ namespace detail {
             const object_entity_scene_index segment = scene.index_for_context;
             const std::unordered_map<object_entity, uint32>& entity_ids = mappings.save_map_scene_entities.at(segment);
 
-            recipe_object_scene& saved = recipe.scenes.emplace_back();
+            snapshot_object_scene& saved = snapshot.scenes.emplace_back();
 
             saved.scene_save_id = mappings.save_map_scene_ids.at(segment);
 
@@ -186,7 +167,7 @@ namespace detail {
             saved.components.transforms = _save_component_group<component_transform>(manager.registry, segment, entity_ids);
 
             for (auto& [type_id, callbacks] : manager.user_component_types) {
-                recipe_object_scene_user_component_group& user_component = saved.user_components.emplace_back();
+                snapshot_object_scene_user_component_group& user_component = saved.user_components.emplace_back();
 
                 user_component.type_id = type_id;
                 user_component.scene = &scene;
@@ -194,7 +175,25 @@ namespace detail {
             }
         }
 
-        return recipe;
+        return snapshot;
+    }
+
+}
+}
+
+namespace lucaria {
+namespace detail {
+
+    void manager_scenes::save(game_save_context& context)
+    {
+        snapshot_manager_scene snapshot = make_snapshot(*this, context.mappings.scenes);
+        context.field("scenes", snapshot.scenes);
+    }
+
+    void manager_scenes::load(game_load_context& context)
+    {
+        std::vector<snapshot_object_scene> loaded_scenes = {};
+        context.field("scenes", loaded_scenes);
     }
 
 }

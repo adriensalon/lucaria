@@ -20,21 +20,5 @@ namespace detail {
         }
     }
 
-    struct storage_user_asset_base {
-        virtual ~storage_user_asset_base() = default;
-    };
-
-    template <typename AssetType>
-    struct storage_user_asset final : storage_user_asset_base {
-        assets_buffer<AssetType> assets;
-    };
-
-    // implemented in manager_assets.hpp
-    template <typename AssetType>
-    [[nodiscard]] assets_cell<AssetType>& fetch(
-        manager_assets& objects,
-        assets_buffer<AssetType>& cached_vector,
-        const std::filesystem::path& path);
-
 }
 }

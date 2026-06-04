@@ -60,38 +60,5 @@ namespace detail {
         }
 
     };
-
-    [[nodiscard]] assets_cell<object_event_track>& fetch(
-		manager_assets& objects, 
-        assets_buffer<object_event_track>& cached_vector,
-        const std::filesystem::path& path);
-
-    // recipes
-
-    struct recipe_object_event_track_path {
-        std::filesystem::path path;
-
-        template <typename ArchiveType>
-        void serialize(ArchiveType& archive)
-        {
-            archive(cereal::make_nvp("path", path));
-        }
-    };
-
-    struct recipe_object_event_track_data {
-        data_event_track data;
-
-        template <typename ArchiveType>
-        void serialize(ArchiveType& archive)
-        {
-            archive(cereal::make_nvp("data", data));
-        }
-    };
-
-    using recipe_object_event_track = std::variant<recipe_object_event_track_path, recipe_object_event_track_data>;
-
-    [[nodiscard]] recipe_object_event_track make_recipe(const assets_cell<object_event_track>& cache);
-	[[nodiscard]] assets_cell<object_event_track>* apply_recipe(manager_assets& objects, assets_buffer<object_event_track>& cached, recipe_object_event_track& recipe);
-
 }
 }

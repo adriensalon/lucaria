@@ -5,8 +5,19 @@
 #include <lucaria/core/utils_error.hpp>
 #include <lucaria/core/utils_refcount.hpp>
 
+#include <memory>
+#include <string>
+#include <functional>
+#include <utility>
+#include <typeindex>
+#include <typeinfo>
+#include <unordered_map>
+
 namespace lucaria {
 namespace detail {
+
+    struct manager_assets;
+    struct manager_window;
 
     template <typename Asset>
     struct assets_cell {
@@ -144,6 +155,65 @@ namespace detail {
             _cells_by_id.emplace(cell->cache_id, cell);
         }
     };
+
+    struct assets_registry {
+        assets_registry() = default;
+        assets_registry(const assets_registry&) = delete;
+        assets_registry& operator=(const assets_registry&) = delete;
+        assets_registry(assets_registry&&) = delete;
+        assets_registry& operator=(assets_registry&&) = delete;
+
+        template <typename Asset>
+        [[nodiscard]] assets_buffer<Asset>& get()
+        {
+            const std::type_index type = std::type_index(typeid(Asset));
+            auto iterator = _buffers.find(type);
+            if (iterator == _buffers.end()) {
+                std::unique_ptr<assets_buffer<Asset>> buffer = std::make_unique<assets_buffer<Asset>>();
+                assets_buffer<Asset>* raw = buffer.get();
+                _buffers.emplace(type, std::move(buffer));
+                return *raw;
+            }
+            return *static_cast<assets_buffer<Asset>*>(iterator->second.get());
+        }
+
+        template <typename Asset>
+        [[nodiscard]] const assets_buffer<Asset>& get() const
+        {
+            return const_cast<assets_registry*>(this)->get<Asset>();
+        }
+
+        void clear()
+        {
+            for (auto& [type, buffer] : _buffers) {
+                buffer->clear();
+            }
+        }
+
+        void gc_unused()
+        {
+            for (auto& [type, buffer] : _buffers) {
+                buffer->gc_unused();
+            }
+        }
+
+        template <typename Asset, typename Configure>
+        [[nodiscard]] assets_cell<Asset>& fetch(
+            manager_assets& objects,
+            std::string cache_id,
+            Configure&& configure,
+            manager_window* window = nullptr);
+
+        template <typename Asset, typename... Args>
+        [[nodiscard]] assets_cell<Asset>& create(Args&&... args)
+        {
+            return *get<Asset>().create_cell(container_async<Asset>(Asset(std::forward<Args>(args)...)));
+        }
+
+    private:
+        std::unordered_map<std::type_index, std::unique_ptr<assets_buffer_base>> _buffers = {};
+    };
+
 
 }
 }
