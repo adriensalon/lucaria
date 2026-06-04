@@ -44,10 +44,21 @@ namespace detail {
         object_mesh(const object_geometry& geometry);
 
         object_mesh_origin origin;
-		std::optional<std::filesystem::path> origin_path;
-		
+        std::filesystem::path origin_path;
         std::vector<float32x4x4> invposes;
         uint32 size;
+
+        template <typename Archive>
+        void serialize(Archive& archive)
+        {
+            archive(cereal::make_nvp("origin", origin));
+            if (origin == object_mesh_origin::path) {
+                archive(cereal::make_nvp("origin_path", origin_path));
+            }
+            if (origin == object_mesh_origin::data) {
+                // TODO recreate geometry from mesh
+            }
+        }
 
 #if defined(LUCARIA_BACKEND_OPENGL)
         flag_owning ownership = {};
@@ -120,7 +131,7 @@ namespace detail {
     using recipe_object_mesh = std::variant<recipe_object_mesh_path, recipe_object_mesh_data>;
 
     [[nodiscard]] recipe_object_mesh make_recipe(const assets_cell<object_mesh>& cache);
-	[[nodiscard]] assets_cell<object_mesh>* apply_recipe(manager_assets& objects, assets_buffer<object_mesh>& cached, recipe_object_mesh& recipe);
+    [[nodiscard]] assets_cell<object_mesh>* apply_recipe(manager_assets& objects, assets_buffer<object_mesh>& cached, recipe_object_mesh& recipe);
 
 }
 }

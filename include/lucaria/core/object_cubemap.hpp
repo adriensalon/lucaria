@@ -1,7 +1,8 @@
 #pragma once
 
-#include <lucaria/core/utils_owning.hpp>
 #include <lucaria/core/object_image.hpp>
+#include <lucaria/core/utils_owning.hpp>
+
 
 #if defined(LUCARIA_BACKEND_OPENGL)
 #include <lucaria/core/backend_opengl.hpp>
@@ -14,7 +15,7 @@
 namespace lucaria {
 namespace detail {
 
-	struct manager_assets;
+    struct manager_assets;
 
     enum struct object_cubemap_origin {
         path,
@@ -32,8 +33,21 @@ namespace detail {
         object_cubemap(const std::array<object_image, 6>& images);
 
         object_cubemap_origin origin;
-		std::optional<std::array<std::filesystem::path, 6>> origin_paths;
-		std::optional<data_image_profile> origin_profile;
+        data_image_profile profile;
+        std::array<std::filesystem::path, 6> origin_paths;
+
+        template <typename Archive>
+        void serialize(Archive& archive)
+        {
+            archive(cereal::make_nvp("origin", origin));
+            archive(cereal::make_nvp("profile", profile));
+            if (origin == object_cubemap_origin::path) {
+                archive(cereal::make_nvp("origin_path", origin_paths));
+            }
+            if (origin == object_cubemap_origin::data) {
+                // TODO
+            }
+        }
 
 #if defined(LUCARIA_BACKEND_OPENGL)
         flag_owning ownership = {};
@@ -47,7 +61,7 @@ namespace detail {
     };
 
     [[nodiscard]] assets_cell<object_cubemap>& fetch(
-		manager_assets& objects,
+        manager_assets& objects,
         assets_buffer<object_cubemap>& cached_vector,
         const std::array<std::filesystem::path, 6>& paths,
         const std::optional<data_image_profile> profile = std::nullopt);
@@ -79,7 +93,7 @@ namespace detail {
     using recipe_object_cubemap = std::variant<recipe_object_cubemap_path, recipe_object_cubemap_data>;
 
     [[nodiscard]] recipe_object_cubemap make_recipe(const assets_cell<object_cubemap>& cache);
-	[[nodiscard]] assets_cell<object_cubemap>* apply_recipe(manager_assets& objects, assets_buffer<object_cubemap>& cached, recipe_object_cubemap& recipe);
+    [[nodiscard]] assets_cell<object_cubemap>* apply_recipe(manager_assets& objects, assets_buffer<object_cubemap>& cached, recipe_object_cubemap& recipe);
 
 }
 }

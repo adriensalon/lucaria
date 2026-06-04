@@ -39,7 +39,7 @@ namespace detail {
         const object_skeleton& _skeleton = cached.fetched.value();
 
         if (_skeleton.origin == object_skeleton_origin::path) {
-            return recipe_object_skeleton_path { _skeleton.origin_path.value() };
+            return recipe_object_skeleton_path { _skeleton.origin_path };
         }
 
         else {

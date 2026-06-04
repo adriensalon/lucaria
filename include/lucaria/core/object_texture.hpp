@@ -39,9 +39,25 @@ namespace detail {
         [[nodiscard]] ImTextureID imgui_texture() const;
 
         object_texture_origin origin;
-		std::optional<std::filesystem::path> origin_path;
-		std::optional<data_image_profile> origin_profile;
-		
+        std::filesystem::path origin_path;
+
+        template <typename Archive>
+        void serialize(Archive& archive)
+        {
+            archive(cereal::make_nvp("origin", origin));
+            archive(cereal::make_nvp("profile", profile));
+            if (origin == object_texture_origin::path) {
+                archive(cereal::make_nvp("origin_path", origin_path));
+            }
+            if (origin == object_texture_origin::data) {
+                // TODO recreate image from texture
+            }
+            if (origin == object_texture_origin::size) {
+				// TODO
+            }
+        }
+
+        data_image_profile profile;
         uint32x2 size;
 
 #if defined(LUCARIA_BACKEND_OPENGL)

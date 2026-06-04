@@ -65,7 +65,7 @@ namespace detail {
         const object_motion_track& _motion_track = cached.fetched.value();
 
         if (_motion_track.origin == object_motion_track_origin::path) {
-            return recipe_object_motion_track_path { _motion_track.origin_path.value() };
+            return recipe_object_motion_track_path { _motion_track.origin_path };
         }
 
         else {

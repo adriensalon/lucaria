@@ -145,7 +145,7 @@ namespace detail {
         const object_audio& _audio = cached.fetched.value();
 
         if (_audio.origin == object_audio_origin::path) {
-            return recipe_object_audio_path { cached.fetched.value().origin_path.value() };
+            return recipe_object_audio_path { cached.fetched.value().origin_path };
         }
 
         else if (_audio.origin == object_audio_origin::data) {

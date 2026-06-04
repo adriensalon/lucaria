@@ -25,9 +25,42 @@ namespace detail {
         object_animation(const std::vector<char>& bytes);
 
         object_animation_origin origin;
-		std::optional<std::filesystem::path> origin_path;
-		
+        std::filesystem::path origin_path;
         ozz::animation::Animation animation;
+
+        template <typename Archive>
+        void save(Archive& archive)
+        {
+            archive(cereal::make_nvp("origin", origin));
+            archive(cereal::make_nvp("origin_path", origin_path));
+        }
+
+        template <typename Archive>
+        void load(Archive& archive)
+        {
+            archive(cereal::make_nvp("origin", origin));
+            archive(cereal::make_nvp("origin_path", origin_path));
+            // call fetch and let this object die ?
+        }
+    };
+
+    template <>
+    struct objectloader<object_animation> {
+
+        template <typename Archive>
+        void save(Archive& archive)
+        {
+            archive(cereal::make_nvp("origin", origin));
+            archive(cereal::make_nvp("origin_path", origin_path));
+        }
+
+        template <typename Archive>
+        void load(Archive& archive)
+        {
+            archive(cereal::make_nvp("origin", origin));
+            archive(cereal::make_nvp("origin_path", origin_path));
+            // call fetch and let this object die ?
+        }
     };
 
     [[nodiscard]] assets_cell<object_animation>& fetch(

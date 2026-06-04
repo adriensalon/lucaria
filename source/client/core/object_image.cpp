@@ -165,7 +165,7 @@ namespace detail {
 
     object_image::object_image(data_image&& data)
         : origin(object_image_origin::data)
-        , origin_profile(data.profile)
+        , profile(data.profile)
         , data(std::move(data))
     {
     }
@@ -194,7 +194,7 @@ namespace detail {
         const object_image& _image = cached.fetched.value();
 
         if (_image.origin == object_image_origin::path) {
-            return recipe_object_image_path { _image.origin_path.value(), _image.data.profile };
+            return recipe_object_image_path { _image.origin_path, _image.data.profile };
         }
 
         else if (_image.origin == object_image_origin::data) {

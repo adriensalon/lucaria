@@ -65,7 +65,7 @@ namespace detail {
         const object_font& _font = cached.fetched.value();
 
         if (_font.origin == object_font_origin::path) {
-            return recipe_object_font_path { cached.fetched.value().origin_path.value(), _font.font->FontSize };
+            return recipe_object_font_path { cached.fetched.value().origin_path, _font.font->FontSize };
         }
 
         else {

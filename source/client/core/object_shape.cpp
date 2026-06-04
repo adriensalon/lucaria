@@ -55,8 +55,7 @@ namespace detail {
     }
 
     object_shape::object_shape(btCollisionShape* handle, const glm::float32 zdistance)
-        : algorithm(std::nullopt)
-		, origin_extents(float32x3(0))
+		: origin_extents(float32x3(0))
     {
         const int _shape_type = handle->getShapeType();
         if (_shape_type == BOX_SHAPE_PROXYTYPE) {
@@ -67,19 +66,19 @@ namespace detail {
 		} else if (_shape_type == SPHERE_SHAPE_PROXYTYPE) {
             btSphereShape* _casted_shape = static_cast<btSphereShape*>(handle);
             origin = object_shape_origin::sphere;
-            origin_extents->x = static_cast<float32>(_casted_shape->getRadius());
+            origin_extents.x = static_cast<float32>(_casted_shape->getRadius());
         
 		} else if (_shape_type == CAPSULE_SHAPE_PROXYTYPE) {
             btCapsuleShape* _casted_shape = static_cast<btCapsuleShape*>(handle);
             origin = object_shape_origin::capsule;
-            origin_extents->x = static_cast<float32>(_casted_shape->getRadius());
-            origin_extents->y = 2.f * static_cast<float32>(_casted_shape->getHalfHeight());
+            origin_extents.x = static_cast<float32>(_casted_shape->getRadius());
+            origin_extents.y = 2.f * static_cast<float32>(_casted_shape->getHalfHeight());
         
 		} else if (_shape_type == CONE_SHAPE_PROXYTYPE) {
             btConeShape* _casted_shape = static_cast<btConeShape*>(handle);
             origin = object_shape_origin::cone;
-            origin_extents->x = static_cast<float32>(_casted_shape->getRadius());
-            origin_extents->y = static_cast<float32>(_casted_shape->getHeight());
+            origin_extents.x = static_cast<float32>(_casted_shape->getRadius());
+            origin_extents.y = static_cast<float32>(_casted_shape->getHeight());
         
 		} else {
             LUCARIA_DEBUG_ERROR("Implementation error");
@@ -115,7 +114,7 @@ namespace detail {
         const object_shape& _shape = cached.fetched.value();
 
         if (_shape.origin == object_shape_origin::path) {
-            return recipe_object_shape_path { _shape.origin_path.value(), _shape.algorithm.value() };
+            return recipe_object_shape_path { _shape.origin_path, _shape.algorithm };
 
         } else if (_shape.origin == object_shape_origin::data) {
             return {}; // TODO

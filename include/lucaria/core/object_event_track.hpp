@@ -25,9 +25,20 @@ namespace detail {
         object_event_track(data_event_track&& data);
 
         object_event_track_origin origin;
-		std::optional<std::filesystem::path> origin_path;
-		
+		std::filesystem::path origin_path;		
         data_event_track data;
+
+        template <typename Archive>
+        void serialize(Archive& archive)
+        {
+            archive(cereal::make_nvp("origin", origin));
+            if (origin == object_event_track_origin::path) {
+                archive(cereal::make_nvp("origin_path", origin_path));
+            }
+            if (origin == object_event_track_origin::data) {
+                archive(cereal::make_nvp("origin_data", data));
+            }
+        }
     };
 
     [[nodiscard]] assets_cell<object_event_track>& fetch(

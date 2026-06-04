@@ -31,7 +31,7 @@ namespace detail {
 
     object_texture::object_texture(const object_image& from)
         : origin(from.origin == object_image_origin::path ? object_texture_origin::path : object_texture_origin::data)
-		, origin_profile(from.origin_profile)
+		, profile(from.profile)
     {
         size = { from.data.width, from.data.height };
         glGenTextures(1, &id);

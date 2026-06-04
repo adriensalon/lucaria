@@ -29,10 +29,22 @@ namespace detail {
         // object_image(const object_cubemap& cubemap, const uint32 face_index);
 
         object_image_origin origin;
-		std::optional<std::filesystem::path> origin_path;
-		std::optional<data_image_profile> origin_profile;
-		
+		std::filesystem::path origin_path;		
+		data_image_profile profile;
         data_image data;
+
+        template <typename Archive>
+        void serialize(Archive& archive)
+        {
+            archive(cereal::make_nvp("origin", origin));
+            archive(cereal::make_nvp("profile", profile));
+            if (origin == object_image_origin::path) {
+                archive(cereal::make_nvp("origin_path", origin_path));
+            }
+            if (origin == object_image_origin::data) {
+                archive(cereal::make_nvp("origin_data", data));
+            }
+        }
     };
 
     [[nodiscard]] std::filesystem::path resolve_profile(

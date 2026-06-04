@@ -27,9 +27,20 @@ namespace detail {
         // object_audio(const object_sound_track& sound_track); // NOT IMPLEMENTED YET
 
         object_audio_origin origin;
-		std::optional<std::filesystem::path> origin_path;
-		
+        std::filesystem::path origin_path;
         data_audio data;
+
+        template <typename Archive>
+        void serialize(Archive& archive)
+        {
+            archive(cereal::make_nvp("origin", origin));
+            if (origin == object_audio_origin::path) {
+                archive(cereal::make_nvp("origin_path", origin_path));
+            }
+            if (origin == object_audio_origin::data) {
+                archive(cereal::make_nvp("origin_data", data));
+            }
+        }
     };
 
     [[nodiscard]] assets_cell<object_audio>& fetch(
@@ -62,6 +73,6 @@ namespace detail {
     using recipe_object_audio = std::variant<recipe_object_audio_path, recipe_object_audio_data>;
 
     [[nodiscard]] recipe_object_audio make_recipe(const assets_cell<object_audio>& cache);
-	[[nodiscard]] assets_cell<object_audio>* apply_recipe(manager_assets& objects, assets_buffer<object_audio>& cached, recipe_object_audio& recipe);
+    [[nodiscard]] assets_cell<object_audio>* apply_recipe(manager_assets& objects, assets_buffer<object_audio>& cached, recipe_object_audio& recipe);
 }
 }

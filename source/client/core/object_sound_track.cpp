@@ -57,7 +57,7 @@ namespace detail {
         const object_sound_track& _sound_track = cached.fetched.value();
 
         if (_sound_track.origin == object_sound_track_origin::path) {
-            return recipe_object_sound_track_path { _sound_track.origin_path.value() };
+            return recipe_object_sound_track_path { _sound_track.origin_path };
         }
 
         // else if (_sound_track.origin == object_sound_track_origin::data) {

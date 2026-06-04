@@ -26,12 +26,23 @@ namespace detail {
         object_sound_track(const object_audio& from);
 
         object_sound_track_origin origin;
-		std::optional<std::filesystem::path> origin_path;
-		
+		std::filesystem::path origin_path;		
         flag_owning ownership = {};
         ALuint id;
         uint32 sample_rate;
         uint32 samples_count;
+
+        template <typename Archive>
+        void serialize(Archive& archive)
+        {
+            archive(cereal::make_nvp("origin", origin));
+            if (origin == object_sound_track_origin::path) {
+                archive(cereal::make_nvp("origin_path", origin_path));
+            }
+            if (origin == object_sound_track_origin::data) {
+				// impossible to recreate audio from sound_track withou AL extension for now
+            }
+        }
     };
 
     [[nodiscard]] assets_cell<object_sound_track>& fetch(

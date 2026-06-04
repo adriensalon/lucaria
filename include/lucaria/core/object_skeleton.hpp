@@ -25,9 +25,17 @@ namespace detail {
         object_skeleton(const std::vector<char>& bytes);
 
         object_skeleton_origin origin;
-		std::optional<std::filesystem::path> origin_path;
-		
+		std::filesystem::path origin_path;		
         ozz::animation::Skeleton skeleton;
+
+        template <typename Archive>
+        void serialize(Archive& archive)
+        {
+            archive(cereal::make_nvp("origin", origin));
+            if (origin == object_skeleton_origin::path) {
+                archive(cereal::make_nvp("origin_path", origin_path));
+            }
+        }
     };
 
     [[nodiscard]] assets_cell<object_skeleton>& fetch(

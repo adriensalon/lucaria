@@ -31,7 +31,7 @@ namespace detail {
         const object_mesh& _mesh = cached.fetched.value();
 
         if (_mesh.origin == object_mesh_origin::path) {
-            return recipe_object_mesh_path { _mesh.origin_path.value() };
+            return recipe_object_mesh_path { _mesh.origin_path };
         }
 
         // else if (_mesh.origin == object_mesh_origin::data) {

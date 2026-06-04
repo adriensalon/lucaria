@@ -29,9 +29,20 @@ namespace detail {
         object_geometry(data_geometry&& data);
 
         object_geometry_origin origin;
-		std::optional<std::filesystem::path> origin_path;
-		
+		std::filesystem::path origin_path;		
         data_geometry data;
+
+        template <typename Archive>
+        void serialize(Archive& archive)
+        {
+            archive(cereal::make_nvp("origin", origin));
+            if (origin == object_geometry_origin::path) {
+                archive(cereal::make_nvp("origin_path", origin_path));
+            }
+            if (origin == object_geometry_origin::data) {
+                archive(cereal::make_nvp("origin_data", data));
+            }
+        }
     };
 
     [[nodiscard]] assets_cell<object_geometry>& fetch(

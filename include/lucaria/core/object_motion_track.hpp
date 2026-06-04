@@ -27,10 +27,18 @@ namespace detail {
         [[nodiscard]] float32x3 get_total_translation() const;
 
         object_motion_track_origin origin;
-		std::optional<std::filesystem::path> origin_path;
-		
+		std::filesystem::path origin_path;		
         ozz::animation::Float3Track translation_track;
         ozz::animation::QuaternionTrack rotation_track;
+
+        template <typename Archive>
+        void serialize(Archive& archive)
+        {
+            archive(cereal::make_nvp("origin", origin));
+            if (origin == object_motion_track_origin::path) {
+                archive(cereal::make_nvp("origin_path", origin_path));
+            }
+        }
     };
 
     [[nodiscard]] assets_cell<object_motion_track>& fetch(

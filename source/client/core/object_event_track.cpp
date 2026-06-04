@@ -44,7 +44,7 @@ namespace detail {
         const object_event_track& _event_track = cached.fetched.value();
 
         if (_event_track.origin == object_event_track_origin::path) {
-            return recipe_object_event_track_path { cached.fetched.value().origin_path.value() };
+            return recipe_object_event_track_path { cached.fetched.value().origin_path };
         }
 
         else if (_event_track.origin == object_event_track_origin::data) {

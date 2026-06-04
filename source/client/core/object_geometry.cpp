@@ -43,7 +43,7 @@ namespace detail {
         const object_geometry& _geometry = cached.fetched.value();
 
         if (_geometry.origin == object_geometry_origin::path) {
-            return recipe_object_geometry_path { cached.fetched.value().origin_path.value() };
+            return recipe_object_geometry_path { cached.fetched.value().origin_path };
 
         } else if (_geometry.origin == object_geometry_origin::data) {
             return recipe_object_geometry_data { _geometry.data };

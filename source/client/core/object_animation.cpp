@@ -41,7 +41,7 @@ namespace detail {
         const object_animation& _animation = cached.fetched.value();
 
         if (_animation.origin == object_animation_origin::path) {
-            return recipe_object_animation_path { cached.fetched.value().origin_path.value() };
+            return recipe_object_animation_path { cached.fetched.value().origin_path };
 
         } else {
             LUCARIA_DEBUG_ERROR("Invalid implementation");

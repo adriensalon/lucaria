@@ -37,15 +37,38 @@ namespace detail {
         object_shape(btCollisionShape* collision_shape, const glm::float32 half_height = 0.f);
 
         object_shape_origin origin;
-		std::optional<std::filesystem::path> origin_path;
-        std::optional<float32x3> origin_extents;
-        std::optional<object_shape_algorithm> algorithm;
-		
+		std::filesystem::path origin_path;
+        float32x3 origin_extents;
+        object_shape_algorithm algorithm;		
         std::unique_ptr<btCollisionShape> collision_shape;
         std::unique_ptr<btTriangleMesh> triangle_geometry;
         glm::mat4 feet_to_center;
         glm::mat4 center_to_feet;
         glm::float32 half_height;
+
+        template <typename Archive>
+        void serialize(Archive& archive)
+        {
+            archive(cereal::make_nvp("origin", origin));
+            if (origin == object_shape_origin::path) {
+                archive(cereal::make_nvp("origin_path", origin_path));
+            }
+            if (origin == object_shape_origin::data) {
+				// TODO recreate geometry from shape triangles
+            }
+            if (origin == object_shape_origin::box) {
+				// TODO recreate geometry from shape triangles
+            }
+            if (origin == object_shape_origin::sphere) {
+				// TODO recreate geometry from shape triangles
+            }
+            if (origin == object_shape_origin::capsule) {
+				// TODO recreate geometry from shape triangles
+            }
+            if (origin == object_shape_origin::cone) {
+				// TODO recreate geometry from shape triangles
+            }
+        }
     };
 
     [[nodiscard]] assets_cell<object_shape>& fetch(

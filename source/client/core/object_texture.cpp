@@ -33,7 +33,7 @@ namespace detail {
         const object_texture& _texture = cached.fetched.value();
 
         if (_texture.origin == object_texture_origin::path) {
-            return recipe_object_texture_path { _texture.origin_path.value() };
+            return recipe_object_texture_path { _texture.origin_path };
         }
 
         // else if (_texture.origin == object_texture_origin::data) {

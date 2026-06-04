@@ -10,9 +10,9 @@
 
 namespace lucaria {
 namespace detail {
-	
-	struct manager_assets;
-	struct manager_window;
+
+    struct manager_assets;
+    struct manager_window;
 
     enum struct object_font_origin {
         path
@@ -28,18 +28,33 @@ namespace detail {
         object_font(manager_window& window, const std::vector<char>& data_bytes, const float32 font_size);
 
         object_font_origin origin;
-		std::optional<std::filesystem::path> origin_path;
-
+        std::filesystem::path origin_path;
         ImFont* font;
+
+        template <typename Archive>
+        void serialize(Archive& archive)
+        {
+            archive(cereal::make_nvp("origin", origin));
+            archive(cereal::make_nvp("origin_path", origin_path));
+        }
     };
 
     [[nodiscard]] assets_cell<object_font>& fetch(
-		manager_window& window, 
+        manager_window& window,
         manager_assets& objects,
         assets_buffer<object_font>& cached_vector,
         const std::filesystem::path& path,
         const float32 font_size);
 
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
     // recipes
 
     struct recipe_object_font_path {
@@ -57,7 +72,7 @@ namespace detail {
     using recipe_object_font = std::variant<recipe_object_font_path>;
 
     [[nodiscard]] recipe_object_font make_recipe(const assets_cell<object_font>& cache);
-	[[nodiscard]] assets_cell<object_font>* apply_recipe(manager_window& window, manager_assets& objects, assets_buffer<object_font>& cached, recipe_object_font& recipe);
+    [[nodiscard]] assets_cell<object_font>* apply_recipe(manager_window& window, manager_assets& objects, assets_buffer<object_font>& cached, recipe_object_font& recipe);
 
 }
 }
