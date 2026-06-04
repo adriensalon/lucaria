@@ -14,6 +14,8 @@ namespace detail {
     struct manager_assets;
     struct manager_window;
 
+    [[nodiscard]] std::vector<char> decode_font_bytes(const std::vector<char>& bytes);
+
     enum struct object_font_origin {
         path
     };
@@ -55,7 +57,8 @@ namespace detail {
                 return;
             }
             context.fetch(_path, [this, _path, _font_size, _window](const std::vector<char>& bytes) {
-                *this = object_font(*_window, bytes, _font_size);
+                std::vector<char> _font_bytes = decode_font_bytes(bytes);
+                *this = object_font(*_window, _font_bytes, _font_size);
                 origin_path = _path;
                 font_size = _font_size;
             });

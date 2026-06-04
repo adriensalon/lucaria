@@ -10,6 +10,26 @@
 namespace lucaria {
 namespace detail {
 
+    std::vector<char> decode_font_bytes(const std::vector<char>& bytes)
+    {
+        const std::uint8_t* _raw_ptr = reinterpret_cast<const std::uint8_t*>(bytes.data());
+        const std::size_t _expected_size = woff2::ComputeWOFF2FinalSize(_raw_ptr, bytes.size());
+        if (_expected_size == 0) {
+            return bytes;
+        }
+
+        std::string _output_str;
+        _output_str.reserve(std::min(_expected_size, woff2::kDefaultMaxSize));
+        woff2::WOFF2StringOut _woff2out(&_output_str);
+        if (!woff2::ConvertWOFF2ToTTF(_raw_ptr, bytes.size(), &_woff2out)) {
+            LUCARIA_DEBUG_ERROR("Impossible to decode woff2 font")
+        }
+
+        std::vector<char> _output;
+        _output.assign(std::make_move_iterator(_output_str.begin()), std::make_move_iterator(_output_str.end()));
+        return _output;
+    }
+
     object_font::object_font(manager_window& window, const std::vector<char>& bytes, const float32 font_size)
         : origin(object_font_origin::path)
         , font_size(font_size)
@@ -37,20 +57,8 @@ namespace detail {
         return *cached_vector.get_or_create_by_id(_cache_id, [&window, &objects, path, font_size] {
             std::shared_ptr<std::promise<std::shared_ptr<std::vector<char>>>> _data_promise = std::make_shared<std::promise<std::shared_ptr<std::vector<char>>>>();
             objects.fetch_bytes(path, [_data_promise](const std::vector<char>& _data_bytes) {
-				const std::uint8_t* _raw_ptr = reinterpret_cast<const uint8_t*>(_data_bytes.data());
-				const std::size_t _expected_size = woff2::ComputeWOFF2FinalSize(_raw_ptr, _data_bytes.size());
-				if (_expected_size == 0) {
-					LUCARIA_DEBUG_ERROR("Failed to compute woff2 final size");
-				}
-				std::string _output_str;
-				_output_str.reserve(std::min(_expected_size, woff2::kDefaultMaxSize));
-				woff2::WOFF2StringOut _woff2out(&_output_str);
-				if (!woff2::ConvertWOFF2ToTTF(_raw_ptr, _data_bytes.size(), &_woff2out)) {
-					LUCARIA_DEBUG_ERROR("Impossible to decode woff2 font")
-				}
-				std::shared_ptr<std::vector<char>> _shared_output = std::make_shared<std::vector<char>>();
-				_shared_output->assign(std::make_move_iterator(_output_str.begin()), std::make_move_iterator(_output_str.end()));
-				_data_promise->set_value(std::move(_shared_output)); }, true);
+                std::shared_ptr<std::vector<char>> _shared_output = std::make_shared<std::vector<char>>(decode_font_bytes(_data_bytes));
+                _data_promise->set_value(std::move(_shared_output)); }, true);
 
             // create font on main thread
             return container_async<object_font>(_data_promise->get_future(), [&window, font_size, path](const std::shared_ptr<std::vector<char>>& bytes) {

@@ -1,9 +1,11 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <filesystem>
 #include <functional>
+#include <future>
 #include <memory>
 #include <mutex>
 #include <type_traits>
@@ -44,8 +46,15 @@ namespace detail {
     template <typename AssetType, typename ArchiveType>
     struct load_storage_context;
 
+    struct load_context_task_base {
+        virtual ~load_context_task_base() = default;
+        virtual bool poll() = 0;
+        virtual bool finished() const = 0;
+    };
+
     struct load_storage_context_base {
         virtual ~load_storage_context_base() = default;
+        virtual bool poll() = 0;
         virtual bool finished() const = 0;
     };
 
@@ -68,94 +77,75 @@ namespace detail {
         }
     };
 
-    template <typename AssetType, typename ArchiveType>
-    struct load_storage_context final : load_storage_context_base, std::enable_shared_from_this<load_storage_context<AssetType, ArchiveType>> {
-        ArchiveType& archive;
-        manager_assets& objects;
-        assets_cell<AssetType>* cell;
-        AssetType& self;
+    template <typename ValueType, typename Callback>
+    struct load_context_value_task final : load_context_task_base {
+        container_async<ValueType> value = {};
+        Callback callback;
+        bool done = false;
 
-        std::atomic<uint32> pending_fetches = 0;
+        load_context_value_task(std::future<ValueType>&& future, Callback&& callback)
+            : value(std::move(future), [](const ValueType& value) {
+                return value;
+            })
+            , callback(std::move(callback))
+        {
+        }
+
+        bool poll() override
+        {
+            if (done) {
+                return true;
+            }
+            if (!value.has_value()) {
+                return false;
+            }
+            callback(std::as_const(value.value()));
+            done = true;
+            return true;
+        }
+
+        bool finished() const override
+        {
+            return done;
+        }
+    };
+
+    struct asset_fetch_context : load_storage_context_base, std::enable_shared_from_this<asset_fetch_context> {
+        manager_assets& objects;
+
+        std::atomic<uint32> pending_worker_fetches = 0;
         std::atomic<bool> closed = false;
         std::atomic<bool> finish_invoked = false;
+        mutable std::mutex tasks_mutex = {};
+        std::vector<std::unique_ptr<load_context_task_base>> tasks = {};
         std::mutex finish_callbacks_mutex = {};
         std::vector<std::function<void()>> finish_callbacks = {};
 
-        load_storage_context(ArchiveType& archive, manager_assets& objects, assets_cell<AssetType>* cell, AssetType& self)
-            : archive(archive)
-            , objects(objects)
-            , cell(cell)
-            , self(self)
+        explicit asset_fetch_context(manager_assets& objects)
+            : objects(objects)
         {
-        }
-
-        template <typename... Args>
-        void operator()(Args&&... args)
-        {
-            archive(std::forward<Args>(args)...);
-        }
-
-        [[nodiscard]] manager_window* window()
-        {
-            return cereal::get_user_data<mappings_manager_game_load>(archive).loading_window;
         }
 
         template <typename Callback>
-        void fetch(const std::filesystem::path& path, Callback&& callback, bool must_persist = true)
-        {
-            pending_fetches.fetch_add(1, std::memory_order_acq_rel);
-            std::shared_ptr<load_storage_context> _context = this->shared_from_this();
-
-            objects.fetch_bytes(path, [_context, callback = std::forward<Callback>(callback)](const std::vector<char>& bytes) mutable {
-                callback(bytes);
-                _context->finish_one();
-            }, must_persist);
-        }
+        void fetch_worker(const std::filesystem::path& path, Callback&& callback, bool must_persist = true);
 
         template <typename Callback>
-        void fetch(const std::array<std::filesystem::path, 6>& paths, Callback&& callback, bool must_persist = true)
-        {
-            pending_fetches.fetch_add(1, std::memory_order_acq_rel);
-            std::shared_ptr<load_storage_context> _context = this->shared_from_this();
-
-            objects.fetch_bytes(paths, [_context, callback = std::forward<Callback>(callback)](const std::vector<std::vector<char>>& bytes) mutable {
-                callback(bytes);
-                _context->finish_one();
-            }, must_persist);
-        }
+        void fetch_worker(const std::vector<std::filesystem::path>& paths, Callback&& callback, bool must_persist = true);
 
         template <typename Callback>
-        void fetch(const std::vector<std::filesystem::path>& paths, Callback&& callback, bool must_persist = true)
-        {
-            pending_fetches.fetch_add(1, std::memory_order_acq_rel);
-            std::shared_ptr<load_storage_context> _context = this->shared_from_this();
+        void fetch_worker(const std::array<std::filesystem::path, 6>& paths, Callback&& callback, bool must_persist = true);
 
-            objects.fetch_bytes(paths, [_context, callback = std::forward<Callback>(callback)](const std::vector<std::vector<char>>& bytes) mutable {
-                callback(bytes);
-                _context->finish_one();
-            }, must_persist);
-        }
+        template <typename Callback>
+        void fetch(const std::filesystem::path& path, Callback&& callback, bool must_persist = true);
+
+        template <typename Callback>
+        void fetch(const std::vector<std::filesystem::path>& paths, Callback&& callback, bool must_persist = true);
+
+        template <typename Callback>
+        void fetch(const std::array<std::filesystem::path, 6>& paths, Callback&& callback, bool must_persist = true);
 
         template <typename OtherAssetType, typename Callback>
-        void fetch_as(const std::filesystem::path& path, Callback&& callback, bool must_persist = true)
-        {
-            pending_fetches.fetch_add(1, std::memory_order_acq_rel);
-            std::shared_ptr<load_storage_context> _context = this->shared_from_this();
-
-            objects.fetch_bytes(path, [_context, callback = std::forward<Callback>(callback)](const std::vector<char>& bytes) mutable {
-                std::shared_ptr<OtherAssetType> _other = std::make_shared<OtherAssetType>();
-                load_user_asset_from_bytes(_context->objects, *_other, bytes, [_context, _other, callback = std::move(callback)]() mutable {
-                    if constexpr (std::is_invocable_v<Callback&, OtherAssetType&&>) {
-                        callback(std::move(*_other));
-                    } else if constexpr (std::is_invocable_v<Callback&, OtherAssetType&>) {
-                        callback(*_other);
-                    } else {
-                        callback(std::as_const(*_other));
-                    }
-                    _context->finish_one();
-                });
-            }, must_persist);
-        }
+        void fetch_as(const std::filesystem::path& path, Callback&& callback, bool must_persist = true);
 
         void close()
         {
@@ -179,15 +169,50 @@ namespace detail {
             finish_callbacks.emplace_back(std::forward<Callback>(callback));
         }
 
-        bool finished() const override
+        bool poll() override
         {
-            return closed.load(std::memory_order_acquire) && pending_fetches.load(std::memory_order_acquire) == 0;
+            std::size_t _index = 0;
+            while (true) {
+                load_context_task_base* _task = nullptr;
+                {
+                    std::scoped_lock _lock(tasks_mutex);
+                    if (_index >= tasks.size()) {
+                        break;
+                    }
+                    _task = tasks[_index].get();
+                }
+
+                _task->poll();
+                ++_index;
+            }
+
+            try_finish();
+            return finished();
         }
 
-    private:
-        void finish_one()
+        bool finished() const override
         {
-            if (pending_fetches.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+            if (!closed.load(std::memory_order_acquire) || pending_worker_fetches.load(std::memory_order_acquire) != 0) {
+                return false;
+            }
+
+            std::scoped_lock _lock(tasks_mutex);
+            for (const std::unique_ptr<load_context_task_base>& _task : tasks) {
+                if (!_task->finished()) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+    protected:
+        virtual void notify_finished()
+        {
+        }
+
+        void finish_one_worker()
+        {
+            if (pending_worker_fetches.fetch_sub(1, std::memory_order_acq_rel) == 1) {
                 try_finish();
             }
         }
@@ -202,9 +227,7 @@ namespace detail {
                 return;
             }
 
-            if (cell != nullptr) {
-                cell->current_version++;
-            }
+            notify_finished();
 
             std::vector<std::function<void()>> _callbacks;
             {
@@ -213,6 +236,76 @@ namespace detail {
             }
             for (std::function<void()>& _callback : _callbacks) {
                 _callback();
+            }
+        }
+    };
+
+    template <typename AssetType, typename ArchiveType>
+    struct load_storage_context final : asset_fetch_context {
+        ArchiveType& archive;
+        assets_cell<AssetType>* cell;
+        AssetType& self;
+
+        load_storage_context(ArchiveType& archive, manager_assets& objects, assets_cell<AssetType>* cell, AssetType& self)
+            : asset_fetch_context(objects)
+            , archive(archive)
+            , cell(cell)
+            , self(self)
+        {
+        }
+
+        template <typename... Args>
+        void operator()(Args&&... args)
+        {
+            archive(std::forward<Args>(args)...);
+        }
+
+        [[nodiscard]] manager_window* window()
+        {
+            return cereal::get_user_data<mappings_manager_game_load>(archive).loading_window;
+        }
+
+    protected:
+        void notify_finished() override
+        {
+            if (cell != nullptr) {
+                cell->fetched.mark_ready();
+            }
+        }
+    };
+
+
+    template <typename AssetType>
+    struct runtime_storage_context final : asset_fetch_context {
+        assets_cell<AssetType>* cell;
+        AssetType& self;
+        manager_window* runtime_window;
+
+        runtime_storage_context(manager_assets& objects, assets_cell<AssetType>* cell, AssetType& self, manager_window* runtime_window = nullptr)
+            : asset_fetch_context(objects)
+            , cell(cell)
+            , self(self)
+            , runtime_window(runtime_window)
+        {
+        }
+
+        template <typename... Args>
+        void operator()(Args&&...)
+        {
+            // Runtime fetches pre-seed the asset fields before calling load().
+            // The storage load member can then be reused without a cereal archive.
+        }
+
+        [[nodiscard]] manager_window* window()
+        {
+            return runtime_window;
+        }
+
+    protected:
+        void notify_finished() override
+        {
+            if (cell != nullptr) {
+                cell->fetched.mark_ready();
             }
         }
     };
@@ -314,6 +407,21 @@ namespace detail {
             return _context;
         }
 
+        std::shared_ptr<asset_fetch_context> make_fetch_context()
+        {
+            std::shared_ptr<asset_fetch_context> _context = std::make_shared<asset_fetch_context>(*this);
+            active_load_contexts.emplace_back(_context);
+            return _context;
+        }
+
+        template <typename AssetType>
+        std::shared_ptr<runtime_storage_context<AssetType>> make_runtime_storage_context(assets_cell<AssetType>* cell, AssetType& object, manager_window* window = nullptr)
+        {
+            std::shared_ptr<runtime_storage_context<AssetType>> _context = std::make_shared<runtime_storage_context<AssetType>>(*this, cell, object, window);
+            active_load_contexts.emplace_back(_context);
+            return _context;
+        }
+
         void collect_finished_load_contexts()
         {
             active_load_contexts.erase(
@@ -324,11 +432,111 @@ namespace detail {
         }
 
         void load_bytes(const std::filesystem::path& path, const std::function<void(const std::vector<char>&)>& callback);
+        [[nodiscard]] std::future<std::vector<char>> fetch_bytes_future(const std::filesystem::path& path, bool must_persist = true);
+        [[nodiscard]] std::future<std::vector<std::vector<char>>> fetch_bytes_future(const std::vector<std::filesystem::path>& paths, bool must_persist = true);
+        [[nodiscard]] std::future<std::vector<std::vector<char>>> fetch_bytes_future(const std::array<std::filesystem::path, 6>& paths, bool must_persist = true);
         void fetch_bytes(const std::filesystem::path& path, const std::function<void(const std::vector<char>&)>& callback, bool must_persist = true);
         void fetch_bytes(const std::vector<std::filesystem::path>& paths, const std::function<void(const std::vector<std::vector<char>>&)>& callback, bool must_persist = true);
         void fetch_bytes(const std::array<std::filesystem::path, 6>& paths, const std::function<void(const std::vector<std::vector<char>>&)>& callback, bool must_persist = true);
+        void poll_load_contexts();
         void gc_unused();
     };
+
+    template <typename Callback>
+    void asset_fetch_context::fetch_worker(const std::filesystem::path& path, Callback&& callback, bool must_persist)
+    {
+        pending_worker_fetches.fetch_add(1, std::memory_order_acq_rel);
+        std::shared_ptr<asset_fetch_context> _context = shared_from_this();
+
+        objects.fetch_bytes(path, [_context, callback = std::forward<Callback>(callback)](const std::vector<char>& bytes) mutable {
+            callback(bytes);
+            _context->finish_one_worker();
+        }, must_persist);
+    }
+
+    template <typename Callback>
+    void asset_fetch_context::fetch_worker(const std::vector<std::filesystem::path>& paths, Callback&& callback, bool must_persist)
+    {
+        pending_worker_fetches.fetch_add(1, std::memory_order_acq_rel);
+        std::shared_ptr<asset_fetch_context> _context = shared_from_this();
+
+        objects.fetch_bytes(paths, [_context, callback = std::forward<Callback>(callback)](const std::vector<std::vector<char>>& bytes) mutable {
+            callback(bytes);
+            _context->finish_one_worker();
+        }, must_persist);
+    }
+
+    template <typename Callback>
+    void asset_fetch_context::fetch_worker(const std::array<std::filesystem::path, 6>& paths, Callback&& callback, bool must_persist)
+    {
+        pending_worker_fetches.fetch_add(1, std::memory_order_acq_rel);
+        std::shared_ptr<asset_fetch_context> _context = shared_from_this();
+
+        objects.fetch_bytes(paths, [_context, callback = std::forward<Callback>(callback)](const std::vector<std::vector<char>>& bytes) mutable {
+            callback(bytes);
+            _context->finish_one_worker();
+        }, must_persist);
+    }
+
+    template <typename Callback>
+    void asset_fetch_context::fetch(const std::filesystem::path& path, Callback&& callback, bool must_persist)
+    {
+        using _callback_type = std::decay_t<Callback>;
+        using _value_type = std::vector<char>;
+        std::future<_value_type> _future = objects.fetch_bytes_future(path, must_persist);
+        std::unique_ptr<load_context_task_base> _task = std::make_unique<load_context_value_task<_value_type, _callback_type>>(std::move(_future), _callback_type(std::forward<Callback>(callback)));
+        {
+            std::scoped_lock _lock(tasks_mutex);
+            tasks.emplace_back(std::move(_task));
+        }
+    }
+
+    template <typename Callback>
+    void asset_fetch_context::fetch(const std::vector<std::filesystem::path>& paths, Callback&& callback, bool must_persist)
+    {
+        using _callback_type = std::decay_t<Callback>;
+        using _value_type = std::vector<std::vector<char>>;
+        std::future<_value_type> _future = objects.fetch_bytes_future(paths, must_persist);
+        std::unique_ptr<load_context_task_base> _task = std::make_unique<load_context_value_task<_value_type, _callback_type>>(std::move(_future), _callback_type(std::forward<Callback>(callback)));
+        {
+            std::scoped_lock _lock(tasks_mutex);
+            tasks.emplace_back(std::move(_task));
+        }
+    }
+
+    template <typename Callback>
+    void asset_fetch_context::fetch(const std::array<std::filesystem::path, 6>& paths, Callback&& callback, bool must_persist)
+    {
+        using _callback_type = std::decay_t<Callback>;
+        using _value_type = std::vector<std::vector<char>>;
+        std::future<_value_type> _future = objects.fetch_bytes_future(paths, must_persist);
+        std::unique_ptr<load_context_task_base> _task = std::make_unique<load_context_value_task<_value_type, _callback_type>>(std::move(_future), _callback_type(std::forward<Callback>(callback)));
+        {
+            std::scoped_lock _lock(tasks_mutex);
+            tasks.emplace_back(std::move(_task));
+        }
+    }
+
+    template <typename OtherAssetType, typename Callback>
+    void asset_fetch_context::fetch_as(const std::filesystem::path& path, Callback&& callback, bool must_persist)
+    {
+        pending_worker_fetches.fetch_add(1, std::memory_order_acq_rel);
+        std::shared_ptr<asset_fetch_context> _context = shared_from_this();
+
+        fetch(path, [_context, callback = std::forward<Callback>(callback)](const std::vector<char>& bytes) mutable {
+            std::shared_ptr<OtherAssetType> _other = std::make_shared<OtherAssetType>();
+            load_user_asset_from_bytes(_context->objects, *_other, bytes, [_context, _other, callback = std::move(callback)]() mutable {
+                if constexpr (std::is_invocable_v<Callback&, OtherAssetType&&>) {
+                    callback(std::move(*_other));
+                } else if constexpr (std::is_invocable_v<Callback&, OtherAssetType&>) {
+                    callback(*_other);
+                } else {
+                    callback(std::as_const(*_other));
+                }
+                _context->finish_one_worker();
+            });
+        }, must_persist);
+    }
 
     template <typename AssetType>
     void load_user_asset_from_bytes(manager_assets& objects, AssetType& asset, const std::vector<char>& bytes)
@@ -363,14 +571,15 @@ namespace detail {
 
 		const std::string _cache_id = path.string();
         return *cached_vector.get_or_create_by_id(_cache_id, [&objects, path, _cache_id] {
-            container_async<AssetType> _async(AssetType {});
+            container_async<AssetType> _async = container_async<AssetType>::pending(AssetType {});
             objects.fetch_bytes(path, [&objects, path, _cache_id](const std::vector<char>& _bytes) {
                 assets_cell<AssetType>* _cell = objects.get_user_asset_storage<AssetType>().assets.find_by_id(_cache_id);
-                if (_cell == nullptr || !_cell->fetched.has_value()) {
+                if (_cell == nullptr || !_cell->fetched.has_emplaced_value()) {
                     return;
                 }
-                load_user_asset_from_bytes(objects, _cell->fetched.value(), _bytes);
-                _cell->current_version++;
+                load_user_asset_from_bytes(objects, _cell->fetched.emplaced_value(), _bytes, [_cell]() {
+                    _cell->fetched.mark_ready();
+                });
             }, true);
 
             return _async;

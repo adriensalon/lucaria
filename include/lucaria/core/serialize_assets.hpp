@@ -100,8 +100,8 @@ namespace detail {
 
             manager_assets& objects = *mappings.loading_objects;
             assets_buffer<AssetType>& buffer = get_asset_buffer<AssetType>(objects);
-            assets_cell<AssetType>* cell = buffer.create_cell(container_async<AssetType>(AssetType {}));
-            AssetType& asset = cell->fetched.value();
+            assets_cell<AssetType>* cell = buffer.create_cell(container_async<AssetType>::pending(AssetType {}));
+            AssetType& asset = cell->fetched.emplaced_value();
 
             std::shared_ptr<load_storage_context<AssetType, ArchiveType>> context = objects.template make_load_storage_context<AssetType>(archive, cell, asset);
             load_user_asset_value(asset, *context);
@@ -225,8 +225,8 @@ namespace detail {
 
             manager_assets& objects = *mappings.loading_objects;
             auto& storage = objects.template get_user_asset_storage<AssetType>();
-            assets_cell<AssetType>* cell = storage.assets.create_cell(container_async<AssetType>(AssetType {}));
-            AssetType& asset = cell->fetched.value();
+            assets_cell<AssetType>* cell = storage.assets.create_cell(container_async<AssetType>::pending(AssetType {}));
+            AssetType& asset = cell->fetched.emplaced_value();
 
             std::shared_ptr<load_storage_context<AssetType, ArchiveType>> context = objects.template make_load_storage_context<AssetType>(archive, cell, asset);
             load_user_asset_value(asset, *context);

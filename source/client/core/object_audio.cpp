@@ -123,61 +123,61 @@ namespace detail {
     {
     }
 
-    // assets_cell<object_audio>& fetch(
-    //     manager_assets& objects,
-    //     assets_buffer<object_audio>& cached_vector,
-    //     const std::filesystem::path& path)
-    // {
-    //     const std::string _cache_id = path.string();
-    //     return *cached_vector.get_or_create_by_id(_cache_id, [&objects, path] {
-    //         std::shared_ptr<std::promise<object_audio>> _promise = std::make_shared<std::promise<object_audio>>();
-    //         objects.fetch_bytes(path, [_promise, path](const std::vector<char>& _bytes) {
-	// 			object_audio _audio(_bytes);
-	// 			_audio.origin_path = path;
-	// 			_promise->set_value(std::move(_audio)); }, true);
+    assets_cell<object_audio>& fetch(
+        manager_assets& objects,
+        assets_buffer<object_audio>& cached_vector,
+        const std::filesystem::path& path)
+    {
+        const std::string _cache_id = path.string();
+        return *cached_vector.get_or_create_by_id(_cache_id, [&objects, path] {
+            std::shared_ptr<std::promise<object_audio>> _promise = std::make_shared<std::promise<object_audio>>();
+            objects.fetch_bytes(path, [_promise, path](const std::vector<char>& _bytes) {
+				object_audio _audio(_bytes);
+				_audio.origin_path = path;
+				_promise->set_value(std::move(_audio)); }, true);
 
-    //         return container_async<object_audio>(_promise->get_future());
-    //     });
-    // }
+            return container_async<object_audio>(_promise->get_future());
+        });
+    }
 
-    // recipe_object_audio make_recipe(const assets_cell<object_audio>& cached)
-    // {
-    //     const object_audio& _audio = cached.fetched.value();
+    recipe_object_audio make_recipe(const assets_cell<object_audio>& cached)
+    {
+        const object_audio& _audio = cached.fetched.value();
 
-    //     if (_audio.origin == object_audio_origin::path) {
-    //         return recipe_object_audio_path { cached.fetched.value().origin_path };
-    //     }
+        if (_audio.origin == object_audio_origin::path) {
+            return recipe_object_audio_path { cached.fetched.value().origin_path };
+        }
 
-    //     else if (_audio.origin == object_audio_origin::data) {
-    //         return recipe_object_audio_data { _audio.data };
-    //     }
+        else if (_audio.origin == object_audio_origin::data) {
+            return recipe_object_audio_data { _audio.data };
+        }
 
-    //     else {
-    //         LUCARIA_DEBUG_ERROR("Implementation error");
-    //         return {};
-    //     }
-    // }
+        else {
+            LUCARIA_DEBUG_ERROR("Implementation error");
+            return {};
+        }
+    }
 
-    // assets_cell<object_audio>* apply_recipe(manager_assets& objects, assets_buffer<object_audio>& cached_vector, recipe_object_audio& recipe)
-    // {
-    //     return std::visit([&](auto& value) -> assets_cell<object_audio>* {
-    //         using RecipeType = std::decay_t<decltype(value)>;
+    assets_cell<object_audio>* apply_recipe(manager_assets& objects, assets_buffer<object_audio>& cached_vector, recipe_object_audio& recipe)
+    {
+        return std::visit([&](auto& value) -> assets_cell<object_audio>* {
+            using RecipeType = std::decay_t<decltype(value)>;
 
-    //         if constexpr (std::is_same_v<RecipeType, recipe_object_audio_path>) {
-    //             return &fetch(objects, cached_vector, value.path);
+            if constexpr (std::is_same_v<RecipeType, recipe_object_audio_path>) {
+                return &fetch(objects, cached_vector, value.path);
 
-    //         } else if constexpr (std::is_same_v<RecipeType, recipe_object_audio_data>) {
-    //             return cached_vector.create_cell(
-    //                 container_async<object_audio>(
-    //                     object_audio(std::move(value.data))));
+            } else if constexpr (std::is_same_v<RecipeType, recipe_object_audio_data>) {
+                return cached_vector.create_cell(
+                    container_async<object_audio>(
+                        object_audio(std::move(value.data))));
 
-    //         } else {
-    //             LUCARIA_DEBUG_ERROR("Implementation error");
-    //             return nullptr;
-    //         }
-    //     },
-    //         recipe);
-    // }
+            } else {
+                LUCARIA_DEBUG_ERROR("Implementation error");
+                return nullptr;
+            }
+        },
+            recipe);
+    }
 
 }
 }

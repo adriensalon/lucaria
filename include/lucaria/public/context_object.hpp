@@ -95,9 +95,27 @@ struct context_object {
     template <typename AssetType>
     handle_user_asset<AssetType> fetch_user_asset(const std::filesystem::path& path)
     {
+        detail::assets_buffer<AssetType>& _assets = _manager->get_user_asset_storage<AssetType>().assets;
+        const std::string _cache_id = path.string();
+
+        detail::assets_cell<AssetType>* _cell = _assets.find_by_id(_cache_id);
+        if (_cell == nullptr) {
+            _cell = _assets.create_cell(detail::container_async<AssetType>::pending(AssetType {}), _cache_id);
+
+            std::shared_ptr<detail::asset_fetch_context> _context = _manager->make_fetch_context();
+            AssetType& _asset = _cell->fetched.emplaced_value();
+            _context->fetch_as<AssetType>(path, [&_asset](AssetType&& loaded) {
+                _asset = std::move(loaded);
+            });
+            _context->on_finished([_cell]() {
+                _cell->fetched.mark_ready();
+            });
+            _context->close();
+        }
+
         handle_user_asset<AssetType> _user_asset = {};
-        _user_asset._cached = &detail::fetch(*_manager, _manager->get_user_asset_storage<AssetType>().assets, path);
-        _user_asset._refcount = detail::flag_refcount(&_user_asset._cached->refcount_control);
+        _user_asset._cached = _cell;
+        _user_asset._refcount = detail::flag_refcount(&_cell->refcount_control);
         return _user_asset;
     }
 

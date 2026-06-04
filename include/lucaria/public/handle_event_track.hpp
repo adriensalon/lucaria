@@ -17,7 +17,7 @@ struct handle_event_track {
     /// @brief Conversion operator for the has_value member function
     explicit operator bool() const;
 
-private:
+// private:
     detail::flag_refcount _refcount = {};
     detail::assets_cell<detail::object_event_track>* _cached = nullptr;
 

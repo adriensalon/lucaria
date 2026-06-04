@@ -25,7 +25,7 @@ struct handle_image {
     /// @return the size of the image
     uint32x2 get_size() const;
 
-private:
+// private:
     detail::flag_refcount _refcount = {};
     detail::assets_cell<detail::object_image>* _cached = nullptr;
 

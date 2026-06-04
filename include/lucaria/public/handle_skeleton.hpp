@@ -16,7 +16,7 @@ struct handle_skeleton {
     /// @brief Conversion operator for the has_value member function
     [[nodiscard]] explicit operator bool() const;
 
-private:
+// private:
     detail::flag_refcount _refcount = {};
     detail::assets_cell<detail::object_skeleton>* _cached = nullptr;
 

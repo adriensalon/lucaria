@@ -14,7 +14,7 @@ struct handle_audio {
 
     explicit operator bool() const;
 
-private:
+// private:
     detail::flag_refcount _refcount = {};
     detail::assets_cell<detail::object_audio>* _cached = nullptr;
 

@@ -128,6 +128,42 @@ namespace detail {
 #endif
     }
 
+    std::future<std::vector<char>> manager_assets::fetch_bytes_future(const std::filesystem::path& file_path, bool persist)
+    {
+        std::shared_ptr<std::promise<std::vector<char>>> _promise = std::make_shared<std::promise<std::vector<char>>>();
+        std::future<std::vector<char>> _future = _promise->get_future();
+
+        _fetch_bytes_impl(*this, file_path, [_promise](std::vector<char> bytes) mutable {
+            _promise->set_value(std::move(bytes));
+        }, persist);
+
+        return _future;
+    }
+
+    std::future<std::vector<std::vector<char>>> manager_assets::fetch_bytes_future(const std::vector<std::filesystem::path>& file_paths, bool persist)
+    {
+        std::shared_ptr<std::promise<std::vector<std::vector<char>>>> _promise = std::make_shared<std::promise<std::vector<std::vector<char>>>>();
+        std::future<std::vector<std::vector<char>>> _future = _promise->get_future();
+
+        fetch_bytes(file_paths, [_promise](const std::vector<std::vector<char>>& bytes) mutable {
+            _promise->set_value(bytes);
+        }, persist);
+
+        return _future;
+    }
+
+    std::future<std::vector<std::vector<char>>> manager_assets::fetch_bytes_future(const std::array<std::filesystem::path, 6>& file_paths, bool persist)
+    {
+        std::shared_ptr<std::promise<std::vector<std::vector<char>>>> _promise = std::make_shared<std::promise<std::vector<std::vector<char>>>>();
+        std::future<std::vector<std::vector<char>>> _future = _promise->get_future();
+
+        fetch_bytes(file_paths, [_promise](const std::vector<std::vector<char>>& bytes) mutable {
+            _promise->set_value(bytes);
+        }, persist);
+
+        return _future;
+    }
+
     void manager_assets::fetch_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback, bool persist)
     {
         _fetch_bytes_impl(*this, file_path, [callback](std::vector<char> bytes) { callback(bytes); }, persist);
@@ -179,6 +215,18 @@ namespace detail {
         }
     }
 
+    void manager_assets::poll_load_contexts()
+    {
+        std::size_t _index = 0;
+        while (_index < active_load_contexts.size()) {
+            std::shared_ptr<load_storage_context_base> _context = active_load_contexts[_index];
+            _context->poll();
+            ++_index;
+        }
+
+        collect_finished_load_contexts();
+    }
+
     void manager_assets::gc_unused()
     {
         animations.gc_unused();
@@ -194,7 +242,7 @@ namespace detail {
         skeletons.gc_unused();
         sound_tracks.gc_unused();
         textures.gc_unused();
-        collect_finished_load_contexts();
+        poll_load_contexts();
     }
 
 }

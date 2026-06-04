@@ -49,7 +49,7 @@ namespace detail {
             if (origin == object_audio_origin::path) {
                 context(cereal::make_nvp("origin_path", origin_path));
                 const std::filesystem::path _path = origin_path;
-                context.fetch(_path, [this, _path](const std::vector<char>& bytes) {
+                context.fetch_worker(_path, [this, _path](const std::vector<char>& bytes) {
                     *this = object_audio(bytes);
                     origin_path = _path;
                 });
@@ -61,36 +61,36 @@ namespace detail {
 
     };
 
-    // [[nodiscard]] assets_cell<object_audio>& fetch(
-    //     manager_assets& objects,
-    //     assets_buffer<object_audio>& cached_vector,
-    //     const std::filesystem::path& path);
+    [[nodiscard]] assets_cell<object_audio>& fetch(
+        manager_assets& objects,
+        assets_buffer<object_audio>& cached_vector,
+        const std::filesystem::path& path);
 
-    // // recipes
+    // recipes
 
-    // struct recipe_object_audio_path {
-    //     std::filesystem::path path;
+    struct recipe_object_audio_path {
+        std::filesystem::path path;
 
-    //     template <typename ArchiveType>
-    //     void serialize(ArchiveType& archive)
-    //     {
-    //         archive(cereal::make_nvp("path", path));
-    //     }
-    // };
+        template <typename ArchiveType>
+        void serialize(ArchiveType& archive)
+        {
+            archive(cereal::make_nvp("path", path));
+        }
+    };
 
-    // struct recipe_object_audio_data {
-    //     data_audio data;
+    struct recipe_object_audio_data {
+        data_audio data;
 
-    //     template <typename ArchiveType>
-    //     void serialize(ArchiveType& archive)
-    //     {
-    //         archive(cereal::make_nvp("data", data));
-    //     }
-    // };
+        template <typename ArchiveType>
+        void serialize(ArchiveType& archive)
+        {
+            archive(cereal::make_nvp("data", data));
+        }
+    };
 
-    // using recipe_object_audio = std::variant<recipe_object_audio_path, recipe_object_audio_data>;
+    using recipe_object_audio = std::variant<recipe_object_audio_path, recipe_object_audio_data>;
 
-    // [[nodiscard]] recipe_object_audio make_recipe(const assets_cell<object_audio>& cache);
-    // [[nodiscard]] assets_cell<object_audio>* apply_recipe(manager_assets& objects, assets_buffer<object_audio>& cached, recipe_object_audio& recipe);
+    [[nodiscard]] recipe_object_audio make_recipe(const assets_cell<object_audio>& cache);
+    [[nodiscard]] assets_cell<object_audio>* apply_recipe(manager_assets& objects, assets_buffer<object_audio>& cached, recipe_object_audio& recipe);
 }
 }

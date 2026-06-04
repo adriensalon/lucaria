@@ -27,7 +27,7 @@ struct handle_texture {
 
     ImTextureID imgui_texture() const;
 
-private:
+// private:
     detail::flag_refcount _refcount = {};
     detail::assets_cell<detail::object_texture>* _cached = nullptr;
 

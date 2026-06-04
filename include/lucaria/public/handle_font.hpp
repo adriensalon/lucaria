@@ -18,7 +18,7 @@ struct handle_font {
 
     ImFont* imgui_font() const;
 
-private:
+// private:
     detail::flag_refcount _refcount = {};
     detail::assets_cell<detail::object_font>* _cached = nullptr;
 

@@ -13,7 +13,7 @@ struct handle_sound_track {
 
     explicit operator bool() const;
 
-private:
+// private:
     detail::flag_refcount _refcount = {};
     detail::assets_cell<detail::object_sound_track>* _cached = nullptr;
 

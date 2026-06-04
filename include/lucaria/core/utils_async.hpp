@@ -18,8 +18,18 @@ namespace detail {
 
         container_async(FetchedType&& value)
             : _cache(std::move(value))
+            , _cache_ready(true)
             , _callbacks_invoked(true)
         {
+        }
+
+        static container_async pending(FetchedType&& value = FetchedType {})
+        {
+            container_async _result = {};
+            _result._cache = std::move(value);
+            _result._cache_ready = false;
+            _result._callbacks_invoked = false;
+            return _result;
         }
 
         container_async(std::future<FetchedType>&& future)
@@ -59,13 +69,14 @@ namespace detail {
 
         [[nodiscard]] bool has_value() const
         {
-            if (_cache) {
+            if (_cache && _cache_ready) {
                 _invoke_callbacks_once();
                 return true;
             }
 
             if (_poll && _poll()) {
                 _cache = std::move(_get());
+                _cache_ready = true;
                 _poll = nullptr;
                 _get = nullptr;
                 _invoke_callbacks_once();
@@ -73,6 +84,39 @@ namespace detail {
             }
 
             return false;
+        }
+
+        [[nodiscard]] bool has_emplaced_value() const
+        {
+            return _cache.has_value();
+        }
+
+        [[nodiscard]] FetchedType& emplaced_value()
+        {
+            if (!_cache) {
+                LUCARIA_DEBUG_ERROR("Failed to get emplaced fetched value&, asset was not emplaced")
+            }
+
+            return _cache.value();
+        }
+
+        [[nodiscard]] const FetchedType& emplaced_value() const
+        {
+            if (!_cache) {
+                LUCARIA_DEBUG_ERROR("Failed to get emplaced fetched const value&, asset was not emplaced")
+            }
+
+            return _cache.value();
+        }
+
+        void mark_ready() const
+        {
+            if (!_cache) {
+                LUCARIA_DEBUG_ERROR("Failed to mark async container ready, asset was not emplaced")
+            }
+
+            _cache_ready = true;
+            _invoke_callbacks_once();
         }
 
         [[nodiscard]] FetchedType& value()
@@ -119,6 +163,7 @@ namespace detail {
         mutable std::function<bool()> _poll = nullptr;
         mutable std::function<FetchedType()> _get = nullptr;
         mutable std::optional<FetchedType> _cache = std::nullopt;
+        mutable bool _cache_ready = false;
         mutable bool _callbacks_invoked = false;
         mutable std::vector<std::function<void(FetchedType&)>> _callbacks = {};
 
