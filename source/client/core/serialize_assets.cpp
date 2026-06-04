@@ -23,7 +23,7 @@ namespace detail {
         make_recipes_for(_recipes.event_tracks, objects.event_tracks, mappings.event_tracks);
 
         for (const auto& [_type_id, _callbacks] : objects.user_asset_types) {
-            recipe_object_user_asset_group& _group = _recipes.user_assets.emplace_back();
+            storage_user_asset_group& _group = _recipes.user_assets.emplace_back();
             _group.type_id = _type_id;
             _group.objects = const_cast<manager_assets*>(&objects);
             _group.callbacks = const_cast<user_asset_type_callbacks*>(&_callbacks);

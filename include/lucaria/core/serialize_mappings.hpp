@@ -32,13 +32,13 @@ namespace detail {
 
     template <typename AssetType>
     struct mappings_user_asset_save final : mappings_user_asset_base_save {
-        mappings_container_cache_vector_save<object_user_asset<AssetType>> typed_mapping = {};
+        mappings_container_cache_vector_save<AssetType> typed_mapping = {};
     };
 
     struct mappings_user_assets_save {
 
         template <typename AssetType>
-        [[nodiscard]] mappings_container_cache_vector_save<object_user_asset<AssetType>>& get_mapping()
+        [[nodiscard]] mappings_container_cache_vector_save<AssetType>& get_mapping()
         {
             const std::type_index _type = std::type_index(typeid(AssetType));
             typename std::unordered_map<std::type_index, std::unique_ptr<mappings_user_asset_base_save>>::const_iterator _iterator = _mappings.find(_type);
@@ -52,9 +52,9 @@ namespace detail {
         }
 
         template <typename AssetType>
-        [[nodiscard]] uint32 get_or_create(const assets_cell<object_user_asset<AssetType>>* cell)
+        [[nodiscard]] uint32 get_or_create(const assets_cell<AssetType>* cell)
         {
-            return get_mapping<AssetType>().get(cell);
+            return get_mapping<AssetType>().get_or_create(cell);
         }
 
     private:
@@ -67,13 +67,13 @@ namespace detail {
 
     template <typename AssetType>
     struct mappings_user_asset_load final : mappings_user_asset_base_load {
-        mappings_container_cache_vector_load<object_user_asset<AssetType>> typed_mapping = {};
+        mappings_container_cache_vector_load<AssetType> typed_mapping = {};
     };
 
     struct mappings_user_assets_load {
 
         template <typename AssetType>
-        [[nodiscard]] mappings_container_cache_vector_load<object_user_asset<AssetType>>& get_mapping()
+        [[nodiscard]] mappings_container_cache_vector_load<AssetType>& get_mapping()
         {
             const std::type_index _type = std::type_index(typeid(AssetType));
             typename std::unordered_map<std::type_index, std::unique_ptr<mappings_user_asset_base_load>>::const_iterator _iterator = _mappings.find(_type);
@@ -87,13 +87,13 @@ namespace detail {
         }
 
         template <typename AssetType>
-        void set(uint32 id, assets_cell<object_user_asset<AssetType>>* cell)
+        void set(uint32 id, assets_cell<AssetType>* cell)
         {
             get_mapping<AssetType>().set(id, cell);
         }
 
         template <typename AssetType>
-        [[nodiscard]] assets_cell<object_user_asset<AssetType>>* get(uint32 id)
+        [[nodiscard]] assets_cell<AssetType>* get(uint32 id)
         {
             return get_mapping<AssetType>().get(id);
         }

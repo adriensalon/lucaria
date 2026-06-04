@@ -20,7 +20,7 @@ namespace detail {
         }
     };
 
-    struct recipe_object_user_asset_group {
+    struct storage_user_asset_group {
         std::string type_id = {};
         manager_assets* objects = nullptr;
         user_asset_type_callbacks* callbacks = nullptr;
@@ -73,7 +73,7 @@ namespace detail {
         std::vector<recipe_object_entry<recipe_object_skeleton>> skeletons = {};
         std::vector<recipe_object_entry<recipe_object_sound_track>> sound_tracks = {};
         std::vector<recipe_object_entry<recipe_object_texture>> textures = {};
-        std::vector<recipe_object_user_asset_group> user_assets = {};
+        std::vector<storage_user_asset_group> user_assets = {};
 
         template <typename ArchiveType>
         void serialize(ArchiveType& archive)
@@ -118,73 +118,76 @@ namespace detail {
 
     void apply_recipes_for(manager_window& window, manager_assets& objects, assets_buffer<object_font>& cached_vector, mappings_container_cache_vector_load<object_font>& mappings, std::vector<recipe_object_entry<recipe_object_font>>& recipes);
 
+    template <typename AssetType>
+    struct storage_user_asset_entry {
+        uint32 save_id = 0;
+        AssetType* value = nullptr;
+        manager_assets* objects = nullptr;
+
+        template <typename ArchiveType>
+        void save(ArchiveType& archive) const
+        {
+            archive(cereal::make_nvp("object_save_id", save_id));
+
+            if (objects == nullptr) {
+                LUCARIA_DEBUG_ERROR("Missing manager_assets while saving user asset");
+                return;
+            }
+
+            save_storage_context<ArchiveType> context { archive, *objects };
+            save_user_asset_value(*value, context);
+        }
+
+        template <typename ArchiveType>
+        void load(ArchiveType& archive)
+        {
+            archive(cereal::make_nvp("object_save_id", save_id));
+
+            mappings_manager_game_load& mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
+            if (mappings.loading_objects == nullptr) {
+                LUCARIA_DEBUG_ERROR("Missing manager_assets while loading user asset");
+                return;
+            }
+
+            manager_assets& objects = *mappings.loading_objects;
+            auto& storage = objects.template get_user_asset_storage<AssetType>();
+            assets_cell<AssetType>* cell = storage.assets.create_cell(container_async<AssetType>(AssetType {}));
+            AssetType& asset = cell->fetched.value();
+
+            std::shared_ptr<load_storage_context<AssetType, ArchiveType>> context = objects.template make_load_storage_context<AssetType>(archive, cell, asset);
+            load_user_asset_value(asset, *context);
+            context->close();
+
+            mappings.objects.user_assets.template set<AssetType>(save_id, cell);
+        }
+    };
+
     template <typename AssetType, typename ArchiveType>
     void save_user_asset_group(manager_assets& objects, ArchiveType& archive)
     {
         auto& mappings = cereal::get_user_data<mappings_manager_game_save>(archive);
         const auto& storage = objects.template get_user_asset_storage<AssetType>();
-        std::vector<recipe_object_entry<recipe_object_user_asset<AssetType>>> recipes = {};
-        make_recipes_for(recipes, storage.assets, mappings.objects.user_assets.template get_mapping<AssetType>());
-        archive(cereal::make_nvp("assets", recipes));
+        std::vector<storage_user_asset_entry<AssetType>> entries = {};
+
+        storage.assets.for_each_cell([&](assets_cell<AssetType>& cell) {
+            if (!cell.fetched.has_value()) {
+                return;
+            }
+            entries.push_back(storage_user_asset_entry<AssetType> {
+                mappings.objects.user_assets.template get_mapping<AssetType>().get_or_create(&cell),
+                &cell.fetched.value(),
+                &objects
+            });
+        });
+
+        archive(cereal::make_nvp("assets", entries));
     }
 
     template <typename AssetType, typename ArchiveType>
     void load_user_asset_group(manager_assets& objects, ArchiveType& archive)
     {
-        mappings_manager_game_load& mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
-        auto& storage = objects.template get_user_asset_storage<AssetType>();
-        std::vector<recipe_object_entry<recipe_object_user_asset<AssetType>>> recipes = {};
-        archive(cereal::make_nvp("assets", recipes));
-        for (auto& entry : recipes) {
-            assets_cell<object_user_asset<AssetType>>* cell = apply_recipe(objects, storage.assets, entry.recipe);
-            if (cell == nullptr) {
-                LUCARIA_DEBUG_ERROR("Failed to apply user asset recipe");
-                continue;
-            }
-            mappings.objects.user_assets.template set<AssetType>(entry.save_id, cell);
-        }
-    }
-
-    template <typename AssetType>
-    [[nodiscard]] recipe_object_user_asset<AssetType> make_recipe(const assets_cell<object_user_asset<AssetType>>& cache)
-    {
-        const object_user_asset<AssetType>& _asset = cache.fetched.value();
-
-        if (_asset.origin == object_user_asset_origin::path) {
-            return recipe_object_user_asset_path<AssetType> { _asset.origin_path };
-
-        } else if (_asset.origin == object_user_asset_origin::data) {
-            return recipe_object_user_asset_data<AssetType> { _asset.data };
-
-        } else {
-            LUCARIA_DEBUG_ERROR("Implementation error");
-            return {};
-        }
-    }
-
-    template <typename AssetType>
-    assets_cell<object_user_asset<AssetType>>* apply_recipe(
-        manager_assets& objects,
-        assets_buffer<object_user_asset<AssetType>>& cached_vector,
-        recipe_object_user_asset<AssetType>& recipe)
-    {
-        return std::visit([&](auto& value) -> assets_cell<object_user_asset<AssetType>>* {
-            using RecipeType = std::decay_t<decltype(value)>;
-
-            if constexpr (std::is_same_v<RecipeType, recipe_object_user_asset_path<AssetType>>) {
-                return &fetch(objects, cached_vector, value.path);
-
-            } else if constexpr (std::is_same_v<RecipeType, recipe_object_user_asset_data<AssetType>>) {
-                return cached_vector.create_cell(
-                    container_async<object_user_asset<AssetType>>(
-                        object_user_asset<AssetType>(std::move(value.value))));
-
-            } else {
-                LUCARIA_DEBUG_ERROR("Unhandled user asset recipe type");
-                return nullptr;
-            }
-        },
-            recipe);
+        std::vector<storage_user_asset_entry<AssetType>> entries = {};
+        archive(cereal::make_nvp("assets", entries));
     }
 
     [[nodiscard]] recipe_manager_object make_recipe(manager_assets& objects, mappings_manager_object_save& mappings);

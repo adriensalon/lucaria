@@ -9,42 +9,16 @@ namespace detail {
 
     struct manager_assets;
 
-    template <typename SceneType>
-    inline constexpr bool is_user_asset_v = is_bytes_compatible_v<SceneType> && is_cereal_compatible_v<SceneType>;
-
-    template <typename SceneType>
-    inline constexpr void static_assert_user_asset()
-    {
-        if constexpr (!is_user_asset_v<SceneType>) {
-            static_assert(is_bytes_compatible_v<SceneType>, "User asset type must be compatible with construction from const std::vector<char>&");
-            static_assert(is_cereal_compatible_v<SceneType>, "User asset type must be compatible with cereal serialization");
-        }
-    }
-
-    enum struct object_user_asset_origin {
-        path,
-        data
-    };
+    template <typename AssetType>
+    inline constexpr bool is_user_asset_v = std::is_default_constructible_v<AssetType>;
 
     template <typename AssetType>
-    struct object_user_asset {
-
-        object_user_asset(const std::vector<char>& bytes)
-            : origin(object_user_asset_origin::path)
-            , data(AssetType(bytes))
-        {
+    inline constexpr void static_assert_user_asset()
+    {
+        if constexpr (!is_user_asset_v<AssetType>) {
+            static_assert(std::is_default_constructible_v<AssetType>, "User asset type must be default constructible");
         }
-
-        object_user_asset(AssetType&& data)
-            : origin(object_user_asset_origin::data)
-            , data(std::move(data))
-        {
-        }
-
-        object_user_asset_origin origin;
-		std::filesystem::path origin_path;
-        AssetType data;
-    };
+    }
 
     struct storage_user_asset_base {
         virtual ~storage_user_asset_base() = default;
@@ -52,42 +26,15 @@ namespace detail {
 
     template <typename AssetType>
     struct storage_user_asset final : storage_user_asset_base {
-        assets_buffer<object_user_asset<AssetType>> assets;
+        assets_buffer<AssetType> assets;
     };
 
     // implemented in manager_assets.hpp
     template <typename AssetType>
-    [[nodiscard]] assets_cell<object_user_asset<AssetType>>& fetch(
+    [[nodiscard]] assets_cell<AssetType>& fetch(
         manager_assets& objects,
-        assets_buffer<object_user_asset<AssetType>>& cached_vector,
+        assets_buffer<AssetType>& cached_vector,
         const std::filesystem::path& path);
-
-    template <typename AssetType>
-    struct recipe_object_user_asset_path {
-        std::filesystem::path path;
-
-        template <typename Archive>
-        void serialize(Archive& archive)
-        {
-            archive(cereal::make_nvp("path", path));
-        }
-    };
-
-    template <typename AssetType>
-    struct recipe_object_user_asset_data {
-        AssetType value;
-
-        template <typename Archive>
-        void serialize(Archive& archive)
-        {
-            archive(cereal::make_nvp("value", value));
-        }
-    };
-
-    template <typename AssetType>
-    using recipe_object_user_asset = std::variant<
-        recipe_object_user_asset_path<AssetType>,
-        recipe_object_user_asset_data<AssetType>>;
 
 }
 }

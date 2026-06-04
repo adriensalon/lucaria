@@ -194,6 +194,7 @@ namespace detail {
         skeletons.gc_unused();
         sound_tracks.gc_unused();
         textures.gc_unused();
+        collect_finished_load_contexts();
     }
 
 }
