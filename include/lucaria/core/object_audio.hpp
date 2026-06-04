@@ -2,10 +2,14 @@
 
 #include <lucaria/bin/data_audio.hpp>
 #include <lucaria/core/assets_buffer.hpp>
+#include <lucaria/core/context_serialize.hpp>
 #include <lucaria/core/utils_compiler.hpp>
 
 namespace lucaria {
 namespace detail {
+
+    struct storage_save_context;
+    struct storage_load_context;
 
     struct object_sound_track;
     struct manager_assets;
@@ -30,24 +34,22 @@ namespace detail {
         std::filesystem::path origin_path;
         data_audio data;
 
-        template <typename ContextType>
-        void save(ContextType& context) const
+        void save(storage_save_context& context) const
         {
-            context(cereal::make_nvp("origin", origin));
+            context.field("origin", origin);
             if (origin == object_audio_origin::path) {
-                context(cereal::make_nvp("origin_path", origin_path));
+                context.field("origin_path", origin_path);
             }
             if (origin == object_audio_origin::data) {
-                context(cereal::make_nvp("origin_data", data));
+                context.field("origin_data", data);
             }
         }
 
-        template <typename ContextType>
-        void load(ContextType& context)
+        void load(storage_load_context& context)
         {
-            context(cereal::make_nvp("origin", origin));
+            context.field("origin", origin);
             if (origin == object_audio_origin::path) {
-                context(cereal::make_nvp("origin_path", origin_path));
+                context.field("origin_path", origin_path);
                 const std::filesystem::path _path = origin_path;
                 context.fetch_worker(_path, [this, _path](const std::vector<char>& bytes) {
                     *this = object_audio(bytes);
@@ -55,7 +57,7 @@ namespace detail {
                 });
             }
             if (origin == object_audio_origin::data) {
-                context(cereal::make_nvp("origin_data", data));
+                context.field("origin_data", data);
             }
         }
 

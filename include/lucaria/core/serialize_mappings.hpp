@@ -153,6 +153,7 @@ namespace detail {
     struct mappings_manager_game_save {
         mappings_manager_object_save objects = {};
         mappings_manager_scene_save scenes = {};
+        manager_assets* saving_objects = nullptr;
     };
 
     struct mappings_manager_game_load {

@@ -10,8 +10,13 @@
 #include <lucaria/core/backend_pspgu.hpp>
 #endif
 
+#include <lucaria/core/context_serialize.hpp>
+
 namespace lucaria {
 namespace detail {
+
+    struct storage_save_context;
+    struct storage_load_context;
 
     struct object_framebuffer {
         object_framebuffer(const object_framebuffer& other) = delete;

@@ -56,4 +56,6 @@ private:
     friend struct access_context;
 };
 
+using game_context = context_game;
+
 }

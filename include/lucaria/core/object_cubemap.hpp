@@ -12,8 +12,13 @@
 #include <lucaria/core/backend_pspgu.hpp>
 #endif
 
+#include <lucaria/core/context_serialize.hpp>
+
 namespace lucaria {
 namespace detail {
+
+    struct storage_save_context;
+    struct storage_load_context;
 
     struct manager_assets;
 
@@ -36,23 +41,21 @@ namespace detail {
         data_image_profile profile;
         std::array<std::filesystem::path, 6> origin_paths;
 
-        template <typename ContextType>
-        void save(ContextType& context) const
+        void save(storage_save_context& context) const
         {
-            context(cereal::make_nvp("origin", origin));
-            context(cereal::make_nvp("profile", profile));
+            context.field("origin", origin);
+            context.field("profile", profile);
             if (origin == object_cubemap_origin::path) {
-                context(cereal::make_nvp("origin_path", origin_paths));
+                context.field("origin_path", origin_paths);
             }
         }
 
-        template <typename ContextType>
-        void load(ContextType& context)
+        void load(storage_load_context& context)
         {
-            context(cereal::make_nvp("origin", origin));
-            context(cereal::make_nvp("profile", profile));
+            context.field("origin", origin);
+            context.field("profile", profile);
             if (origin == object_cubemap_origin::path) {
-                context(cereal::make_nvp("origin_path", origin_paths));
+                context.field("origin_path", origin_paths);
                 const std::array<std::filesystem::path, 6> _paths = origin_paths;
                 const data_image_profile _profile = profile;
                 const std::array<std::filesystem::path, 6> _resolved_paths = resolve_profile(context.objects, _paths, _profile);

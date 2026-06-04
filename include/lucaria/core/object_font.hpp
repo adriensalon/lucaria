@@ -5,11 +5,15 @@
 #include <lucaria/bin/types_containers.hpp>
 #include <lucaria/bin/types_math.hpp>
 #include <lucaria/core/assets_buffer.hpp>
+#include <lucaria/core/context_serialize.hpp>
 #include <lucaria/core/utils_compiler.hpp>
 #include <lucaria/core/utils_refcount.hpp>
 
 namespace lucaria {
 namespace detail {
+
+    struct storage_save_context;
+    struct storage_load_context;
 
     struct manager_assets;
     struct manager_window;
@@ -34,21 +38,19 @@ namespace detail {
         ImFont* font = nullptr;
         float32 font_size = 14.f;
 
-        template <typename ContextType>
-        void save(ContextType& context) const
+        void save(storage_save_context& context) const
         {
-            context(cereal::make_nvp("origin", origin));
-            context(cereal::make_nvp("origin_path", origin_path));
+            context.field("origin", origin);
+            context.field("origin_path", origin_path);
             const float32 _font_size = font != nullptr ? font->FontSize : font_size;
-            context(cereal::make_nvp("font_size", _font_size));
+            context.field("font_size", _font_size);
         }
 
-        template <typename ContextType>
-        void load(ContextType& context)
+        void load(storage_load_context& context)
         {
-            context(cereal::make_nvp("origin", origin));
-            context(cereal::make_nvp("origin_path", origin_path));
-            context(cereal::make_nvp("font_size", font_size));
+            context.field("origin", origin);
+            context.field("origin_path", origin_path);
+            context.field("font_size", font_size);
             const std::filesystem::path _path = origin_path;
             const float32 _font_size = font_size;
             manager_window* _window = context.window();

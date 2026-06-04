@@ -56,10 +56,11 @@ namespace detail {
 
     void manager_game::save_snapshot(const std::filesystem::path& path)
     {
-        recipe_manager_object _objects = {};
-        recipe_manager_scene _scenes = {};
         mappings_manager_game_save _mappings = {};
-        _objects = make_recipe(objects, _mappings.objects);
+        _mappings.saving_objects = &objects;
+
+        snapshot_assets _objects { objects };
+        recipe_manager_scene _scenes = {};
         _scenes = make_recipe(scenes, _mappings.scenes);
 
         std::ofstream _ofstream(path, std::ios::binary);
@@ -79,11 +80,10 @@ namespace detail {
         std::ifstream _ifstream(path, std::ios::binary);
         archive_json_input _archive(_mappings, _ifstream);
 
-        recipe_manager_object _objects = {};
+        snapshot_assets _objects { objects };
         recipe_manager_scene _scenes = {};
 
         _archive(cereal::make_nvp("assets", _objects));
-        apply_recipe(window, objects, _mappings.objects, _objects);
 
         // scenes.scenes.clear();
         // scenes.current_scene = nullptr;

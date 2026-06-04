@@ -97,7 +97,17 @@ namespace detail {
                 return;
             }
 
-            archive(cereal::make_nvp("component", *component_save));
+            if constexpr (has_user_component_save_game_v<ComponentType>) {
+                mappings_manager_game_save& game_mappings = cereal::get_user_data<mappings_manager_game_save>(archive);
+                if (game_mappings.saving_objects == nullptr || game_mappings.scenes.saving_scene_manager == nullptr) {
+                    LUCARIA_DEBUG_ERROR("Missing game context while saving component");
+                    return;
+                }
+                game_save_context context { archive, *game_mappings.saving_objects, *game_mappings.scenes.saving_scene_manager, game_mappings };
+                context.field("component", *component_save);
+            } else {
+                archive(cereal::make_nvp("component", *component_save));
+            }
         }
 
         template <typename ArchiveType>
@@ -121,7 +131,16 @@ namespace detail {
                 game_mappings.loading_scene_manager->registry,
                 entity);
 
-            archive(cereal::make_nvp("component", component));
+            if constexpr (has_user_component_load_game_v<ComponentType>) {
+                if (game_mappings.loading_objects == nullptr) {
+                    LUCARIA_DEBUG_ERROR("Missing manager_assets while loading component");
+                    return;
+                }
+                game_load_context context { archive, *game_mappings.loading_objects, *game_mappings.loading_scene_manager, game_mappings.dynamics, game_mappings };
+                context.field("component", component);
+            } else {
+                archive(cereal::make_nvp("component", component));
+            }
         }
     };
 

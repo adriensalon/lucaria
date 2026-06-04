@@ -3,8 +3,13 @@
 #include <lucaria/bin/data_shader.hpp>
 #include <lucaria/core/utils_compiler.hpp>
 
+#include <lucaria/core/context_serialize.hpp>
+
 namespace lucaria {
 namespace detail {
+
+    struct storage_save_context;
+    struct storage_load_context;
 
     struct object_shader {
         LUCARIA_DELETE_DEFAULT(object_shader)

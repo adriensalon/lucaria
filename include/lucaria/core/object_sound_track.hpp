@@ -5,8 +5,13 @@
 #include <lucaria/core/object_audio.hpp>
 #include <lucaria/core/utils_owning.hpp>
 
+#include <lucaria/core/context_serialize.hpp>
+
 namespace lucaria {
 namespace detail {
+
+    struct storage_save_context;
+    struct storage_load_context;
 	
     struct manager_assets;
 
@@ -32,21 +37,19 @@ namespace detail {
         uint32 sample_rate;
         uint32 samples_count;
 
-        template <typename ContextType>
-        void save(ContextType& context) const
+        void save(storage_save_context& context) const
         {
-            context(cereal::make_nvp("origin", origin));
+            context.field("origin", origin);
             if (origin == object_sound_track_origin::path) {
-                context(cereal::make_nvp("origin_path", origin_path));
+                context.field("origin_path", origin_path);
             }
         }
 
-        template <typename ContextType>
-        void load(ContextType& context)
+        void load(storage_load_context& context)
         {
-            context(cereal::make_nvp("origin", origin));
+            context.field("origin", origin);
             if (origin == object_sound_track_origin::path) {
-                context(cereal::make_nvp("origin_path", origin_path));
+                context.field("origin_path", origin_path);
                 const std::filesystem::path _path = origin_path;
                 context.fetch(_path, [this, _path](const std::vector<char>& bytes) {
                     object_audio _audio(bytes);

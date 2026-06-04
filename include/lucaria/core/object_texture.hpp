@@ -13,8 +13,13 @@
 #include <lucaria/core/backend_pspgu.hpp>
 #endif
 
+#include <lucaria/core/context_serialize.hpp>
+
 namespace lucaria {
 namespace detail {
+
+    struct storage_save_context;
+    struct storage_load_context;
 
     struct manager_assets;
 
@@ -41,26 +46,24 @@ namespace detail {
         object_texture_origin origin;
         std::filesystem::path origin_path;
 
-        template <typename ContextType>
-        void save(ContextType& context) const
+        void save(storage_save_context& context) const
         {
-            context(cereal::make_nvp("origin", origin));
-            context(cereal::make_nvp("profile", profile));
+            context.field("origin", origin);
+            context.field("profile", profile);
             if (origin == object_texture_origin::path) {
-                context(cereal::make_nvp("origin_path", origin_path));
+                context.field("origin_path", origin_path);
             }
             if (origin == object_texture_origin::size) {
-                context(cereal::make_nvp("size", size));
+                context.field("size", size);
             }
         }
 
-        template <typename ContextType>
-        void load(ContextType& context)
+        void load(storage_load_context& context)
         {
-            context(cereal::make_nvp("origin", origin));
-            context(cereal::make_nvp("profile", profile));
+            context.field("origin", origin);
+            context.field("profile", profile);
             if (origin == object_texture_origin::path) {
-                context(cereal::make_nvp("origin_path", origin_path));
+                context.field("origin_path", origin_path);
                 const std::filesystem::path _path = origin_path;
                 const data_image_profile _profile = profile;
                 const std::filesystem::path _resolved_path = resolve_profile(context.objects, _path, _profile);
@@ -71,7 +74,7 @@ namespace detail {
                 });
             }
             if (origin == object_texture_origin::size) {
-                context(cereal::make_nvp("size", size));
+                context.field("size", size);
                 *this = object_texture(size);
             }
         }

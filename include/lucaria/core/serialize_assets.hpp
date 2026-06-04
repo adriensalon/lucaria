@@ -83,7 +83,7 @@ namespace detail {
                 LUCARIA_DEBUG_ERROR("Missing asset value or manager_assets while saving asset");
                 return;
             }
-            save_storage_context<ArchiveType> context { archive, *objects };
+            storage_save_context context { archive, *objects };
             save_user_asset_value(*value, context);
         }
 
@@ -208,7 +208,7 @@ namespace detail {
                 return;
             }
 
-            save_storage_context<ArchiveType> context { archive, *objects };
+            storage_save_context context { archive, *objects };
             save_user_asset_value(*value, context);
         }
 
@@ -266,6 +266,34 @@ namespace detail {
 
     [[nodiscard]] recipe_manager_object make_recipe(manager_assets& objects, mappings_manager_object_save& mappings);
     void apply_recipe(manager_window& window, manager_assets& objects, mappings_manager_object_load& mappings, recipe_manager_object& recipe);
+
+
+    struct snapshot_assets {
+        manager_assets& objects;
+
+        template <typename ArchiveType>
+        void save(ArchiveType& archive) const
+        {
+            mappings_manager_game_save& mappings = cereal::get_user_data<mappings_manager_game_save>(archive);
+            recipe_manager_object storage = make_recipe(objects, mappings.objects);
+            archive(storage);
+        }
+
+        template <typename ArchiveType>
+        void load(ArchiveType& archive)
+        {
+            mappings_manager_game_load& mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
+            recipe_manager_object storage = {};
+            archive(storage);
+
+            if (mappings.loading_objects == nullptr || mappings.loading_window == nullptr) {
+                LUCARIA_DEBUG_ERROR("Missing manager_assets or manager_window while loading snapshot assets");
+                return;
+            }
+
+            apply_recipe(*mappings.loading_window, *mappings.loading_objects, mappings.objects, storage);
+        }
+    };
 
     // declared in manager_assets.hpp
     template <typename AssetType>

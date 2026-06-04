@@ -5,10 +5,12 @@
 #include <cereal/archives/json.hpp>
 #include <cereal/archives/portable_binary.hpp>
 
-#include <lucaria/core/serialize_mappings.hpp>
 
 namespace lucaria {
 namespace detail {
+
+    struct mappings_manager_game_save;
+    struct mappings_manager_game_load;
 
     using archive_json_output_type_base = cereal::JSONOutputArchive;
     using archive_json_output = cereal::UserDataAdapter<mappings_manager_game_save, archive_json_output_type_base>;

@@ -10,6 +10,8 @@
 #include <mutex>
 #include <type_traits>
 #include <typeindex>
+#include <variant>
+#include <string_view>
 #include <utility>
 #include <unordered_map>
 #include <vector>
@@ -27,6 +29,7 @@
 #include <lucaria/core/serialize_mappings.hpp>
 #include <lucaria/core/serialize_containers.hpp>
 #include <lucaria/core/serialize_archives.hpp>
+#include <lucaria/core/context_serialize.hpp>
 #include <lucaria/core/user_asset.hpp>
 #include <lucaria/core/assets_buffer.hpp>
 #include <lucaria/core/utils_stream.hpp>
@@ -43,271 +46,11 @@ namespace detail {
     template <typename AssetType, typename Callback>
     void load_user_asset_from_bytes(manager_assets& objects, AssetType& asset, const std::vector<char>& bytes, Callback&& callback);
 
-    template <typename AssetType, typename ArchiveType>
-    struct load_storage_context;
-
-    struct load_context_task_base {
-        virtual ~load_context_task_base() = default;
-        virtual bool poll() = 0;
-        virtual bool finished() const = 0;
-    };
-
-    struct load_storage_context_base {
-        virtual ~load_storage_context_base() = default;
-        virtual bool poll() = 0;
-        virtual bool finished() const = 0;
-    };
-
     struct user_asset_type_callbacks {
         std::function<void(manager_assets&, cereal::PortableBinaryOutputArchive&)> binary_save = nullptr;
         std::function<void(manager_assets&, cereal::PortableBinaryInputArchive&)> binary_load = nullptr;
         std::function<void(manager_assets&, cereal::JSONOutputArchive&)> json_save = nullptr;
         std::function<void(manager_assets&, cereal::JSONInputArchive&)> json_load = nullptr;
-    };
-
-    template <typename ArchiveType>
-    struct save_storage_context {
-        ArchiveType& archive;
-        manager_assets& objects;
-
-        template <typename... Args>
-        void operator()(Args&&... args)
-        {
-            archive(std::forward<Args>(args)...);
-        }
-    };
-
-    template <typename ValueType, typename Callback>
-    struct load_context_value_task final : load_context_task_base {
-        container_async<ValueType> value = {};
-        Callback callback;
-        bool done = false;
-
-        load_context_value_task(std::future<ValueType>&& future, Callback&& callback)
-            : value(std::move(future), [](const ValueType& value) {
-                return value;
-            })
-            , callback(std::move(callback))
-        {
-        }
-
-        bool poll() override
-        {
-            if (done) {
-                return true;
-            }
-            if (!value.has_value()) {
-                return false;
-            }
-            callback(std::as_const(value.value()));
-            done = true;
-            return true;
-        }
-
-        bool finished() const override
-        {
-            return done;
-        }
-    };
-
-    struct asset_fetch_context : load_storage_context_base, std::enable_shared_from_this<asset_fetch_context> {
-        manager_assets& objects;
-
-        std::atomic<uint32> pending_worker_fetches = 0;
-        std::atomic<bool> closed = false;
-        std::atomic<bool> finish_invoked = false;
-        mutable std::mutex tasks_mutex = {};
-        std::vector<std::unique_ptr<load_context_task_base>> tasks = {};
-        std::mutex finish_callbacks_mutex = {};
-        std::vector<std::function<void()>> finish_callbacks = {};
-
-        explicit asset_fetch_context(manager_assets& objects)
-            : objects(objects)
-        {
-        }
-
-        template <typename Callback>
-        void fetch_worker(const std::filesystem::path& path, Callback&& callback, bool must_persist = true);
-
-        template <typename Callback>
-        void fetch_worker(const std::vector<std::filesystem::path>& paths, Callback&& callback, bool must_persist = true);
-
-        template <typename Callback>
-        void fetch_worker(const std::array<std::filesystem::path, 6>& paths, Callback&& callback, bool must_persist = true);
-
-        template <typename Callback>
-        void fetch(const std::filesystem::path& path, Callback&& callback, bool must_persist = true);
-
-        template <typename Callback>
-        void fetch(const std::vector<std::filesystem::path>& paths, Callback&& callback, bool must_persist = true);
-
-        template <typename Callback>
-        void fetch(const std::array<std::filesystem::path, 6>& paths, Callback&& callback, bool must_persist = true);
-
-        template <typename OtherAssetType, typename Callback>
-        void fetch_as(const std::filesystem::path& path, Callback&& callback, bool must_persist = true);
-
-        void close()
-        {
-            closed.store(true, std::memory_order_release);
-            try_finish();
-        }
-
-        template <typename Callback>
-        void on_finished(Callback&& callback)
-        {
-            if (finished()) {
-                callback();
-                return;
-            }
-
-            std::scoped_lock _lock(finish_callbacks_mutex);
-            if (finished()) {
-                callback();
-                return;
-            }
-            finish_callbacks.emplace_back(std::forward<Callback>(callback));
-        }
-
-        bool poll() override
-        {
-            std::size_t _index = 0;
-            while (true) {
-                load_context_task_base* _task = nullptr;
-                {
-                    std::scoped_lock _lock(tasks_mutex);
-                    if (_index >= tasks.size()) {
-                        break;
-                    }
-                    _task = tasks[_index].get();
-                }
-
-                _task->poll();
-                ++_index;
-            }
-
-            try_finish();
-            return finished();
-        }
-
-        bool finished() const override
-        {
-            if (!closed.load(std::memory_order_acquire) || pending_worker_fetches.load(std::memory_order_acquire) != 0) {
-                return false;
-            }
-
-            std::scoped_lock _lock(tasks_mutex);
-            for (const std::unique_ptr<load_context_task_base>& _task : tasks) {
-                if (!_task->finished()) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-    protected:
-        virtual void notify_finished()
-        {
-        }
-
-        void finish_one_worker()
-        {
-            if (pending_worker_fetches.fetch_sub(1, std::memory_order_acq_rel) == 1) {
-                try_finish();
-            }
-        }
-
-        void try_finish()
-        {
-            if (!finished()) {
-                return;
-            }
-            bool _expected = false;
-            if (!finish_invoked.compare_exchange_strong(_expected, true, std::memory_order_acq_rel)) {
-                return;
-            }
-
-            notify_finished();
-
-            std::vector<std::function<void()>> _callbacks;
-            {
-                std::scoped_lock _lock(finish_callbacks_mutex);
-                _callbacks.swap(finish_callbacks);
-            }
-            for (std::function<void()>& _callback : _callbacks) {
-                _callback();
-            }
-        }
-    };
-
-    template <typename AssetType, typename ArchiveType>
-    struct load_storage_context final : asset_fetch_context {
-        ArchiveType& archive;
-        assets_cell<AssetType>* cell;
-        AssetType& self;
-
-        load_storage_context(ArchiveType& archive, manager_assets& objects, assets_cell<AssetType>* cell, AssetType& self)
-            : asset_fetch_context(objects)
-            , archive(archive)
-            , cell(cell)
-            , self(self)
-        {
-        }
-
-        template <typename... Args>
-        void operator()(Args&&... args)
-        {
-            archive(std::forward<Args>(args)...);
-        }
-
-        [[nodiscard]] manager_window* window()
-        {
-            return cereal::get_user_data<mappings_manager_game_load>(archive).loading_window;
-        }
-
-    protected:
-        void notify_finished() override
-        {
-            if (cell != nullptr) {
-                cell->fetched.mark_ready();
-            }
-        }
-    };
-
-
-    template <typename AssetType>
-    struct runtime_storage_context final : asset_fetch_context {
-        assets_cell<AssetType>* cell;
-        AssetType& self;
-        manager_window* runtime_window;
-
-        runtime_storage_context(manager_assets& objects, assets_cell<AssetType>* cell, AssetType& self, manager_window* runtime_window = nullptr)
-            : asset_fetch_context(objects)
-            , cell(cell)
-            , self(self)
-            , runtime_window(runtime_window)
-        {
-        }
-
-        template <typename... Args>
-        void operator()(Args&&...)
-        {
-            // Runtime fetches pre-seed the asset fields before calling load().
-            // The storage load member can then be reused without a cereal archive.
-        }
-
-        [[nodiscard]] manager_window* window()
-        {
-            return runtime_window;
-        }
-
-    protected:
-        void notify_finished() override
-        {
-            if (cell != nullptr) {
-                cell->fetched.mark_ready();
-            }
-        }
     };
 
     template <typename AssetType, typename ContextType, typename = void>
@@ -336,7 +79,7 @@ namespace detail {
         } else if constexpr (has_const_storage_save<AssetType, ContextType>::value) {
             std::as_const(asset).save(context);
         } else {
-            context(cereal::make_nvp("value", asset));
+            context.field("value", asset);
         }
     }
 
@@ -346,7 +89,7 @@ namespace detail {
         if constexpr (has_storage_load<AssetType, ContextType>::value) {
             asset.load(context);
         } else {
-            context(cereal::make_nvp("value", asset));
+            context.field("value", asset);
         }
     }
 
@@ -402,7 +145,11 @@ namespace detail {
         template <typename AssetType, typename ArchiveType>
         std::shared_ptr<load_storage_context<AssetType, ArchiveType>> make_load_storage_context(ArchiveType& archive, assets_cell<AssetType>* cell, AssetType& object)
         {
-            std::shared_ptr<load_storage_context<AssetType, ArchiveType>> _context = std::make_shared<load_storage_context<AssetType, ArchiveType>>(archive, *this, cell, object);
+            manager_window* _window = nullptr;
+            if constexpr (std::is_same_v<std::decay_t<ArchiveType>, archive_json_input> || std::is_same_v<std::decay_t<ArchiveType>, archive_binary_input>) {
+                _window = cereal::get_user_data<mappings_manager_game_load>(archive).loading_window;
+            }
+            std::shared_ptr<load_storage_context<AssetType, ArchiveType>> _context = std::make_shared<load_storage_context<AssetType, ArchiveType>>(archive, *this, cell, object, _window);
             active_load_contexts.emplace_back(_context);
             return _context;
         }

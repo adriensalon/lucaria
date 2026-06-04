@@ -10,6 +10,8 @@
 #include <lucaria/core/storage_registry.hpp>
 #include <lucaria/core/user_scene.hpp>
 #include <lucaria/core/gsl_compiler.hpp>
+#include <lucaria/core/context_serialize.hpp>
+#include <lucaria/core/utils_error.hpp>
 
 namespace lucaria {
 
@@ -127,7 +129,12 @@ namespace detail {
                     _typed_scene.update(game);
                 };
             }
-            if constexpr (has_user_scene_stop_v<SceneType>) {
+            if constexpr (has_user_scene_destroy_v<SceneType>) {
+                _scene_type.stop = [](context_game& game, object_user_scene& scene) {
+                    SceneType& _typed_scene = std::any_cast<SceneType&>(scene.user_data);
+                    _typed_scene.destroy(game);
+                };
+            } else if constexpr (has_user_scene_stop_v<SceneType>) {
                 _scene_type.stop = [](context_game& game, object_user_scene& scene) {
                     SceneType& _typed_scene = std::any_cast<SceneType&>(scene.user_data);
                     _typed_scene.stop(game);
@@ -136,22 +143,62 @@ namespace detail {
 
             _scene_type.binary_save = [](object_user_scene& scene, cereal::PortableBinaryOutputArchive& archive) {
                 SceneType& _typed_scene = std::any_cast<SceneType&>(scene.user_data);
-                archive(cereal::make_nvp("user_scene", _typed_scene));
+                if constexpr (has_user_scene_save_game_v<SceneType>) {
+                    mappings_manager_game_save& _mappings = cereal::get_user_data<mappings_manager_game_save>(archive);
+                    if (_mappings.saving_objects == nullptr || _mappings.scenes.saving_scene_manager == nullptr) {
+                        LUCARIA_DEBUG_ERROR("Missing game context while saving user scene");
+                        return;
+                    }
+                    game_save_context _context { archive, *_mappings.saving_objects, *_mappings.scenes.saving_scene_manager, _mappings };
+                    _context.field("user_scene", _typed_scene);
+                } else {
+                    archive(cereal::make_nvp("user_scene", _typed_scene));
+                }
             };
 
             _scene_type.binary_load = [](object_user_scene& scene, cereal::PortableBinaryInputArchive& archive) {
                 SceneType& _typed_scene = std::any_cast<SceneType&>(scene.user_data);
-                archive(cereal::make_nvp("user_scene", _typed_scene));
+                if constexpr (has_user_scene_load_game_v<SceneType>) {
+                    mappings_manager_game_load& _mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
+                    if (_mappings.loading_objects == nullptr || _mappings.loading_scene_manager == nullptr) {
+                        LUCARIA_DEBUG_ERROR("Missing game context while loading user scene");
+                        return;
+                    }
+                    game_load_context _context { archive, *_mappings.loading_objects, *_mappings.loading_scene_manager, _mappings.dynamics, _mappings };
+                    _context.field("user_scene", _typed_scene);
+                } else {
+                    archive(cereal::make_nvp("user_scene", _typed_scene));
+                }
             };
 
             _scene_type.json_save = [](object_user_scene& scene, cereal::JSONOutputArchive& archive) {
                 SceneType& _typed_scene = std::any_cast<SceneType&>(scene.user_data);
-                archive(cereal::make_nvp("user_scene", _typed_scene));
+                if constexpr (has_user_scene_save_game_v<SceneType>) {
+                    mappings_manager_game_save& _mappings = cereal::get_user_data<mappings_manager_game_save>(archive);
+                    if (_mappings.saving_objects == nullptr || _mappings.scenes.saving_scene_manager == nullptr) {
+                        LUCARIA_DEBUG_ERROR("Missing game context while saving user scene");
+                        return;
+                    }
+                    game_save_context _context { archive, *_mappings.saving_objects, *_mappings.scenes.saving_scene_manager, _mappings };
+                    _context.field("user_scene", _typed_scene);
+                } else {
+                    archive(cereal::make_nvp("user_scene", _typed_scene));
+                }
             };
 
             _scene_type.json_load = [](object_user_scene& scene, cereal::JSONInputArchive& archive) {
                 SceneType& _typed_scene = std::any_cast<SceneType&>(scene.user_data);
-                archive(cereal::make_nvp("user_scene", _typed_scene));
+                if constexpr (has_user_scene_load_game_v<SceneType>) {
+                    mappings_manager_game_load& _mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
+                    if (_mappings.loading_objects == nullptr || _mappings.loading_scene_manager == nullptr) {
+                        LUCARIA_DEBUG_ERROR("Missing game context while loading user scene");
+                        return;
+                    }
+                    game_load_context _context { archive, *_mappings.loading_objects, *_mappings.loading_scene_manager, _mappings.dynamics, _mappings };
+                    _context.field("user_scene", _typed_scene);
+                } else {
+                    archive(cereal::make_nvp("user_scene", _typed_scene));
+                }
             };
 
             scene_type_ids[std::type_index(typeid(SceneType))] = type_id;
