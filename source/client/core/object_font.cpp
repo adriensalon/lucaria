@@ -12,6 +12,7 @@ namespace detail {
 
     object_font::object_font(manager_window& window, const std::vector<char>& bytes, const float32 font_size)
         : origin(object_font_origin::path)
+        , font_size(font_size)
     {
         int _data_size = static_cast<int>(bytes.size());
         void* _owned_data = IM_ALLOC(_data_size);

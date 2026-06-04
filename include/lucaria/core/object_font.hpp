@@ -19,7 +19,7 @@ namespace detail {
     };
 
     struct object_font {
-        LUCARIA_DELETE_DEFAULT(object_font)
+        object_font() = default;
         object_font(const object_font& other) = delete;
         object_font& operator=(const object_font& other) = delete;
         object_font(object_font&& other) = default;
@@ -29,14 +29,38 @@ namespace detail {
 
         object_font_origin origin;
         std::filesystem::path origin_path;
-        ImFont* font;
+        ImFont* font = nullptr;
+        float32 font_size = 14.f;
 
-        template <typename Archive>
-        void serialize(Archive& archive)
+        template <typename ContextType>
+        void save(ContextType& context) const
         {
-            archive(cereal::make_nvp("origin", origin));
-            archive(cereal::make_nvp("origin_path", origin_path));
+            context(cereal::make_nvp("origin", origin));
+            context(cereal::make_nvp("origin_path", origin_path));
+            const float32 _font_size = font != nullptr ? font->FontSize : font_size;
+            context(cereal::make_nvp("font_size", _font_size));
         }
+
+        template <typename ContextType>
+        void load(ContextType& context)
+        {
+            context(cereal::make_nvp("origin", origin));
+            context(cereal::make_nvp("origin_path", origin_path));
+            context(cereal::make_nvp("font_size", font_size));
+            const std::filesystem::path _path = origin_path;
+            const float32 _font_size = font_size;
+            manager_window* _window = context.window();
+            if (_window == nullptr) {
+                LUCARIA_DEBUG_ERROR("Missing manager_window while loading font asset");
+                return;
+            }
+            context.fetch(_path, [this, _path, _font_size, _window](const std::vector<char>& bytes) {
+                *this = object_font(*_window, bytes, _font_size);
+                origin_path = _path;
+                font_size = _font_size;
+            });
+        }
+
     };
 
     [[nodiscard]] assets_cell<object_font>& fetch(

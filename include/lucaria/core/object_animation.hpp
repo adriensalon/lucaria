@@ -16,7 +16,7 @@ namespace detail {
     };
 
     struct object_animation {
-        LUCARIA_DELETE_DEFAULT(object_animation)
+        object_animation() = default;
         object_animation(const object_animation& other) = delete;
         object_animation& operator=(const object_animation& other) = delete;
         object_animation(object_animation&& other) = default;
@@ -40,7 +40,11 @@ namespace detail {
         {
             archive(cereal::make_nvp("origin", origin));
             archive(cereal::make_nvp("origin_path", origin_path));
-            // call fetch and let this object die ?
+            const std::filesystem::path _path = origin_path;
+            archive.fetch(_path, [this, _path](const std::vector<char>& bytes) {
+                *this = object_animation(bytes);
+                origin_path = _path;
+            });
         }
     };
 

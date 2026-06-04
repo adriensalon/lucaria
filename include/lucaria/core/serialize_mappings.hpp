@@ -24,6 +24,7 @@ namespace detail {
 
     struct manager_assets;
     struct manager_scenes;
+    struct manager_window;
     struct object_user_scene;
 
     struct mappings_user_asset_base_save {
@@ -158,6 +159,7 @@ namespace detail {
         mappings_manager_object_load objects = {};
         mappings_manager_scene_load scenes = {};
         manager_assets* loading_objects = nullptr;
+        manager_window* loading_window = nullptr;
         context_dynamics* dynamics = nullptr;
         manager_scenes* loading_scene_manager = nullptr;
         object_user_scene* loading_scene = nullptr;

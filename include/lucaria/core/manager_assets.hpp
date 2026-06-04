@@ -33,6 +33,7 @@ namespace lucaria {
 namespace detail {
 
     struct manager_assets;
+    struct manager_window;
 
     template <typename AssetType>
     void load_user_asset_from_bytes(manager_assets& objects, AssetType& asset, const std::vector<char>& bytes);
@@ -94,6 +95,11 @@ namespace detail {
             archive(std::forward<Args>(args)...);
         }
 
+        [[nodiscard]] manager_window* window()
+        {
+            return cereal::get_user_data<mappings_manager_game_load>(archive).loading_window;
+        }
+
         template <typename Callback>
         void fetch(const std::filesystem::path& path, Callback&& callback, bool must_persist = true)
         {
@@ -106,12 +112,39 @@ namespace detail {
             }, must_persist);
         }
 
+        template <typename Callback>
+        void fetch(const std::array<std::filesystem::path, 6>& paths, Callback&& callback, bool must_persist = true)
+        {
+            pending_fetches.fetch_add(1, std::memory_order_acq_rel);
+            std::shared_ptr<load_storage_context> _context = this->shared_from_this();
+
+            objects.fetch_bytes(paths, [_context, callback = std::forward<Callback>(callback)](const std::vector<std::vector<char>>& bytes) mutable {
+                callback(bytes);
+                _context->finish_one();
+            }, must_persist);
+        }
+
+        template <typename Callback>
+        void fetch(const std::vector<std::filesystem::path>& paths, Callback&& callback, bool must_persist = true)
+        {
+            pending_fetches.fetch_add(1, std::memory_order_acq_rel);
+            std::shared_ptr<load_storage_context> _context = this->shared_from_this();
+
+            objects.fetch_bytes(paths, [_context, callback = std::forward<Callback>(callback)](const std::vector<std::vector<char>>& bytes) mutable {
+                callback(bytes);
+                _context->finish_one();
+            }, must_persist);
+        }
+
         template <typename OtherAssetType, typename Callback>
         void fetch_as(const std::filesystem::path& path, Callback&& callback, bool must_persist = true)
         {
-            fetch(path, [this, callback = std::forward<Callback>(callback)](const std::vector<char>& bytes) mutable {
+            pending_fetches.fetch_add(1, std::memory_order_acq_rel);
+            std::shared_ptr<load_storage_context> _context = this->shared_from_this();
+
+            objects.fetch_bytes(path, [_context, callback = std::forward<Callback>(callback)](const std::vector<char>& bytes) mutable {
                 std::shared_ptr<OtherAssetType> _other = std::make_shared<OtherAssetType>();
-                load_user_asset_from_bytes(objects, *_other, bytes, [_other, callback = std::move(callback)]() mutable {
+                load_user_asset_from_bytes(_context->objects, *_other, bytes, [_context, _other, callback = std::move(callback)]() mutable {
                     if constexpr (std::is_invocable_v<Callback&, OtherAssetType&&>) {
                         callback(std::move(*_other));
                     } else if constexpr (std::is_invocable_v<Callback&, OtherAssetType&>) {
@@ -119,6 +152,7 @@ namespace detail {
                     } else {
                         callback(std::as_const(*_other));
                     }
+                    _context->finish_one();
                 });
             }, must_persist);
         }

@@ -17,7 +17,7 @@ namespace detail {
     };
 
     struct object_image {
-        LUCARIA_DELETE_DEFAULT(object_image)
+        object_image() = default;
         object_image(const object_image& other) = delete;
         object_image& operator=(const object_image& other) = delete;
         object_image(object_image&& other) noexcept = default;
@@ -33,18 +33,39 @@ namespace detail {
 		data_image_profile profile;
         data_image data;
 
-        template <typename Archive>
-        void serialize(Archive& archive)
+        template <typename ContextType>
+        void save(ContextType& context) const
         {
-            archive(cereal::make_nvp("origin", origin));
-            archive(cereal::make_nvp("profile", profile));
+            context(cereal::make_nvp("origin", origin));
+            context(cereal::make_nvp("profile", profile));
             if (origin == object_image_origin::path) {
-                archive(cereal::make_nvp("origin_path", origin_path));
+                context(cereal::make_nvp("origin_path", origin_path));
             }
             if (origin == object_image_origin::data) {
-                archive(cereal::make_nvp("origin_data", data));
+                context(cereal::make_nvp("origin_data", data));
             }
         }
+
+        template <typename ContextType>
+        void load(ContextType& context)
+        {
+            context(cereal::make_nvp("origin", origin));
+            context(cereal::make_nvp("profile", profile));
+            if (origin == object_image_origin::path) {
+                context(cereal::make_nvp("origin_path", origin_path));
+                const std::filesystem::path _path = origin_path;
+                const data_image_profile _profile = profile;
+                const std::filesystem::path _resolved_path = resolve_profile(context.objects, _path, _profile);
+                context.fetch(_resolved_path, [this, _path](const std::vector<char>& bytes) {
+                    *this = object_image(bytes);
+                    origin_path = _path;
+                });
+            }
+            if (origin == object_image_origin::data) {
+                context(cereal::make_nvp("origin_data", data));
+            }
+        }
+
     };
 
     [[nodiscard]] std::filesystem::path resolve_profile(

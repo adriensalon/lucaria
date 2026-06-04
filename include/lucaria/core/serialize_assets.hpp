@@ -59,20 +59,93 @@ namespace detail {
         }
     };
 
+
+    template <typename AssetType>
+    [[nodiscard]] assets_buffer<AssetType>& get_asset_buffer(manager_assets& objects);
+
+    template <typename AssetType>
+    [[nodiscard]] mappings_container_cache_vector_save<AssetType>& get_asset_mapping(mappings_manager_object_save& mappings);
+
+    template <typename AssetType>
+    [[nodiscard]] mappings_container_cache_vector_load<AssetType>& get_asset_mapping(mappings_manager_object_load& mappings);
+
+    template <typename AssetType>
+    struct storage_asset_entry {
+        uint32 save_id = 0;
+        AssetType* value = nullptr;
+        manager_assets* objects = nullptr;
+
+        template <typename ArchiveType>
+        void save(ArchiveType& archive) const
+        {
+            archive(cereal::make_nvp("object_save_id", save_id));
+            if (value == nullptr || objects == nullptr) {
+                LUCARIA_DEBUG_ERROR("Missing asset value or manager_assets while saving asset");
+                return;
+            }
+            save_storage_context<ArchiveType> context { archive, *objects };
+            save_user_asset_value(*value, context);
+        }
+
+        template <typename ArchiveType>
+        void load(ArchiveType& archive)
+        {
+            archive(cereal::make_nvp("object_save_id", save_id));
+
+            mappings_manager_game_load& mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
+            if (mappings.loading_objects == nullptr) {
+                LUCARIA_DEBUG_ERROR("Missing manager_assets while loading asset");
+                return;
+            }
+
+            manager_assets& objects = *mappings.loading_objects;
+            assets_buffer<AssetType>& buffer = get_asset_buffer<AssetType>(objects);
+            assets_cell<AssetType>* cell = buffer.create_cell(container_async<AssetType>(AssetType {}));
+            AssetType& asset = cell->fetched.value();
+
+            std::shared_ptr<load_storage_context<AssetType, ArchiveType>> context = objects.template make_load_storage_context<AssetType>(archive, cell, asset);
+            load_user_asset_value(asset, *context);
+            context->close();
+
+            get_asset_mapping<AssetType>(mappings.objects).set(save_id, cell);
+        }
+    };
+
+#define LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(Type, Member) \
+    template <> inline assets_buffer<Type>& get_asset_buffer<Type>(manager_assets& objects) { return objects.Member; } \
+    template <> inline mappings_container_cache_vector_save<Type>& get_asset_mapping<Type>(mappings_manager_object_save& mappings) { return mappings.Member; } \
+    template <> inline mappings_container_cache_vector_load<Type>& get_asset_mapping<Type>(mappings_manager_object_load& mappings) { return mappings.Member; }
+
+    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_animation, animations)
+    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_audio, audios)
+    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_cubemap, cubemaps)
+    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_event_track, event_tracks)
+    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_font, fonts)
+    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_geometry, geometries)
+    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_image, images)
+    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_mesh, meshes)
+    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_motion_track, motion_tracks)
+    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_shape, shapes)
+    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_skeleton, skeletons)
+    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_sound_track, sound_tracks)
+    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_texture, textures)
+
+#undef LUCARIA_DETAIL_DEFINE_ASSET_STORAGE
+
     struct recipe_manager_object {
-        std::vector<recipe_object_entry<recipe_object_animation>> animations = {};
-        std::vector<recipe_object_entry<recipe_object_audio>> audios = {};
-        std::vector<recipe_object_entry<recipe_object_cubemap>> cubemaps = {};
-        std::vector<recipe_object_entry<recipe_object_event_track>> event_tracks = {};
-        std::vector<recipe_object_entry<recipe_object_font>> fonts = {};
-        std::vector<recipe_object_entry<recipe_object_geometry>> geometries = {};
-        std::vector<recipe_object_entry<recipe_object_image>> images = {};
-        std::vector<recipe_object_entry<recipe_object_mesh>> meshes = {};
-        std::vector<recipe_object_entry<recipe_object_motion_track>> motion_tracks = {};
-        std::vector<recipe_object_entry<recipe_object_shape>> shapes = {};
-        std::vector<recipe_object_entry<recipe_object_skeleton>> skeletons = {};
-        std::vector<recipe_object_entry<recipe_object_sound_track>> sound_tracks = {};
-        std::vector<recipe_object_entry<recipe_object_texture>> textures = {};
+        std::vector<storage_asset_entry<object_animation>> animations = {};
+        std::vector<storage_asset_entry<object_audio>> audios = {};
+        std::vector<storage_asset_entry<object_cubemap>> cubemaps = {};
+        std::vector<storage_asset_entry<object_event_track>> event_tracks = {};
+        std::vector<storage_asset_entry<object_font>> fonts = {};
+        std::vector<storage_asset_entry<object_geometry>> geometries = {};
+        std::vector<storage_asset_entry<object_image>> images = {};
+        std::vector<storage_asset_entry<object_mesh>> meshes = {};
+        std::vector<storage_asset_entry<object_motion_track>> motion_tracks = {};
+        std::vector<storage_asset_entry<object_shape>> shapes = {};
+        std::vector<storage_asset_entry<object_skeleton>> skeletons = {};
+        std::vector<storage_asset_entry<object_sound_track>> sound_tracks = {};
+        std::vector<storage_asset_entry<object_texture>> textures = {};
         std::vector<storage_user_asset_group> user_assets = {};
 
         template <typename ArchiveType>
@@ -95,25 +168,26 @@ namespace detail {
         }
     };
 
-    template <typename ObjectType, typename RecipeType>
-    void make_recipes_for(std::vector<recipe_object_entry<RecipeType>>& recipes, const assets_buffer<ObjectType>& cached_vector, mappings_container_cache_vector_save<ObjectType>& ids)
+    template <typename ObjectType>
+    void make_storage_entries_for(std::vector<storage_asset_entry<ObjectType>>& entries, manager_assets& objects, const assets_buffer<ObjectType>& cached_vector, mappings_container_cache_vector_save<ObjectType>& ids)
     {
-		cached_vector.for_each_cell([&] (assets_cell<ObjectType>& cell) {
-            recipes.push_back(recipe_object_entry<RecipeType> { ids.get_or_create(&cell), make_recipe(cell) });
-		});
+        cached_vector.for_each_cell([&] (assets_cell<ObjectType>& cell) {
+            if (!cell.fetched.has_value()) {
+                return;
+            }
+            entries.push_back(storage_asset_entry<ObjectType> { ids.get_or_create(&cell), &cell.fetched.value(), &objects });
+        });
+    }
+
+    // Legacy recipe helpers kept for source compatibility with older call sites.
+    template <typename ObjectType, typename RecipeType>
+    void make_recipes_for(std::vector<recipe_object_entry<RecipeType>>&, const assets_buffer<ObjectType>&, mappings_container_cache_vector_save<ObjectType>&)
+    {
     }
 
     template <typename ObjectType, typename RecipeType>
-    void apply_recipes_for(manager_assets& objects, assets_buffer<ObjectType>& cached_vector, mappings_container_cache_vector_load<ObjectType>& mappings, std::vector<recipe_object_entry<RecipeType>>& recipes)
+    void apply_recipes_for(manager_assets&, assets_buffer<ObjectType>&, mappings_container_cache_vector_load<ObjectType>&, std::vector<recipe_object_entry<RecipeType>>&)
     {
-        for (auto& entry : recipes) {
-            assets_cell<ObjectType>* cell = apply_recipe(objects, cached_vector, entry.recipe);
-            if (cell == nullptr) {
-                LUCARIA_DEBUG_ERROR("Failed to apply object recipe");
-                continue;
-            }
-            mappings.set(entry.save_id, cell);
-        }
     }
 
     void apply_recipes_for(manager_window& window, manager_assets& objects, assets_buffer<object_font>& cached_vector, mappings_container_cache_vector_load<object_font>& mappings, std::vector<recipe_object_entry<recipe_object_font>>& recipes);

@@ -25,7 +25,7 @@ namespace detail {
     };
 
     struct object_texture {
-        LUCARIA_DELETE_DEFAULT(object_texture)
+        object_texture() = default;
         object_texture(const object_texture& other) = delete;
         object_texture& operator=(const object_texture& other) = delete;
         object_texture(object_texture&& other) = default;
@@ -41,21 +41,41 @@ namespace detail {
         object_texture_origin origin;
         std::filesystem::path origin_path;
 
-        template <typename Archive>
-        void serialize(Archive& archive)
+        template <typename ContextType>
+        void save(ContextType& context) const
         {
-            archive(cereal::make_nvp("origin", origin));
-            archive(cereal::make_nvp("profile", profile));
+            context(cereal::make_nvp("origin", origin));
+            context(cereal::make_nvp("profile", profile));
             if (origin == object_texture_origin::path) {
-                archive(cereal::make_nvp("origin_path", origin_path));
-            }
-            if (origin == object_texture_origin::data) {
-                // TODO recreate image from texture
+                context(cereal::make_nvp("origin_path", origin_path));
             }
             if (origin == object_texture_origin::size) {
-				// TODO
+                context(cereal::make_nvp("size", size));
             }
         }
+
+        template <typename ContextType>
+        void load(ContextType& context)
+        {
+            context(cereal::make_nvp("origin", origin));
+            context(cereal::make_nvp("profile", profile));
+            if (origin == object_texture_origin::path) {
+                context(cereal::make_nvp("origin_path", origin_path));
+                const std::filesystem::path _path = origin_path;
+                const data_image_profile _profile = profile;
+                const std::filesystem::path _resolved_path = resolve_profile(context.objects, _path, _profile);
+                context.fetch(_resolved_path, [this, _path](const std::vector<char>& bytes) {
+                    object_image _image(bytes);
+                    *this = object_texture(_image);
+                    origin_path = _path;
+                });
+            }
+            if (origin == object_texture_origin::size) {
+                context(cereal::make_nvp("size", size));
+                *this = object_texture(size);
+            }
+        }
+
 
         data_image_profile profile;
         uint32x2 size;

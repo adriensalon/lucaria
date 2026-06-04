@@ -16,7 +16,7 @@ namespace detail {
     };
 
     struct object_sound_track {
-        LUCARIA_DELETE_DEFAULT(object_sound_track)
+        object_sound_track() = default;
         object_sound_track(const object_sound_track& other) = delete;
         object_sound_track& operator=(const object_sound_track& other) = delete;
         object_sound_track(object_sound_track&& other) = default;
@@ -32,17 +32,30 @@ namespace detail {
         uint32 sample_rate;
         uint32 samples_count;
 
-        template <typename Archive>
-        void serialize(Archive& archive)
+        template <typename ContextType>
+        void save(ContextType& context) const
         {
-            archive(cereal::make_nvp("origin", origin));
+            context(cereal::make_nvp("origin", origin));
             if (origin == object_sound_track_origin::path) {
-                archive(cereal::make_nvp("origin_path", origin_path));
-            }
-            if (origin == object_sound_track_origin::data) {
-				// impossible to recreate audio from sound_track withou AL extension for now
+                context(cereal::make_nvp("origin_path", origin_path));
             }
         }
+
+        template <typename ContextType>
+        void load(ContextType& context)
+        {
+            context(cereal::make_nvp("origin", origin));
+            if (origin == object_sound_track_origin::path) {
+                context(cereal::make_nvp("origin_path", origin_path));
+                const std::filesystem::path _path = origin_path;
+                context.fetch(_path, [this, _path](const std::vector<char>& bytes) {
+                    object_audio _audio(bytes);
+                    *this = object_sound_track(_audio);
+                    origin_path = _path;
+                });
+            }
+        }
+
     };
 
     [[nodiscard]] assets_cell<object_sound_track>& fetch(

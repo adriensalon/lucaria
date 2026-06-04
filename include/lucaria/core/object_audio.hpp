@@ -16,7 +16,7 @@ namespace detail {
     };
 
     struct object_audio {
-        LUCARIA_DELETE_DEFAULT(object_audio)
+        object_audio() = default;
         object_audio(const object_audio& other) = delete;
         object_audio& operator=(const object_audio& other) = delete;
         object_audio(object_audio&& other) = default;
@@ -30,49 +30,67 @@ namespace detail {
         std::filesystem::path origin_path;
         data_audio data;
 
-        template <typename Archive>
-        void serialize(Archive& archive)
+        template <typename ContextType>
+        void save(ContextType& context) const
         {
-            archive(cereal::make_nvp("origin", origin));
+            context(cereal::make_nvp("origin", origin));
             if (origin == object_audio_origin::path) {
-                archive(cereal::make_nvp("origin_path", origin_path));
+                context(cereal::make_nvp("origin_path", origin_path));
             }
             if (origin == object_audio_origin::data) {
-                archive(cereal::make_nvp("origin_data", data));
+                context(cereal::make_nvp("origin_data", data));
             }
         }
-    };
 
-    [[nodiscard]] assets_cell<object_audio>& fetch(
-        manager_assets& objects,
-        assets_buffer<object_audio>& cached_vector,
-        const std::filesystem::path& path);
-
-    // recipes
-
-    struct recipe_object_audio_path {
-        std::filesystem::path path;
-
-        template <typename ArchiveType>
-        void serialize(ArchiveType& archive)
+        template <typename ContextType>
+        void load(ContextType& context)
         {
-            archive(cereal::make_nvp("path", path));
+            context(cereal::make_nvp("origin", origin));
+            if (origin == object_audio_origin::path) {
+                context(cereal::make_nvp("origin_path", origin_path));
+                const std::filesystem::path _path = origin_path;
+                context.fetch(_path, [this, _path](const std::vector<char>& bytes) {
+                    *this = object_audio(bytes);
+                    origin_path = _path;
+                });
+            }
+            if (origin == object_audio_origin::data) {
+                context(cereal::make_nvp("origin_data", data));
+            }
         }
+
     };
 
-    struct recipe_object_audio_data {
-        data_audio data;
+    // [[nodiscard]] assets_cell<object_audio>& fetch(
+    //     manager_assets& objects,
+    //     assets_buffer<object_audio>& cached_vector,
+    //     const std::filesystem::path& path);
 
-        template <typename ArchiveType>
-        void serialize(ArchiveType& archive)
-        {
-            archive(cereal::make_nvp("data", data));
-        }
-    };
+    // // recipes
 
-    using recipe_object_audio = std::variant<recipe_object_audio_path, recipe_object_audio_data>;
+    // struct recipe_object_audio_path {
+    //     std::filesystem::path path;
 
-    [[nodiscard]] recipe_object_audio make_recipe(const assets_cell<object_audio>& cache);
-    [[nodiscard]] assets_cell<object_audio>* apply_recipe(manager_assets& objects, assets_buffer<object_audio>& cached, recipe_object_audio& recipe);
+    //     template <typename ArchiveType>
+    //     void serialize(ArchiveType& archive)
+    //     {
+    //         archive(cereal::make_nvp("path", path));
+    //     }
+    // };
+
+    // struct recipe_object_audio_data {
+    //     data_audio data;
+
+    //     template <typename ArchiveType>
+    //     void serialize(ArchiveType& archive)
+    //     {
+    //         archive(cereal::make_nvp("data", data));
+    //     }
+    // };
+
+    // using recipe_object_audio = std::variant<recipe_object_audio_path, recipe_object_audio_data>;
+
+    // [[nodiscard]] recipe_object_audio make_recipe(const assets_cell<object_audio>& cache);
+    // [[nodiscard]] assets_cell<object_audio>* apply_recipe(manager_assets& objects, assets_buffer<object_audio>& cached, recipe_object_audio& recipe);
 }
 }

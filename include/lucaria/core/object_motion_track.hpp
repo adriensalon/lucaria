@@ -17,7 +17,7 @@ namespace detail {
     };
 
     struct object_motion_track {
-        LUCARIA_DELETE_DEFAULT(object_motion_track)
+        object_motion_track() = default;
         object_motion_track(const object_motion_track& other) = delete;
         object_motion_track& operator=(const object_motion_track& other) = delete;
         object_motion_track(object_motion_track&& other) = default;
@@ -31,14 +31,29 @@ namespace detail {
         ozz::animation::Float3Track translation_track;
         ozz::animation::QuaternionTrack rotation_track;
 
-        template <typename Archive>
-        void serialize(Archive& archive)
+        template <typename ContextType>
+        void save(ContextType& context) const
         {
-            archive(cereal::make_nvp("origin", origin));
+            context(cereal::make_nvp("origin", origin));
             if (origin == object_motion_track_origin::path) {
-                archive(cereal::make_nvp("origin_path", origin_path));
+                context(cereal::make_nvp("origin_path", origin_path));
             }
         }
+
+        template <typename ContextType>
+        void load(ContextType& context)
+        {
+            context(cereal::make_nvp("origin", origin));
+            if (origin == object_motion_track_origin::path) {
+                context(cereal::make_nvp("origin_path", origin_path));
+                const std::filesystem::path _path = origin_path;
+                context.fetch(_path, [this, _path](const std::vector<char>& bytes) {
+                    *this = object_motion_track(bytes);
+                    origin_path = _path;
+                });
+            }
+        }
+
     };
 
     [[nodiscard]] assets_cell<object_motion_track>& fetch(

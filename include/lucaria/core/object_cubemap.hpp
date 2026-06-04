@@ -23,7 +23,7 @@ namespace detail {
     };
 
     struct object_cubemap {
-        LUCARIA_DELETE_DEFAULT(object_cubemap)
+        object_cubemap() = default;
         object_cubemap(const object_cubemap& other) = delete;
         object_cubemap& operator=(const object_cubemap& other) = delete;
         object_cubemap(object_cubemap&& other) = default;
@@ -36,18 +36,41 @@ namespace detail {
         data_image_profile profile;
         std::array<std::filesystem::path, 6> origin_paths;
 
-        template <typename Archive>
-        void serialize(Archive& archive)
+        template <typename ContextType>
+        void save(ContextType& context) const
         {
-            archive(cereal::make_nvp("origin", origin));
-            archive(cereal::make_nvp("profile", profile));
+            context(cereal::make_nvp("origin", origin));
+            context(cereal::make_nvp("profile", profile));
             if (origin == object_cubemap_origin::path) {
-                archive(cereal::make_nvp("origin_path", origin_paths));
-            }
-            if (origin == object_cubemap_origin::data) {
-                // TODO
+                context(cereal::make_nvp("origin_path", origin_paths));
             }
         }
+
+        template <typename ContextType>
+        void load(ContextType& context)
+        {
+            context(cereal::make_nvp("origin", origin));
+            context(cereal::make_nvp("profile", profile));
+            if (origin == object_cubemap_origin::path) {
+                context(cereal::make_nvp("origin_path", origin_paths));
+                const std::array<std::filesystem::path, 6> _paths = origin_paths;
+                const data_image_profile _profile = profile;
+                const std::array<std::filesystem::path, 6> _resolved_paths = resolve_profile(context.objects, _paths, _profile);
+                context.fetch(_resolved_paths, [this, _paths](const std::vector<std::vector<char>>& bytes) {
+                    std::array<object_image, 6> _images = {
+                        object_image(bytes[0]),
+                        object_image(bytes[1]),
+                        object_image(bytes[2]),
+                        object_image(bytes[3]),
+                        object_image(bytes[4]),
+                        object_image(bytes[5])
+                    };
+                    *this = object_cubemap(_images);
+                    origin_paths = _paths;
+                });
+            }
+        }
+
 
 #if defined(LUCARIA_BACKEND_OPENGL)
         flag_owning ownership = {};

@@ -72,6 +72,7 @@ namespace detail {
     {
         mappings_manager_game_load _mappings = {};
         _mappings.loading_objects = &objects;
+        _mappings.loading_window = &window;
         _mappings.loading_scene_manager = &scenes;
         _mappings.dynamics = &context->dynamics;
 

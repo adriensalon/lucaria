@@ -5,6 +5,7 @@
 #include <btBulletDynamicsCommon.h>
 
 #include <lucaria/core/object_geometry.hpp>
+#include <lucaria/core/utils_math.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -27,7 +28,7 @@ namespace detail {
     };
 
     struct object_shape {
-        LUCARIA_DELETE_DEFAULT(object_shape)
+        object_shape() = default;
         object_shape(const object_shape& other) = delete;
         object_shape& operator=(const object_shape& other) = delete;
         object_shape(object_shape&& other) = default;
@@ -46,29 +47,48 @@ namespace detail {
         glm::mat4 center_to_feet;
         glm::float32 half_height;
 
-        template <typename Archive>
-        void serialize(Archive& archive)
+        template <typename ContextType>
+        void save(ContextType& context) const
         {
-            archive(cereal::make_nvp("origin", origin));
+            context(cereal::make_nvp("origin", origin));
             if (origin == object_shape_origin::path) {
-                archive(cereal::make_nvp("origin_path", origin_path));
+                context(cereal::make_nvp("origin_path", origin_path));
+                context(cereal::make_nvp("algorithm", algorithm));
             }
-            if (origin == object_shape_origin::data) {
-				// TODO recreate geometry from shape triangles
-            }
-            if (origin == object_shape_origin::box) {
-				// TODO recreate geometry from shape triangles
-            }
-            if (origin == object_shape_origin::sphere) {
-				// TODO recreate geometry from shape triangles
-            }
-            if (origin == object_shape_origin::capsule) {
-				// TODO recreate geometry from shape triangles
-            }
-            if (origin == object_shape_origin::cone) {
-				// TODO recreate geometry from shape triangles
+            if (origin == object_shape_origin::box || origin == object_shape_origin::sphere || origin == object_shape_origin::capsule || origin == object_shape_origin::cone) {
+                context(cereal::make_nvp("origin_extents", origin_extents));
             }
         }
+
+        template <typename ContextType>
+        void load(ContextType& context)
+        {
+            context(cereal::make_nvp("origin", origin));
+            if (origin == object_shape_origin::path) {
+                context(cereal::make_nvp("origin_path", origin_path));
+                context(cereal::make_nvp("algorithm", algorithm));
+                const std::filesystem::path _path = origin_path;
+                const object_shape_algorithm _algorithm = algorithm;
+                context.fetch(_path, [this, _path, _algorithm](const std::vector<char>& bytes) {
+                    object_geometry _geometry(bytes);
+                    *this = object_shape(_geometry, _algorithm);
+                    origin_path = _path;
+                });
+            } else if (origin == object_shape_origin::box) {
+                context(cereal::make_nvp("origin_extents", origin_extents));
+                *this = object_shape(new btBoxShape(convert_bullet(origin_extents)), origin_extents.z);
+            } else if (origin == object_shape_origin::sphere) {
+                context(cereal::make_nvp("origin_extents", origin_extents));
+                *this = object_shape(new btSphereShape(static_cast<btScalar>(origin_extents.x)), static_cast<btScalar>(origin_extents.x));
+            } else if (origin == object_shape_origin::capsule) {
+                context(cereal::make_nvp("origin_extents", origin_extents));
+                *this = object_shape(new btCapsuleShape(static_cast<btScalar>(origin_extents.x), static_cast<btScalar>(origin_extents.y)));
+            } else if (origin == object_shape_origin::cone) {
+                context(cereal::make_nvp("origin_extents", origin_extents));
+                *this = object_shape(new btConeShape(static_cast<btScalar>(origin_extents.x), static_cast<btScalar>(origin_extents.y)));
+            }
+        }
+
     };
 
     [[nodiscard]] assets_cell<object_shape>& fetch(

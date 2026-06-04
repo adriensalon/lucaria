@@ -15,7 +15,7 @@ namespace detail {
     };
 
     struct object_event_track {
-        LUCARIA_DELETE_DEFAULT(object_event_track)
+        object_event_track() = default;
         object_event_track(const object_event_track& other) = delete;
         object_event_track& operator=(const object_event_track& other) = delete;
         object_event_track(object_event_track&& other) = default;
@@ -28,17 +28,35 @@ namespace detail {
 		std::filesystem::path origin_path;		
         data_event_track data;
 
-        template <typename Archive>
-        void serialize(Archive& archive)
+        template <typename ContextType>
+        void save(ContextType& context) const
         {
-            archive(cereal::make_nvp("origin", origin));
+            context(cereal::make_nvp("origin", origin));
             if (origin == object_event_track_origin::path) {
-                archive(cereal::make_nvp("origin_path", origin_path));
+                context(cereal::make_nvp("origin_path", origin_path));
             }
             if (origin == object_event_track_origin::data) {
-                archive(cereal::make_nvp("origin_data", data));
+                context(cereal::make_nvp("origin_data", data));
             }
         }
+
+        template <typename ContextType>
+        void load(ContextType& context)
+        {
+            context(cereal::make_nvp("origin", origin));
+            if (origin == object_event_track_origin::path) {
+                context(cereal::make_nvp("origin_path", origin_path));
+                const std::filesystem::path _path = origin_path;
+                context.fetch(_path, [this, _path](const std::vector<char>& bytes) {
+                    *this = object_event_track(bytes);
+                    origin_path = _path;
+                });
+            }
+            if (origin == object_event_track_origin::data) {
+                context(cereal::make_nvp("origin_data", data));
+            }
+        }
+
     };
 
     [[nodiscard]] assets_cell<object_event_track>& fetch(

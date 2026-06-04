@@ -16,7 +16,7 @@ namespace detail {
     };
 
     struct object_skeleton {
-        LUCARIA_DELETE_DEFAULT(object_skeleton)
+        object_skeleton() = default;
         object_skeleton(const object_skeleton& other) = delete;
         object_skeleton& operator=(const object_skeleton& other) = delete;
         object_skeleton(object_skeleton&& other) = default;
@@ -28,14 +28,29 @@ namespace detail {
 		std::filesystem::path origin_path;		
         ozz::animation::Skeleton skeleton;
 
-        template <typename Archive>
-        void serialize(Archive& archive)
+        template <typename ContextType>
+        void save(ContextType& context) const
         {
-            archive(cereal::make_nvp("origin", origin));
+            context(cereal::make_nvp("origin", origin));
             if (origin == object_skeleton_origin::path) {
-                archive(cereal::make_nvp("origin_path", origin_path));
+                context(cereal::make_nvp("origin_path", origin_path));
             }
         }
+
+        template <typename ContextType>
+        void load(ContextType& context)
+        {
+            context(cereal::make_nvp("origin", origin));
+            if (origin == object_skeleton_origin::path) {
+                context(cereal::make_nvp("origin_path", origin_path));
+                const std::filesystem::path _path = origin_path;
+                context.fetch(_path, [this, _path](const std::vector<char>& bytes) {
+                    *this = object_skeleton(bytes);
+                    origin_path = _path;
+                });
+            }
+        }
+
     };
 
     [[nodiscard]] assets_cell<object_skeleton>& fetch(
