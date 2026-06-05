@@ -1,5 +1,5 @@
 #include <lucaria/core/manager_assets.hpp>
-#include <lucaria/core/object_program.hpp>
+#include <lucaria/core/rendering_program.hpp>
 
 namespace lucaria {
 namespace detail {

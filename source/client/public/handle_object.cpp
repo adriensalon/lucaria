@@ -1,5 +1,6 @@
-#include <lucaria/public/handle_font.hpp>
-#include <lucaria/public/handle_texture.hpp>
+#include <lucaria/engine/asset_font.hpp>
+#include <lucaria/engine/asset_texture.hpp>
+#include <lucaria/core/manager_assets.hpp>
 
 namespace lucaria {
 

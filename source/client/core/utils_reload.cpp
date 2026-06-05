@@ -1,8 +1,8 @@
 #include <future>
 
-#include <lucaria/core/utils_error.hpp>
-#include <lucaria/core/utils_reload.hpp>
-#include <lucaria/core/utils_reload_config.hpp>
+#include <lucaria/core/app_error.hpp>
+#include <lucaria/core/reload_config.hpp>
+#include <lucaria/core/reload_module.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -81,16 +81,16 @@ namespace detail {
         std::string _error = {};
         _current_library_path = _copy_current_build_to_cache(version);
         LUCARIA_DEBUG_ASSERT(_shared_library.load(_current_library_path, _error), _error);
-       
-		module_register = _shared_library.symbol<object_reload_module_register_function>("__lucaria_plugin_register", _error);
+
+        module_register = _shared_library.symbol<object_reload_module_register_function>("__lucaria_plugin_register", _error);
         LUCARIA_DEBUG_ASSERT(module_register, _error);
-        
-		module_start = _shared_library.symbol<object_reload_module_start_function>("__lucaria_plugin_start", _error);
+
+        module_start = _shared_library.symbol<object_reload_module_start_function>("__lucaria_plugin_start", _error);
         LUCARIA_DEBUG_ASSERT(module_start, _error);
 
-		for (uint32 _index = 0; _index < __lucaria_reload_watched_paths_count; ++_index) {
-			_watched_source_paths.emplace_back(__lucaria_reload_watched_paths[_index]);
-		}
+        for (uint32 _index = 0; _index < __lucaria_reload_watched_paths_count; ++_index) {
+            _watched_source_paths.emplace_back(__lucaria_reload_watched_paths[_index]);
+        }
     }
 
     object_reload_module::~object_reload_module()
@@ -141,8 +141,7 @@ namespace detail {
             }
 
             _compile_thread = std::thread([this] {
-				
-				std::string _configure_output = {};
+                std::string _configure_output = {};
                 _status.store(object_reload_module_status::compiling, std::memory_order_release);
                 int _result = _run_process_capture_output(__lucaria_reload_cmake_configure_command, _configure_output);
                 if (_result != 0) {
@@ -172,8 +171,8 @@ namespace detail {
         if (!_next_library.load(_next_library_path, load_error)) {
             return false;
         }
-		object_reload_module_register_function _register_symbol = _next_library.symbol<object_reload_module_register_function>("__lucaria_plugin_register", load_error);
-		if (!_register_symbol) {
+        object_reload_module_register_function _register_symbol = _next_library.symbol<object_reload_module_register_function>("__lucaria_plugin_register", load_error);
+        if (!_register_symbol) {
             return false;
         }
         object_reload_module_start_function _start_symbol = _next_library.symbol<object_reload_module_start_function>("__lucaria_plugin_start", load_error);

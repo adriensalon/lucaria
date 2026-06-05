@@ -1,6 +1,6 @@
 #include <set>
 
-#include <lucaria/core/object_mesh.hpp>
+#include <lucaria/engine/asset_mesh.hpp>
 
 namespace lucaria {
 namespace detail {

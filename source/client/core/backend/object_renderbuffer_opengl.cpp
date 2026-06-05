@@ -1,4 +1,4 @@
-#include <lucaria/core/object_renderbuffer.hpp>
+#include <lucaria/core/rendering_renderbuffer.hpp>
 
 namespace lucaria {
 namespace detail {

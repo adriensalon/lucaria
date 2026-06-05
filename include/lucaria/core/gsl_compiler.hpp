@@ -3,7 +3,7 @@
 #include <unordered_map>
 
 #include <lucaria/core/gsl_reflection.hpp>
-#include <lucaria/core/storage_compute.hpp>
+#include <lucaria/core/scenes_compute.hpp>
 
 namespace lucaria {
 namespace detail {

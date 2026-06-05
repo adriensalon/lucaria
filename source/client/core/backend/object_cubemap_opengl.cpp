@@ -1,5 +1,5 @@
-#include <lucaria/core/object_cubemap.hpp>
 #include <lucaria/core/manager_assets.hpp>
+#include <lucaria/engine/asset_cubemap.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -42,7 +42,7 @@ namespace detail {
 
     object_cubemap::object_cubemap(const std::array<object_image, 6>& images)
         : origin(images[0].origin == object_image_origin::path ? object_cubemap_origin::path : object_cubemap_origin::data)
-		, profile(images[0].profile)
+        , profile(images[0].profile)
     {
         glGenTextures(1, &id);
         glBindTexture(GL_TEXTURE_CUBE_MAP, id);

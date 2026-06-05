@@ -2,13 +2,13 @@
 #include <ozz/animation/runtime/local_to_model_job.h>
 #include <ozz/animation/runtime/track_sampling_job.h>
 
-#include <lucaria/core/system_rendering.hpp>
-#include <lucaria/core/system_motion.hpp>
+#include <lucaria/core/systems_rendering.hpp>
+#include <lucaria/core/systems_motion.hpp>
 #include <lucaria/core/utils_math.hpp>
-#include <lucaria/public/component_animator.hpp>
-#include <lucaria/public/component_model.hpp>
-#include <lucaria/public/component_rigidbody.hpp>
-#include <lucaria/public/component_transform.hpp>
+#include <lucaria/engine/component_animator.hpp>
+#include <lucaria/engine/component_model.hpp>
+#include <lucaria/engine/component_rigidbody.hpp>
+#include <lucaria/engine/component_transform.hpp>
 
 namespace lucaria {
 namespace detail {

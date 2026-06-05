@@ -1,4 +1,5 @@
-#include <lucaria/public/context_dynamics.hpp>
+#include <lucaria/forward/context_dynamics.hpp>
+#include <lucaria/core/systems_dynamics.hpp>
 
 namespace lucaria {
 

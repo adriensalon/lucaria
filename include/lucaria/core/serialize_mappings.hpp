@@ -1,20 +1,22 @@
 #pragma once
 
-#include <lucaria/core/storage_entity.hpp>
-#include <lucaria/core/user_asset.hpp>
-#include <lucaria/core/object_animation.hpp>
-#include <lucaria/core/object_audio.hpp>
-#include <lucaria/core/object_cubemap.hpp>
-#include <lucaria/core/object_event_track.hpp>
-#include <lucaria/core/object_font.hpp>
-#include <lucaria/core/object_geometry.hpp>
-#include <lucaria/core/object_image.hpp>
-#include <lucaria/core/object_mesh.hpp>
-#include <lucaria/core/object_motion_track.hpp>
-#include <lucaria/core/object_shape.hpp>
-#include <lucaria/core/object_skeleton.hpp>
-#include <lucaria/core/object_sound_track.hpp>
-#include <lucaria/core/object_texture.hpp>
+#include <lucaria/core/scenes_entity.hpp>
+#include <lucaria/core/user_assets.hpp>
+#include <lucaria/engine/asset_animation.hpp>
+#include <lucaria/engine/asset_audio.hpp>
+#include <lucaria/engine/asset_cubemap.hpp>
+#include <lucaria/engine/asset_event_track.hpp>
+#include <lucaria/engine/asset_font.hpp>
+#include <lucaria/engine/asset_geometry.hpp>
+#include <lucaria/engine/asset_image.hpp>
+#include <lucaria/engine/asset_mesh.hpp>
+#include <lucaria/engine/asset_motion_track.hpp>
+#include <lucaria/engine/asset_shape.hpp>
+#include <lucaria/engine/asset_skeleton.hpp>
+#include <lucaria/engine/asset_sound_track.hpp>
+#include <lucaria/engine/asset_texture.hpp>
+#include <lucaria/forward/handle_asset.hpp>
+#include <lucaria/forward/handle_entity.hpp>
 
 namespace lucaria {
 
@@ -26,6 +28,56 @@ namespace detail {
     struct manager_scenes;
     struct manager_window;
     struct object_user_scene;
+
+    // assets
+
+    template <typename ObjectType>
+    struct mappings_container_cache_vector_save {
+
+        [[nodiscard]] uint32 get(const assets_cell<ObjectType>* resource) const
+        {
+            LUCARIA_DEBUG_ASSERT(resource, "Object implementation was nullptr");
+            typename std::unordered_map<const assets_cell<ObjectType>*, uint32>::const_iterator _iterator = _asset_ids.find(resource);
+            LUCARIA_DEBUG_ASSERT(_iterator != _asset_ids.end(), "Object was not registered before component snapshot save");
+            return _iterator->second;
+        }
+
+        [[nodiscard]] uint32 get_or_create(const assets_cell<ObjectType>* resource)
+        {
+            LUCARIA_DEBUG_ASSERT(resource, "Object implementation was nullptr");
+            typename std::unordered_map<const assets_cell<ObjectType>*, uint32>::const_iterator _iterator = _asset_ids.find(resource);
+            if (_iterator != _asset_ids.end()) {
+                return _iterator->second;
+            }
+            const uint32 _asset_id = _next_id++;
+            _asset_ids.emplace(resource, _asset_id);
+            return _asset_id;
+        }
+
+    private:
+        std::unordered_map<const assets_cell<ObjectType>*, uint32> _asset_ids = {};
+        uint32 _next_id = 1;
+    };
+
+    template <typename ObjectType>
+    struct mappings_container_cache_vector_load {
+
+        void set(const uint32 id, assets_cell<ObjectType>* asset)
+        {
+            LUCARIA_DEBUG_ASSERT(id != 0 && asset != nullptr, "Invalid object load mapping");
+            _assets[id] = asset;
+        }
+
+        [[nodiscard]] assets_cell<ObjectType>* get(const uint32 id) const
+        {
+            typename std::unordered_map<uint32, assets_cell<ObjectType>*>::const_iterator _iterator = _assets.find(id);
+            LUCARIA_DEBUG_ASSERT(_iterator != _assets.end(), "Object save id was not loaded before handle load");
+            return _iterator->second;
+        }
+
+    private:
+        std::unordered_map<uint32, assets_cell<ObjectType>*> _assets = {};
+    };
 
     struct mappings_user_asset_base_save {
         virtual ~mappings_user_asset_base_save() = default;
@@ -139,6 +191,26 @@ namespace detail {
         mappings_user_assets_load user_assets = {};
     };
 
+    template <typename AssetType>
+    struct handle_asset_mapping {
+        static uint32 save(mappings_manager_object_save& mappings, const assets_cell<AssetType>* cell)
+        {
+            return mappings.user_assets.template get_or_create<AssetType>(cell);
+        }
+
+        static assets_cell<AssetType>* load(mappings_manager_object_load& mappings, const uint32 id)
+        {
+            return mappings.user_assets.template get<AssetType>(id);
+        }
+
+        static constexpr const char* name()
+        {
+            return "user_asset";
+        }
+    };
+
+    // scenes
+
     struct mappings_manager_scene_save {
         manager_scenes* saving_scene_manager = nullptr;
         std::unordered_map<object_entity_scene_index, uint32> save_map_scene_ids = {};
@@ -156,6 +228,8 @@ namespace detail {
         manager_assets* saving_objects = nullptr;
     };
 
+    // game
+
     struct mappings_manager_game_load {
         mappings_manager_object_load objects = {};
         mappings_manager_scene_load scenes = {};
@@ -168,4 +242,132 @@ namespace detail {
     };
 
 }
+// impl
+
+#define LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(AssetType, SaveMember, LoadMember, NameLiteral)                            \
+    template <>                                                                                                        \
+    struct detail::handle_asset_mapping<AssetType> {                                                                   \
+        static uint32 save(detail::mappings_manager_object_save& mappings, const detail::assets_cell<AssetType>* cell) \
+        {                                                                                                              \
+            return mappings.SaveMember.get(cell);                                                                      \
+        }                                                                                                              \
+        static detail::assets_cell<AssetType>* load(detail::mappings_manager_object_load& mappings, const uint32 id)   \
+        {                                                                                                              \
+            return mappings.LoadMember.get(id);                                                                        \
+        }                                                                                                              \
+        static constexpr const char* name()                                                                            \
+        {                                                                                                              \
+            return NameLiteral;                                                                                        \
+        }                                                                                                              \
+    };
+
+LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_animation, animations, animations, "animation")
+LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_audio, audios, audios, "audio")
+LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_cubemap, cubemaps, cubemaps, "cubemap")
+LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_event_track, event_tracks, event_tracks, "event_track")
+LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_font, fonts, fonts, "font")
+LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_geometry, geometries, geometries, "geometry")
+LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_image, images, images, "image")
+LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_mesh, meshes, meshes, "mesh")
+LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_motion_track, motion_tracks, motion_tracks, "motion_track")
+LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_shape, shapes, shapes, "shape")
+LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_skeleton, skeletons, skeletons, "skeleton")
+LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_sound_track, sound_tracks, sound_tracks, "sound_track")
+LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_texture, textures, textures, "texture")
+
+#undef LUCARIA_DEFINE_HANDLE_ASSET_MAPPING
+
+template <typename AssetType>
+template <typename ArchiveType>
+void handle_asset<AssetType>::save(ArchiveType& archive) const
+{
+    detail::mappings_manager_game_save& mappings = cereal::get_user_data<detail::mappings_manager_game_save>(archive);
+    const uint32 asset_id = _cached == nullptr ? 0u : detail::handle_asset_mapping<AssetType>::save(mappings.objects, _cached);
+    archive(cereal::make_nvp("object_save_id", asset_id));
+}
+
+template <typename AssetType>
+template <typename ArchiveType>
+void handle_asset<AssetType>::load(ArchiveType& archive)
+{
+    uint32 asset_id = 0;
+    archive(cereal::make_nvp("object_save_id", asset_id));
+
+    if (asset_id == 0) {
+        reset();
+        return;
+    }
+
+    detail::mappings_manager_game_load& mappings = cereal::get_user_data<detail::mappings_manager_game_load>(archive);
+    detail::assets_cell<AssetType>* cached_cell = detail::handle_asset_mapping<AssetType>::load(mappings.objects, asset_id);
+
+    if (cached_cell == nullptr) {
+        LUCARIA_DEBUG_ERROR(std::string("Failed to resolve ") + detail::handle_asset_mapping<AssetType>::name() + " handle while loading");
+        reset();
+        return;
+    }
+
+    _cached = cached_cell;
+    _refcount = detail::flag_refcount(&_cached->refcount_control);
+}
+
+template <typename ArchiveType>
+void handle_entity::save(ArchiveType& archive) const
+{
+    const detail::mappings_manager_game_save& _mappings = cereal::get_user_data<detail::mappings_manager_game_save>(archive);
+    const auto scene = detail::entity_scene(_entity);
+    const uint32 _scene_id = _mappings.scenes.save_map_scene_ids.at(scene);
+    const uint32 _entity_id = _mappings.scenes.save_map_scene_entities.at(scene).at(_entity);
+    archive(cereal::make_nvp("scene_save_id", _scene_id));
+    archive(cereal::make_nvp("entity_save_id", _entity_id));
+}
+
+template <typename ArchiveType>
+void handle_entity::load(ArchiveType& archive)
+{
+    uint32 scene_id = 0;
+    uint32 entity_id = 0;
+
+    archive(cereal::make_nvp("scene_save_id", scene_id));
+    archive(cereal::make_nvp("entity_save_id", entity_id));
+
+    if (scene_id == 0 || entity_id == 0) {
+        _entity = {};
+        return;
+    }
+
+    detail::mappings_manager_game_load& mappings = cereal::get_user_data<detail::mappings_manager_game_load>(archive);
+
+    auto scene_it = mappings.scenes.load_map_scenes.find(scene_id);
+    if (scene_it == mappings.scenes.load_map_scenes.end()) {
+        LUCARIA_DEBUG_ERROR("Failed to resolve scene while loading entity handle");
+        _entity = {};
+        return;
+    }
+
+    auto entities_it = mappings.scenes.load_map_scene_entities.find(scene_id);
+    if (entities_it == mappings.scenes.load_map_scene_entities.end()) {
+        LUCARIA_DEBUG_ERROR("Failed to resolve scene entity map while loading entity handle");
+        _entity = {};
+        return;
+    }
+
+    auto entity_it = entities_it->second.find(entity_id);
+    if (entity_it == entities_it->second.end()) {
+        LUCARIA_DEBUG_ERROR("Failed to resolve entity while loading entity handle");
+        _entity = {};
+        return;
+    }
+
+    if (detail::entity_scene(entity_it->second) != scene_it->second
+        || mappings.loading_scene_manager == nullptr
+        || !mappings.loading_scene_manager->registry.valid(entity_it->second)) {
+        LUCARIA_DEBUG_ERROR("Failed to resolve valid entity while loading entity handle");
+        _entity = {};
+        return;
+    }
+
+    _entity = entity_it->second;
+}
+
 }

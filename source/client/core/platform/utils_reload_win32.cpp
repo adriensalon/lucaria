@@ -2,8 +2,8 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-#include <lucaria/core/utils_error.hpp>
-#include <lucaria/core/utils_reload.hpp>
+#include <lucaria/core/app_error.hpp>
+#include <lucaria/core/reload_module.hpp>
 
 namespace lucaria {
 namespace detail {

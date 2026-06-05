@@ -2,10 +2,10 @@
 #include <cereal/archives/portable_binary.hpp>
 #include <ozz/animation/runtime/track_sampling_job.h>
 
+#include <lucaria/core/assets_stream.hpp>
 #include <lucaria/core/manager_assets.hpp>
-#include <lucaria/core/object_motion_track.hpp>
 #include <lucaria/core/utils_math.hpp>
-#include <lucaria/core/utils_stream.hpp>
+#include <lucaria/engine/asset_motion_track.hpp>
 
 namespace lucaria {
 namespace detail {

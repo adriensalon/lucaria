@@ -1,8 +1,8 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 
-#include <lucaria/core/manager_window.hpp>
-#include <lucaria/core/utils_error.hpp>
+#include <lucaria/core/app_error.hpp>
+#include <lucaria/core/manager_app.hpp>
 
 #if defined(LUCARIA_BACKEND_OPENGL)
 #include <backends/imgui_impl_opengl3.h>

@@ -1,5 +1,5 @@
-#include <lucaria/core/manager_window.hpp>
-#include <lucaria/public/component_interface.hpp>
+#include <lucaria/core/manager_app.hpp>
+#include <lucaria/engine/component_interface.hpp>
 
 namespace lucaria {
 namespace {

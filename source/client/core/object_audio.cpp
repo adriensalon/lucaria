@@ -3,7 +3,7 @@
 #include <vorbis/vorbisfile.h>
 
 #include <lucaria/core/manager_assets.hpp>
-#include <lucaria/core/object_audio.hpp>
+#include <lucaria/engine/asset_audio.hpp>
 
 namespace lucaria {
 namespace detail {

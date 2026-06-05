@@ -1,5 +1,5 @@
 #include <lucaria/core/utils_math.hpp>
-#include <lucaria/public/component_animator.hpp>
+#include <lucaria/engine/component_animator.hpp>
 
 namespace lucaria {
 

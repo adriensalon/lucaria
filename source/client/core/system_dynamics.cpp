@@ -1,10 +1,10 @@
 #include <btBulletDynamicsCommon.h>
 
-#include <lucaria/core/system_dynamics.hpp>
-#include <lucaria/core/system_rendering.hpp>
+#include <lucaria/core/systems_dynamics.hpp>
+#include <lucaria/core/systems_rendering.hpp>
 #include <lucaria/core/utils_math.hpp>
-#include <lucaria/public/component_rigidbody.hpp>
-#include <lucaria/public/component_transform.hpp>
+#include <lucaria/engine/component_rigidbody.hpp>
+#include <lucaria/engine/component_transform.hpp>
 
 namespace lucaria {
 namespace detail {

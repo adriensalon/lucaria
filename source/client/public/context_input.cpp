@@ -1,4 +1,5 @@
-#include <lucaria/public/context_input.hpp>
+#include <lucaria/forward/context_input.hpp>
+#include <lucaria/core/manager_input.hpp>
 
 namespace lucaria {
 

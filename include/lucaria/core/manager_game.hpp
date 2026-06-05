@@ -3,16 +3,16 @@
 #include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/manager_input.hpp>
 #include <lucaria/core/manager_scenes.hpp>
-#include <lucaria/core/manager_window.hpp>
+#include <lucaria/core/manager_app.hpp>
 #include <lucaria/core/serialize_archives.hpp>
 #include <lucaria/core/serialize_assets.hpp>
 #include <lucaria/core/serialize_containers.hpp>
 #include <lucaria/core/serialize_mappings.hpp>
 #include <lucaria/core/serialize_scenes.hpp>
-#include <lucaria/core/system_dynamics.hpp>
-#include <lucaria/core/system_mixer.hpp>
-#include <lucaria/core/system_motion.hpp>
-#include <lucaria/core/system_rendering.hpp>
+#include <lucaria/core/systems_dynamics.hpp>
+#include <lucaria/core/systems_mixer.hpp>
+#include <lucaria/core/systems_motion.hpp>
+#include <lucaria/core/systems_rendering.hpp>
 
 namespace lucaria {
 

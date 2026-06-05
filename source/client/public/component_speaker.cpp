@@ -1,7 +1,7 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 
-#include <lucaria/public/component_speaker.hpp>
+#include <lucaria/engine/component_speaker.hpp>
 
 namespace lucaria {
 

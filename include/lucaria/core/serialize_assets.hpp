@@ -2,7 +2,7 @@
 
 #include <lucaria/core/serialize_containers.hpp>
 #include <lucaria/core/serialize_mappings.hpp>
-#include <lucaria/core/user_asset.hpp>
+#include <lucaria/core/user_assets.hpp>
 
 namespace lucaria {
 namespace detail {

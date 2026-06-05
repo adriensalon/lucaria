@@ -1,8 +1,8 @@
 #include <ozz/animation/runtime/track_sampling_job.h>
 
+#include <lucaria/core/assets_stream.hpp>
 #include <lucaria/core/manager_assets.hpp>
-#include <lucaria/core/object_animation.hpp>
-#include <lucaria/core/utils_stream.hpp>
+#include <lucaria/engine/asset_animation.hpp>
 
 namespace lucaria {
 namespace detail {

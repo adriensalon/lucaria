@@ -2,7 +2,7 @@
 #include <AL/alc.h>
 
 #include <lucaria/core/manager_scenes.hpp>
-#include <lucaria/public/context_mixer.hpp>
+#include <lucaria/forward/context_mixer.hpp>
 
 namespace lucaria {
 namespace detail {

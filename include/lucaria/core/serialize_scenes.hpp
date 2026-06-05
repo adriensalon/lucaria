@@ -5,14 +5,14 @@
 
 #include <lucaria/core/serialize_containers.hpp>
 #include <lucaria/core/serialize_mappings.hpp>
-#include <lucaria/core/user_scene.hpp>
-#include <lucaria/public/component_animator.hpp>
-#include <lucaria/public/component_interface.hpp>
-#include <lucaria/public/component_model.hpp>
-#include <lucaria/public/component_rigidbody.hpp>
-#include <lucaria/public/component_speaker.hpp>
-#include <lucaria/public/component_transform.hpp>
-#include <lucaria/public/traits_component.hpp>
+#include <lucaria/core/user_scenes.hpp>
+#include <lucaria/engine/component_animator.hpp>
+#include <lucaria/engine/component_interface.hpp>
+#include <lucaria/engine/component_model.hpp>
+#include <lucaria/engine/component_rigidbody.hpp>
+#include <lucaria/engine/component_speaker.hpp>
+#include <lucaria/engine/component_transform.hpp>
+#include <lucaria/core/user_components.hpp>
 
 namespace lucaria {
 namespace detail {

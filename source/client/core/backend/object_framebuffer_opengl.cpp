@@ -1,4 +1,4 @@
-#include <lucaria/core/object_framebuffer.hpp>
+#include <lucaria/core/rendering_framebuffer.hpp>
 
 namespace lucaria {
 namespace {

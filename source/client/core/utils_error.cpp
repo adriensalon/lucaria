@@ -5,7 +5,7 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 
-#include <lucaria/core/utils_error.hpp>
+#include <lucaria/core/app_error.hpp>
 
 #if defined(LUCARIA_BACKEND_OPENGL)
 #include <lucaria/core/backend_opengl.hpp>

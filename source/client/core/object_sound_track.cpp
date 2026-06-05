@@ -1,9 +1,9 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 
+#include <lucaria/core/assets_stream.hpp>
 #include <lucaria/core/manager_assets.hpp>
-#include <lucaria/core/object_sound_track.hpp>
-#include <lucaria/core/utils_stream.hpp>
+#include <lucaria/engine/asset_sound_track.hpp>
 
 namespace lucaria {
 namespace detail {

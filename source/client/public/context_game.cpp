@@ -1,4 +1,4 @@
-#include <lucaria/public/context_game.hpp>
+#include <lucaria/forward/context_game.hpp>
 
 namespace lucaria {
 

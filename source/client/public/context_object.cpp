@@ -1,5 +1,5 @@
-#include <lucaria/public/context_object.hpp>
-#include <lucaria/public/context_window.hpp>
+#include <lucaria/forward/context_object.hpp>
+#include <lucaria/forward/context_window.hpp>
 
 namespace lucaria {
 

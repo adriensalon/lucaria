@@ -1,6 +1,6 @@
+#include <lucaria/core/assets_stream.hpp>
 #include <lucaria/core/manager_assets.hpp>
-#include <lucaria/core/object_mesh.hpp>
-#include <lucaria/core/utils_stream.hpp>
+#include <lucaria/engine/asset_mesh.hpp>
 
 namespace lucaria {
 namespace detail {

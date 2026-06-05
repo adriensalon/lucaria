@@ -1,22 +1,22 @@
-#include <lucaria/core/utils_access.hpp>
+#include <lucaria/core/game_access.hpp>
 
 #include <lucaria/core/manager_game.hpp>
 #include <lucaria/core/manager_input.hpp>
 #include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/manager_scenes.hpp>
-#include <lucaria/core/manager_window.hpp>
-#include <lucaria/core/system_dynamics.hpp>
-#include <lucaria/core/system_mixer.hpp>
-#include <lucaria/core/system_motion.hpp>
-#include <lucaria/core/system_rendering.hpp>
-#include <lucaria/public/context_dynamics.hpp>
-#include <lucaria/public/context_game.hpp>
-#include <lucaria/public/context_input.hpp>
-#include <lucaria/public/context_mixer.hpp>
-#include <lucaria/public/context_object.hpp>
-#include <lucaria/public/context_rendering.hpp>
-#include <lucaria/public/context_scene.hpp>
-#include <lucaria/public/context_window.hpp>
+#include <lucaria/core/manager_app.hpp>
+#include <lucaria/core/systems_dynamics.hpp>
+#include <lucaria/core/systems_mixer.hpp>
+#include <lucaria/core/systems_motion.hpp>
+#include <lucaria/core/systems_rendering.hpp>
+#include <lucaria/forward/context_dynamics.hpp>
+#include <lucaria/forward/context_game.hpp>
+#include <lucaria/forward/context_input.hpp>
+#include <lucaria/forward/context_mixer.hpp>
+#include <lucaria/forward/context_object.hpp>
+#include <lucaria/forward/context_rendering.hpp>
+#include <lucaria/forward/context_scene.hpp>
+#include <lucaria/forward/context_window.hpp>
 
 namespace lucaria {
 

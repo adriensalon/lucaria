@@ -2,7 +2,7 @@
 
 #include <lucaria/bin/types_containers.hpp>
 #include <lucaria/bin/types_math.hpp>
-#include <lucaria/public/utils_key.hpp>
+#include <lucaria/forward/context_input.hpp>
 
 namespace lucaria {
 namespace detail {

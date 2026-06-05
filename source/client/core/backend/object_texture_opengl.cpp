@@ -1,4 +1,4 @@
-#include <lucaria/core/object_texture.hpp>
+#include <lucaria/engine/asset_texture.hpp>
 
 namespace lucaria {
 namespace detail {

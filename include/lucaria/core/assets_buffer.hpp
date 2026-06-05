@@ -1,23 +1,49 @@
 #pragma once
 
-#include <lucaria/core/generics_memory.hpp>
-#include <lucaria/core/utils_async.hpp>
-#include <lucaria/core/utils_error.hpp>
-#include <lucaria/core/utils_refcount.hpp>
+#include <lucaria/bin/types_math.hpp>
+#include <lucaria/core/app_error.hpp>
+#include <lucaria/core/assets_async.hpp>
+#include <lucaria/core/assets_storage.hpp>
 
+#include <functional>
 #include <memory>
 #include <string>
-#include <functional>
-#include <utility>
 #include <typeindex>
 #include <typeinfo>
 #include <unordered_map>
+#include <utility>
 
 namespace lucaria {
 namespace detail {
 
     struct manager_assets;
     struct manager_window;
+
+    struct flag_refcount_control {
+        std::atomic<uint32> count = { 0 };
+    };
+
+    struct flag_refcount {
+        flag_refcount() noexcept = default;
+        flag_refcount(const flag_refcount& other) noexcept;
+        flag_refcount& operator=(const flag_refcount& other) noexcept;
+        flag_refcount(flag_refcount&& other) noexcept;
+        flag_refcount& operator=(flag_refcount&& other) noexcept;
+        ~flag_refcount();
+
+        explicit flag_refcount(flag_refcount_control* control) noexcept;
+        void reset() noexcept;
+        bool owns() const noexcept;
+        bool is_last_owner() const noexcept;
+        uint32 use_count() const noexcept;
+
+    private:
+        void _retain() noexcept;
+        void _release() noexcept;
+
+    private:
+        flag_refcount_control* _control = nullptr;
+    };
 
     template <typename Asset>
     struct assets_cell {
@@ -213,7 +239,6 @@ namespace detail {
     private:
         std::unordered_map<std::type_index, std::unique_ptr<assets_buffer_base>> _buffers = {};
     };
-
 
 }
 }

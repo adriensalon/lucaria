@@ -2,7 +2,7 @@
 #include <ozz/base/containers/vector.h>
 #include <ozz/base/maths/simd_math.h>
 
-#include <lucaria/core/object_program.hpp>
+#include <lucaria/core/rendering_program.hpp>
 
 namespace lucaria {
 namespace detail {

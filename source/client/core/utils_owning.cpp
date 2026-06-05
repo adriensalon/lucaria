@@ -1,4 +1,4 @@
-#include <lucaria/core/utils_error.hpp>
+#include <lucaria/core/app_error.hpp>
 #include <lucaria/core/utils_owning.hpp>
 
 namespace lucaria {

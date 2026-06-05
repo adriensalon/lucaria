@@ -4,7 +4,7 @@
 
 #include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/manager_scenes.hpp>
-#include <lucaria/core/utils_async.hpp>
+#include <lucaria/core/assets_async.hpp>
 
 #if defined(LUCARIA_PLATFORM_WEB)
 #include <emscripten/fetch.h>

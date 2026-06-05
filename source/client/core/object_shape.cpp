@@ -1,9 +1,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <lucaria/core/assets_stream.hpp>
 #include <lucaria/core/manager_assets.hpp>
-#include <lucaria/core/object_shape.hpp>
 #include <lucaria/core/utils_math.hpp>
-#include <lucaria/core/utils_stream.hpp>
+#include <lucaria/engine/asset_shape.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -55,32 +55,32 @@ namespace detail {
     }
 
     object_shape::object_shape(btCollisionShape* handle, const glm::float32 zdistance)
-		: origin_extents(float32x3(0))
+        : origin_extents(float32x3(0))
     {
         const int _shape_type = handle->getShapeType();
         if (_shape_type == BOX_SHAPE_PROXYTYPE) {
             btBoxShape* _casted_shape = static_cast<btBoxShape*>(handle);
             origin = object_shape_origin::box;
             origin_extents = convert(_casted_shape->getHalfExtentsWithoutMargin());
-        
-		} else if (_shape_type == SPHERE_SHAPE_PROXYTYPE) {
+
+        } else if (_shape_type == SPHERE_SHAPE_PROXYTYPE) {
             btSphereShape* _casted_shape = static_cast<btSphereShape*>(handle);
             origin = object_shape_origin::sphere;
             origin_extents.x = static_cast<float32>(_casted_shape->getRadius());
-        
-		} else if (_shape_type == CAPSULE_SHAPE_PROXYTYPE) {
+
+        } else if (_shape_type == CAPSULE_SHAPE_PROXYTYPE) {
             btCapsuleShape* _casted_shape = static_cast<btCapsuleShape*>(handle);
             origin = object_shape_origin::capsule;
             origin_extents.x = static_cast<float32>(_casted_shape->getRadius());
             origin_extents.y = 2.f * static_cast<float32>(_casted_shape->getHalfHeight());
-        
-		} else if (_shape_type == CONE_SHAPE_PROXYTYPE) {
+
+        } else if (_shape_type == CONE_SHAPE_PROXYTYPE) {
             btConeShape* _casted_shape = static_cast<btConeShape*>(handle);
             origin = object_shape_origin::cone;
             origin_extents.x = static_cast<float32>(_casted_shape->getRadius());
             origin_extents.y = static_cast<float32>(_casted_shape->getHeight());
-        
-		} else {
+
+        } else {
             LUCARIA_DEBUG_ERROR("Implementation error");
         }
 

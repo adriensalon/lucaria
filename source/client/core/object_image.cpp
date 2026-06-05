@@ -1,9 +1,9 @@
 #include <cereal/archives/json.hpp>
 #include <cereal/archives/portable_binary.hpp>
 
+#include <lucaria/core/assets_stream.hpp>
 #include <lucaria/core/manager_assets.hpp>
-#include <lucaria/core/object_image.hpp>
-#include <lucaria/core/utils_stream.hpp>
+#include <lucaria/engine/asset_image.hpp>
 
 namespace lucaria {
 namespace detail {

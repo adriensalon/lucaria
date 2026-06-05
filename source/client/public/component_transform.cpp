@@ -1,8 +1,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-#include <lucaria/public/component_transform.hpp>
-#include <lucaria/public/context_scene.hpp>
+#include <lucaria/engine/component_transform.hpp>
+#include <lucaria/forward/context_scene.hpp>
 
 namespace lucaria {
 

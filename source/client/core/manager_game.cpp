@@ -6,15 +6,15 @@
 #include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/manager_game.hpp>
 #include <lucaria/core/manager_scenes.hpp>
-#include <lucaria/core/utils_access.hpp>
-#include <lucaria/core/utils_register.hpp>
-#include <lucaria/public/component_animator.hpp>
-#include <lucaria/public/component_interface.hpp>
-#include <lucaria/public/component_model.hpp>
-#include <lucaria/public/component_rigidbody.hpp>
-#include <lucaria/public/component_speaker.hpp>
-#include <lucaria/public/component_transform.hpp>
-#include <lucaria/public/context_game.hpp>
+#include <lucaria/core/game_access.hpp>
+#include <lucaria/core/game_register.hpp>
+#include <lucaria/engine/component_animator.hpp>
+#include <lucaria/engine/component_interface.hpp>
+#include <lucaria/engine/component_model.hpp>
+#include <lucaria/engine/component_rigidbody.hpp>
+#include <lucaria/engine/component_speaker.hpp>
+#include <lucaria/engine/component_transform.hpp>
+#include <lucaria/forward/context_game.hpp>
 
 // Store static pointers when hotreloading is enabled
 LUCARIA_PLUGIN_EXPORT bool __lucaria_plugin_register(::lucaria::detail::manager_game* game);

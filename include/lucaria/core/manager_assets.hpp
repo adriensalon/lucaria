@@ -8,31 +8,31 @@
 #include <future>
 #include <memory>
 #include <mutex>
+#include <string_view>
 #include <type_traits>
 #include <typeindex>
-#include <variant>
-#include <string_view>
-#include <utility>
 #include <unordered_map>
+#include <utility>
+#include <variant>
 #include <vector>
 
-#include <lucaria/core/object_animation.hpp>
-#include <lucaria/core/object_cubemap.hpp>
-#include <lucaria/core/object_event_track.hpp>
-#include <lucaria/core/object_font.hpp>
-#include <lucaria/core/object_mesh.hpp>
-#include <lucaria/core/object_motion_track.hpp>
-#include <lucaria/core/object_shape.hpp>
-#include <lucaria/core/object_skeleton.hpp>
-#include <lucaria/core/object_sound_track.hpp>
-#include <lucaria/core/object_texture.hpp>
-#include <lucaria/core/serialize_mappings.hpp>
-#include <lucaria/core/serialize_containers.hpp>
-#include <lucaria/core/serialize_archives.hpp>
-#include <lucaria/core/context_serialize.hpp>
-#include <lucaria/core/user_asset.hpp>
 #include <lucaria/core/assets_buffer.hpp>
-#include <lucaria/core/utils_stream.hpp>
+#include <lucaria/core/assets_stream.hpp>
+#include <lucaria/core/serialize_archives.hpp>
+#include <lucaria/core/serialize_containers.hpp>
+#include <lucaria/core/serialize_context.hpp>
+#include <lucaria/core/serialize_mappings.hpp>
+#include <lucaria/core/user_assets.hpp>
+#include <lucaria/engine/asset_animation.hpp>
+#include <lucaria/engine/asset_cubemap.hpp>
+#include <lucaria/engine/asset_event_track.hpp>
+#include <lucaria/engine/asset_font.hpp>
+#include <lucaria/engine/asset_mesh.hpp>
+#include <lucaria/engine/asset_motion_track.hpp>
+#include <lucaria/engine/asset_shape.hpp>
+#include <lucaria/engine/asset_skeleton.hpp>
+#include <lucaria/engine/asset_sound_track.hpp>
+#include <lucaria/engine/asset_texture.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -102,7 +102,7 @@ namespace detail {
 
         bool is_etc2_supported = false;
         bool is_s3tc_supported = false;
-		data_image_profile supported_image_profiles = {}; // TODO replace bools with bitfields
+        data_image_profile supported_image_profiles = {}; // TODO replace bools with bitfields
 
         std::atomic<uint32> async_fetches_waiting = 0;
         std::filesystem::path async_prefix_path = {};
@@ -111,7 +111,7 @@ namespace detail {
         std::unordered_map<std::type_index, std::string> user_asset_type_ids = {};
         std::vector<std::shared_ptr<load_storage_context_base>> active_load_contexts = {};
 
-		// implemented in serialize_assets.hpp
+        // implemented in serialize_assets.hpp
         template <typename AssetType>
         void register_user_asset(std::string type_id);
 
@@ -176,7 +176,6 @@ namespace detail {
         void gc_unused();
     };
 
-
     template <typename Asset, typename Configure>
     assets_cell<Asset>& assets_registry::fetch(
         manager_assets& objects,
@@ -197,8 +196,7 @@ namespace detail {
         Asset& asset = cell->fetched.emplaced_value();
         std::forward<Configure>(configure)(asset);
 
-        std::shared_ptr<runtime_storage_context<Asset>> context =
-            objects.template make_runtime_storage_context<Asset>(cell, asset, window);
+        std::shared_ptr<runtime_storage_context<Asset>> context = objects.template make_runtime_storage_context<Asset>(cell, asset, window);
         load_user_asset_value(asset, *context);
         context->close();
 
@@ -213,8 +211,7 @@ namespace detail {
 
         objects.fetch_bytes(path, [_context, callback = std::forward<Callback>(callback)](const std::vector<char>& bytes) mutable {
             callback(bytes);
-            _context->finish_one_worker();
-        }, must_persist);
+            _context->finish_one_worker(); }, must_persist);
     }
 
     template <typename Callback>
@@ -225,8 +222,7 @@ namespace detail {
 
         objects.fetch_bytes(paths, [_context, callback = std::forward<Callback>(callback)](const std::vector<std::vector<char>>& bytes) mutable {
             callback(bytes);
-            _context->finish_one_worker();
-        }, must_persist);
+            _context->finish_one_worker(); }, must_persist);
     }
 
     template <typename Callback>
@@ -237,8 +233,7 @@ namespace detail {
 
         objects.fetch_bytes(paths, [_context, callback = std::forward<Callback>(callback)](const std::vector<std::vector<char>>& bytes) mutable {
             callback(bytes);
-            _context->finish_one_worker();
-        }, must_persist);
+            _context->finish_one_worker(); }, must_persist);
     }
 
     template <typename Callback>
@@ -297,14 +292,13 @@ namespace detail {
                     callback(std::as_const(*_other));
                 }
                 _context->finish_one_worker();
-            });
-        }, must_persist);
+            }); }, must_persist);
     }
 
     template <typename AssetType>
     void load_user_asset_from_bytes(manager_assets& objects, AssetType& asset, const std::vector<char>& bytes)
     {
-        load_user_asset_from_bytes(objects, asset, bytes, []() {});
+        load_user_asset_from_bytes(objects, asset, bytes, []() { });
     }
 
     template <typename AssetType, typename Callback>
@@ -322,7 +316,6 @@ namespace detail {
         _context->on_finished(std::forward<Callback>(callback));
         _context->close();
     }
-
 
 }
 }

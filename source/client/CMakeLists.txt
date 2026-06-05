@@ -64,8 +64,8 @@ if(NOT LUCARIA_DISABLE_RELOAD)
 		string(APPEND LUCARIA_RELOAD_WATCHED_PATHS "\"${path_normalized}\",\n")
 	endforeach()
 	configure_file(
-		"${LUCARIA_INCLUDE_DIR}/lucaria/core/utils_reload_config.hpp.in"
-		"${CMAKE_BINARY_DIR}/generated/lucaria/core/utils_reload_config.hpp"
+		"${LUCARIA_INCLUDE_DIR}/lucaria/core/reload_config.hpp.in"
+		"${CMAKE_BINARY_DIR}/generated/lucaria/core/reload_config.hpp"
 		@ONLY)
 endif()
 

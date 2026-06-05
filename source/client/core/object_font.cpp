@@ -2,10 +2,10 @@
 
 #include <woff2/decode.h>
 
+#include <lucaria/core/assets_stream.hpp>
 #include <lucaria/core/manager_assets.hpp>
-#include <lucaria/core/manager_window.hpp>
-#include <lucaria/core/object_font.hpp>
-#include <lucaria/core/utils_stream.hpp>
+#include <lucaria/core/manager_app.hpp>
+#include <lucaria/engine/asset_font.hpp>
 
 namespace lucaria {
 namespace detail {

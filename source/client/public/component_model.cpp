@@ -1,4 +1,4 @@
-#include <lucaria/public/component_model.hpp>
+#include <lucaria/engine/component_model.hpp>
 
 namespace lucaria {
 

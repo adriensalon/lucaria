@@ -1,11 +1,11 @@
 
-#include <lucaria/public/component_animator.hpp>
-#include <lucaria/public/component_interface.hpp>
-#include <lucaria/public/component_model.hpp>
-#include <lucaria/public/component_rigidbody.hpp>
-#include <lucaria/public/component_speaker.hpp>
-#include <lucaria/public/component_transform.hpp>
-#include <lucaria/public/context_scene.hpp>
+#include <lucaria/engine/component_animator.hpp>
+#include <lucaria/engine/component_interface.hpp>
+#include <lucaria/engine/component_model.hpp>
+#include <lucaria/engine/component_rigidbody.hpp>
+#include <lucaria/engine/component_speaker.hpp>
+#include <lucaria/engine/component_transform.hpp>
+#include <lucaria/forward/context_scene.hpp>
 
 namespace lucaria {
 

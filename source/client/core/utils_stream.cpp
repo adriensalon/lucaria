@@ -1,6 +1,6 @@
 #include <cstring>
 
-#include <lucaria/core/utils_stream.hpp>
+#include <lucaria/core/assets_stream.hpp>
 
 namespace lucaria {
 namespace detail {
