@@ -3,11 +3,11 @@
 #define CEREAL_FUTURE_EXPERIMENTAL
 #include <cereal/archives/adapters.hpp>
 
+#include <lucaria/core/game_access.hpp>
+#include <lucaria/core/game_register.hpp>
 #include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/manager_game.hpp>
 #include <lucaria/core/manager_scenes.hpp>
-#include <lucaria/core/game_access.hpp>
-#include <lucaria/core/game_register.hpp>
 #include <lucaria/engine/component_animator.hpp>
 #include <lucaria/engine/component_interface.hpp>
 #include <lucaria/engine/component_model.hpp>
@@ -42,10 +42,11 @@ namespace detail {
 
         window.run(input, objects,
 
-            [this, &_game]() { 
-				
-			// compile shaders
+            [this, &_game]() {
+
+#if !defined(LUCARIA_DISABLE_COMPUTE_SPIRV)
 			scenes.compiler = std::make_unique<gsl_compiler>(scenes.gsl_systems);
+#endif
 			__lucaria_plugin_start(&_game); },
 
             [this, &_game]() {

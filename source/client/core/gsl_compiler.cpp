@@ -1,3 +1,4 @@
+#if !defined(LUCARIA_DISABLE_COMPUTE_SPIRV)
 
 #include <glslang/Public/ResourceLimits.h>
 #include <glslang/Public/ShaderLang.h>
@@ -77,3 +78,4 @@ void main()
 
 }
 }
+#endif

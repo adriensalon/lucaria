@@ -30,8 +30,8 @@ struct context_window;
 /// @brief
 struct context_object {
 
-    template <typename AssetType, typename Configure>
-    handle_asset<AssetType> fetch_asset(
+    template <typename AssetType, typename Handle = handle_asset<AssetType>, typename Configure>
+    Handle fetch_asset(
         std::string cache_id,
         Configure&& configure,
         context_window* window = nullptr)
@@ -42,47 +42,20 @@ struct context_object {
             std::forward<Configure>(configure),
             window != nullptr ? window->_manager : nullptr);
 
-        handle_asset<AssetType> _handle = {};
+        Handle _handle = {};
         _handle._cached = &_cell;
         _handle._refcount = detail::flag_refcount(&_cell.refcount_control);
         return _handle;
     }
 
-    // template <typename HandleType, typename AssetType, typename Configure>
-    // HandleType fetch_asset(
-    //     std::string cache_id,
-    //     Configure&& configure,
-    //     context_window* window = nullptr)
-    // {
-    //     detail::assets_cell<AssetType>& _cell = _manager->assets.template fetch<AssetType>(
-    //         *_manager,
-    //         std::move(cache_id),
-    //         std::forward<Configure>(configure),
-    //         window != nullptr ? window->_manager : nullptr);
-
-    //     HandleType _handle = {};
-    //     _handle._cached = &_cell;
-    //     _handle._refcount = detail::flag_refcount(&_cell.refcount_control);
-    //     return _handle;
-    // }
-
-    template <typename AssetType, typename... AssetTypeArgs>
-    handle_asset<AssetType> create_asset(AssetTypeArgs&&... args)
+    template <typename AssetType, typename Handle = handle_asset<AssetType>, typename... AssetTypeArgs>
+    Handle create_asset(AssetTypeArgs&&... args)
     {
-        handle_asset<AssetType> _handle = {};
+        Handle _handle = {};
         _handle._cached = &_manager->assets.template create<AssetType>(std::forward<AssetTypeArgs>(args)...);
         _handle._refcount = detail::flag_refcount(&_handle._cached->refcount_control);
         return _handle;
     }
-
-    // template <typename HandleType, typename AssetType, typename... AssetTypeArgs>
-    // HandleType create_asset(AssetTypeArgs&&... args)
-    // {
-    //     HandleType _handle = {};
-    //     _handle._cached = &_manager->assets.template create<AssetType>(std::forward<AssetTypeArgs>(args)...);
-    //     _handle._refcount = detail::flag_refcount(&_handle._cached->refcount_control);
-    //     return _handle;
-    // }
 
     handle_animation fetch_animation(const std::filesystem::path& path);
     handle_audio fetch_audio(const std::filesystem::path& path);

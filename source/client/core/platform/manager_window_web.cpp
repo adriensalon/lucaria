@@ -1,6 +1,6 @@
 #include <lucaria/core/manager_assets.hpp>
-#include <lucaria/core/manager_window.hpp>
-#include <lucaria/core/utils_key.hpp>
+#include <lucaria/core/manager_app.hpp>
+#include <lucaria/core/app_key.hpp>
 #include <lucaria/core/utils_math.hpp>
 
 namespace lucaria {
