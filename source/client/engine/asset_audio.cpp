@@ -3,6 +3,7 @@
 #include <vorbis/vorbisfile.h>
 
 #include <lucaria/core/manager_assets.hpp>
+#include <lucaria/core/serialize_context.hpp>
 #include <lucaria/engine/asset_audio.hpp>
 
 namespace lucaria {
@@ -84,7 +85,7 @@ namespace detail {
         }
     }
 
-    object_audio::object_audio(const std::vector<char>& bytes)
+    asset_audio::asset_audio(const std::vector<char>& bytes)
         : origin(object_audio_origin::path)
     {
         _vorbis_bytes_stream _stream(bytes);
@@ -117,10 +118,37 @@ namespace detail {
         ov_clear(&_vorbis);
     }
 
-    object_audio::object_audio(data_audio&& data)
+    asset_audio::asset_audio(data_audio&& data)
         : origin(object_audio_origin::data)
         , data(std::move(data))
     {
+    }
+
+    void asset_audio::save(storage_save_context& context) const
+    {
+        context.field("origin", origin);
+        if (origin == object_audio_origin::path) {
+            context.field("origin_path", origin_path);
+        }
+        if (origin == object_audio_origin::data) {
+            context.field("origin_data", data);
+        }
+    }
+
+    void asset_audio::load(storage_load_context& context)
+    {
+        context.field("origin", origin);
+        if (origin == object_audio_origin::path) {
+            context.field("origin_path", origin_path);
+            const std::filesystem::path _path = origin_path;
+            context.fetch_worker(_path, [this, _path](const std::vector<char>& bytes) {
+                *this = asset_audio(bytes);
+                origin_path = _path;
+            });
+        }
+        if (origin == object_audio_origin::data) {
+            context.field("origin_data", data);
+        }
     }
 
 }

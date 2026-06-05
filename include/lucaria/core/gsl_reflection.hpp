@@ -6,7 +6,7 @@
 #include <type_traits>
 #include <vector>
 
-#include <lucaria/forward/handle_entity.hpp>
+#include <lucaria/engine/handle_entity.hpp>
 
 namespace lucaria {
 

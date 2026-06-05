@@ -6,7 +6,7 @@
 #include <lucaria/engine/component_rigidbody.hpp>
 #include <lucaria/engine/component_speaker.hpp>
 #include <lucaria/engine/component_transform.hpp>
-#include <lucaria/forward/handle_entity.hpp>
+#include <lucaria/engine/handle_entity.hpp>
 
 namespace lucaria {
 

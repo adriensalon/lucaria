@@ -8,7 +8,7 @@
 #include <lucaria/engine/component_rigidbody.hpp>
 #include <lucaria/engine/component_speaker.hpp>
 #include <lucaria/engine/component_transform.hpp>
-#include <lucaria/forward/context_game.hpp>
+#include <lucaria/engine/context_game.hpp>
 
 namespace lucaria {
 namespace detail {

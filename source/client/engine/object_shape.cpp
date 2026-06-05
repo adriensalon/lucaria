@@ -4,13 +4,14 @@
 #include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/utils_math.hpp>
 #include <lucaria/engine/asset_shape.hpp>
+#include <lucaria/engine/context_dynamics.hpp>
 
 namespace lucaria {
 namespace detail {
 
     namespace {
 
-        static void _make_convex_hull_shape(const object_geometry& from, std::unique_ptr<btCollisionShape>& handle)
+        static void _make_convex_hull_shape(const asset_geometry& from, std::unique_ptr<btCollisionShape>& handle)
         {
             handle = std::make_unique<btConvexHullShape>();
             btConvexHullShape* _hull_shape = static_cast<btConvexHullShape*>(handle.get());
@@ -20,7 +21,7 @@ namespace detail {
             _hull_shape->recalcLocalAabb();
         }
 
-        static void _make_triangle_mesh_shape(const object_geometry& from, std::unique_ptr<btCollisionShape>& handle, std::unique_ptr<btTriangleMesh>& triangle_handle)
+        static void _make_triangle_mesh_shape(const asset_geometry& from, std::unique_ptr<btCollisionShape>& handle, std::unique_ptr<btTriangleMesh>& triangle_handle)
         {
             btVector3 _vertex_1, _vertex_2, _vertex_3;
             triangle_handle = std::make_unique<btTriangleMesh>();
@@ -35,7 +36,7 @@ namespace detail {
 
     }
 
-    object_shape::object_shape(const object_geometry& from, const object_shape_algorithm algorithm)
+    object_shape::object_shape(const asset_geometry& from, const object_shape_algorithm algorithm)
         : origin(from.origin == object_geometry_origin::path ? object_shape_origin::path : object_shape_origin::data)
         , algorithm(algorithm)
     {

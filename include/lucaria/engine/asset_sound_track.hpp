@@ -5,7 +5,7 @@
 #include <lucaria/core/serialize_context.hpp>
 #include <lucaria/core/utils_owning.hpp>
 #include <lucaria/engine/asset_audio.hpp>
-#include <lucaria/forward/handle_asset.hpp>
+#include <lucaria/engine/handle_asset.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -28,7 +28,7 @@ namespace detail {
         object_sound_track& operator=(object_sound_track&& other) = default;
         ~object_sound_track();
 
-        object_sound_track(const object_audio& from);
+        object_sound_track(const asset_audio& from);
 
         object_sound_track_origin origin;
         std::filesystem::path origin_path;
@@ -52,7 +52,7 @@ namespace detail {
                 context.field("origin_path", origin_path);
                 const std::filesystem::path _path = origin_path;
                 context.fetch(_path, [this, _path](const std::vector<char>& bytes) {
-                    object_audio _audio(bytes);
+                    asset_audio _audio(bytes);
                     *this = object_sound_track(_audio);
                     origin_path = _path;
                 });

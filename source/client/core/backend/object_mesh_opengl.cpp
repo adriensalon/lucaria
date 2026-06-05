@@ -115,7 +115,7 @@ namespace detail {
         }
     }
 
-    object_mesh::object_mesh(const object_geometry& from)
+    object_mesh::object_mesh(const asset_geometry& from)
         : origin(from.origin == object_geometry_origin::path ? object_mesh_origin::path : object_mesh_origin::data)
     {
         array_id = _create_vertex_array();
@@ -161,7 +161,7 @@ namespace detail {
         }
     }
 
-    object_mesh_line::object_mesh_line(const object_geometry& from)
+    object_mesh_line::object_mesh_line(const asset_geometry& from)
     {
         const std::vector<uint32x2> _line_indices = _generate_line_indices(from.data.indices);
         array_handle = _create_vertex_array();

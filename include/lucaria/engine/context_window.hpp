@@ -1,8 +1,11 @@
 #pragma once
 
-#include <lucaria/core/manager_app.hpp>
+#include <lucaria/bin/types_math.hpp>
 
 namespace lucaria {
+namespace detail {
+    struct manager_window;
+}
 
 struct context_window {
 

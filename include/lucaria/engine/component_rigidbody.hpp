@@ -3,7 +3,7 @@
 #include <BulletCollision/CollisionDispatch/btGhostObject.h>
 
 #include <lucaria/engine/asset_shape.hpp>
-#include <lucaria/forward/context_dynamics.hpp>
+#include <lucaria/engine/context_dynamics.hpp>
 
 namespace lucaria {
 

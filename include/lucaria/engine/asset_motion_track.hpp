@@ -5,7 +5,7 @@
 #include <lucaria/bin/types_containers.hpp>
 #include <lucaria/core/assets_buffer.hpp>
 #include <lucaria/core/serialize_context.hpp>
-#include <lucaria/forward/handle_asset.hpp>
+#include <lucaria/engine/handle_asset.hpp>
 
 namespace lucaria {
 namespace detail {

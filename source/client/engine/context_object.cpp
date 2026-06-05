@@ -1,23 +1,22 @@
-#include <lucaria/forward/context_object.hpp>
-#include <lucaria/forward/context_window.hpp>
+#include <lucaria/engine/context_object.hpp>
+#include <lucaria/engine/context_window.hpp>
 
 namespace lucaria {
 
 handle_animation context_object::fetch_animation(const std::filesystem::path& path)
 {
-    return fetch_asset<handle_animation, detail::object_animation>(
+    return fetch_asset<handle_animation, detail::asset_animation>(
         path.string(),
-        [path](detail::object_animation& animation) {
-            animation.origin = detail::object_animation_origin::path;
+        [path](detail::asset_animation& animation) {
             animation.origin_path = path;
         });
 }
 
 handle_audio context_object::fetch_audio(const std::filesystem::path& path)
 {
-    return fetch_asset<handle_audio, detail::object_audio>(
+    return fetch_asset<handle_audio, detail::asset_audio>(
         path.string(),
-        [path](detail::object_audio& audio) {
+        [path](detail::asset_audio& audio) {
             audio.origin = detail::object_audio_origin::path;
             audio.origin_path = path;
         });
@@ -53,7 +52,6 @@ handle_font context_object::fetch_font(context_window& window, const std::filesy
     return fetch_asset<handle_font, detail::object_font>(
         _cache_id,
         [path, font_size](detail::object_font& font) {
-            font.origin = detail::object_font_origin::path;
             font.origin_path = path;
             font.font_size = font_size;
         },
@@ -62,9 +60,9 @@ handle_font context_object::fetch_font(context_window& window, const std::filesy
 
 handle_geometry context_object::fetch_geometry(const std::filesystem::path& path)
 {
-    return fetch_asset<handle_geometry, detail::object_geometry>(
+    return fetch_asset<handle_geometry, detail::asset_geometry>(
         path.string(),
-        [path](detail::object_geometry& geometry) {
+        [path](detail::asset_geometry& geometry) {
             geometry.origin = detail::object_geometry_origin::path;
             geometry.origin_path = path;
         });

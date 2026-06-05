@@ -3,7 +3,7 @@
 #include <ostream>
 
 #include <lucaria/bin/types_math.hpp>
-#include <lucaria/forward/handle_entity.hpp>
+#include <lucaria/engine/handle_entity.hpp>
 
 namespace lucaria {
 namespace detail {

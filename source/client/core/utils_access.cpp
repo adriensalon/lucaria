@@ -9,14 +9,14 @@
 #include <lucaria/core/systems_mixer.hpp>
 #include <lucaria/core/systems_motion.hpp>
 #include <lucaria/core/systems_rendering.hpp>
-#include <lucaria/forward/context_dynamics.hpp>
-#include <lucaria/forward/context_game.hpp>
-#include <lucaria/forward/context_input.hpp>
-#include <lucaria/forward/context_mixer.hpp>
-#include <lucaria/forward/context_object.hpp>
-#include <lucaria/forward/context_rendering.hpp>
-#include <lucaria/forward/context_scene.hpp>
-#include <lucaria/forward/context_window.hpp>
+#include <lucaria/engine/context_dynamics.hpp>
+#include <lucaria/engine/context_game.hpp>
+#include <lucaria/engine/context_input.hpp>
+#include <lucaria/engine/context_mixer.hpp>
+#include <lucaria/engine/context_assets.hpp>
+#include <lucaria/engine/context_rendering.hpp>
+#include <lucaria/engine/context_scenes.hpp>
+#include <lucaria/engine/context_window.hpp>
 
 namespace lucaria {
 

@@ -2,7 +2,7 @@
 
 #include <lucaria/core/utils_owning.hpp>
 #include <lucaria/engine/asset_geometry.hpp>
-#include <lucaria/forward/handle_asset.hpp>
+#include <lucaria/engine/handle_asset.hpp>
 
 #if defined(LUCARIA_BACKEND_OPENGL)
 #include <lucaria/core/backend_opengl.hpp>
@@ -47,7 +47,7 @@ namespace detail {
         object_mesh& operator=(object_mesh&& other) = default;
         ~object_mesh();
 
-        object_mesh(const object_geometry& geometry);
+        object_mesh(const asset_geometry& geometry);
 
         object_mesh_origin origin;
         std::filesystem::path origin_path;
@@ -69,7 +69,7 @@ namespace detail {
                 context.field("origin_path", origin_path);
                 const std::filesystem::path _path = origin_path;
                 context.fetch(_path, [this, _path](const std::vector<char>& bytes) {
-                    object_geometry _geometry(bytes);
+                    asset_geometry _geometry(bytes);
                     *this = object_mesh(_geometry);
                     origin_path = _path;
                 });
@@ -100,7 +100,7 @@ namespace detail {
         object_mesh_line& operator=(object_mesh_line&& other) = default;
         ~object_mesh_line();
 
-        object_mesh_line(const object_geometry& from);
+        object_mesh_line(const asset_geometry& from);
         object_mesh_line(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices);
         void update(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices);
 

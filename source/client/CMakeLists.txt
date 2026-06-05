@@ -71,8 +71,11 @@ endif()
 
 # lucaria client library
 file(GLOB lucaria_client_core_sources "core/*.cpp")
-file(GLOB lucaria_client_public_sources "public/*.cpp")
-add_library(lucaria_client STATIC ${lucaria_client_core_sources} ${lucaria_client_public_sources})
+file(GLOB lucaria_client_engine_sources "engine/*.cpp")
+set(lucaria_client_sources
+	${lucaria_client_core_sources}
+	${lucaria_client_engine_sources})
+add_library(lucaria_client STATIC ${lucaria_client_sources})
 target_include_directories(lucaria_client PUBLIC ${LUCARIA_INCLUDE_DIR})
 set_target_properties(lucaria_client PROPERTIES CXX_STANDARD 17)
 target_compile_definitions(lucaria_client PUBLIC BT_NO_SIMD_OPERATOR_OVERLOADS) # ozz implements them already

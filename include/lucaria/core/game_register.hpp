@@ -1,7 +1,6 @@
 #pragma once
 
-#include <lucaria/core/reload_module.hpp>
-#include <lucaria/forward/context_game.hpp>
+#include <lucaria/engine/context_game.hpp>
 
 #if !defined(LUCARIA_DISABLE_COMPUTE)
 #define LUCARIA_REGISTER_GSL_IMPLEMENTATION(SystemFunction)                       \
@@ -89,6 +88,9 @@ namespace lucaria {
 struct context_game;
 
 namespace detail {
+
+	struct manager_scenes;
+	struct manager_assets;
 
     struct pending_gsl_system_registration {
         const char* name = nullptr;

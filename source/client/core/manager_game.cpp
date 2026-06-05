@@ -14,7 +14,7 @@
 #include <lucaria/engine/component_rigidbody.hpp>
 #include <lucaria/engine/component_speaker.hpp>
 #include <lucaria/engine/component_transform.hpp>
-#include <lucaria/forward/context_game.hpp>
+#include <lucaria/engine/context_game.hpp>
 
 // Store static pointers when hotreloading is enabled
 LUCARIA_PLUGIN_EXPORT bool __lucaria_plugin_register(::lucaria::detail::manager_game* game);

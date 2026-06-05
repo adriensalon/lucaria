@@ -1,7 +1,27 @@
 #pragma once
 
+#include <array>
+#include <filesystem>
+#include <optional>
+#include <string>
+#include <utility>
+
 #include <lucaria/core/manager_assets.hpp>
-#include <lucaria/forward/context_window.hpp>
+#include <lucaria/engine/context_window.hpp>
+
+#include <lucaria/engine/asset_animation.hpp>
+#include <lucaria/engine/asset_audio.hpp>
+#include <lucaria/engine/asset_cubemap.hpp>
+#include <lucaria/engine/asset_event_track.hpp>
+#include <lucaria/engine/asset_font.hpp>
+#include <lucaria/engine/asset_geometry.hpp>
+#include <lucaria/engine/asset_image.hpp>
+#include <lucaria/engine/asset_mesh.hpp>
+#include <lucaria/engine/asset_motion_track.hpp>
+#include <lucaria/engine/asset_shape.hpp>
+#include <lucaria/engine/asset_skeleton.hpp>
+#include <lucaria/engine/asset_sound_track.hpp>
+#include <lucaria/engine/asset_texture.hpp>
 
 namespace lucaria {
 
@@ -28,23 +48,23 @@ struct context_object {
         return _handle;
     }
 
-    template <typename HandleType, typename AssetType, typename Configure>
-    HandleType fetch_asset(
-        std::string cache_id,
-        Configure&& configure,
-        context_window* window = nullptr)
-    {
-        detail::assets_cell<AssetType>& _cell = _manager->assets.template fetch<AssetType>(
-            *_manager,
-            std::move(cache_id),
-            std::forward<Configure>(configure),
-            window != nullptr ? window->_manager : nullptr);
+    // template <typename HandleType, typename AssetType, typename Configure>
+    // HandleType fetch_asset(
+    //     std::string cache_id,
+    //     Configure&& configure,
+    //     context_window* window = nullptr)
+    // {
+    //     detail::assets_cell<AssetType>& _cell = _manager->assets.template fetch<AssetType>(
+    //         *_manager,
+    //         std::move(cache_id),
+    //         std::forward<Configure>(configure),
+    //         window != nullptr ? window->_manager : nullptr);
 
-        HandleType _handle = {};
-        _handle._cached = &_cell;
-        _handle._refcount = detail::flag_refcount(&_cell.refcount_control);
-        return _handle;
-    }
+    //     HandleType _handle = {};
+    //     _handle._cached = &_cell;
+    //     _handle._refcount = detail::flag_refcount(&_cell.refcount_control);
+    //     return _handle;
+    // }
 
     template <typename AssetType, typename... AssetTypeArgs>
     handle_asset<AssetType> create_asset(AssetTypeArgs&&... args)
@@ -55,14 +75,14 @@ struct context_object {
         return _handle;
     }
 
-    template <typename HandleType, typename AssetType, typename... AssetTypeArgs>
-    HandleType create_asset(AssetTypeArgs&&... args)
-    {
-        HandleType _handle = {};
-        _handle._cached = &_manager->assets.template create<AssetType>(std::forward<AssetTypeArgs>(args)...);
-        _handle._refcount = detail::flag_refcount(&_handle._cached->refcount_control);
-        return _handle;
-    }
+    // template <typename HandleType, typename AssetType, typename... AssetTypeArgs>
+    // HandleType create_asset(AssetTypeArgs&&... args)
+    // {
+    //     HandleType _handle = {};
+    //     _handle._cached = &_manager->assets.template create<AssetType>(std::forward<AssetTypeArgs>(args)...);
+    //     _handle._refcount = detail::flag_refcount(&_handle._cached->refcount_control);
+    //     return _handle;
+    // }
 
     handle_animation fetch_animation(const std::filesystem::path& path);
     handle_audio fetch_audio(const std::filesystem::path& path);

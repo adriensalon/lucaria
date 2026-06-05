@@ -4,7 +4,7 @@
 
 #include <lucaria/core/utils_owning.hpp>
 #include <lucaria/engine/asset_image.hpp>
-#include <lucaria/forward/handle_asset.hpp>
+#include <lucaria/engine/handle_asset.hpp>
 
 #if defined(LUCARIA_BACKEND_OPENGL)
 #include <lucaria/core/backend_opengl.hpp>

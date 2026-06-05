@@ -1,13 +1,7 @@
 #pragma once
 
-#include <lucaria/forward/context_game.hpp>
-#include <lucaria/forward/context_input.hpp>
-#include <lucaria/forward/context_mixer.hpp>
-#include <lucaria/forward/context_object.hpp>
-#include <lucaria/forward/context_rendering.hpp>
-#include <lucaria/forward/context_scene.hpp>
-#include <lucaria/forward/context_window.hpp>
-#include <lucaria/forward/handle_entity.hpp>
+#include <lucaria/engine/handle_asset.hpp>
+#include <lucaria/engine/handle_entity.hpp>
 
 #include <lucaria/engine/asset_animation.hpp>
 #include <lucaria/engine/asset_audio.hpp>
@@ -30,4 +24,13 @@
 #include <lucaria/engine/component_speaker.hpp>
 #include <lucaria/engine/component_transform.hpp>
 
+#include <lucaria/engine/context_game.hpp>
+#include <lucaria/engine/context_input.hpp>
+#include <lucaria/engine/context_mixer.hpp>
+#include <lucaria/engine/context_assets.hpp>
+#include <lucaria/engine/context_rendering.hpp>
+#include <lucaria/engine/context_scenes.hpp>
+#include <lucaria/engine/context_window.hpp>
+
 #include <lucaria/core/game_register.hpp>
+

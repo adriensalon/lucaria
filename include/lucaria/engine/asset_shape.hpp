@@ -8,7 +8,7 @@
 #include <lucaria/core/utils_math.hpp>
 #include <lucaria/engine/asset_geometry.hpp>
 #include <lucaria/engine/asset_skeleton.hpp>
-#include <lucaria/forward/handle_asset.hpp>
+#include <lucaria/engine/handle_asset.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -40,7 +40,7 @@ namespace detail {
         object_shape(object_shape&& other) = default;
         object_shape& operator=(object_shape&& other) = default;
 
-        object_shape(const object_geometry& geometry, const object_shape_algorithm algorithm = object_shape_algorithm::convex_hull);
+        object_shape(const asset_geometry& geometry, const object_shape_algorithm algorithm = object_shape_algorithm::convex_hull);
         object_shape(btCollisionShape* collision_shape, const glm::float32 half_height = 0.f);
 
         object_shape_origin origin;
@@ -74,7 +74,7 @@ namespace detail {
                 const std::filesystem::path _path = origin_path;
                 const object_shape_algorithm _algorithm = algorithm;
                 context.fetch(_path, [this, _path, _algorithm](const std::vector<char>& bytes) {
-                    object_geometry _geometry(bytes);
+                    asset_geometry _geometry(bytes);
                     *this = object_shape(_geometry, _algorithm);
                     origin_path = _path;
                 });

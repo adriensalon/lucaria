@@ -2,7 +2,7 @@
 
 #include <lucaria/core/manager_scenes.hpp>
 #include <lucaria/core/manager_app.hpp>
-#include <lucaria/forward/context_dynamics.hpp>
+#include <lucaria/engine/context_dynamics.hpp>
 
 namespace lucaria {
 namespace detail {

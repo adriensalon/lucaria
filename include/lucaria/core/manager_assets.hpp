@@ -24,9 +24,12 @@
 #include <lucaria/core/serialize_mappings.hpp>
 #include <lucaria/core/user_assets.hpp>
 #include <lucaria/engine/asset_animation.hpp>
+#include <lucaria/engine/asset_audio.hpp>
 #include <lucaria/engine/asset_cubemap.hpp>
 #include <lucaria/engine/asset_event_track.hpp>
 #include <lucaria/engine/asset_font.hpp>
+#include <lucaria/engine/asset_image.hpp>
+#include <lucaria/engine/asset_geometry.hpp>
 #include <lucaria/engine/asset_mesh.hpp>
 #include <lucaria/engine/asset_motion_track.hpp>
 #include <lucaria/engine/asset_shape.hpp>

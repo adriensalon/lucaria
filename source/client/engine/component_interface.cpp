@@ -37,7 +37,7 @@ component_interface_spatial::~component_interface_spatial()
 component_interface_spatial& component_interface_spatial::use_viewport(const handle_geometry geometry, const uint32x2& size)
 {
     _viewport_geometry = geometry;
-    _viewport_geometry._cached->fetched.on_ready([this](detail::object_geometry& _on_ready_geometry) {
+    _viewport_geometry._cached->fetched.on_ready([this](detail::asset_geometry& _on_ready_geometry) {
         _invert_texcoords(_on_ready_geometry.data.texcoords);
         _viewport_mesh.emplace(_viewport_geometry._cached->fetched.value());
     });

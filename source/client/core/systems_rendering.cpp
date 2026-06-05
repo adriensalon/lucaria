@@ -280,7 +280,7 @@ namespace detail {
             return vertex_texcoord_a * _w + vertex_texcoord_b * lerp_texcoord_u + vertex_texcoord_c * lerp_texcoord_v;
         }
 
-        [[nodiscard]] std::optional<float32x2> viewport_raycast(const float32x4x4& camera_view, const object_geometry& viewport_geometry)
+        [[nodiscard]] std::optional<float32x2> viewport_raycast(const float32x4x4& camera_view, const asset_geometry& viewport_geometry)
         {
             float32x4x4 _inverse_view = glm::inverse(camera_view);
             float32x3 _origin = float32x3(_inverse_view * glm::vec4(0, 0, 0, 1));
@@ -428,7 +428,7 @@ namespace detail {
                 data_geometry _geometry_data;
                 _geometry_data.positions = skybox_positions;
                 _geometry_data.indices = skybox_indices;
-                object_geometry _skybox_geometry(std::move(_geometry_data));
+                asset_geometry _skybox_geometry(std::move(_geometry_data));
 
                 object_shader _skybox_vertex_shader(data_shader { data_shader_profile::glsl, skybox_vertex });
                 object_shader _skybox_fragment_shader(data_shader { data_shader_profile::glsl, skybox_fragment });
@@ -698,7 +698,7 @@ namespace detail {
                 uint32x3(0, 2, 3),
             };
 
-            object_geometry _post_processing_geometry(std::move(_geometry_data));
+            asset_geometry _post_processing_geometry(std::move(_geometry_data));
             object_shader _post_processing_vertex_shader(data_shader { data_shader_profile::glsl, post_processing_vertex });
             object_shader _post_processing_fragment_shader(data_shader { data_shader_profile::glsl, post_processing_fragment });
 

@@ -1,7 +1,12 @@
 #pragma once
 
+#include <type_traits>
+#include <utility>
+
 #include <lucaria/core/manager_scenes.hpp>
-#include <lucaria/forward/handle_entity.hpp>
+#include <lucaria/core/scenes_view.hpp>
+#include <lucaria/core/user_components.hpp>
+#include <lucaria/engine/handle_entity.hpp>
 #include <lucaria/engine/component_animator.hpp>
 #include <lucaria/engine/component_interface.hpp>
 #include <lucaria/engine/component_model.hpp>
@@ -134,14 +139,14 @@ struct context_scene {
     template <typename ComponentType, typename... Args>
     ComponentType& create_component_user(const handle_entity entity, Args&&... args)
     {
-		static_assert(!traits::component_compute_enable_v<ComponentType>, "Compute user components must be created with emplace_compute_user");
+		static_assert(!::lucaria::traits::component_compute_enable_v<ComponentType>, "Compute user components must be created with emplace_compute_user");
         return _manager->registry.emplace<ComponentType>(entity._entity, std::forward<Args>(args)...);
     }
 
     template <typename ComponentType, typename... Args>
     void emplace_compute_user(const handle_entity entity, Args&&... args)
     {
-		static_assert(traits::component_compute_enable_v<ComponentType>, "Standard user components must be created with emplace_user");
+		static_assert(::lucaria::traits::component_compute_enable_v<ComponentType>, "Standard user components must be created with emplace_user");
         _manager->registry.emplace_compute<ComponentType>(entity._entity, std::forward<Args>(args)...);
     }
 

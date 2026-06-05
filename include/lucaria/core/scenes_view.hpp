@@ -5,7 +5,7 @@
 
 #include <lucaria/core/scenes_entity.hpp>
 #include <lucaria/core/scenes_buffer.hpp>
-#include <lucaria/forward/handle_entity.hpp>
+#include <lucaria/engine/handle_entity.hpp>
 
 namespace lucaria {
 namespace detail {

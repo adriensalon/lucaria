@@ -1,17 +1,13 @@
 #pragma once
 
 #include <lucaria/bin/data_event_track.hpp>
-#include <lucaria/core/assets_buffer.hpp>
-#include <lucaria/core/serialize_context.hpp>
-#include <lucaria/forward/handle_asset.hpp>
+#include <lucaria/engine/handle_asset.hpp>
 
 namespace lucaria {
 namespace detail {
 
     struct storage_save_context;
     struct storage_load_context;
-
-	struct manager_assets;
 
     enum struct object_event_track_origin {
         path,
@@ -32,32 +28,8 @@ namespace detail {
 		std::filesystem::path origin_path;		
         data_event_track data;
 
-        void save(storage_save_context& context) const
-        {
-            context.field("origin", origin);
-            if (origin == object_event_track_origin::path) {
-                context.field("origin_path", origin_path);
-            }
-            if (origin == object_event_track_origin::data) {
-                context.field("origin_data", data);
-            }
-        }
-
-        void load(storage_load_context& context)
-        {
-            context.field("origin", origin);
-            if (origin == object_event_track_origin::path) {
-                context.field("origin_path", origin_path);
-                const std::filesystem::path _path = origin_path;
-                context.fetch(_path, [this, _path](const std::vector<char>& bytes) {
-                    *this = object_event_track(bytes);
-                    origin_path = _path;
-                });
-            }
-            if (origin == object_event_track_origin::data) {
-                context.field("origin_data", data);
-            }
-        }
+        void save(storage_save_context& context) const;
+        void load(storage_load_context& context);
 
     };
 }

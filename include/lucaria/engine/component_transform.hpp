@@ -1,7 +1,7 @@
 #pragma once
 
 #include <lucaria/bin/types_containers.hpp>
-#include <lucaria/forward/handle_entity.hpp>
+#include <lucaria/engine/handle_entity.hpp>
 
 namespace lucaria {
 namespace detail {

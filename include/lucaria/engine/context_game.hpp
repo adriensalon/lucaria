@@ -1,17 +1,26 @@
 #pragma once
 
-#include <lucaria/forward/context_dynamics.hpp>
-#include <lucaria/forward/context_input.hpp>
-#include <lucaria/forward/context_mixer.hpp>
-#include <lucaria/forward/context_object.hpp>
-#include <lucaria/forward/context_rendering.hpp>
-#include <lucaria/forward/context_scene.hpp>
-#include <lucaria/forward/context_window.hpp>
 #include <lucaria/core/manager_game.hpp>
+#include <lucaria/engine/context_dynamics.hpp>
+#include <lucaria/engine/context_input.hpp>
+#include <lucaria/engine/context_mixer.hpp>
+#include <lucaria/engine/context_assets.hpp>
+#include <lucaria/engine/context_rendering.hpp>
+#include <lucaria/engine/context_scenes.hpp>
+#include <lucaria/engine/context_window.hpp>
+
+/// @brief
+#define LUCARIA_REGISTER_COMPONENT(ComponentType) LUCARIA_REGISTER_COMPONENT_IMPLEMENTATION(ComponentType)
+
+/// @brief
+#define LUCARIA_REGISTER_SCENE(SceneType) LUCARIA_REGISTER_SCENE_IMPLEMENTATION(SceneType)
+
+/// @brief
+#define LUCARIA_MAIN_SCENE(SceneType) LUCARIA_MAIN_SCENE_IMPLEMENTATION(SceneType)
 
 namespace lucaria {
 namespace detail {
-    struct manager_game;
+	struct manager_game;
 }
 
 /// @brief Represents the context of the current scene, which can be used to create entities, add components and so on.
@@ -58,7 +67,5 @@ private:
     detail::manager_game* _manager;
     friend struct access_context;
 };
-
-using game_context = context_game;
 
 }

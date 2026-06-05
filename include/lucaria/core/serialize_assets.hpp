@@ -1,5 +1,9 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
+#include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/serialize_containers.hpp>
 #include <lucaria/core/serialize_mappings.hpp>
 #include <lucaria/core/user_assets.hpp>
@@ -57,12 +61,12 @@ namespace detail {
     template <> inline mappings_container_cache_vector_save<Type>& get_asset_mapping<Type>(mappings_manager_object_save& mappings) { return mappings.Member; } \
     template <> inline mappings_container_cache_vector_load<Type>& get_asset_mapping<Type>(mappings_manager_object_load& mappings) { return mappings.Member; }
 
-    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_animation, animations)
-    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_audio, audios)
+    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(asset_animation, animations)
+    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(asset_audio, audios)
     LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_cubemap, cubemaps)
     LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_event_track, event_tracks)
     LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_font, fonts)
-    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_geometry, geometries)
+    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(asset_geometry, geometries)
     LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_image, images)
     LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_mesh, meshes)
     LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_motion_track, motion_tracks)
@@ -250,14 +254,14 @@ namespace detail {
         save_asset_buffer_direct<object_image>(context, "images", *this, mappings.objects.images);
         save_asset_buffer_direct<object_texture>(context, "textures", *this, mappings.objects.textures);
         save_asset_buffer_direct<object_cubemap>(context, "cubemaps", *this, mappings.objects.cubemaps);
-        save_asset_buffer_direct<object_geometry>(context, "geometries", *this, mappings.objects.geometries);
+        save_asset_buffer_direct<asset_geometry>(context, "geometries", *this, mappings.objects.geometries);
         save_asset_buffer_direct<object_shape>(context, "shapes", *this, mappings.objects.shapes);
         save_asset_buffer_direct<object_mesh>(context, "meshes", *this, mappings.objects.meshes);
         save_asset_buffer_direct<object_font>(context, "fonts", *this, mappings.objects.fonts);
-        save_asset_buffer_direct<object_audio>(context, "audios", *this, mappings.objects.audios);
+        save_asset_buffer_direct<asset_audio>(context, "audios", *this, mappings.objects.audios);
         save_asset_buffer_direct<object_sound_track>(context, "sound_tracks", *this, mappings.objects.sound_tracks);
         save_asset_buffer_direct<object_skeleton>(context, "skeletons", *this, mappings.objects.skeletons);
-        save_asset_buffer_direct<object_animation>(context, "animations", *this, mappings.objects.animations);
+        save_asset_buffer_direct<asset_animation>(context, "animations", *this, mappings.objects.animations);
         save_asset_buffer_direct<object_motion_track>(context, "motion_tracks", *this, mappings.objects.motion_tracks);
         save_asset_buffer_direct<object_event_track>(context, "event_tracks", *this, mappings.objects.event_tracks);
 
@@ -287,14 +291,14 @@ namespace detail {
         load_asset_buffer_direct<object_image>(context, "images", *this, mappings.objects.images);
         load_asset_buffer_direct<object_texture>(context, "textures", *this, mappings.objects.textures);
         load_asset_buffer_direct<object_cubemap>(context, "cubemaps", *this, mappings.objects.cubemaps);
-        load_asset_buffer_direct<object_geometry>(context, "geometries", *this, mappings.objects.geometries);
+        load_asset_buffer_direct<asset_geometry>(context, "geometries", *this, mappings.objects.geometries);
         load_asset_buffer_direct<object_shape>(context, "shapes", *this, mappings.objects.shapes);
         load_asset_buffer_direct<object_mesh>(context, "meshes", *this, mappings.objects.meshes);
         load_asset_buffer_direct<object_font>(context, "fonts", *this, mappings.objects.fonts);
-        load_asset_buffer_direct<object_audio>(context, "audios", *this, mappings.objects.audios);
+        load_asset_buffer_direct<asset_audio>(context, "audios", *this, mappings.objects.audios);
         load_asset_buffer_direct<object_sound_track>(context, "sound_tracks", *this, mappings.objects.sound_tracks);
         load_asset_buffer_direct<object_skeleton>(context, "skeletons", *this, mappings.objects.skeletons);
-        load_asset_buffer_direct<object_animation>(context, "animations", *this, mappings.objects.animations);
+        load_asset_buffer_direct<asset_animation>(context, "animations", *this, mappings.objects.animations);
         load_asset_buffer_direct<object_motion_track>(context, "motion_tracks", *this, mappings.objects.motion_tracks);
         load_asset_buffer_direct<object_event_track>(context, "event_tracks", *this, mappings.objects.event_tracks);
 

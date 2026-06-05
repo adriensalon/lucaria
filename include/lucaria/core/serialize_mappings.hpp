@@ -1,6 +1,11 @@
 #pragma once
 
+#include <memory>
+#include <typeindex>
+#include <unordered_map>
+
 #include <lucaria/core/scenes_entity.hpp>
+#include <lucaria/core/serialize_archives.hpp>
 #include <lucaria/core/user_assets.hpp>
 #include <lucaria/engine/asset_animation.hpp>
 #include <lucaria/engine/asset_audio.hpp>
@@ -15,8 +20,8 @@
 #include <lucaria/engine/asset_skeleton.hpp>
 #include <lucaria/engine/asset_sound_track.hpp>
 #include <lucaria/engine/asset_texture.hpp>
-#include <lucaria/forward/handle_asset.hpp>
-#include <lucaria/forward/handle_entity.hpp>
+#include <lucaria/engine/handle_asset.hpp>
+#include <lucaria/engine/handle_entity.hpp>
 
 namespace lucaria {
 
@@ -156,12 +161,12 @@ namespace detail {
     };
 
     struct mappings_manager_object_save {
-        mappings_container_cache_vector_save<object_animation> animations = {};
-        mappings_container_cache_vector_save<object_audio> audios = {};
+        mappings_container_cache_vector_save<asset_animation> animations = {};
+        mappings_container_cache_vector_save<asset_audio> audios = {};
         mappings_container_cache_vector_save<object_cubemap> cubemaps = {};
         mappings_container_cache_vector_save<object_event_track> event_tracks = {};
         mappings_container_cache_vector_save<object_font> fonts = {};
-        mappings_container_cache_vector_save<object_geometry> geometries = {};
+        mappings_container_cache_vector_save<asset_geometry> geometries = {};
         mappings_container_cache_vector_save<object_image> images = {};
         mappings_container_cache_vector_save<object_mesh> meshes = {};
         mappings_container_cache_vector_save<object_motion_track> motion_tracks = {};
@@ -177,14 +182,14 @@ namespace detail {
         mappings_container_cache_vector_load<object_image> images = {};
         mappings_container_cache_vector_load<object_texture> textures = {};
         mappings_container_cache_vector_load<object_cubemap> cubemaps = {};
-        mappings_container_cache_vector_load<object_geometry> geometries = {};
+        mappings_container_cache_vector_load<asset_geometry> geometries = {};
         mappings_container_cache_vector_load<object_shape> shapes = {};
         mappings_container_cache_vector_load<object_mesh> meshes = {};
         mappings_container_cache_vector_load<object_font> fonts = {};
-        mappings_container_cache_vector_load<object_audio> audios = {};
+        mappings_container_cache_vector_load<asset_audio> audios = {};
         mappings_container_cache_vector_load<object_sound_track> sound_tracks = {};
         mappings_container_cache_vector_load<object_skeleton> skeletons = {};
-        mappings_container_cache_vector_load<object_animation> animations = {};
+        mappings_container_cache_vector_load<asset_animation> animations = {};
         mappings_container_cache_vector_load<object_motion_track> motion_tracks = {};
         mappings_container_cache_vector_load<object_event_track> event_tracks = {};
 
@@ -261,12 +266,12 @@ namespace detail {
         }                                                                                                              \
     };
 
-LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_animation, animations, animations, "animation")
-LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_audio, audios, audios, "audio")
+LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::asset_animation, animations, animations, "animation")
+LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::asset_audio, audios, audios, "audio")
 LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_cubemap, cubemaps, cubemaps, "cubemap")
 LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_event_track, event_tracks, event_tracks, "event_track")
 LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_font, fonts, fonts, "font")
-LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_geometry, geometries, geometries, "geometry")
+LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::asset_geometry, geometries, geometries, "geometry")
 LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_image, images, images, "image")
 LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_mesh, meshes, meshes, "mesh")
 LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_motion_track, motion_tracks, motion_tracks, "motion_track")

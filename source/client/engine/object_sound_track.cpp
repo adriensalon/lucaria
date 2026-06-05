@@ -15,7 +15,7 @@ namespace detail {
         }
     }
 
-    object_sound_track::object_sound_track(const object_audio& from)
+    object_sound_track::object_sound_track(const asset_audio& from)
         : origin(from.origin == object_audio_origin::path ? object_sound_track_origin::path : object_sound_track_origin::data)
     {
         id = 0;
