@@ -40,6 +40,16 @@ if(NOT LUCARIA_BUILD_COMPILERS)
 		target_link_libraries(lucaria_external_imgui PRIVATE lucaria_external_glfw)
 	endif()
 
+	# interface
+	add_library(lucaria_external_imgui_interface INTERFACE)
+	target_include_directories(lucaria_external_imgui_interface INTERFACE "config")
+	target_include_directories(lucaria_external_imgui_interface INTERFACE "upstream/imgui_1897")
+	target_compile_definitions(lucaria_external_imgui_interface INTERFACE -DIMGUI_USER_CONFIG="lucaria_imconfig.h")
+	if(WIN32 AND NOT LUCARIA_DISABLE_RELOAD)
+		target_compile_definitions(lucaria_external_imgui PRIVATE
+			"IMGUI_API=__declspec(dllexport)")
+	endif()
+
 else()
 
 	set(lucaria_patched_imgui_dir "${CMAKE_CURRENT_BINARY_DIR}/patched")

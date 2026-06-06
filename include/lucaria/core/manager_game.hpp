@@ -38,6 +38,10 @@ namespace detail {
         system_rendering rendering = {};
         context_game* context = nullptr;
 
+#if !defined(LUCARIA_DISABLE_RELOAD)
+		object_reload_module user_module = {};
+#endif
+
         void save_snapshot(const std::filesystem::path& path);
         void load_snapshot(const std::filesystem::path& path);
     };

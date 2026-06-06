@@ -38,21 +38,38 @@ namespace detail {
         _access.set(mixer, _game.mixer);
         _access.set(rendering, _game.rendering);
 
+#if !defined(LUCARIA_DISABLE_RELOAD)
+        user_module.module_register(this);
+#else
         __lucaria_plugin_register(this);
+#endif
 
         window.run(input, objects,
 
             [this, &_game]() {
 
 #if !defined(LUCARIA_DISABLE_COMPUTE_SPIRV)
-			scenes.compiler = std::make_unique<gsl_compiler>(scenes.gsl_systems);
+                scenes.compiler = std::make_unique<gsl_compiler>(scenes.gsl_systems);
 #endif
-			__lucaria_plugin_start(&_game); },
+#if !defined(LUCARIA_DISABLE_RELOAD)
+                user_module.module_start(&_game);
+#else
+                __lucaria_plugin_start(&_game);
+#endif
+            },
 
             [this, &_game]() {
-			scenes.update_callbacks(_game);
-			scenes.update_systems(*this); 
-			objects.gc_unused(); });
+                scenes.update_callbacks(_game);
+                scenes.update_systems(*this);
+                objects.gc_unused();
+
+                int _cmake_return;
+                std::string _cmake_output;
+                object_reload_module_status _status = user_module.poll_sources_and_recompile_library(_cmake_return, _cmake_output);
+                if (_status == object_reload_module_status::compilation_started) {
+                    std::cout << "compilation started" << std::endl;
+                }
+            });
     }
 
     void manager_game::save_snapshot(const std::filesystem::path& path)
@@ -86,6 +103,5 @@ namespace detail {
         _archive(cereal::make_nvp("assets", _objects));
         _archive(cereal::make_nvp("components", _scenes));
     }
-
 }
 }

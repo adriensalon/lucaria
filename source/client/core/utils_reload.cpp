@@ -104,6 +104,11 @@ namespace detail {
     {
         cmake_result = 0;
         cmake_output.clear();
+		
+        const auto current_status = _status.load(std::memory_order_acquire);
+        std::cout << "reload poll status = "
+                  << static_cast<int>(current_status)
+                  << "\n";
 
         object_reload_module_status _expected = object_reload_module_status::compilation_finished;
         if (_status.compare_exchange_strong(_expected, object_reload_module_status::idle, std::memory_order_acq_rel)) {
