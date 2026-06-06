@@ -1,35 +1,13 @@
 set(GLSLANG_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated/glslang")
 file(MAKE_DIRECTORY "${GLSLANG_GENERATED_DIR}/glslang")
 
-# glslang requires <glslang/build_info.h>
-file(WRITE "${GLSLANG_GENERATED_DIR}/glslang/build_info.h" [[
-#pragma once
-
-#define GLSLANG_VERSION_MAJOR 16
-#define GLSLANG_VERSION_MINOR 3
-#define GLSLANG_VERSION_PATCH 0
-#define GLSLANG_VERSION_FLAVOR ""
-
-#define GLSLANG_VERSION_GREATER_THAN(major, minor, patch) \
-((GLSLANG_VERSION_MAJOR) > (major) || ((major) == GLSLANG_VERSION_MAJOR && \
-((GLSLANG_VERSION_MINOR) > (minor) || ((minor) == GLSLANG_VERSION_MINOR && \
-	(GLSLANG_VERSION_PATCH) > (patch)))))
-
-#define GLSLANG_VERSION_GREATER_OR_EQUAL_TO(major, minor, patch) \
-((GLSLANG_VERSION_MAJOR) > (major) || ((major) == GLSLANG_VERSION_MAJOR && \
-((GLSLANG_VERSION_MINOR) > (minor) || ((minor) == GLSLANG_VERSION_MINOR && \
-	(GLSLANG_VERSION_PATCH >= (patch))))))
-
-#define GLSLANG_VERSION_LESS_THAN(major, minor, patch) \
-((GLSLANG_VERSION_MAJOR) < (major) || ((major) == GLSLANG_VERSION_MAJOR && \
-((GLSLANG_VERSION_MINOR) < (minor) || ((minor) == GLSLANG_VERSION_MINOR && \
-	(GLSLANG_VERSION_PATCH) < (patch)))))
-
-#define GLSLANG_VERSION_LESS_OR_EQUAL_TO(major, minor, patch) \
-((GLSLANG_VERSION_MAJOR) < (major) || ((major) == GLSLANG_VERSION_MAJOR && \
-((GLSLANG_VERSION_MINOR) < (minor) || ((minor) == GLSLANG_VERSION_MINOR && \
-	(GLSLANG_VERSION_PATCH <= (patch))))))
-]])
+set(GLSLANG_VERSION_MAJOR 16)
+set(GLSLANG_VERSION_MINOR 3)
+set(GLSLANG_VERSION_PATCH 0)
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/build_info.h.in"
+    "${GLSLANG_GENERATED_DIR}/glslang/build_info.h"
+    @ONLY)
 
 set(GLSLANG_SOURCES
 	"upstream/glslang/glslang/CInterface/glslang_c_interface.cpp"
