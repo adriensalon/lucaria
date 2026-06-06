@@ -30,26 +30,21 @@ foreach(gslc_source IN LISTS LUCARIA_GSLC_SOURCES)
 endforeach()
 
 set_target_properties(${LUCARIA_USER_TARGET} PROPERTIES CXX_STANDARD 17)
-target_link_libraries(${LUCARIA_USER_TARGET} PRIVATE lucaria_client_core)
+target_link_libraries(${LUCARIA_USER_TARGET} PRIVATE lucaria_runtime)
 target_include_directories(${LUCARIA_USER_TARGET} PRIVATE ${LUCARIA_TARGET_INCLUDES})
 target_compile_definitions(${LUCARIA_USER_TARGET} PRIVATE ${LUCARIA_TARGET_DEFINES})
 target_compile_options(${LUCARIA_USER_TARGET} PRIVATE ${LUCARIA_TARGET_BUILD_ARGS})
 
-# lucaria_client is now the executable created by the engine CMake.
-# Keep the generated binary name equal to the user requested game target.
-set_target_properties(lucaria_client PROPERTIES OUTPUT_NAME ${LUCARIA_TARGET})
-
-# In reload mode the executable dlopens the user module, so do not link it.
-# In non-reload mode link it normally for a single self-contained executable.
+set_target_properties(lucaria_main PROPERTIES OUTPUT_NAME ${LUCARIA_TARGET})
 if(NOT LUCARIA_DISABLE_RELOAD AND NOT ANDROID AND NOT EMSCRIPTEN AND NOT PSP)
-    add_dependencies(lucaria_client ${LUCARIA_USER_TARGET})
+    add_dependencies(lucaria_main ${LUCARIA_USER_TARGET})
 else()
-    target_link_libraries(lucaria_client PRIVATE ${LUCARIA_USER_TARGET})
+    target_link_libraries(lucaria_main PRIVATE ${LUCARIA_USER_TARGET})
 endif()
 
 if(PSP)
     create_pbp_file(
-        TARGET lucaria_client
+        TARGET lucaria_main
         ICON_PATH NULL
         BACKGROUND_PATH NULL
         PREVIEW_PATH NULL
@@ -63,37 +58,37 @@ if(EMSCRIPTEN)
         set(LUCARIA_HTML_SHELL "${CMAKE_CURRENT_LIST_DIR}/web/shell.html")
     endif()
 
-    set_target_properties(lucaria_client PROPERTIES SUFFIX ".html")
-    target_link_options(lucaria_client PRIVATE --shell-file ${LUCARIA_HTML_SHELL})
-    target_link_options(lucaria_client PRIVATE -sLLD_REPORT_UNDEFINED)
-    target_link_options(lucaria_client PRIVATE -sALLOW_MEMORY_GROWTH=1)
-    target_link_options(lucaria_client PRIVATE -sINITIAL_MEMORY=671088640)
-    target_link_options(lucaria_client PRIVATE -sMALLOC=emmalloc)
-    target_link_options(lucaria_client PRIVATE -sMAX_WEBGL_VERSION=2)
-    target_link_options(lucaria_client PRIVATE -sUSE_WEBGL2=1)
-    target_link_options(lucaria_client PRIVATE -sFETCH)
-    target_link_options(lucaria_client PRIVATE -lopenal)
+    set_target_properties(lucaria_main PROPERTIES SUFFIX ".html")
+    target_link_options(lucaria_main PRIVATE --shell-file ${LUCARIA_HTML_SHELL})
+    target_link_options(lucaria_main PRIVATE -sLLD_REPORT_UNDEFINED)
+    target_link_options(lucaria_main PRIVATE -sALLOW_MEMORY_GROWTH=1)
+    target_link_options(lucaria_main PRIVATE -sINITIAL_MEMORY=671088640)
+    target_link_options(lucaria_main PRIVATE -sMALLOC=emmalloc)
+    target_link_options(lucaria_main PRIVATE -sMAX_WEBGL_VERSION=2)
+    target_link_options(lucaria_main PRIVATE -sUSE_WEBGL2=1)
+    target_link_options(lucaria_main PRIVATE -sFETCH)
+    target_link_options(lucaria_main PRIVATE -lopenal)
     
     if(LUCARIA_DEBUG)
-        target_link_options(lucaria_client PRIVATE -g)
-        target_link_options(lucaria_client PRIVATE -sGL_DEBUG=1)
-        target_link_options(lucaria_client PRIVATE -sNO_DISABLE_EXCEPTION_CATCHING)
+        target_link_options(lucaria_main PRIVATE -g)
+        target_link_options(lucaria_main PRIVATE -sGL_DEBUG=1)
+        target_link_options(lucaria_main PRIVATE -sNO_DISABLE_EXCEPTION_CATCHING)
     else()
-        target_link_options(lucaria_client PRIVATE -O3)
-        target_link_options(lucaria_client PRIVATE -sGL_DEBUG=0)
+        target_link_options(lucaria_main PRIVATE -O3)
+        target_link_options(lucaria_main PRIVATE -sGL_DEBUG=0)
     endif()
     
     if(LUCARIA_ASSETS_PACKAGE)
-        target_link_options(lucaria_client PRIVATE --preload-file ${LUCARIA_ASSETS_DIR}@/)
+        target_link_options(lucaria_main PRIVATE --preload-file ${LUCARIA_ASSETS_DIR}@/)
     endif()
 endif()
 
 # win32 options
 if(WIN32 AND LUCARIA_HIDE_CONSOLE)
-    target_compile_definitions(lucaria_client PRIVATE -DLUCARIA_HIDE_CONSOLE=1)
-    set_target_properties(lucaria_client PROPERTIES WIN32_EXECUTABLE TRUE)
+    target_compile_definitions(lucaria_main PRIVATE -DLUCARIA_HIDE_CONSOLE=1)
+    set_target_properties(lucaria_main PROPERTIES WIN32_EXECUTABLE TRUE)
 else()
-    target_compile_definitions(lucaria_client PRIVATE -DLUCARIA_HIDE_CONSOLE=0)
+    target_compile_definitions(lucaria_main PRIVATE -DLUCARIA_HIDE_CONSOLE=0)
 endif()
 
 # lto optimization
@@ -120,6 +115,6 @@ function(enable_ipo_recursive TARGET)
 endfunction()
 
 if(NOT LUCARIA_DEBUG)
-    enable_ipo_recursive(lucaria_client)
+    enable_ipo_recursive(lucaria_main)
     enable_ipo_recursive(${LUCARIA_USER_TARGET})
 endif()

@@ -69,6 +69,9 @@ namespace detail {
                 if (_status == object_reload_module_status::compilation_started) {
                     std::cout << "compilation started" << std::endl;
                 }
+                if (_status == object_reload_module_status::compilation_finished) {
+                    std::cout << _cmake_output << std::endl;
+                }
             });
     }
 

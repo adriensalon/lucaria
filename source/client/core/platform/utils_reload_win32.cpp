@@ -81,7 +81,7 @@ namespace detail {
         FARPROC _symbol = GetProcAddress(reinterpret_cast<HMODULE>(_handle), name);
         if (!_symbol) {
             error = _last_error();
-			return nullptr;
+            return nullptr;
         }
         return reinterpret_cast<void*>(_symbol);
     }
@@ -92,38 +92,65 @@ namespace detail {
         _security.nLength = sizeof(_security);
         _security.bInheritHandle = TRUE;
         _security.lpSecurityDescriptor = nullptr;
+
         HANDLE _read_pipe = nullptr;
         HANDLE _write_pipe = nullptr;
+
         if (!CreatePipe(&_read_pipe, &_write_pipe, &_security, 0)) {
-			output = "Failed to create command pipe with error " + _last_error();
-			return -1;
-		}
+            output = "Failed to create command pipe with error " + _last_error();
+            return -1;
+        }
 
         SetHandleInformation(_read_pipe, HANDLE_FLAG_INHERIT, 0);
+
         STARTUPINFOW _startup = {};
         _startup.cb = sizeof(_startup);
         _startup.dwFlags = STARTF_USESTDHANDLES;
         _startup.hStdOutput = _write_pipe;
         _startup.hStdError = _write_pipe;
         _startup.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+
         PROCESS_INFORMATION _process = {};
+
         std::wstring _command_line = L"cmd.exe /C " + _to_wide(command);
-        if (!CreateProcessW(nullptr, _command_line.data(), nullptr, nullptr, TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &_startup, &_process)) {
+
+        if (!CreateProcessW(
+                nullptr,
+                _command_line.data(),
+                nullptr,
+                nullptr,
+                TRUE,
+                CREATE_NO_WINDOW,
+                nullptr,
+                nullptr,
+                &_startup,
+                &_process)) {
+            CloseHandle(_read_pipe);
+            CloseHandle(_write_pipe);
             output = "Failed to create process with error " + _last_error();
             return -1;
         }
 
+        CloseHandle(_write_pipe);
+        _write_pipe = nullptr;
+
         char _buffer[4096];
         DWORD _bytes_read = 0;
+
         while (ReadFile(_read_pipe, _buffer, sizeof(_buffer), &_bytes_read, nullptr) && _bytes_read > 0) {
             output.append(_buffer, _bytes_read);
         }
+
         CloseHandle(_read_pipe);
+
         WaitForSingleObject(_process.hProcess, INFINITE);
+
         DWORD _exit_code = 0;
         GetExitCodeProcess(_process.hProcess, &_exit_code);
+
         CloseHandle(_process.hThread);
         CloseHandle(_process.hProcess);
+
         return static_cast<int>(_exit_code);
     }
 

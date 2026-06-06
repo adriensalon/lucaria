@@ -24,7 +24,10 @@ function(add_lucaria_game_win32 TARGET)
                 TARGET ${TARGET}_win32
                 POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/external/lucaria/client/win32/$<CONFIG>/${TARGET}.exe ${LBG_INSTALL_DIR}/${TARGET}.exe
-                COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/external/lucaria/client/win32/$<CONFIG>/lucaria_client_core.dll ${LBG_INSTALL_DIR}/lucaria_client_core.dll)
+
+                COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/external/lucaria/client/win32/$<CONFIG>/${TARGET}.pdb ${LBG_INSTALL_DIR}/${TARGET}.pdb
+                COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/external/lucaria/client/win32/$<CONFIG>/lucaria_runtime.dll ${LBG_INSTALL_DIR}/lucaria_runtime.dll
+                COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/external/lucaria/client/win32/$<CONFIG>/lucaria_runtime.pdb ${LBG_INSTALL_DIR}/lucaria_runtime.pdb)
         endif()
     endif()
 

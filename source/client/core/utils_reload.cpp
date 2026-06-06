@@ -15,30 +15,22 @@ namespace detail {
         constexpr const char* _extension = ".so";
 #endif
 
-        [[nodiscard]] static std::filesystem::path _make_cached_library_path(const std::filesystem::path& watched_library_path, const uint32 version)
-        {
-            return std::filesystem::path(__lucaria_reload_cache_directory)
-                / (watched_library_path.stem().string() + "_" + std::to_string(version) + _extension);
-        }
-
         [[nodiscard]] static std::filesystem::path _copy_current_build_to_cache(const uint32 version)
         {
             const std::filesystem::path _source_path = std::filesystem::path(__lucaria_reload_shared_library_path);
-            const std::filesystem::path _cache_directory = std::filesystem::path(__lucaria_reload_cache_directory);
+            const std::filesystem::path _cache_root = std::filesystem::path(__lucaria_reload_cache_directory);
+            const std::filesystem::path _cache_directory = _cache_root / std::to_string(version);
             std::filesystem::create_directories(_cache_directory);
-            const std::filesystem::path _target_path = _cache_directory / (_source_path.stem().string() + "_" + std::to_string(version) + _extension);
+            const std::filesystem::path _target_path = _cache_directory / _source_path.filename();
             std::filesystem::copy_file(_source_path, _target_path, std::filesystem::copy_options::overwrite_existing);
-
 #if defined(_WIN32)
             std::filesystem::path _source_pdb = _source_path;
             _source_pdb.replace_extension(".pdb");
             if (std::filesystem::exists(_source_pdb)) {
-                std::filesystem::path _target_pdb = _target_path;
-                _target_pdb.replace_extension(".pdb");
-                std::filesystem::copy_file(_source_pdb, _target_pdb, std::filesystem::copy_options::overwrite_existing);
+                const std::filesystem::path _target_pdb = _cache_directory / _source_pdb.filename();
+                std::filesystem::rename(_source_pdb, _target_pdb);
             }
 #endif
-
             return _target_path;
         }
     }
@@ -104,11 +96,8 @@ namespace detail {
     {
         cmake_result = 0;
         cmake_output.clear();
-		
+
         const auto current_status = _status.load(std::memory_order_acquire);
-        std::cout << "reload poll status = "
-                  << static_cast<int>(current_status)
-                  << "\n";
 
         object_reload_module_status _expected = object_reload_module_status::compilation_finished;
         if (_status.compare_exchange_strong(_expected, object_reload_module_status::idle, std::memory_order_acq_rel)) {
