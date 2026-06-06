@@ -1,7 +1,6 @@
 #pragma once
 
-#include <vector>
-
+#include <lucaria/bin/types_containers.hpp>
 #include <lucaria/core/scenes_compute.hpp>
 #include <lucaria/core/scenes_storage.hpp>
 #include <lucaria/core/user_components.hpp>
@@ -10,9 +9,9 @@ namespace lucaria {
 namespace detail {
 
     template <typename Component, typename Entity>
-	using default_compute_allocator = storage_compute_allocator_opengl_texture<Component, Entity>;
+    using default_compute_allocator = storage_compute_allocator_opengl_texture<Component, Entity>;
 
-	//
+    //
 
     template <typename Component, typename Entity, typename Allocator>
     struct storage_buffer : public entt::basic_sparse_set<Entity, typename std::allocator_traits<Allocator>::template rebind_alloc<Entity>> {
@@ -25,21 +24,21 @@ namespace detail {
         using size_type = std::size_t;
         using traits_type = entt::component_traits<Component>;
 
-        // static constexpr std::uint32_t page_size = 256u;
-        static constexpr std::uint32_t page_size = 4u;
+        // static constexpr uint32 page_size = 256u;
+        static constexpr uint32 page_size = 4u;
 
         struct segment {
             object_entity_scene_index scene = {};
             entity_type* entities = nullptr;
             Component* components = nullptr;
-            std::uint32_t count = {};
+            uint32 count = {};
         };
 
         struct const_segment {
             object_entity_scene_index scene = {};
             const entity_type* entities = nullptr;
             const value_type* components = nullptr;
-            std::uint32_t count = {};
+            uint32 count = {};
         };
 
         storage_buffer()
@@ -89,7 +88,7 @@ namespace detail {
             _locations_by_index[_base_index] = location {
                 .scene = _scene,
                 .page = _page_index,
-                .offset = static_cast<std::uint32_t>(_offset)
+                .offset = static_cast<uint32>(_offset)
             };
             return *_ptr;
         }
@@ -101,7 +100,7 @@ namespace detail {
             for (auto _iterator = base_type::begin(); _iterator != base_type::end(); ++_iterator) {
                 _scratch_entities.push_back(*_iterator);
             }
-            for (const auto _entity : _scratch_entities) {
+            for (const Entity _entity : _scratch_entities) {
                 erase_one(_entity);
             }
             _scratch_entities.clear();
@@ -286,7 +285,7 @@ namespace detail {
             _scratch_entities.clear();
             auto& _partition = _partitions[scene];
             for (page* pg : _partition.pages) {
-                for (std::uint32_t i = 0; i < pg->count; ++i) {
+                for (uint32 i = 0; i < pg->count; ++i) {
                     _scratch_entities.push_back(pg->entities[i]);
                 }
             }
@@ -305,14 +304,14 @@ namespace detail {
     private:
         struct location {
             object_entity_scene_index scene = {};
-            std::uint32_t page = {};
-            std::uint32_t offset = {};
+            uint32 page = {};
+            uint32 offset = {};
         };
 
         struct page {
             entity_type entities[page_size];
             alignas(value_type) std::byte raw[sizeof(value_type) * page_size];
-            std::uint32_t count = {};
+            uint32 count = {};
 
             value_type* components() noexcept
             {
@@ -340,7 +339,7 @@ namespace detail {
             for (partition& _partition : _partitions) {
                 for (page* _page : _partition.pages) {
                     auto* _components = _page->components();
-                    for (std::uint32_t _page_index = 0; _page_index < _page->count; ++_page_index) {
+                    for (uint32 _page_index = 0; _page_index < _page->count; ++_page_index) {
                         std::destroy_at(_components + _page_index);
                     }
                     _page->count = 0;
@@ -360,14 +359,14 @@ namespace detail {
             return _partitions[scene];
         }
 
-        std::pair<std::uint32_t, page*> assure_page(partition& part)
+        std::pair<uint32, page*> assure_page(partition& part)
         {
             if (part.pages.empty() || part.pages.back()->count == page_size) {
                 auto* _page = _page_pool.acquire();
                 _page->count = 0;
                 part.pages.push_back(_page);
             }
-            const std::uint32_t _index = static_cast<std::uint32_t>(part.pages.size() - 1u);
+            const uint32 _index = static_cast<uint32>(part.pages.size() - 1u);
             return { _index, part.pages.back() };
         }
 
@@ -479,11 +478,14 @@ namespace detail {
             return const_iterable { this };
         }
     };
-	
+
     template <typename ExcludedComponentTypesList, typename LeadComponentType, typename... RestComponentTypes>
     struct storage_view_compute;
 
-    template <typename Component, typename Entity, typename Allocator,
+    template <
+        typename Component,
+        typename Entity,
+        typename Allocator,
         typename ComputeAllocator = default_compute_allocator<Component, Entity>,
         typename PageType = storage_page_compute<Component, Entity, ComputeAllocator>>
     struct storage_buffer_compute : public entt::basic_sparse_set<Entity, typename std::allocator_traits<Allocator>::template rebind_alloc<Entity>> {
@@ -498,26 +500,26 @@ namespace detail {
         using size_type = std::size_t;
         using traits_type = entt::component_traits<Component>;
 
-        static constexpr std::uint32_t page_size = page_type::page_size;
+        static constexpr uint32 page_size = page_type::page_size;
 
         struct storage_location {
             object_entity_scene_index scene = {};
-            std::uint32_t segment = {};
-            std::uint32_t offset = {};
+            uint32 segment = {};
+            uint32 offset = {};
         };
 
         struct compute_segment {
             object_entity_scene_index scene = {};
-            std::uint32_t segment = {};
+            uint32 segment = {};
             page_type* page = nullptr;
-            std::uint32_t count = {};
+            uint32 count = {};
         };
 
         struct const_compute_segment {
             object_entity_scene_index scene = {};
-            std::uint32_t segment = {};
+            uint32 segment = {};
             const page_type* page = nullptr;
-            std::uint32_t count = {};
+            uint32 count = {};
         };
 
         storage_buffer_compute()
@@ -566,39 +568,29 @@ namespace detail {
         }
 
         template <typename... Args>
-        void emplace(entity_type entity, Args&&... args)
+        void emplace(Entity entity, Args&&... args)
         {
             const object_entity_scene_index _scene = entity_scene(entity);
             auto _iterator = base_type::try_emplace(entity, false);
             const std::size_t _base_index = static_cast<std::size_t>(_iterator.index());
-
             if (_locations_by_index.size() <= _base_index) {
                 _locations_by_index.resize(_base_index + 1u);
             }
-
             partition& _partition = assure_partition(_scene);
             auto [_segment_index, _segment] = assure_segment(_partition);
-            const std::uint32_t _offset = _segment->count++;
-
+            const uint32 _offset = _segment->count++;
             _segment->page->emplace(_offset, entity, std::forward<Args>(args)...);
             _segment->page->set_count(_segment->count);
-
-            _locations_by_index[_base_index] = storage_location {
-                .scene = _scene,
-                .segment = _segment_index,
-                .offset = _offset
-            };
+            _locations_by_index[_base_index] = storage_location { _scene, _segment_index, _offset };
         }
 
         void clear()
         {
             _scratch_entities.clear();
             _scratch_entities.reserve(base_type::size());
-
             for (auto _iterator = base_type::begin(); _iterator != base_type::end(); ++_iterator) {
                 _scratch_entities.push_back(*_iterator);
             }
-
             for (const auto _entity : _scratch_entities) {
                 erase_one(_entity);
             }
@@ -606,12 +598,12 @@ namespace detail {
             _scratch_entities.clear();
         }
 
-        [[nodiscard]] bool contains(entity_type entity) const noexcept
+        [[nodiscard]] bool contains(Entity entity) const noexcept
         {
             return base_type::contains(entity);
         }
 
-        [[nodiscard]] bool contains(object_entity_scene_index scene, entity_type entity) const noexcept
+        [[nodiscard]] bool contains(object_entity_scene_index scene, Entity entity) const noexcept
         {
             if (scene >= _partitions.size()) {
                 return false;
@@ -626,33 +618,33 @@ namespace detail {
             return _location.scene == scene;
         }
 
-        [[nodiscard]] storage_location locate(entity_type entity) const noexcept
+        [[nodiscard]] storage_location locate(Entity entity) const noexcept
         {
             const auto _index = base_type::index(entity);
             return _locations_by_index[_index];
         }
 
-        [[nodiscard]] storage_location locate(object_entity_scene_index scene, entity_type entity) const noexcept
+        [[nodiscard]] storage_location locate(object_entity_scene_index scene, Entity entity) const noexcept
         {
             LUCARIA_DEBUG_ASSERT(contains(scene, entity), "Entity is not contained in the scene");
             return locate(entity);
         }
 
-        [[nodiscard]] std::uint32_t backend_index(entity_type entity) const noexcept
+        [[nodiscard]] uint32 backend_index(Entity entity) const noexcept
         {
             const auto _location = locate(entity);
             const auto& _segment = _partitions[_location.scene].segments[_location.segment];
             return _segment.page->backend_index(_location.offset);
         }
 
-        [[nodiscard]] std::uint32_t backend_index(object_entity_scene_index scene, entity_type entity) const noexcept
+        [[nodiscard]] uint32 backend_index(object_entity_scene_index scene, Entity entity) const noexcept
         {
             const auto _location = locate(scene, entity);
             const auto& _segment = _partitions[_location.scene].segments[_location.segment];
             return _segment.page->backend_index(_location.offset);
         }
 
-        void erase_one(entity_type entity)
+        void erase_one(Entity entity)
         {
             const auto _erased_index = base_type::index(entity);
             const auto _last_index = base_type::size() - 1u;
@@ -695,7 +687,7 @@ namespace detail {
                     continue;
                 }
 
-                for (std::uint32_t i = 0; i < _segment.count; ++i) {
+                for (uint32 i = 0; i < _segment.count; ++i) {
                     _scratch_entities.push_back(_segment.page->entity(i));
                 }
             }
@@ -723,16 +715,14 @@ namespace detail {
             if (scene >= _partitions.size()) {
                 return;
             }
-
-            auto& _partition = _partitions[scene];
-
-            for (std::uint32_t i = 0; i < static_cast<std::uint32_t>(_partition.segments.size()); ++i) {
-                auto& _segment = _partition.segments[i];
+            partition& _partition = _partitions[scene];
+            for (uint32 _index = 0; _index < static_cast<uint32>(_partition.segments.size()); ++_index) {
+                segment& _segment = _partition.segments[_index];
 
                 if (_segment.count != 0u) {
                     callback(compute_segment {
                         .scene = scene,
-                        .segment = i,
+                        .segment = _index,
                         .page = _segment.page,
                         .count = _segment.count });
                 }
@@ -756,15 +746,10 @@ namespace detail {
 
             const auto& _partition = _partitions[scene];
 
-            for (std::uint32_t i = 0; i < static_cast<std::uint32_t>(_partition.segments.size()); ++i) {
+            for (uint32 i = 0; i < static_cast<uint32>(_partition.segments.size()); ++i) {
                 const auto& _segment = _partition.segments[i];
-
                 if (_segment.count != 0u) {
-                    callback(const_compute_segment {
-                        .scene = scene,
-                        .segment = i,
-                        .page = _segment.page,
-                        .count = _segment.count });
+                    callback(const_compute_segment {                         scene,                     i,                     _segment.page,                         _segment.count });
                 }
             }
         }
@@ -777,19 +762,19 @@ namespace detail {
             }
         }
 
-        [[nodiscard]] std::uint32_t scene_segment_count(object_entity_scene_index scene) const noexcept
+        [[nodiscard]] uint32 scene_segment_count(object_entity_scene_index scene) const noexcept
         {
             if (scene >= _partitions.size()) {
                 return 0u;
             }
 
-            return static_cast<std::uint32_t>(_partitions[scene].segments.size());
+            return static_cast<uint32>(_partitions[scene].segments.size());
         }
 
     private:
         struct segment {
             page_type* page = nullptr;
-            std::uint32_t count = {};
+            uint32 count = {};
         };
 
         struct partition {
@@ -801,13 +786,13 @@ namespace detail {
         };
 
         using location_vector_type = typename alloc_traits_type::template rebind_alloc<storage_location>;
-        using entity_vector_type = typename alloc_traits_type::template rebind_alloc<entity_type>;
+        using entity_vector_type = typename alloc_traits_type::template rebind_alloc<Entity>;
 
         allocator_type _allocator = {};
         compute_allocator_type _compute_allocator = {};
         std::vector<partition> _partitions = {};
         std::vector<storage_location> _locations_by_index = {};
-        std::vector<entity_type> _scratch_entities = {};
+        std::vector<Entity> _scratch_entities = {};
         storage_page_pool_compute<page_type, allocator_type, compute_allocator_type> _page_pool;
 
         void clear_payload()
@@ -834,7 +819,7 @@ namespace detail {
                 return;
             }
 
-            for (std::uint32_t i = 0; i < _segment.count; ++i) {
+            for (uint32 i = 0; i < _segment.count; ++i) {
                 _segment.page->destroy(i);
             }
         }
@@ -844,11 +829,10 @@ namespace detail {
             while (_partitions.size() <= static_cast<std::size_t>(scene)) {
                 _partitions.emplace_back(_allocator);
             }
-
             return _partitions[scene];
         }
 
-        std::pair<std::uint32_t, segment*> assure_segment(partition& part)
+        std::pair<uint32, segment*> assure_segment(partition& part)
         {
             if (part.segments.empty() || part.segments.back().count == page_size) {
                 auto* _page = _page_pool.acquire();
@@ -858,14 +842,14 @@ namespace detail {
                     .count = 0u });
             }
 
-            const std::uint32_t _index = static_cast<std::uint32_t>(part.segments.size() - 1u);
+            const uint32 _index = static_cast<uint32>(part.segments.size() - 1u);
             return { _index, &part.segments.back() };
         }
 
         void erase_payload_at_base_index(std::size_t base_index)
         {
             const auto _location = _locations_by_index[base_index];
-            auto& _segment = _partitions[_location.scene].segments[_location.segment];
+            segment& _segment = _partitions[_location.scene].segments[_location.segment];
 
             const auto _last = _segment.count - 1u;
             _segment.page->destroy(_location.offset);
@@ -886,12 +870,12 @@ namespace detail {
             _segment.page->set_count(_segment.count);
         }
 
-        [[nodiscard]] segment& segment_at(object_entity_scene_index scene, std::uint32_t segment_index) noexcept
+        [[nodiscard]] segment& segment_at(object_entity_scene_index scene, uint32 segment_index) noexcept
         {
             return _partitions[scene].segments[segment_index];
         }
 
-        [[nodiscard]] const segment& segment_at(object_entity_scene_index scene, std::uint32_t segment_index) const noexcept
+        [[nodiscard]] const segment& segment_at(object_entity_scene_index scene, uint32 segment_index) const noexcept
         {
             return _partitions[scene].segments[segment_index];
         }

@@ -28,8 +28,8 @@
 #include <lucaria/engine/asset_cubemap.hpp>
 #include <lucaria/engine/asset_event_track.hpp>
 #include <lucaria/engine/asset_font.hpp>
-#include <lucaria/engine/asset_image.hpp>
 #include <lucaria/engine/asset_geometry.hpp>
+#include <lucaria/engine/asset_image.hpp>
 #include <lucaria/engine/asset_mesh.hpp>
 #include <lucaria/engine/asset_motion_track.hpp>
 #include <lucaria/engine/asset_shape.hpp>
@@ -166,6 +166,30 @@ namespace detail {
                 active_load_contexts.end());
         }
 
+        [[nodiscard]] std::filesystem::path resolve_fetch_path(const std::filesystem::path& path) const
+        {
+#if !defined(LUCARIA_PACKAGED_ASSETS)
+            return async_prefix_path / path;
+#else
+            return path;
+#endif
+        }
+
+        [[nodiscard]] std::vector<assets_filewatch_change> poll_filewatch_changes()
+        {
+            return assets.poll_filewatch_changes();
+        }
+
+        [[nodiscard]] std::vector<assets_filewatch_change> refetch_filewatch_changes()
+        {
+            return assets.refetch_filewatch_changes();
+        }
+
+        [[nodiscard]] bool has_filewatch_changes()
+        {
+            return assets.has_filewatch_changes();
+        }
+
         void load_bytes(const std::filesystem::path& path, const std::function<void(const std::vector<char>&)>& callback);
         [[nodiscard]] std::future<std::vector<char>> fetch_bytes_future(const std::filesystem::path& path, bool must_persist = true);
         [[nodiscard]] std::future<std::vector<std::vector<char>>> fetch_bytes_future(const std::vector<std::filesystem::path>& paths, bool must_persist = true);
@@ -179,6 +203,20 @@ namespace detail {
         void gc_unused();
     };
 
+
+    inline void asset_fetch_context::track_fetch_path(const std::filesystem::path& path)
+    {
+        track_resolved_fetch_path(objects.resolve_fetch_path(path));
+    }
+
+    template <typename Paths>
+    void asset_fetch_context::track_fetch_paths(const Paths& paths)
+    {
+        for (const std::filesystem::path& path : paths) {
+            track_fetch_path(path);
+        }
+    }
+
     template <typename Asset, typename Configure>
     assets_cell<Asset>& assets_registry::fetch(
         manager_assets& objects,
@@ -191,17 +229,20 @@ namespace detail {
         if (assets_cell<Asset>* existing = buffer.find_by_id(cache_id)) {
             return *existing;
         }
+        assets_cell<Asset>* cell = buffer.create_cell(container_async<Asset>::pending(Asset {}), std::move(cache_id));
+        using configure_type = std::decay_t<Configure>;
+        std::shared_ptr<configure_type> shared_configure = std::make_shared<configure_type>(std::forward<Configure>(configure));
 
-        assets_cell<Asset>* cell = buffer.create_cell(
-            container_async<Asset>::pending(Asset {}),
-            std::move(cache_id));
+        cell->refetch = [&objects, &buffer, cell, shared_configure, window]() {
+            buffer.reset_cell_fetch(cell, container_async<Asset>::pending(Asset {}));
+            Asset& asset = cell->fetched.emplaced_value();
+            (*shared_configure)(asset);
+            std::shared_ptr<runtime_storage_context<Asset>> context = objects.template make_runtime_storage_context<Asset>(cell, asset, window);
+            load_user_asset_value(asset, *context);
+            context->close();
+        };
 
-        Asset& asset = cell->fetched.emplaced_value();
-        std::forward<Configure>(configure)(asset);
-
-        std::shared_ptr<runtime_storage_context<Asset>> context = objects.template make_runtime_storage_context<Asset>(cell, asset, window);
-        load_user_asset_value(asset, *context);
-        context->close();
+        cell->refetch();
 
         return *cell;
     }
@@ -209,6 +250,7 @@ namespace detail {
     template <typename Callback>
     void asset_fetch_context::fetch_worker(const std::filesystem::path& path, Callback&& callback, bool must_persist)
     {
+        track_fetch_path(path);
         pending_worker_fetches.fetch_add(1, std::memory_order_acq_rel);
         std::shared_ptr<asset_fetch_context> _context = shared_from_this();
 
@@ -220,6 +262,7 @@ namespace detail {
     template <typename Callback>
     void asset_fetch_context::fetch_worker(const std::vector<std::filesystem::path>& paths, Callback&& callback, bool must_persist)
     {
+        track_fetch_paths(paths);
         pending_worker_fetches.fetch_add(1, std::memory_order_acq_rel);
         std::shared_ptr<asset_fetch_context> _context = shared_from_this();
 
@@ -231,6 +274,7 @@ namespace detail {
     template <typename Callback>
     void asset_fetch_context::fetch_worker(const std::array<std::filesystem::path, 6>& paths, Callback&& callback, bool must_persist)
     {
+        track_fetch_paths(paths);
         pending_worker_fetches.fetch_add(1, std::memory_order_acq_rel);
         std::shared_ptr<asset_fetch_context> _context = shared_from_this();
 
@@ -242,6 +286,7 @@ namespace detail {
     template <typename Callback>
     void asset_fetch_context::fetch(const std::filesystem::path& path, Callback&& callback, bool must_persist)
     {
+        track_fetch_path(path);
         using _callback_type = std::decay_t<Callback>;
         using _value_type = std::vector<char>;
         std::future<_value_type> _future = objects.fetch_bytes_future(path, must_persist);
@@ -255,6 +300,7 @@ namespace detail {
     template <typename Callback>
     void asset_fetch_context::fetch(const std::vector<std::filesystem::path>& paths, Callback&& callback, bool must_persist)
     {
+        track_fetch_paths(paths);
         using _callback_type = std::decay_t<Callback>;
         using _value_type = std::vector<std::vector<char>>;
         std::future<_value_type> _future = objects.fetch_bytes_future(paths, must_persist);
@@ -268,6 +314,7 @@ namespace detail {
     template <typename Callback>
     void asset_fetch_context::fetch(const std::array<std::filesystem::path, 6>& paths, Callback&& callback, bool must_persist)
     {
+        track_fetch_paths(paths);
         using _callback_type = std::decay_t<Callback>;
         using _value_type = std::vector<std::vector<char>>;
         std::future<_value_type> _future = objects.fetch_bytes_future(paths, must_persist);

@@ -4,7 +4,9 @@
 #include <lucaria/core/app_error.hpp>
 #include <lucaria/core/assets_async.hpp>
 #include <lucaria/core/assets_storage.hpp>
+#include <lucaria/core/reload_filewatch.hpp>
 
+#include <filesystem>
 #include <functional>
 #include <memory>
 #include <string>
@@ -12,6 +14,7 @@
 #include <typeinfo>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
 namespace lucaria {
 namespace detail {
@@ -51,12 +54,23 @@ namespace detail {
         std::string cache_id = {};
         uint32 current_version = 0u;
         flag_refcount_control refcount_control = {};
+        std::vector<object_filewatched_path> object_filewatched_paths = {};
+        std::function<void()> refetch = nullptr;
+    };
+
+    struct assets_filewatch_change {
+        std::type_index asset_type;
+        void* cell = nullptr;
+        std::string cache_id = {};
+        std::filesystem::path path = {};
     };
 
     struct assets_buffer_base {
         virtual ~assets_buffer_base() = default;
         virtual void clear() = 0;
         virtual void gc_unused() = 0;
+        virtual void poll_filewatch_changes(std::vector<assets_filewatch_change>& changes) = 0;
+        virtual void refetch_filewatch_changes(std::vector<assets_filewatch_change>& changes) = 0;
     };
 
     template <typename Asset>
@@ -76,6 +90,26 @@ namespace detail {
             return _cells.create();
         }
 
+        void reset_cell_fetch(
+            assets_cell<Asset>* cell,
+            container_async<Asset>&& value)
+        {
+            LUCARIA_DEBUG_ASSERT(cell, "Asset cell was nullptr");
+
+            // Important for hot reload:
+            // destroy the old loaded asset before assigning the new pending value.
+            // Otherwise std::optional may move-assign into the existing Asset,
+            // which breaks owning GPU/resource objects.
+            cell->fetched = {};
+
+            cell->fetched = std::move(value);
+            cell->object_filewatched_paths.clear();
+
+            cell->fetched.on_ready([cell]() {
+                cell->current_version++;
+            });
+        }
+
         void set_cell(
             assets_cell<Asset>* cell,
             container_async<Asset>&& value,
@@ -85,12 +119,8 @@ namespace detail {
 
             erase_id(cell);
 
-            cell->fetched = std::move(value);
             cell->cache_id = std::move(cache_id);
-
-            cell->fetched.on_ready([cell]() {
-                cell->current_version++;
-            });
+            reset_cell_fetch(cell, std::move(value));
 
             insert_id(cell);
         }
@@ -154,6 +184,38 @@ namespace detail {
 
                 erase_id(&cell);
                 return true;
+            });
+        }
+
+        void poll_filewatch_changes(std::vector<assets_filewatch_change>& changes) override
+        {
+            collect_filewatch_changes(changes, false);
+        }
+
+        void refetch_filewatch_changes(std::vector<assets_filewatch_change>& changes) override
+        {
+            collect_filewatch_changes(changes, true);
+        }
+
+    private:
+        void collect_filewatch_changes(std::vector<assets_filewatch_change>& changes, bool refetch_changed_cells)
+        {
+            _cells.for_each([&](assets_cell<Asset>& cell) {
+                bool should_refetch_cell = false;
+
+                for (object_filewatched_path& watched_path : cell.object_filewatched_paths) {
+                    if (watched_path.has_changed()) {
+                        should_refetch_cell = true;
+                        changes.push_back({ std::type_index(typeid(Asset)),
+                            &cell,
+                            cell.cache_id,
+                            watched_path.get() });
+                    }
+                }
+
+                if (refetch_changed_cells && should_refetch_cell && cell.refetch) {
+                    cell.refetch();
+                }
             });
         }
 
@@ -221,6 +283,29 @@ namespace detail {
             for (auto& [type, buffer] : _buffers) {
                 buffer->gc_unused();
             }
+        }
+
+        [[nodiscard]] std::vector<assets_filewatch_change> poll_filewatch_changes()
+        {
+            std::vector<assets_filewatch_change> changes;
+            for (auto& [type, buffer] : _buffers) {
+                buffer->poll_filewatch_changes(changes);
+            }
+            return changes;
+        }
+
+        [[nodiscard]] std::vector<assets_filewatch_change> refetch_filewatch_changes()
+        {
+            std::vector<assets_filewatch_change> changes;
+            for (auto& [type, buffer] : _buffers) {
+                buffer->refetch_filewatch_changes(changes);
+            }
+            return changes;
+        }
+
+        [[nodiscard]] bool has_filewatch_changes()
+        {
+            return !poll_filewatch_changes().empty();
         }
 
         template <typename Asset, typename Configure>

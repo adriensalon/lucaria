@@ -301,7 +301,7 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
 
 int main(int argc, char* argv[])
 {
-	lucaria::detail::run_tracy_profiler_window("127.0.0.1", 8086);
+	// lucaria::detail::run_tracy_profiler_window("127.0.0.1", 8086);
     detail::commands_map _commands = detail::extract_args(argc, argv);
     if (detail::process_help_command(_commands)) {
         return 0;

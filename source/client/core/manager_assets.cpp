@@ -2,9 +2,9 @@
 #include <fstream>
 #include <iostream>
 
+#include <lucaria/core/assets_async.hpp>
 #include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/manager_scenes.hpp>
-#include <lucaria/core/assets_async.hpp>
 
 #if defined(LUCARIA_PLATFORM_WEB)
 #include <emscripten/fetch.h>
@@ -28,11 +28,7 @@ namespace detail {
         static void _fetch_bytes_impl(manager_assets& assets, const std::filesystem::path& file_path, std::function<void(std::vector<char>)> callback, bool persist)
         {
             assets.async_fetches_waiting++;
-            std::filesystem::path _fetch_file_path = file_path;
-
-#if !defined(LUCARIA_PACKAGED_ASSETS)
-            _fetch_file_path = assets.async_prefix_path / file_path;
-#endif
+            std::filesystem::path _fetch_file_path = assets.resolve_fetch_path(file_path);
 
 #if defined(LUCARIA_PLATFORM_WEB) && !defined(LUCARIA_PACKAGED_ASSETS)
             emscripten_fetch_attr_t _emscripten_fetch_attr;
@@ -133,9 +129,7 @@ namespace detail {
         std::shared_ptr<std::promise<std::vector<char>>> _promise = std::make_shared<std::promise<std::vector<char>>>();
         std::future<std::vector<char>> _future = _promise->get_future();
 
-        _fetch_bytes_impl(*this, file_path, [_promise](std::vector<char> bytes) mutable {
-            _promise->set_value(std::move(bytes));
-        }, persist);
+        _fetch_bytes_impl(*this, file_path, [_promise](std::vector<char> bytes) mutable { _promise->set_value(std::move(bytes)); }, persist);
 
         return _future;
     }
@@ -145,9 +139,7 @@ namespace detail {
         std::shared_ptr<std::promise<std::vector<std::vector<char>>>> _promise = std::make_shared<std::promise<std::vector<std::vector<char>>>>();
         std::future<std::vector<std::vector<char>>> _future = _promise->get_future();
 
-        fetch_bytes(file_paths, [_promise](const std::vector<std::vector<char>>& bytes) mutable {
-            _promise->set_value(bytes);
-        }, persist);
+        fetch_bytes(file_paths, [_promise](const std::vector<std::vector<char>>& bytes) mutable { _promise->set_value(bytes); }, persist);
 
         return _future;
     }
@@ -157,9 +149,7 @@ namespace detail {
         std::shared_ptr<std::promise<std::vector<std::vector<char>>>> _promise = std::make_shared<std::promise<std::vector<std::vector<char>>>>();
         std::future<std::vector<std::vector<char>>> _future = _promise->get_future();
 
-        fetch_bytes(file_paths, [_promise](const std::vector<std::vector<char>>& bytes) mutable {
-            _promise->set_value(bytes);
-        }, persist);
+        fetch_bytes(file_paths, [_promise](const std::vector<std::vector<char>>& bytes) mutable { _promise->set_value(bytes); }, persist);
 
         return _future;
     }
@@ -217,6 +207,9 @@ namespace detail {
 
     void manager_assets::poll_load_contexts()
     {
+#if !defined(LUCARIA_DISABLE_RELOAD)
+       	std::vector<assets_filewatch_change> _changes = refetch_filewatch_changes();
+#endif
         std::size_t _index = 0;
         while (_index < active_load_contexts.size()) {
             std::shared_ptr<load_storage_context_base> _context = active_load_contexts[_index];

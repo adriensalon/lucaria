@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <filesystem>
@@ -303,6 +304,17 @@ namespace detail {
         template <typename OtherAssetType, typename Callback>
         void fetch_as(const std::filesystem::path& path, Callback&& callback, bool must_persist = true);
 
+    protected:
+        void track_fetch_path(const std::filesystem::path& path);
+
+        template <typename Paths>
+        void track_fetch_paths(const Paths& paths);
+
+        virtual void track_resolved_fetch_path(const std::filesystem::path&)
+        {
+        }
+
+    public:
         void close()
         {
             closed.store(true, std::memory_order_release);
@@ -517,6 +529,21 @@ namespace detail {
         }
 
     protected:
+        void track_resolved_fetch_path(const std::filesystem::path& path) override
+        {
+            if (cell == nullptr) {
+                return;
+            }
+
+            std::vector<object_filewatched_path>& watched_paths = cell->object_filewatched_paths;
+            const auto existing = std::find_if(watched_paths.begin(), watched_paths.end(), [&](const object_filewatched_path& watched_path) {
+                return watched_path.get() == path;
+            });
+            if (existing == watched_paths.end()) {
+                watched_paths.emplace_back(path);
+            }
+        }
+
         void notify_finished() override
         {
             if (cell != nullptr) {
@@ -538,6 +565,21 @@ namespace detail {
         }
 
     protected:
+        void track_resolved_fetch_path(const std::filesystem::path& path) override
+        {
+            if (cell == nullptr) {
+                return;
+            }
+
+            std::vector<object_filewatched_path>& watched_paths = cell->object_filewatched_paths;
+            const auto existing = std::find_if(watched_paths.begin(), watched_paths.end(), [&](const object_filewatched_path& watched_path) {
+                return watched_path.get() == path;
+            });
+            if (existing == watched_paths.end()) {
+                watched_paths.emplace_back(path);
+            }
+        }
+
         void notify_finished() override
         {
             if (cell != nullptr) {

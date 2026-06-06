@@ -13,30 +13,20 @@ namespace detail {
         const std::filesystem::path& path,
         const std::optional<data_image_profile> profile)
     {
-        if ((!profile || profile == data_image_profile::etc2_compressed) && object.is_etc2_supported) {
+        if ((profile == data_image_profile::etc2_compressed) || object.is_etc2_supported) {
             std::filesystem::path _etc2_path = path;
             _etc2_path = _etc2_path.replace_extension().string() + "_etc.bin";
-            if (!profile && std::filesystem::exists(object.async_prefix_path / _etc2_path)) {
-                return _etc2_path;
-            }
-            if (profile == data_image_profile::etc2_compressed) {
-                LUCARIA_DEBUG_ASSERT(std::filesystem::exists(object.async_prefix_path / _etc2_path), "ETC2 path does not exist");
+            if (std::filesystem::exists(object.async_prefix_path / _etc2_path)) {
                 return _etc2_path;
             }
         }
-
-        if ((!profile || profile == data_image_profile::s3tc_compressed) && object.is_s3tc_supported) {
+        if ((profile == data_image_profile::s3tc_compressed) || object.is_s3tc_supported) {
             std::filesystem::path _s3tc_path = path;
             _s3tc_path = _s3tc_path.replace_extension().string() + "_s3tc.bin";
-            if (!profile && std::filesystem::exists(object.async_prefix_path / _s3tc_path)) {
-                return _s3tc_path;
-            }
-            if (profile == data_image_profile::s3tc_compressed) {
-                LUCARIA_DEBUG_ASSERT(std::filesystem::exists(object.async_prefix_path / _s3tc_path), "S3TC path does not exist");
+            if (std::filesystem::exists(object.async_prefix_path / _s3tc_path)) {
                 return _s3tc_path;
             }
         }
-
         return path;
     }
 
@@ -45,42 +35,28 @@ namespace detail {
         const std::array<std::filesystem::path, 6>& paths,
         const std::optional<data_image_profile> profile)
     {
-        if ((!profile || profile == data_image_profile::etc2_compressed) && object.is_etc2_supported) {
+        if ((profile == data_image_profile::etc2_compressed) || object.is_etc2_supported) {
             std::array<std::filesystem::path, 6> _etc2_paths = paths;
             bool _all_exist = true;
             for (std::size_t _index = 0; _index < 6; ++_index) {
                 _etc2_paths[_index] = _etc2_paths[_index].replace_extension().string() + "_etc.bin";
                 _all_exist = _all_exist && std::filesystem::exists(object.async_prefix_path / _etc2_paths[_index]);
             }
-            if (!profile && _all_exist) {
-                return _etc2_paths;
-            }
-            if (profile == data_image_profile::etc2_compressed) {
-                for (std::size_t _index = 0; _index < 6; ++_index) {
-                    LUCARIA_DEBUG_ASSERT(std::filesystem::exists(object.async_prefix_path / _etc2_paths[_index]), "ETC2 path does not exist");
-                }
+            if (_all_exist) {
                 return _etc2_paths;
             }
         }
-
-        if ((!profile || profile == data_image_profile::s3tc_compressed) && object.is_s3tc_supported) {
+        if ((profile == data_image_profile::s3tc_compressed) || object.is_s3tc_supported) {
             std::array<std::filesystem::path, 6> _s3tc_paths = paths;
             bool _all_exist = true;
             for (std::size_t _index = 0; _index < 6; ++_index) {
                 _s3tc_paths[_index] = _s3tc_paths[_index].replace_extension().string() + "_s3tc.bin";
                 _all_exist = _all_exist && std::filesystem::exists(object.async_prefix_path / _s3tc_paths[_index]);
             }
-            if (!profile && _all_exist) {
-                return _s3tc_paths;
-            }
-            if (profile == data_image_profile::s3tc_compressed) {
-                for (std::size_t _index = 0; _index < 6; ++_index) {
-                    LUCARIA_DEBUG_ASSERT(std::filesystem::exists(object.async_prefix_path / _s3tc_paths[_index]), "S3TC path does not exist");
-                }
+            if (_all_exist) {
                 return _s3tc_paths;
             }
         }
-
         return paths;
     }
 
@@ -161,6 +137,7 @@ namespace detail {
             cereal::PortableBinaryInputArchive _archive(_stream);
             _archive(data);
         }
+		profile = data.profile;
     }
 
     object_image::object_image(data_image&& data)
