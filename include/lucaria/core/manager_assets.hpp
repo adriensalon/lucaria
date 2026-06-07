@@ -175,6 +175,14 @@ namespace detail {
 #endif
         }
 
+        void clear_runtime_for_reload()
+        {
+            active_load_contexts.clear();
+            assets.clear_buffers_for_reload();
+            user_asset_types.clear();
+            user_asset_type_ids.clear();
+        }
+
         [[nodiscard]] std::vector<assets_filewatch_change> poll_filewatch_changes()
         {
             return assets.poll_filewatch_changes();

@@ -13,8 +13,8 @@ struct component_rigidbody_passive {
     component_rigidbody_passive(context_dynamics& dynamics);
     component_rigidbody_passive(const component_rigidbody_passive& other) = delete;
     component_rigidbody_passive& operator=(const component_rigidbody_passive& other) = delete;
-    component_rigidbody_passive(component_rigidbody_passive&& other) = default;
-    component_rigidbody_passive& operator=(component_rigidbody_passive&& other) = default;
+    component_rigidbody_passive(component_rigidbody_passive&& other) noexcept;
+    component_rigidbody_passive& operator=(component_rigidbody_passive&& other) noexcept;
     ~component_rigidbody_passive();
 
     component_rigidbody_passive& use_shape(const handle_shape shape);
@@ -30,6 +30,8 @@ private:
     std::unique_ptr<btRigidBody> _rigidbody = nullptr;
     int16 _group = 0;
     int16 _mask = 0;
+
+    void _remove_from_world() noexcept;
 
     template <typename Archive>
     void save(Archive& archive) const
@@ -56,8 +58,9 @@ struct component_rigidbody_kinematic {
     component_rigidbody_kinematic(context_dynamics& dynamics);
     component_rigidbody_kinematic(const component_rigidbody_kinematic& other) = delete;
     component_rigidbody_kinematic& operator=(const component_rigidbody_kinematic& other) = delete;
-    component_rigidbody_kinematic(component_rigidbody_kinematic&& other) = default;
-    component_rigidbody_kinematic& operator=(component_rigidbody_kinematic&& other) = default;
+    component_rigidbody_kinematic(component_rigidbody_kinematic&& other) noexcept;
+    component_rigidbody_kinematic& operator=(component_rigidbody_kinematic&& other) noexcept;
+    ~component_rigidbody_kinematic();
 
     component_rigidbody_kinematic& use_shape(const handle_shape shape);
 
@@ -78,6 +81,8 @@ private:
     std::vector<collision> _collisions = {};
     float32x3 _translation_speed = float32x3(0);
     float32x3 _rotation_speed = float32x3(0);
+
+    void _remove_from_world() noexcept;
 
     template <typename Archive>
     void save(Archive& archive) const
@@ -108,8 +113,9 @@ struct component_rigidbody_dynamic {
     component_rigidbody_dynamic(context_dynamics& dynamics);
     component_rigidbody_dynamic(const component_rigidbody_dynamic&) = delete;
     component_rigidbody_dynamic& operator=(const component_rigidbody_dynamic&) = delete;
-    component_rigidbody_dynamic(component_rigidbody_dynamic&&) = default;
-    component_rigidbody_dynamic& operator=(component_rigidbody_dynamic&&) = default;
+    component_rigidbody_dynamic(component_rigidbody_dynamic&& other) noexcept;
+    component_rigidbody_dynamic& operator=(component_rigidbody_dynamic&& other) noexcept;
+    ~component_rigidbody_dynamic();
 
     component_rigidbody_dynamic& use_shape(const handle_shape shape);
 
@@ -158,6 +164,8 @@ private:
     float32x3 _last_position = float32x3(0);
     float32x3 _translation_speed = float32x3(0);
     float32x3 _rotation_speed = float32x3(0);
+
+    void _remove_from_world() noexcept;
 
     template <typename Archive>
     void save(Archive& archive) const

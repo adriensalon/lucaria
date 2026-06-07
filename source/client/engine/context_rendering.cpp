@@ -9,18 +9,17 @@ void context_rendering::use_skybox_cubemap(const handle_cubemap cubemap)
 
 void context_rendering::set_skybox_rotation(const float32 rotation)
 {
-    _system->_skybox_rotation = rotation;
+    _system->skybox_rotation = rotation;
 }
 
-void context_rendering::use_camera_transform(component_transform& camera)
+void context_rendering::use_camera_transform(handle_entity entity)
 {
-    _system->_follow = &camera;
+    _system->use_camera_transform(entity);
 }
 
-void context_rendering::use_camera_bone(component_animator& animator, const std::string& bone)
+void context_rendering::use_camera_bone(handle_entity entity, const std::string& bone)
 {
-    _system->_follow_animator = &animator;
-    _system->_follow_bone_name = bone;
+    _system->use_camera_bone(entity, bone);
 }
 
 void context_rendering::set_camera_fov(const float32 fov)

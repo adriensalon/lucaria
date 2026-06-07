@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cereal/cereal.hpp>
 #include <lucaria/core/manager_scenes.hpp>
 #include <lucaria/core/manager_app.hpp>
 #include <lucaria/engine/context_dynamics.hpp>
@@ -23,13 +24,27 @@ namespace detail {
         btCollisionDispatcher* collision_dispatcher = nullptr;
         btBroadphaseInterface* overlapping_pair_cache = nullptr;
         btSequentialImpulseConstraintSolver* constraint_solver = nullptr;
+        float32 world_gravity = 9.81f;
 
+        void apply_runtime_settings();
         void update_step_simulation(manager_window& window, manager_scenes& scenes);
         void update_compute_collisions(manager_scenes& scenes);
         void update_collect_debug_guizmos(system_rendering& rendering, manager_scenes& scenes);
 
 		[[nodiscard]] std::optional<collision> raycast(system_rendering& rendering, const float32x3& from, const float32x3& to);
 		void set_world_gravity(const float32 newtons);
+
+        template <typename ArchiveType>
+        void save(ArchiveType& archive) const
+        {
+            archive(cereal::make_nvp("world_gravity", world_gravity));
+        }
+
+        template <typename ArchiveType>
+        void load(ArchiveType& archive)
+        {
+            archive(cereal::make_nvp("world_gravity", world_gravity));
+        }
     };
 
 }

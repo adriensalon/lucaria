@@ -4,6 +4,8 @@
 #include <array>
 #include <atomic>
 #include <filesystem>
+#include <iostream>
+#include <exception>
 #include <functional>
 #include <future>
 #include <memory>
@@ -56,6 +58,31 @@ namespace detail {
 
     using storage_save_archive_variant = std::variant<archive_json_output*, archive_binary_output*, cereal::JSONOutputArchive*, cereal::PortableBinaryOutputArchive*>;
     using storage_load_archive_variant = std::variant<std::monostate, archive_json_input*, archive_binary_input*, cereal::JSONInputArchive*, cereal::PortableBinaryInputArchive*>;
+
+    inline void log_snapshot_load_warning(std::string_view scope, std::string_view name, const std::exception& error)
+    {
+        std::cout << "Lucaria snapshot load warning [" << scope << "] field '" << name << "': " << error.what() << std::endl;
+    }
+
+    inline void log_snapshot_load_warning(std::string_view scope, std::string_view name)
+    {
+        std::cout << "Lucaria snapshot load warning [" << scope << "] field '" << name << "': unknown error" << std::endl;
+    }
+
+    template <typename Callback>
+    bool try_snapshot_load(std::string_view scope, std::string_view name, Callback&& callback)
+    {
+        try {
+            std::forward<Callback>(callback)();
+            return true;
+        } catch (const std::exception& error) {
+            log_snapshot_load_warning(scope, name, error);
+            return false;
+        } catch (...) {
+            log_snapshot_load_warning(scope, name);
+            return false;
+        }
+    }
 
 
     template <typename ValueType, typename ContextType, typename = void>
@@ -203,22 +230,24 @@ namespace detail {
         void field(std::string_view name, ValueType& value)
         {
             const std::string _name(name);
-            if constexpr (has_context_load_v<ValueType, game_load_context>) {
-                context_load_field_wrapper<game_load_context, ValueType> _wrapper { this, &value };
-                std::visit([&](auto archive_value) {
-                    using archive_value_type = std::decay_t<decltype(archive_value)>;
-                    if constexpr (!std::is_same_v<archive_value_type, std::monostate>) {
-                        (*archive_value)(cereal::make_nvp(_name, _wrapper));
-                    }
-                }, archive);
-            } else {
-                std::visit([&](auto archive_value) {
-                    using archive_value_type = std::decay_t<decltype(archive_value)>;
-                    if constexpr (!std::is_same_v<archive_value_type, std::monostate>) {
-                        (*archive_value)(cereal::make_nvp(_name, value));
-                    }
-                }, archive);
-            }
+            try_snapshot_load("game_load_context", _name, [&]() {
+                if constexpr (has_context_load_v<ValueType, game_load_context>) {
+                    context_load_field_wrapper<game_load_context, ValueType> _wrapper { this, &value };
+                    std::visit([&](auto archive_value) {
+                        using archive_value_type = std::decay_t<decltype(archive_value)>;
+                        if constexpr (!std::is_same_v<archive_value_type, std::monostate>) {
+                            (*archive_value)(cereal::make_nvp(_name, _wrapper));
+                        }
+                    }, archive);
+                } else {
+                    std::visit([&](auto archive_value) {
+                        using archive_value_type = std::decay_t<decltype(archive_value)>;
+                        if constexpr (!std::is_same_v<archive_value_type, std::monostate>) {
+                            (*archive_value)(cereal::make_nvp(_name, value));
+                        }
+                    }, archive);
+                }
+            });
         }
     };
 
@@ -459,22 +488,24 @@ namespace detail {
                 return;
             }
             const std::string _name(name);
-            if constexpr (has_context_load_v<ValueType, storage_load_context>) {
-                context_load_field_wrapper<storage_load_context, ValueType> _wrapper { this, &value };
-                std::visit([&](auto archive_value) {
-                    using archive_value_type = std::decay_t<decltype(archive_value)>;
-                    if constexpr (!std::is_same_v<archive_value_type, std::monostate>) {
-                        (*archive_value)(cereal::make_nvp(_name, _wrapper));
-                    }
-                }, archive);
-            } else {
-                std::visit([&](auto archive_value) {
-                    using archive_value_type = std::decay_t<decltype(archive_value)>;
-                    if constexpr (!std::is_same_v<archive_value_type, std::monostate>) {
-                        (*archive_value)(cereal::make_nvp(_name, value));
-                    }
-                }, archive);
-            }
+            try_snapshot_load("storage_load_context", _name, [&]() {
+                if constexpr (has_context_load_v<ValueType, storage_load_context>) {
+                    context_load_field_wrapper<storage_load_context, ValueType> _wrapper { this, &value };
+                    std::visit([&](auto archive_value) {
+                        using archive_value_type = std::decay_t<decltype(archive_value)>;
+                        if constexpr (!std::is_same_v<archive_value_type, std::monostate>) {
+                            (*archive_value)(cereal::make_nvp(_name, _wrapper));
+                        }
+                    }, archive);
+                } else {
+                    std::visit([&](auto archive_value) {
+                        using archive_value_type = std::decay_t<decltype(archive_value)>;
+                        if constexpr (!std::is_same_v<archive_value_type, std::monostate>) {
+                            (*archive_value)(cereal::make_nvp(_name, value));
+                        }
+                    }, archive);
+                }
+            });
         }
 
         [[nodiscard]] manager_window* window()

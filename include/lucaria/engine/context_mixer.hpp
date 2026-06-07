@@ -3,14 +3,15 @@
 #include <lucaria/core/systems_mixer.hpp>
 #include <lucaria/engine/component_transform.hpp>
 #include <lucaria/engine/component_speaker.hpp>
+#include <lucaria/engine/handle_entity.hpp>
 
 namespace lucaria {
 
 struct context_mixer {
 
-    /// @brief Uses a transform component as the audio listener
-    /// @param transform the transform component to use
-    void use_listener_transform(component_transform& transform);
+    /// @brief Uses an entity transform as the audio listener
+    /// @param entity the entity containing the transform component
+    void use_listener_transform(handle_entity entity);
 
 	/// @brief 
 	/// @param volume 

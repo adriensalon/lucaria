@@ -44,6 +44,11 @@ namespace detail {
 
         void save_snapshot(const std::filesystem::path& path);
         void load_snapshot(const std::filesystem::path& path);
+
+#if !defined(LUCARIA_DISABLE_RELOAD)
+        [[nodiscard]] bool hot_reload(const std::filesystem::path& snapshot_path);
+        void clear_runtime_for_reload();
+#endif
     };
 
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cereal/cereal.hpp>
 #include <lucaria/core/manager_input.hpp>
 #include <lucaria/core/manager_scenes.hpp>
 #include <lucaria/core/manager_app.hpp>
@@ -7,6 +8,7 @@
 #include <lucaria/core/rendering_program.hpp>
 #include <lucaria/core/rendering_guizmos.hpp>
 #include <lucaria/engine/asset_cubemap.hpp>
+#include <lucaria/engine/handle_entity.hpp>
 
 namespace lucaria {
 	
@@ -57,6 +59,7 @@ namespace detail {
         float32x3 player_up = { 0.f, 1.f, 0.f };
         float32 player_pitch = 0.f;
         float32 player_yaw = 0.f;
+        std::optional<handle_entity> _follow_entity = std::nullopt;
         component_transform* _follow = nullptr;
         component_animator* _follow_animator = nullptr;
         std::string _follow_bone_name = {};
@@ -71,7 +74,7 @@ namespace detail {
         float32x4x4 camera_view;
         float32x4x4 camera_view_projection;
         handle_cubemap skybox_cubemap = {};
-        float32 _skybox_rotation = 0.f;
+        float32 skybox_rotation = 0.f;
         bool show_free_camera = false;
         std::optional<detail::object_program> _persistent_unlit_program = std::nullopt;
 
@@ -92,6 +95,71 @@ namespace detail {
         bool show_physics_guizmos = false;
         bool last_show_physics_guizmos_key = false;
 #endif
+
+        void clear_runtime_references_for_reload();
+        void resolve_runtime_references(manager_scenes& scenes);
+        void use_camera_transform(handle_entity entity);
+        void use_camera_bone(handle_entity entity, std::string bone);
+
+        template <typename ArchiveType>
+        void save(ArchiveType& archive) const
+        {
+            archive(cereal::make_nvp("follow_entity", _follow_entity));
+            archive(cereal::make_nvp("follow_bone_name", _follow_bone_name));
+            archive(cereal::make_nvp("skybox_cubemap", skybox_cubemap));
+            archive(cereal::make_nvp("skybox_rotation", skybox_rotation));
+            archive(cereal::make_nvp("mouse_sensitivity", mouse_sensitivity));
+            archive(cereal::make_nvp("player_speed", player_speed));
+            archive(cereal::make_nvp("player_position", player_position));
+            archive(cereal::make_nvp("player_forward", player_forward));
+            archive(cereal::make_nvp("player_up", player_up));
+            archive(cereal::make_nvp("player_pitch", player_pitch));
+            archive(cereal::make_nvp("player_yaw", player_yaw));
+            archive(cereal::make_nvp("clear_color", clear_color));
+            archive(cereal::make_nvp("clear_depth", clear_depth));
+            archive(cereal::make_nvp("camera_fov", camera_fov));
+            archive(cereal::make_nvp("camera_near", camera_near));
+            archive(cereal::make_nvp("camera_far", camera_far));
+            archive(cereal::make_nvp("show_free_camera", show_free_camera));
+            archive(cereal::make_nvp("fxaa_enable", fxaa_enable));
+            archive(cereal::make_nvp("fxaa_contrast_threshold", fxaa_contrast_threshold));
+            archive(cereal::make_nvp("fxaa_relative_threshold", fxaa_relative_threshold));
+            archive(cereal::make_nvp("fxaa_edge_sharpness", fxaa_edge_sharpness));
+#if defined(LUCARIA_DEBUG)
+            archive(cereal::make_nvp("show_physics_guizmos", show_physics_guizmos));
+#endif
+        }
+
+        template <typename ArchiveType>
+        void load(ArchiveType& archive)
+        {
+            archive(cereal::make_nvp("follow_entity", _follow_entity));
+            archive(cereal::make_nvp("follow_bone_name", _follow_bone_name));
+            archive(cereal::make_nvp("skybox_cubemap", skybox_cubemap));
+            archive(cereal::make_nvp("skybox_rotation", skybox_rotation));
+            archive(cereal::make_nvp("mouse_sensitivity", mouse_sensitivity));
+            archive(cereal::make_nvp("player_speed", player_speed));
+            archive(cereal::make_nvp("player_position", player_position));
+            archive(cereal::make_nvp("player_forward", player_forward));
+            archive(cereal::make_nvp("player_up", player_up));
+            archive(cereal::make_nvp("player_pitch", player_pitch));
+            archive(cereal::make_nvp("player_yaw", player_yaw));
+            archive(cereal::make_nvp("clear_color", clear_color));
+            archive(cereal::make_nvp("clear_depth", clear_depth));
+            archive(cereal::make_nvp("camera_fov", camera_fov));
+            archive(cereal::make_nvp("camera_near", camera_near));
+            archive(cereal::make_nvp("camera_far", camera_far));
+            archive(cereal::make_nvp("show_free_camera", show_free_camera));
+            archive(cereal::make_nvp("fxaa_enable", fxaa_enable));
+            archive(cereal::make_nvp("fxaa_contrast_threshold", fxaa_contrast_threshold));
+            archive(cereal::make_nvp("fxaa_relative_threshold", fxaa_relative_threshold));
+            archive(cereal::make_nvp("fxaa_edge_sharpness", fxaa_edge_sharpness));
+#if defined(LUCARIA_DEBUG)
+            archive(cereal::make_nvp("show_physics_guizmos", show_physics_guizmos));
+#endif
+            _follow = nullptr;
+            _follow_animator = nullptr;
+        }
 
         void update_clear_screen(manager_window& window, manager_scenes& scenes);
         void update_compute_projection(manager_window& window, manager_scenes& scenes);

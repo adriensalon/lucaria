@@ -86,6 +86,13 @@ namespace detail {
     using object_reload_module_register_function = bool (*)(manager_game*);
     using object_reload_module_start_function = bool (*)(context_game*);
 
+    struct object_reload_candidate {
+        object_reload_library library = {};
+        std::filesystem::path path = {};
+        object_reload_module_register_function module_register = nullptr;
+        object_reload_module_start_function module_start = nullptr;
+    };
+
     struct object_reload_module {
         object_reload_module();
         object_reload_module(const object_reload_module&) = delete;
@@ -95,11 +102,13 @@ namespace detail {
         ~object_reload_module();
 
         uint32 version = 0;
+		std::filesystem::path cache_directory = {};
         object_reload_module_register_function module_register = nullptr;
         object_reload_module_start_function module_start = nullptr;
 
 		[[nodiscard]] object_reload_module_status poll_sources_and_recompile_library(int& cmake_return, std::string& cmake_output);
-		[[nodiscard]] bool reload_library(std::string& load_error);
+        [[nodiscard]] std::optional<object_reload_candidate> load_next_library(std::string& load_error);
+        void commit_library(object_reload_candidate&& candidate);
 
     private:
 		std::thread _compile_thread = {};

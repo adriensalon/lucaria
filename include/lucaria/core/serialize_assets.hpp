@@ -43,9 +43,17 @@ namespace detail {
                 return;
             }
             if constexpr (std::is_base_of_v<cereal::JSONInputArchive, ArchiveType>) {
-                it->second.json_load(*mappings.loading_objects, archive);
+                if (it->second.json_load) {
+                    try_snapshot_load("user_asset_group", type_id, [&]() {
+                        it->second.json_load(*mappings.loading_objects, archive);
+                    });
+                }
             } else if constexpr (std::is_base_of_v<cereal::PortableBinaryInputArchive, ArchiveType>) {
-                it->second.binary_load(*mappings.loading_objects, archive);
+                if (it->second.binary_load) {
+                    try_snapshot_load("user_asset_group", type_id, [&]() {
+                        it->second.binary_load(*mappings.loading_objects, archive);
+                    });
+                }
             }
         }
     };

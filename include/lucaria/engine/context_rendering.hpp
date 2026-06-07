@@ -2,6 +2,7 @@
 
 #include <lucaria/core/systems_rendering.hpp>
 #include <lucaria/engine/asset_cubemap.hpp>
+#include <lucaria/engine/handle_entity.hpp>
 
 namespace lucaria {
 
@@ -14,14 +15,14 @@ struct context_rendering {
 
     void set_skybox_rotation(const float32 rotation);
 
-    /// @brief Uses a transform component as the camera
-    /// @param transform the transform component to use
-    void use_camera_transform(component_transform& transform);
+    /// @brief Uses an entity transform as the camera
+    /// @param entity the entity containing the transform component
+    void use_camera_transform(handle_entity entity);
 
-    /// @brief Uses an animator component and a bone name as a relative offset for the camera
-    /// @param from the animator component to use
+    /// @brief Uses an entity animator bone as a relative offset for the camera
+    /// @param entity the entity containing transform and animator components
     /// @param bone the bone name to use
-    void use_camera_bone(component_animator& animator, const std::string& bone);
+    void use_camera_bone(handle_entity entity, const std::string& bone);
 
     /// @brief Sets camera projection settings
     /// @param fov the FOV value in degrees (default is 60.f)

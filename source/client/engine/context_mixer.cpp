@@ -2,9 +2,9 @@
 
 namespace lucaria {
 
-void context_mixer::use_listener_transform(component_transform& transform)
+void context_mixer::use_listener_transform(handle_entity entity)
 {
-	_system->listener_transform = &transform;
+	_system->use_listener_transform(entity);
 }
 
 void context_mixer::set_listener_volume(const float32 volume)

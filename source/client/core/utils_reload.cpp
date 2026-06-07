@@ -69,6 +69,7 @@ namespace detail {
     }
 
     object_reload_module::object_reload_module()
+		: cache_directory(__lucaria_reload_cache_directory)
     {
         std::string _error = {};
         _current_library_path = _copy_current_build_to_cache(version);
@@ -158,28 +159,35 @@ namespace detail {
         return _status.load(std::memory_order_acquire);
     }
 
-    bool object_reload_module::reload_library(std::string& load_error)
+    std::optional<object_reload_candidate> object_reload_module::load_next_library(std::string& load_error)
     {
-        object_reload_library _next_library = {};
-        std::filesystem::path _next_library_path = _copy_current_build_to_cache(version + 1);
-        if (!_next_library.load(_next_library_path, load_error)) {
-            return false;
+        object_reload_candidate _candidate = {};
+        _candidate.path = _copy_current_build_to_cache(version + 1);
+
+        if (!_candidate.library.load(_candidate.path, load_error)) {
+            return std::nullopt;
         }
-        object_reload_module_register_function _register_symbol = _next_library.symbol<object_reload_module_register_function>("__lucaria_plugin_register", load_error);
-        if (!_register_symbol) {
-            return false;
+
+        _candidate.module_register = _candidate.library.symbol<object_reload_module_register_function>("__lucaria_plugin_register", load_error);
+        if (!_candidate.module_register) {
+            return std::nullopt;
         }
-        object_reload_module_start_function _start_symbol = _next_library.symbol<object_reload_module_start_function>("__lucaria_plugin_start", load_error);
-        if (!_start_symbol) {
-            return false;
+
+        _candidate.module_start = _candidate.library.symbol<object_reload_module_start_function>("__lucaria_plugin_start", load_error);
+        if (!_candidate.module_start) {
+            return std::nullopt;
         }
-        _shared_library.unload();
-        _shared_library = std::move(_next_library);
-        _current_library_path = _next_library_path;
-        module_register = _register_symbol;
-        module_start = _start_symbol;
+
+        return std::optional<object_reload_candidate> { std::move(_candidate) };
+    }
+
+    void object_reload_module::commit_library(object_reload_candidate&& candidate)
+    {
+        _shared_library = std::move(candidate.library);
+        _current_library_path = std::move(candidate.path);
+        module_register = candidate.module_register;
+        module_start = candidate.module_start;
         ++version;
-        return true;
     }
 
 }

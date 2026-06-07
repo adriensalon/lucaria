@@ -243,11 +243,15 @@ namespace detail {
 
             if constexpr (std::is_base_of_v<cereal::JSONInputArchive, ArchiveType>) {
                 if (it->second.json_load) {
-                    it->second.json_load(*game_mappings.loading_scene, archive);
+                    try_snapshot_load("user_component_group", type_id, [&]() {
+                        it->second.json_load(*game_mappings.loading_scene, archive);
+                    });
                 }
             } else if constexpr (std::is_base_of_v<cereal::PortableBinaryInputArchive, ArchiveType>) {
                 if (it->second.binary_load) {
-                    it->second.binary_load(*game_mappings.loading_scene, archive);
+                    try_snapshot_load("user_component_group", type_id, [&]() {
+                        it->second.binary_load(*game_mappings.loading_scene, archive);
+                    });
                 }
             }
         }
@@ -320,11 +324,15 @@ namespace detail {
 
             if constexpr (std::is_base_of_v<cereal::JSONInputArchive, ArchiveType>) {
                 if (it->second.json_load) {
-                    it->second.json_load(loaded_scene, archive);
+                    try_snapshot_load("user_scene", type_id, [&]() {
+                        it->second.json_load(loaded_scene, archive);
+                    });
                 }
             } else if constexpr (std::is_base_of_v<cereal::PortableBinaryInputArchive, ArchiveType>) {
                 if (it->second.binary_load) {
-                    it->second.binary_load(loaded_scene, archive);
+                    try_snapshot_load("user_scene", type_id, [&]() {
+                        it->second.binary_load(loaded_scene, archive);
+                    });
                 }
             }
 

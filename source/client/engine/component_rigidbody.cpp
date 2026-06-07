@@ -12,11 +12,47 @@ component_rigidbody_passive::component_rigidbody_passive(context_dynamics& dynam
     _dynamics_world = dynamics._system->dynamics_world;
 }
 
+component_rigidbody_passive::component_rigidbody_passive(component_rigidbody_passive&& other) noexcept
+    : _is_added(other._is_added)
+    , _dynamics_world(other._dynamics_world)
+    , _shape(std::move(other._shape))
+    , _state(std::move(other._state))
+    , _rigidbody(std::move(other._rigidbody))
+    , _group(other._group)
+    , _mask(other._mask)
+{
+    other._is_added = false;
+    other._dynamics_world = nullptr;
+}
+
+component_rigidbody_passive& component_rigidbody_passive::operator=(component_rigidbody_passive&& other) noexcept
+{
+    if (this != &other) {
+        _remove_from_world();
+        _is_added = other._is_added;
+        _dynamics_world = other._dynamics_world;
+        _shape = std::move(other._shape);
+        _state = std::move(other._state);
+        _rigidbody = std::move(other._rigidbody);
+        _group = other._group;
+        _mask = other._mask;
+        other._is_added = false;
+        other._dynamics_world = nullptr;
+    }
+    return *this;
+}
+
 component_rigidbody_passive::~component_rigidbody_passive()
 {
-    if (_is_added) {
+    _remove_from_world();
+}
+
+void component_rigidbody_passive::_remove_from_world() noexcept
+{
+    if (_is_added && _dynamics_world && _rigidbody) {
         _dynamics_world->removeRigidBody(_rigidbody.get());
     }
+    _is_added = false;
 }
 
 component_rigidbody_passive& component_rigidbody_passive::use_shape(const handle_shape shape)
@@ -25,15 +61,17 @@ component_rigidbody_passive& component_rigidbody_passive::use_shape(const handle
     _shape._cached->fetched.on_ready([this]() {
         btCollisionShape* _collision_shape = _shape._cached->fetched.value().collision_shape.get();
         if (_is_added) {
-            _dynamics_world->removeRigidBody(_rigidbody.get());
+            _remove_from_world();
             _rigidbody->setCollisionShape(_collision_shape);
         } else {
             _state = std::make_unique<btDefaultMotionState>(btTransform(btQuaternion(0, 0, 0, 1)));
             _rigidbody = std::make_unique<btRigidBody>(btRigidBody::btRigidBodyConstructionInfo(0, _state.get(), _collision_shape));
             _rigidbody->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
         }
-        _dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
-        _is_added = true;
+        if (_dynamics_world && _rigidbody) {
+            _dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
+            _is_added = true;
+        }
     });
     return *this;
 }
@@ -46,7 +84,7 @@ component_rigidbody_passive& component_rigidbody_passive::set_group_layer(const 
     } else {
         _group &= ~_layer_bitfield;
     }
-    if (_is_added) {
+    if (_is_added && _dynamics_world && _rigidbody) {
         _dynamics_world->removeRigidBody(_rigidbody.get());
         _dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
     }
@@ -61,7 +99,7 @@ component_rigidbody_passive& component_rigidbody_passive::set_mask_layer(const c
     } else {
         _mask &= ~_layer_bitfield;
     }
-    if (_is_added) {
+    if (_is_added && _dynamics_world && _rigidbody) {
         _dynamics_world->removeRigidBody(_rigidbody.get());
         _dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
     }
@@ -73,21 +111,70 @@ component_rigidbody_kinematic::component_rigidbody_kinematic(context_dynamics& d
     _dynamics_world = dynamics._system->dynamics_world;
 }
 
+component_rigidbody_kinematic::component_rigidbody_kinematic(component_rigidbody_kinematic&& other) noexcept
+    : _is_added(other._is_added)
+    , _dynamics_world(other._dynamics_world)
+    , _shape(std::move(other._shape))
+    , _ghost(std::move(other._ghost))
+    , _group(other._group)
+    , _mask(other._mask)
+    , _collisions(std::move(other._collisions))
+    , _translation_speed(other._translation_speed)
+    , _rotation_speed(other._rotation_speed)
+{
+    other._is_added = false;
+    other._dynamics_world = nullptr;
+}
+
+component_rigidbody_kinematic& component_rigidbody_kinematic::operator=(component_rigidbody_kinematic&& other) noexcept
+{
+    if (this != &other) {
+        _remove_from_world();
+        _is_added = other._is_added;
+        _dynamics_world = other._dynamics_world;
+        _shape = std::move(other._shape);
+        _ghost = std::move(other._ghost);
+        _group = other._group;
+        _mask = other._mask;
+        _collisions = std::move(other._collisions);
+        _translation_speed = other._translation_speed;
+        _rotation_speed = other._rotation_speed;
+        other._is_added = false;
+        other._dynamics_world = nullptr;
+    }
+    return *this;
+}
+
+component_rigidbody_kinematic::~component_rigidbody_kinematic()
+{
+    _remove_from_world();
+}
+
+void component_rigidbody_kinematic::_remove_from_world() noexcept
+{
+    if (_is_added && _dynamics_world && _ghost) {
+        _dynamics_world->removeCollisionObject(_ghost.get());
+    }
+    _is_added = false;
+}
+
 component_rigidbody_kinematic& component_rigidbody_kinematic::use_shape(const handle_shape shape)
 {
     _shape = shape;
     _shape._cached->fetched.on_ready([this]() {
         btCollisionShape* _collision_shape = _shape._cached->fetched.value().collision_shape.get();
         if (_is_added) {
-            _dynamics_world->removeCollisionObject(_ghost.get());
+            _remove_from_world();
             _ghost->setCollisionShape(_collision_shape);
         } else {
             _ghost = std::make_unique<btPairCachingGhostObject>();
             _ghost->setCollisionShape(_collision_shape);
             _ghost->setCollisionFlags(btCollisionObject::CF_KINEMATIC_OBJECT);
         }
-        _dynamics_world->addCollisionObject(_ghost.get(), _group, _mask);
-        _is_added = true;
+        if (_dynamics_world && _ghost) {
+            _dynamics_world->addCollisionObject(_ghost.get(), _group, _mask);
+            _is_added = true;
+        }
     });
     return *this;
 }
@@ -100,7 +187,7 @@ component_rigidbody_kinematic& component_rigidbody_kinematic::set_group_layer(co
     } else {
         _group &= ~_layer_bitfield;
     }
-    if (_is_added) {
+    if (_is_added && _dynamics_world && _ghost) {
         _dynamics_world->removeCollisionObject(_ghost.get());
         _dynamics_world->addCollisionObject(_ghost.get(), _group, _mask);
     }
@@ -115,7 +202,7 @@ component_rigidbody_kinematic& component_rigidbody_kinematic::set_mask_layer(con
     } else {
         _mask &= ~_layer_bitfield;
     }
-    if (_is_added) {
+    if (_is_added && _dynamics_world && _ghost) {
         _dynamics_world->removeCollisionObject(_ghost.get());
         _dynamics_world->addCollisionObject(_ghost.get(), _group, _mask);
     }
@@ -132,13 +219,98 @@ component_rigidbody_dynamic::component_rigidbody_dynamic(context_dynamics& dynam
     _dynamics_world = dynamics._system->dynamics_world;
 }
 
+component_rigidbody_dynamic::component_rigidbody_dynamic(component_rigidbody_dynamic&& other) noexcept
+    : _is_added(other._is_added)
+    , _dynamics_world(other._dynamics_world)
+    , _shape(std::move(other._shape))
+    , _state(std::move(other._state))
+    , _rigidbody(std::move(other._rigidbody))
+    , _group(other._group)
+    , _mask(other._mask)
+    , _mass(other._mass)
+    , _friction(other._friction)
+    , _linear_kp(other._linear_kp)
+    , _linear_kd(other._linear_kd)
+    , _linear_max_force(other._linear_max_force)
+    , _angular_kp(other._angular_kp)
+    , _angular_kd(other._angular_kd)
+    , _angular_max_force(other._angular_max_force)
+    , _angular_airborne_scale(other._angular_airborne_scale)
+    , _angular_factor(other._angular_factor)
+    , _target_linear_position(other._target_linear_position)
+    , _target_angular_position(other._target_angular_position)
+    , _target_linear_velocity(other._target_linear_velocity)
+    , _target_angular_velocity(other._target_angular_velocity)
+    , _linear_forces(other._linear_forces)
+    , _angular_forces(other._angular_forces)
+    , _linear_impulses(other._linear_impulses)
+    , _angular_impulses(other._angular_impulses)
+    , _last_position(other._last_position)
+    , _translation_speed(other._translation_speed)
+    , _rotation_speed(other._rotation_speed)
+{
+    other._is_added = false;
+    other._dynamics_world = nullptr;
+}
+
+component_rigidbody_dynamic& component_rigidbody_dynamic::operator=(component_rigidbody_dynamic&& other) noexcept
+{
+    if (this != &other) {
+        _remove_from_world();
+        _is_added = other._is_added;
+        _dynamics_world = other._dynamics_world;
+        _shape = std::move(other._shape);
+        _state = std::move(other._state);
+        _rigidbody = std::move(other._rigidbody);
+        _group = other._group;
+        _mask = other._mask;
+        _mass = other._mass;
+        _friction = other._friction;
+        _linear_kp = other._linear_kp;
+        _linear_kd = other._linear_kd;
+        _linear_max_force = other._linear_max_force;
+        _angular_kp = other._angular_kp;
+        _angular_kd = other._angular_kd;
+        _angular_max_force = other._angular_max_force;
+        _angular_airborne_scale = other._angular_airborne_scale;
+        _angular_factor = other._angular_factor;
+        _target_linear_position = other._target_linear_position;
+        _target_angular_position = other._target_angular_position;
+        _target_linear_velocity = other._target_linear_velocity;
+        _target_angular_velocity = other._target_angular_velocity;
+        _linear_forces = other._linear_forces;
+        _angular_forces = other._angular_forces;
+        _linear_impulses = other._linear_impulses;
+        _angular_impulses = other._angular_impulses;
+        _last_position = other._last_position;
+        _translation_speed = other._translation_speed;
+        _rotation_speed = other._rotation_speed;
+        other._is_added = false;
+        other._dynamics_world = nullptr;
+    }
+    return *this;
+}
+
+component_rigidbody_dynamic::~component_rigidbody_dynamic()
+{
+    _remove_from_world();
+}
+
+void component_rigidbody_dynamic::_remove_from_world() noexcept
+{
+    if (_is_added && _dynamics_world && _rigidbody) {
+        _dynamics_world->removeRigidBody(_rigidbody.get());
+    }
+    _is_added = false;
+}
+
 component_rigidbody_dynamic& component_rigidbody_dynamic::use_shape(const handle_shape shape)
 {
     _shape = shape;
     _shape._cached->fetched.on_ready([this]() {
         btCollisionShape* _collision_shape = _shape._cached->fetched.value().collision_shape.get();
         if (_is_added) {
-            _dynamics_world->removeRigidBody(_rigidbody.get());
+            _remove_from_world();
             _rigidbody->setCollisionShape(_collision_shape);
         } else {
             _state = std::make_unique<btDefaultMotionState>(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 0)));
@@ -150,8 +322,10 @@ component_rigidbody_dynamic& component_rigidbody_dynamic::use_shape(const handle
             _rigidbody->setCcdSweptSphereRadius(0);
             _rigidbody->setCollisionFlags(btCollisionObject::CF_DYNAMIC_OBJECT);
         }
-        _dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
-        _is_added = true;
+        if (_dynamics_world && _rigidbody) {
+            _dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
+            _is_added = true;
+        }
     });
     return *this;
 }
@@ -164,7 +338,7 @@ component_rigidbody_dynamic& component_rigidbody_dynamic::set_group_layer(const 
     } else {
         _group &= ~_layer_bitfield;
     }
-    if (_is_added) {
+    if (_is_added && _dynamics_world && _rigidbody) {
         _dynamics_world->removeRigidBody(_rigidbody.get());
         _dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
     }
@@ -179,7 +353,7 @@ component_rigidbody_dynamic& component_rigidbody_dynamic::set_mask_layer(const c
     } else {
         _mask &= ~_layer_bitfield;
     }
-    if (_is_added) {
+    if (_is_added && _dynamics_world && _rigidbody) {
         _dynamics_world->removeRigidBody(_rigidbody.get());
         _dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
     }

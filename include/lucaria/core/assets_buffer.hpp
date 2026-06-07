@@ -278,6 +278,11 @@ namespace detail {
             }
         }
 
+        void clear_buffers_for_reload()
+        {
+            _buffers.clear();
+        }
+
         void gc_unused()
         {
             for (auto& [type, buffer] : _buffers) {

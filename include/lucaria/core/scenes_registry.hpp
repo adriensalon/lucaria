@@ -181,6 +181,18 @@ namespace detail {
             _allocator.erase_all();
         }
 
+        void clear_runtime()
+        {
+            // entt::registry::clear() removes entities but intentionally keeps the
+            // component storages. During hot reload those storages can still carry
+            // type metadata/destructors from the previous user DLL. Reconstruct the
+            // registry itself so the next component emplace creates fresh storages
+            // from the newly loaded DLL generation.
+            _registry = entt::basic_registry<object_entity> {};
+            scene_allocators.clear();
+            scene_erasers.clear();
+        }
+
         template <typename Lead, typename... Rest, typename... Excluded>
         [[nodiscard]] auto view(exclude_t<Excluded...> = {})
         {

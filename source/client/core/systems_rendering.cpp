@@ -19,6 +19,17 @@
 namespace lucaria {
 namespace detail {
 
+
+    void system_rendering::clear_runtime_references_for_reload()
+    {
+        // These pointers/handles can reference components or asset cells that are
+        // destroyed and reconstructed during hot reload. They are configured from
+        // context_rendering, so they must not survive a snapshot reload unless a
+        // scene explicitly rebinds them later.
+        _follow = nullptr;
+        _follow_animator = nullptr;
+    }
+
     namespace {
 
         static const std::string unlit_vertex = R"(#version 300 es
@@ -325,6 +336,38 @@ namespace detail {
         }
     }
 
+
+    void system_rendering::use_camera_transform(handle_entity entity)
+    {
+        _follow_entity = entity;
+        _follow_bone_name.clear();
+        _follow = nullptr;
+        _follow_animator = nullptr;
+    }
+
+    void system_rendering::use_camera_bone(handle_entity entity, std::string bone)
+    {
+        _follow_entity = entity;
+        _follow_bone_name = std::move(bone);
+        _follow = nullptr;
+        _follow_animator = nullptr;
+    }
+
+    void system_rendering::resolve_runtime_references(manager_scenes& scenes)
+    {
+        _follow = nullptr;
+        _follow_animator = nullptr;
+
+        if (!_follow_entity || !_follow_entity->has_value()) {
+            return;
+        }
+
+        _follow = scenes.registry.try_get<component_transform>(_follow_entity->_entity);
+        if (!_follow_bone_name.empty()) {
+            _follow_animator = scenes.registry.try_get<component_animator>(_follow_entity->_entity);
+        }
+    }
+
     void system_rendering::update_clear_screen(manager_window& window, manager_scenes& scenes)
     {
         if (!scene_framebuffer) {
@@ -363,6 +406,7 @@ namespace detail {
 
     void system_rendering::update_apply_camera_rotation(manager_scenes& scenes)
     {
+        resolve_runtime_references(scenes);
         if (!_follow) {
             return;
         }
@@ -391,6 +435,7 @@ namespace detail {
 
     void system_rendering::update_compute_view_projection(manager_scenes& scenes)
     {
+        resolve_runtime_references(scenes);
         if (_follow && _follow_animator && !_follow_bone_name.empty()) {
             const float32x4x4 followW = _follow->_transform;
             const float32quat qFollow = extract_world_rotation(followW);
@@ -441,8 +486,8 @@ namespace detail {
             object_mesh& _skybox_mesh = _persistent_skybox_mesh.value();
             object_program& _skybox_program = _persistent_skybox_program.value();
             object_cubemap& _skybox_cubemap = skybox_cubemap._cached->fetched.value();
-            const float32x4x4 _skybox_rotation_matrix = glm::rotate(glm::identity<float32x4x4>(), glm::radians(_skybox_rotation), float32x3(0, 1, 0));
-            const float32x4x4 _no_translation_view_projection = camera_projection * float32x4x4(float32x3x3(camera_view)) * _skybox_rotation_matrix;
+            const float32x4x4 skybox_rotation_matrix = glm::rotate(glm::identity<float32x4x4>(), glm::radians(skybox_rotation), float32x3(0, 1, 0));
+            const float32x4x4 _no_translation_view_projection = camera_projection * float32x4x4(float32x3x3(camera_view)) * skybox_rotation_matrix;
             _skybox_program.use();
             _skybox_program.bind_attribute("vert_position", _skybox_mesh, object_mesh_attribute::position);
             _skybox_program.bind_uniform("uniform_color", _skybox_cubemap, 0);

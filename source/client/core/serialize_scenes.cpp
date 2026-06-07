@@ -44,6 +44,32 @@ namespace detail {
         }
     }
 
+    void manager_scenes::clear_runtime_for_reload(context_game& game)
+    {
+        for (object_user_scene& scene : scenes) {
+            auto it = scene_types.find(scene.type_id);
+            if (it != scene_types.end() && it->second.stop) {
+                it->second.stop(game, scene);
+            }
+        }
+
+        scenes.clear();
+        registry.clear_runtime();
+        index_for_context = 0;
+    }
+
+    void manager_scenes::clear_plugin_registrations_for_reload()
+    {
+#if !defined(LUCARIA_DISABLE_COMPUTE_SPIRV)
+        compiler.reset();
+#endif
+        gsl_systems.clear();
+        scene_types.clear();
+        scene_type_ids.clear();
+        user_component_types.clear();
+        user_component_type_ids.clear();
+    }
+
     void manager_scenes::update_callbacks(context_game& game)
     {
         for (std::size_t index = 0; index < scenes.size(); ++index) {

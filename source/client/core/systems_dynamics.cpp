@@ -74,7 +74,7 @@ namespace detail {
         overlapping_pair_cache->getOverlappingPairCache()->setInternalGhostPairCallback(new btGhostPairCallback());
         constraint_solver = new btSequentialImpulseConstraintSolver();
         dynamics_world = new btDiscreteDynamicsWorld(collision_dispatcher, overlapping_pair_cache, constraint_solver, collision_configuration);
-        dynamics_world->setGravity(btVector3(0.f, -9.81f, 0.f));
+        apply_runtime_settings();
     }
 
     void system_dynamics::update_step_simulation(manager_window& window, manager_scenes& scenes)
@@ -242,9 +242,17 @@ namespace detail {
         return std::nullopt;
     }
 
+    void system_dynamics::apply_runtime_settings()
+    {
+        if (dynamics_world) {
+            dynamics_world->setGravity(convert_bullet(-world_up * world_gravity));
+        }
+    }
+
     void system_dynamics::set_world_gravity(const float32 newtons)
     {
-        dynamics_world->setGravity(convert_bullet(-world_up * newtons));
+        world_gravity = newtons;
+        apply_runtime_settings();
     }
 
 }

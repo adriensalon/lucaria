@@ -225,6 +225,8 @@ namespace detail {
         }
 
         void start_scene(context_game& game, object_user_scene& scene);
+        void clear_runtime_for_reload(context_game& game);
+        void clear_plugin_registrations_for_reload();
         void update_callbacks(context_game& game);
         void update_systems(manager_game& game);
 

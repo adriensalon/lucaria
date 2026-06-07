@@ -7,8 +7,25 @@
 namespace lucaria {
 namespace detail {
 
+
+    void system_mixer::use_listener_transform(handle_entity entity)
+    {
+        listener_entity = entity;
+        listener_transform = nullptr;
+    }
+
+    void system_mixer::resolve_runtime_references(manager_scenes& scenes)
+    {
+        listener_transform = nullptr;
+        if (!listener_entity || !listener_entity->has_value()) {
+            return;
+        }
+        listener_transform = scenes.registry.try_get<component_transform>(listener_entity->_entity);
+    }
+
     void system_mixer::update_apply_speaker_transforms(manager_scenes& scenes)
     {
+        resolve_runtime_references(scenes);
         if (listener_transform) {
             scenes.each_view<component_speaker_spatial>([](component_speaker_spatial& _speaker) {
                 if (_speaker._sound && _speaker._want_playing != _speaker._is_playing) {
@@ -42,6 +59,7 @@ namespace detail {
 
     void system_mixer::update_apply_listener_transform(manager_scenes& scenes)
     {
+        resolve_runtime_references(scenes);
         if (listener_transform) {
             const float32x3 _position = listener_transform->get_position();
             const float32x3 _forward = listener_transform->get_forward();
