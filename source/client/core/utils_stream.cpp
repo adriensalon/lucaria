@@ -5,33 +5,33 @@
 namespace lucaria {
 namespace detail {
 
-    bytes_streambuf::bytes_streambuf(const std::vector<char>& data)
+    assets_bytes_streambuf::assets_bytes_streambuf(const std::vector<char>& data)
     {
         char* begin = const_cast<char*>(data.data());
         char* end = begin + data.size();
         setg(begin, begin, end);
     }
 
-    bytes_stream::bytes_stream(const std::vector<char>& data)
+    assets_bytes_stream::assets_bytes_stream(const std::vector<char>& data)
         : std::istream(&_buffer)
         , _buffer(data)
     {
         this->setstate(std::ios::goodbit);
     }
 
-    ozz_bytes_stream::ozz_bytes_stream(const std::vector<char>& data)
+    assets_bytes_stream_ozz::assets_bytes_stream_ozz(const std::vector<char>& data)
         : _bytes(data)
         , _position(0)
     {
     }
 
-    bool ozz_bytes_stream::opened() const
+    bool assets_bytes_stream_ozz::opened() const
     {
         // the stream is always opened when constructed
         return true;
     }
 
-    std::size_t ozz_bytes_stream::Read(void* buffer, std::size_t size)
+    std::size_t assets_bytes_stream_ozz::Read(void* buffer, std::size_t size)
     {
         std::size_t remaining = _bytes.size() - _position;
         std::size_t to_read = std::min(size, remaining);
@@ -40,13 +40,13 @@ namespace detail {
         return to_read;
     }
 
-    std::size_t ozz_bytes_stream::Write(const void* buffer, std::size_t size)
+    std::size_t assets_bytes_stream_ozz::Write(const void* buffer, std::size_t size)
     {
         // not implemented since this is a read only stream
         return 0;
     }
 
-    int ozz_bytes_stream::Seek(int offset, Origin origin)
+    int assets_bytes_stream_ozz::Seek(int offset, Origin origin)
     {
         int new_position = 0;
         switch (origin) {
@@ -69,12 +69,12 @@ namespace detail {
         return 0;
     }
 
-    int ozz_bytes_stream::Tell() const
+    int assets_bytes_stream_ozz::Tell() const
     {
         return static_cast<int>(_position);
     }
 
-    std::size_t ozz_bytes_stream::Size() const
+    std::size_t assets_bytes_stream_ozz::Size() const
     {
         return _bytes.size();
     }

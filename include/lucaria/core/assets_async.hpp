@@ -2,39 +2,38 @@
 
 #include <functional>
 #include <future>
-#include <optional>
 #include <type_traits>
-#include <vector>
 
+#include <lucaria/bin/types_containers.hpp>
 #include <lucaria/core/app_error.hpp>
 
 namespace lucaria {
 namespace detail {
 
-    template <typename FetchedType>
-    struct container_async {
+    template <typename Asset>
+    struct assets_async_slot {
 
-        container_async() = default;
+        assets_async_slot() = default;
 
-        container_async(FetchedType&& value)
+        assets_async_slot(Asset&& value)
             : _cache(std::move(value))
             , _cache_ready(true)
             , _callbacks_invoked(true)
         {
         }
 
-        static container_async pending(FetchedType&& value = FetchedType {})
+        static assets_async_slot pending(Asset&& value = Asset {})
         {
-            container_async _result = {};
+            assets_async_slot _result = {};
             _result._cache = std::move(value);
             _result._cache_ready = false;
             _result._callbacks_invoked = false;
             return _result;
         }
 
-        container_async(std::future<FetchedType>&& future)
+        assets_async_slot(std::future<Asset>&& future)
         {
-            std::shared_ptr<std::future<FetchedType>> _shared_future = std::make_shared<std::future<FetchedType>>(std::move(future));
+            std::shared_ptr<std::future<Asset>> _shared_future = std::make_shared<std::future<Asset>>(std::move(future));
 
             _poll = [_shared_future]() -> bool {
                 if (!_shared_future->valid()) {
@@ -43,15 +42,15 @@ namespace detail {
                 return _shared_future->wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
             };
 
-            _get = [_shared_future]() -> FetchedType {
+            _get = [_shared_future]() -> Asset {
                 return _shared_future->get();
             };
         }
 
-        template <typename OriginFetchedType, typename ThenCallback, typename = std::enable_if_t<std::is_invocable_r_v<FetchedType, const ThenCallback&, const OriginFetchedType&>>>
-        container_async(std::future<OriginFetchedType>&& future, const ThenCallback& then)
+        template <typename OriginAsset, typename ThenCallback, typename = std::enable_if_t<std::is_invocable_r_v<Asset, const ThenCallback&, const OriginAsset&>>>
+        assets_async_slot(std::future<OriginAsset>&& future, const ThenCallback& then)
         {
-            std::shared_ptr<std::future<OriginFetchedType>> _shared_intermediate_future = std::make_shared<std::future<OriginFetchedType>>(std::move(future));
+            std::shared_ptr<std::future<OriginAsset>> _shared_intermediate_future = std::make_shared<std::future<OriginAsset>>(std::move(future));
             std::shared_ptr<std::decay_t<ThenCallback>> _shared_decayed_then = std::make_shared<std::decay_t<ThenCallback>>(then);
 
             _poll = [_shared_intermediate_future]() -> bool {
@@ -61,8 +60,8 @@ namespace detail {
                 return _shared_intermediate_future->wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
             };
 
-            _get = [_shared_intermediate_future, _shared_decayed_then]() -> FetchedType {
-                const OriginFetchedType _intermediate_value = _shared_intermediate_future->get();
+            _get = [_shared_intermediate_future, _shared_decayed_then]() -> Asset {
+                const OriginAsset _intermediate_value = _shared_intermediate_future->get();
                 return std::invoke(*_shared_decayed_then, _intermediate_value);
             };
         }
@@ -91,7 +90,7 @@ namespace detail {
             return _cache.has_value();
         }
 
-        [[nodiscard]] FetchedType& emplaced_value()
+        [[nodiscard]] Asset& emplaced_value()
         {
             if (!_cache) {
                 LUCARIA_DEBUG_ERROR("Failed to get emplaced fetched value&, asset was not emplaced")
@@ -100,7 +99,7 @@ namespace detail {
             return _cache.value();
         }
 
-        [[nodiscard]] const FetchedType& emplaced_value() const
+        [[nodiscard]] const Asset& emplaced_value() const
         {
             if (!_cache) {
                 LUCARIA_DEBUG_ERROR("Failed to get emplaced fetched const value&, asset was not emplaced")
@@ -119,7 +118,7 @@ namespace detail {
             _invoke_callbacks_once();
         }
 
-        [[nodiscard]] FetchedType& value()
+        [[nodiscard]] Asset& value()
         {
             if (!has_value()) {
                 LUCARIA_DEBUG_ERROR("Failed to get fetched value&, please check has_value() before trying to access it")
@@ -128,7 +127,7 @@ namespace detail {
             return _cache.value();
         }
 
-        [[nodiscard]] const FetchedType& value() const
+        [[nodiscard]] const Asset& value() const
         {
             if (!has_value()) {
                 LUCARIA_DEBUG_ERROR("Failed to get fetched const value&, please check has_value() before trying to access it")
@@ -137,7 +136,7 @@ namespace detail {
             return _cache.value();
         }
 
-        void on_ready(std::function<void(FetchedType&)> callback) const
+        void on_ready(std::function<void(Asset&)> callback) const
         {
             if (has_value()) {
                 callback(_cache.value());
@@ -149,7 +148,7 @@ namespace detail {
 
         void on_ready(std::function<void()> callback) const
         {
-            on_ready([callback = std::move(callback)](FetchedType&) {
+            on_ready([callback = std::move(callback)](Asset&) {
                 callback();
             });
         }
@@ -161,11 +160,11 @@ namespace detail {
 
     private:
         mutable std::function<bool()> _poll = nullptr;
-        mutable std::function<FetchedType()> _get = nullptr;
-        mutable std::optional<FetchedType> _cache = std::nullopt;
+        mutable std::function<Asset()> _get = nullptr;
+        mutable std::optional<Asset> _cache = std::nullopt;
         mutable bool _cache_ready = false;
         mutable bool _callbacks_invoked = false;
-        mutable std::vector<std::function<void(FetchedType&)>> _callbacks = {};
+        mutable std::vector<std::function<void(Asset&)>> _callbacks = {};
 
         void _invoke_callbacks_once() const
         {
@@ -174,7 +173,7 @@ namespace detail {
             }
             _callbacks_invoked = true;
 
-            for (std::function<void(FetchedType&)>& _callback : _callbacks) {
+            for (std::function<void(Asset&)>& _callback : _callbacks) {
                 _callback(_cache.value());
             }
             _callbacks.clear();

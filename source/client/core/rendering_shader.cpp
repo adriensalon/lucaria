@@ -12,7 +12,7 @@ namespace detail {
 
         static void _load_data_from_bytes(data_shader& data, const std::vector<char>& bytes)
         {
-            detail::bytes_stream _stream(bytes);
+            detail::assets_bytes_stream _stream(bytes);
 #if defined(LUCARIA_JSON_ASSETS)
             cereal::JSONInputArchive _archive(_stream);
 #else

@@ -84,7 +84,7 @@ struct context_object {
 
         detail::assets_cell<AssetType>* _cell = _assets.find_by_id(_cache_id);
         if (_cell == nullptr) {
-            _cell = _assets.create_cell(detail::container_async<AssetType>::pending(AssetType {}), _cache_id);
+            _cell = _assets.create_cell(detail::assets_async_slot<AssetType>::pending(AssetType {}), _cache_id);
 
             std::shared_ptr<detail::asset_fetch_context> _context = _manager->make_fetch_context();
             AssetType& _asset = _cell->fetched.emplaced_value();
@@ -145,7 +145,7 @@ struct context_object {
     {
         handle_user_asset<AssetType> _user_asset = {};
         _user_asset._cached = _manager->get_asset_buffer<AssetType>().create_cell(
-            detail::container_async<AssetType>(AssetType(std::forward<AssetTypeArgs>(args)...)));
+            detail::assets_async_slot<AssetType>(AssetType(std::forward<AssetTypeArgs>(args)...)));
         _user_asset._refcount = detail::flag_refcount(&_user_asset._cached->refcount_control);
         return _user_asset;
     }

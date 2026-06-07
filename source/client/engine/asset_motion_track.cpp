@@ -13,7 +13,7 @@ namespace detail {
     object_motion_track::object_motion_track(const std::vector<char>& bytes)
         : origin(object_motion_track_origin::path)
     {
-        ozz_bytes_stream _ozz_stream(bytes);
+        assets_bytes_stream_ozz _ozz_stream(bytes);
         ozz::io::IArchive _ozz_archive(&_ozz_stream);
         if (!_ozz_archive.TestTag<ozz::animation::Float3Track>()) {
             LUCARIA_DEBUG_ERROR("Failed to load float3 track, archive doesn't contain the expected object type")

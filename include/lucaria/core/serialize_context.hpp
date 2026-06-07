@@ -516,7 +516,7 @@ namespace detail {
 
     template <typename ValueType, typename Callback>
     struct load_context_value_task final : load_context_task_base {
-        container_async<ValueType> value = {};
+        assets_async_slot<ValueType> value = {};
         Callback callback;
         bool done = false;
 

@@ -10,20 +10,20 @@
 namespace lucaria {
 namespace detail {
 
-    struct bytes_streambuf : public std::streambuf {
-        bytes_streambuf(const std::vector<char>& data);
+    struct assets_bytes_streambuf : public std::streambuf {
+        assets_bytes_streambuf(const std::vector<char>& data);
     };
 
-    struct bytes_stream : public std::istream {
-        bytes_stream(const std::vector<char>& data);
+    struct assets_bytes_stream : public std::istream {
+        assets_bytes_stream(const std::vector<char>& data);
 
     private:
-        bytes_streambuf _buffer;
+        assets_bytes_streambuf _buffer;
     };
 
-    struct ozz_bytes_stream : public ozz::io::Stream {
-        ozz_bytes_stream(const std::vector<char>& data);
-        ~ozz_bytes_stream() override = default;
+    struct assets_bytes_stream_ozz : public ozz::io::Stream {
+        assets_bytes_stream_ozz(const std::vector<char>& data);
+        ~assets_bytes_stream_ozz() override = default;
 
         bool opened() const override;
         std::size_t Read(void* buffer, std::size_t size) override;

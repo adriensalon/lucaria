@@ -11,7 +11,7 @@ namespace detail {
     asset_geometry::asset_geometry(const std::vector<char>& bytes)
         : origin(object_geometry_origin::path)
     {
-        bytes_stream _stream(bytes);
+        assets_bytes_stream _stream(bytes);
         cereal::PortableBinaryInputArchive _archive(_stream);
         _archive(data);
     }

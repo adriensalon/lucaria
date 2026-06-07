@@ -240,7 +240,7 @@ template <typename ArchiveType>
 void handle_entity::save(ArchiveType& archive) const
 {
     const detail::mappings_manager_game_save& _mappings = cereal::get_user_data<detail::mappings_manager_game_save>(archive);
-    const auto scene = detail::entity_scene(_entity);
+    const detail::object_entity_scene_index  scene = detail::entity_scene(_entity);
     const uint32 _scene_id = _mappings.scenes.save_map_scene_ids.at(scene);
     const uint32 _entity_id = _mappings.scenes.save_map_scene_entities.at(scene).at(_entity);
     archive(cereal::make_nvp("scene_save_id", _scene_id));

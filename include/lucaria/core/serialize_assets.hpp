@@ -116,7 +116,7 @@ namespace detail {
                 return;
             }
 
-            assets_cell<AssetType>* cell = buffer->create_cell(container_async<AssetType>::pending(AssetType {}));
+            assets_cell<AssetType>* cell = buffer->create_cell(assets_async_slot<AssetType>::pending(AssetType {}));
             AssetType& asset = cell->fetched.emplaced_value();
 
             bool loaded = false;

@@ -133,7 +133,7 @@ namespace detail {
 
             // binary raw format
         } else {
-            bytes_stream _stream(bytes);
+            assets_bytes_stream _stream(bytes);
             cereal::PortableBinaryInputArchive _archive(_stream);
             _archive(data);
         }

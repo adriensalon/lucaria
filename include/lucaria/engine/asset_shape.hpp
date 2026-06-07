@@ -56,6 +56,9 @@ namespace detail {
         void save(storage_save_context& context) const
         {
             context.field("origin", origin);
+            context.field("feet_to_center", feet_to_center);
+            context.field("center_to_feet", center_to_feet);
+            context.field("half_height", half_height);
             if (origin == object_shape_origin::path) {
                 context.field("origin_path", origin_path);
                 context.field("algorithm", algorithm);
@@ -68,6 +71,9 @@ namespace detail {
         void load(storage_load_context& context)
         {
             context.field("origin", origin);
+            context.field("feet_to_center", feet_to_center);
+            context.field("center_to_feet", center_to_feet);
+            context.field("half_height", half_height);
             if (origin == object_shape_origin::path) {
                 context.field("origin_path", origin_path);
                 context.field("algorithm", algorithm);

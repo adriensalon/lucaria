@@ -11,7 +11,7 @@ namespace detail {
     object_event_track::object_event_track(const std::vector<char>& bytes)
         : origin(object_event_track_origin::path)
     {
-        bytes_stream _stream(bytes);
+        assets_bytes_stream _stream(bytes);
         cereal::PortableBinaryInputArchive _archive(_stream);
         _archive(data);
     }

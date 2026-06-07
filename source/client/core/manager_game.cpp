@@ -77,7 +77,7 @@ namespace detail {
                     }
 
                     const std::filesystem::path _snapshot_path = user_module.cache_directory / "reload_snapshot.json";
-                    hot_reload(_snapshot_path);
+                    bool ok = hot_reload(_snapshot_path);
                 }
             });
     }

@@ -237,12 +237,12 @@ namespace detail {
         if (assets_cell<Asset>* existing = buffer.find_by_id(cache_id)) {
             return *existing;
         }
-        assets_cell<Asset>* cell = buffer.create_cell(container_async<Asset>::pending(Asset {}), std::move(cache_id));
+        assets_cell<Asset>* cell = buffer.create_cell(assets_async_slot<Asset>::pending(Asset {}), std::move(cache_id));
         using configure_type = std::decay_t<Configure>;
         std::shared_ptr<configure_type> shared_configure = std::make_shared<configure_type>(std::forward<Configure>(configure));
 
         cell->refetch = [&objects, &buffer, cell, shared_configure, window]() {
-            buffer.reset_cell_fetch(cell, container_async<Asset>::pending(Asset {}));
+            buffer.reset_cell_fetch(cell, assets_async_slot<Asset>::pending(Asset {}));
             Asset& asset = cell->fetched.emplaced_value();
             (*shared_configure)(asset);
             std::shared_ptr<runtime_storage_context<Asset>> context = objects.template make_runtime_storage_context<Asset>(cell, asset, window);
@@ -364,7 +364,7 @@ namespace detail {
     {
         static_assert_user_asset<AssetType>();
 
-        bytes_stream _stream(bytes);
+        assets_bytes_stream _stream(bytes);
         mappings_manager_game_load _mappings = {};
         _mappings.loading_objects = &objects;
         archive_binary_input _archive(_mappings, _stream);

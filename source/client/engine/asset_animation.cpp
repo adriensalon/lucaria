@@ -8,7 +8,7 @@ namespace detail {
 
     asset_animation::asset_animation(const std::vector<char>& bytes)
     {
-        ozz_bytes_stream _ozz_stream(bytes);
+        assets_bytes_stream_ozz _ozz_stream(bytes);
         ozz::io::IArchive _ozz_archive(&_ozz_stream);
         if (!_ozz_archive.TestTag<ozz::animation::Animation>()) {
             LUCARIA_DEBUG_ERROR("Failed to load animation, archive doesn't contain the expected object type")

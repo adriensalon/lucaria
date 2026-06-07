@@ -50,7 +50,7 @@ namespace detail {
 
     template <typename Asset>
     struct assets_cell {
-        container_async<Asset> fetched = {};
+        assets_async_slot<Asset> fetched = {};
         std::string cache_id = {};
         uint32 current_version = 0u;
         flag_refcount_control refcount_control = {};
@@ -90,21 +90,12 @@ namespace detail {
             return _cells.create();
         }
 
-        void reset_cell_fetch(
-            assets_cell<Asset>* cell,
-            container_async<Asset>&& value)
+        void reset_cell_fetch(assets_cell<Asset>* cell, assets_async_slot<Asset>&& value)
         {
             LUCARIA_DEBUG_ASSERT(cell, "Asset cell was nullptr");
-
-            // Important for hot reload:
-            // destroy the old loaded asset before assigning the new pending value.
-            // Otherwise std::optional may move-assign into the existing Asset,
-            // which breaks owning GPU/resource objects.
             cell->fetched = {};
-
             cell->fetched = std::move(value);
             cell->object_filewatched_paths.clear();
-
             cell->fetched.on_ready([cell]() {
                 cell->current_version++;
             });
@@ -112,26 +103,21 @@ namespace detail {
 
         void set_cell(
             assets_cell<Asset>* cell,
-            container_async<Asset>&& value,
+            assets_async_slot<Asset>&& value,
             std::string cache_id = {})
         {
             LUCARIA_DEBUG_ASSERT(cell, "Asset cell was nullptr");
-
             erase_id(cell);
-
             cell->cache_id = std::move(cache_id);
             reset_cell_fetch(cell, std::move(value));
-
             insert_id(cell);
         }
 
-        [[nodiscard]] assets_cell<Asset>* create_cell(
-            container_async<Asset>&& value,
-            std::string cache_id = {})
+        [[nodiscard]] assets_cell<Asset>* create_cell(assets_async_slot<Asset>&& value, std::string cache_id = {})
         {
-            assets_cell<Asset>* cell = create_cell();
-            set_cell(cell, std::move(value), std::move(cache_id));
-            return cell;
+            assets_cell<Asset>* _cell = create_cell();
+            set_cell(_cell, std::move(value), std::move(cache_id));
+            return _cell;
         }
 
         [[nodiscard]] assets_cell<Asset>* find_by_id(const std::string& cache_id) const
@@ -139,19 +125,15 @@ namespace detail {
             if (cache_id.empty()) {
                 return nullptr;
             }
-
-            auto it = _cells_by_id.find(cache_id);
-            return it == _cells_by_id.end() ? nullptr : it->second;
+            auto _iterator = _cells_by_id.find(cache_id);
+            return _iterator == _cells_by_id.end() ? nullptr : _iterator->second;
         }
 
-        [[nodiscard]] assets_cell<Asset>* get_or_create_by_id(
-            std::string cache_id,
-            std::function<container_async<Asset>()> create_fetch)
+        [[nodiscard]] assets_cell<Asset>* get_or_create_by_id(std::string cache_id, std::function<assets_async_slot<Asset>()> create_fetch)
         {
-            if (assets_cell<Asset>* existing = find_by_id(cache_id)) {
-                return existing;
+            if (assets_cell<Asset>* _existing = find_by_id(cache_id)) {
+                return _existing;
             }
-
             return create_cell(create_fetch(), std::move(cache_id));
         }
 
@@ -160,7 +142,6 @@ namespace detail {
             if (!cell) {
                 return;
             }
-
             erase_id(cell);
             _cells.destroy(cell);
         }
@@ -177,11 +158,9 @@ namespace detail {
                 if (!cell.fetched.has_value()) {
                     return false;
                 }
-
                 if (cell.refcount_control.count.load(std::memory_order_acquire) != 0) {
                     return false;
                 }
-
                 erase_id(&cell);
                 return true;
             });
@@ -201,26 +180,21 @@ namespace detail {
         void collect_filewatch_changes(std::vector<assets_filewatch_change>& changes, bool refetch_changed_cells)
         {
             _cells.for_each([&](assets_cell<Asset>& cell) {
-                bool should_refetch_cell = false;
-
-                for (object_filewatched_path& watched_path : cell.object_filewatched_paths) {
-                    if (watched_path.has_changed()) {
-                        should_refetch_cell = true;
-                        changes.push_back({ std::type_index(typeid(Asset)),
-                            &cell,
-                            cell.cache_id,
-                            watched_path.get() });
+                bool _should_refetch_cell = false;
+                for (object_filewatched_path& _watched_path : cell.object_filewatched_paths) {
+                    if (_watched_path.has_changed()) {
+                        _should_refetch_cell = true;
+                        changes.push_back({ std::type_index(typeid(Asset)), &cell, cell.cache_id, _watched_path.get() });
                     }
                 }
-
-                if (refetch_changed_cells && should_refetch_cell && cell.refetch) {
+                if (refetch_changed_cells && _should_refetch_cell && cell.refetch) {
                     cell.refetch();
                 }
             });
         }
 
     private:
-        generics_paged_buffer<assets_cell<Asset>> _cells = {};
+        assets_paged_buffer<assets_cell<Asset>> _cells = {};
         std::unordered_map<std::string, assets_cell<Asset>*> _cells_by_id = {};
 
         void erase_id(assets_cell<Asset>* cell)
@@ -323,7 +297,7 @@ namespace detail {
         template <typename Asset, typename... Args>
         [[nodiscard]] assets_cell<Asset>& create(Args&&... args)
         {
-            return *get<Asset>().create_cell(container_async<Asset>(Asset(std::forward<Args>(args)...)));
+            return *get<Asset>().create_cell(assets_async_slot<Asset>(Asset(std::forward<Args>(args)...)));
         }
 
     private:
