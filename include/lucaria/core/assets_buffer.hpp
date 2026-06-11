@@ -107,10 +107,13 @@ namespace detail {
             std::string cache_id = {})
         {
             LUCARIA_DEBUG_ASSERT(cell, "Asset cell was nullptr");
-            erase_id(cell);
+            _erase_id(cell);
             cell->cache_id = std::move(cache_id);
             reset_cell_fetch(cell, std::move(value));
-            insert_id(cell);
+			if (cell->cache_id.empty()) {
+                return;
+            }
+            _cells_by_id.emplace(cell->cache_id, cell);
         }
 
         [[nodiscard]] assets_cell<Asset>* create_cell(assets_async_slot<Asset>&& value, std::string cache_id = {})
@@ -142,7 +145,7 @@ namespace detail {
             if (!cell) {
                 return;
             }
-            erase_id(cell);
+            _erase_id(cell);
             _cells.destroy(cell);
         }
 
@@ -161,7 +164,7 @@ namespace detail {
                 if (cell.refcount_control.count.load(std::memory_order_acquire) != 0) {
                     return false;
                 }
-                erase_id(&cell);
+                _erase_id(&cell);
                 return true;
             });
         }
@@ -197,7 +200,7 @@ namespace detail {
         assets_paged_buffer<assets_cell<Asset>> _cells = {};
         std::unordered_map<std::string, assets_cell<Asset>*> _cells_by_id = {};
 
-        void erase_id(assets_cell<Asset>* cell)
+        void _erase_id(assets_cell<Asset>* cell)
         {
             if (cell->cache_id.empty()) {
                 return;
@@ -207,14 +210,6 @@ namespace detail {
             if (it != _cells_by_id.end() && it->second == cell) {
                 _cells_by_id.erase(it);
             }
-        }
-
-        void insert_id(assets_cell<Asset>* cell)
-        {
-            if (cell->cache_id.empty()) {
-                return;
-            }
-            _cells_by_id.emplace(cell->cache_id, cell);
         }
     };
 

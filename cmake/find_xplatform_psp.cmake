@@ -1,0 +1,11 @@
+include_guard(GLOBAL)
+
+function(lucaria_find_xplatform_psp)
+	find_program(_pspcmake_executable psp-cmake)
+	if(_pspcmake_executable)
+		get_filename_component(_pspsdk_dir "${_pspcmake_executable}" DIRECTORY)
+		get_filename_component(_pspsdk_root "${_pspsdk_dir}/.." ABSOLUTE)
+		message(STATUS "Found xplatform [PlayStation Portable] SDKs at ${_pspsdk_root}")
+		set(lucaria_xplatform_psp_cmake_executable "${_pspcmake_executable}" CACHE PATH "PSP cmake executable")
+	endif()	
+endfunction()

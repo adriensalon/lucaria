@@ -1,120 +1,21 @@
 cmake_minimum_required(VERSION 3.13)
-project(${LUCARIA_TARGET})
-
-# The user/game code is now a library. Keep this target name stable so
-# reload_config.hpp can rebuild/reload it without knowing the final exe target.
-if(NOT LUCARIA_USER_TARGET)
-    set(LUCARIA_USER_TARGET user_game)
+project(lucaria_game LANGUAGES C CXX)
+if(NOT LUCARIA_GAME_DIR)
+    message(FATAL_ERROR "LUCARIA_GAME_DIR is required")
 endif()
-
-add_subdirectory("${LUCARIA_SOURCE_DIR}/client" "${LUCARIA_BINARY_DIR}/client/${LUCARIA_TARGET_PLATFORM}")
-
-# filter out shaders
-set(LUCARIA_GSLC_SOURCES ${LUCARIA_TARGET_SOURCES})
-list(FILTER LUCARIA_GSLC_SOURCES INCLUDE REGEX "\.gslc$")
-set(LUCARIA_NORMAL_SOURCES ${LUCARIA_TARGET_SOURCES})
-list(FILTER LUCARIA_NORMAL_SOURCES EXCLUDE REGEX "\.gslc$")
-
-# User code is static normally, shared when reload is enabled.
-# Platforms that cannot cheaply dlopen a game module keep the old static behavior.
-set(LUCARIA_USER_LIBRARY_TYPE STATIC)
-if(NOT LUCARIA_DISABLE_RELOAD AND NOT ANDROID AND NOT EMSCRIPTEN AND NOT PSP)
-    set(LUCARIA_USER_LIBRARY_TYPE SHARED)
+if(NOT LUCARIA_TARGET_PLATFORM)
+    message(FATAL_ERROR "LUCARIA_TARGET_PLATFORM is required")
 endif()
-
-add_library(${LUCARIA_USER_TARGET} ${LUCARIA_USER_LIBRARY_TYPE} ${LUCARIA_NORMAL_SOURCES})
-
-# append shader sources to the user module; shaders belong to user assets/code
-foreach(gslc_source IN LISTS LUCARIA_GSLC_SOURCES)
-    embed_gslc(${LUCARIA_USER_TARGET} ${gslc_source})
-endforeach()
-
-set_target_properties(${LUCARIA_USER_TARGET} PROPERTIES CXX_STANDARD 17)
-target_link_libraries(${LUCARIA_USER_TARGET} PRIVATE lucaria_runtime)
-target_include_directories(${LUCARIA_USER_TARGET} PRIVATE ${LUCARIA_TARGET_INCLUDES})
-target_compile_definitions(${LUCARIA_USER_TARGET} PRIVATE ${LUCARIA_TARGET_DEFINES})
-target_compile_options(${LUCARIA_USER_TARGET} PRIVATE ${LUCARIA_TARGET_BUILD_ARGS})
-
-set_target_properties(lucaria_main PROPERTIES OUTPUT_NAME ${LUCARIA_TARGET})
-if(NOT LUCARIA_DISABLE_RELOAD AND NOT ANDROID AND NOT EMSCRIPTEN AND NOT PSP)
-    add_dependencies(lucaria_main ${LUCARIA_USER_TARGET})
-else()
-    target_link_libraries(lucaria_main PRIVATE ${LUCARIA_USER_TARGET})
+if(NOT EXISTS "${LUCARIA_GAME_DIR}/build.cmake")
+    message(FATAL_ERROR "Missing game build script: ${LUCARIA_GAME_DIR}/build.cmake")
 endif()
-
-if(PSP)
-    create_pbp_file(
-        TARGET lucaria_main
-        ICON_PATH NULL
-        BACKGROUND_PATH NULL
-        PREVIEW_PATH NULL
-        TITLE ${LUCARIA_TARGET}
-        VERSION 01.00)
+include("${LUCARIA_CMAKE_DIR}/game_api.cmake")
+add_subdirectory(
+    "${LUCARIA_SOURCE_DIR}/runtime"
+    "${LUCARIA_BINARY_DIR}/runtime/${LUCARIA_TARGET_PLATFORM}")
+include("${LUCARIA_GAME_DIR}/build.cmake")
+if(NOT LUCARIA_TARGET)
+    message(FATAL_ERROR "build.cmake must call add_lucaria_game(<output_name> SOURCES ...)")
 endif()
-
-# emscripten options
-if(EMSCRIPTEN)
-    if(NOT LUCARIA_HTML_SHELL)
-        set(LUCARIA_HTML_SHELL "${CMAKE_CURRENT_LIST_DIR}/web/shell.html")
-    endif()
-
-    set_target_properties(lucaria_main PROPERTIES SUFFIX ".html")
-    target_link_options(lucaria_main PRIVATE --shell-file ${LUCARIA_HTML_SHELL})
-    target_link_options(lucaria_main PRIVATE -sLLD_REPORT_UNDEFINED)
-    target_link_options(lucaria_main PRIVATE -sALLOW_MEMORY_GROWTH=1)
-    target_link_options(lucaria_main PRIVATE -sINITIAL_MEMORY=671088640)
-    target_link_options(lucaria_main PRIVATE -sMALLOC=emmalloc)
-    target_link_options(lucaria_main PRIVATE -sMAX_WEBGL_VERSION=2)
-    target_link_options(lucaria_main PRIVATE -sUSE_WEBGL2=1)
-    target_link_options(lucaria_main PRIVATE -sFETCH)
-    target_link_options(lucaria_main PRIVATE -lopenal)
-    
-    if(LUCARIA_DEBUG)
-        target_link_options(lucaria_main PRIVATE -g)
-        target_link_options(lucaria_main PRIVATE -sGL_DEBUG=1)
-        target_link_options(lucaria_main PRIVATE -sNO_DISABLE_EXCEPTION_CATCHING)
-    else()
-        target_link_options(lucaria_main PRIVATE -O3)
-        target_link_options(lucaria_main PRIVATE -sGL_DEBUG=0)
-    endif()
-    
-    if(LUCARIA_ASSETS_PACKAGE)
-        target_link_options(lucaria_main PRIVATE --preload-file ${LUCARIA_ASSETS_DIR}@/)
-    endif()
-endif()
-
-# win32 options
-if(WIN32 AND LUCARIA_HIDE_CONSOLE)
-    target_compile_definitions(lucaria_main PRIVATE -DLUCARIA_HIDE_CONSOLE=1)
-    set_target_properties(lucaria_main PROPERTIES WIN32_EXECUTABLE TRUE)
-else()
-    target_compile_definitions(lucaria_main PRIVATE -DLUCARIA_HIDE_CONSOLE=0)
-endif()
-
-# lto optimization
-cmake_policy(SET CMP0069 NEW)
-function(enable_ipo_recursive TARGET)
-    if(NOT TARGET ${TARGET})
-        return()
-    endif()
-    get_property(already_set TARGET ${TARGET} PROPERTY _IPO_MARKER SET)
-    if(already_set)
-        return()
-    endif()
-    set_property(TARGET ${TARGET} PROPERTY _IPO_MARKER TRUE)
-    set_property(TARGET ${TARGET} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
-    get_target_property(link_libs ${TARGET} LINK_LIBRARIES)
-    if(NOT link_libs)
-        return()
-    endif()
-    foreach(lib IN LISTS link_libs)
-        if(TARGET ${lib})
-            enable_ipo_recursive(${lib})
-        endif()
-    endforeach()
-endfunction()
-
-if(NOT LUCARIA_DEBUG)
-    enable_ipo_recursive(lucaria_main)
-    enable_ipo_recursive(${LUCARIA_USER_TARGET})
-endif()
+include("${LUCARIA_CMAKE_DIR}/make_finalize.cmake")
+lucaria_make_finalize()

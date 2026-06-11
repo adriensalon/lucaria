@@ -1,0 +1,22 @@
+//clang-format off
+
+// #include <lucaria/core/lgsl_prologue.hpp>
+#include <lucaria/lucaria.hpp>
+using namespace lucaria;
+
+#include "@LUCARIA_GSLC_EMBED_HPP@"
+
+#define LUCARIA_CURRENT_GSL_ID \
+    ::lucaria::detail::generated::@LUCARIA_GSLC_IDENT@_id
+
+#if !defined(LUCARIA_DISABLE_COMPUTE)
+#define LUCARIA_CURRENT_GSL_SOURCE \
+    ::lucaria::detail::generated::@LUCARIA_GSLC_IDENT@_source
+#endif
+
+#include "@LUCARIA_GSLC_FILE@"
+
+#undef LUCARIA_CURRENT_GSL_ID
+#undef LUCARIA_CURRENT_GSL_SOURCE
+
+//clang-format on

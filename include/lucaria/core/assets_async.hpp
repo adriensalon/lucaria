@@ -12,7 +12,6 @@ namespace detail {
 
     template <typename Asset>
     struct assets_async_slot {
-
         assets_async_slot() = default;
 
         assets_async_slot(Asset&& value)
@@ -34,14 +33,12 @@ namespace detail {
         assets_async_slot(std::future<Asset>&& future)
         {
             std::shared_ptr<std::future<Asset>> _shared_future = std::make_shared<std::future<Asset>>(std::move(future));
-
             _poll = [_shared_future]() -> bool {
                 if (!_shared_future->valid()) {
                     return false;
                 }
                 return _shared_future->wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
             };
-
             _get = [_shared_future]() -> Asset {
                 return _shared_future->get();
             };
@@ -52,14 +49,12 @@ namespace detail {
         {
             std::shared_ptr<std::future<OriginAsset>> _shared_intermediate_future = std::make_shared<std::future<OriginAsset>>(std::move(future));
             std::shared_ptr<std::decay_t<ThenCallback>> _shared_decayed_then = std::make_shared<std::decay_t<ThenCallback>>(then);
-
             _poll = [_shared_intermediate_future]() -> bool {
                 if (!_shared_intermediate_future->valid()) {
                     return false;
                 }
                 return _shared_intermediate_future->wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
             };
-
             _get = [_shared_intermediate_future, _shared_decayed_then]() -> Asset {
                 const OriginAsset _intermediate_value = _shared_intermediate_future->get();
                 return std::invoke(*_shared_decayed_then, _intermediate_value);
@@ -72,7 +67,6 @@ namespace detail {
                 _invoke_callbacks_once();
                 return true;
             }
-
             if (_poll && _poll()) {
                 _cache = std::move(_get());
                 _cache_ready = true;
@@ -81,7 +75,6 @@ namespace detail {
                 _invoke_callbacks_once();
                 return true;
             }
-
             return false;
         }
 
@@ -92,47 +85,32 @@ namespace detail {
 
         [[nodiscard]] Asset& emplaced_value()
         {
-            if (!_cache) {
-                LUCARIA_DEBUG_ERROR("Failed to get emplaced fetched value&, asset was not emplaced")
-            }
-
+            LUCARIA_DEBUG_ASSERT(_cache, "Failed to get emplaced fetched value&, asset was not emplaced")
             return _cache.value();
         }
 
         [[nodiscard]] const Asset& emplaced_value() const
         {
-            if (!_cache) {
-                LUCARIA_DEBUG_ERROR("Failed to get emplaced fetched const value&, asset was not emplaced")
-            }
-
+            LUCARIA_DEBUG_ASSERT(_cache, "Failed to get emplaced fetched const value&, asset was not emplaced")
             return _cache.value();
         }
 
         void mark_ready() const
         {
-            if (!_cache) {
-                LUCARIA_DEBUG_ERROR("Failed to mark async container ready, asset was not emplaced")
-            }
-
+            LUCARIA_DEBUG_ASSERT(_cache, "Failed to mark async container ready, asset was not emplaced")
             _cache_ready = true;
             _invoke_callbacks_once();
         }
 
         [[nodiscard]] Asset& value()
         {
-            if (!has_value()) {
-                LUCARIA_DEBUG_ERROR("Failed to get fetched value&, please check has_value() before trying to access it")
-            }
-
+            LUCARIA_DEBUG_ASSERT(has_value(), "Failed to get fetched value&, please check has_value() before trying to access it")
             return _cache.value();
         }
 
         [[nodiscard]] const Asset& value() const
         {
-            if (!has_value()) {
-                LUCARIA_DEBUG_ERROR("Failed to get fetched const value&, please check has_value() before trying to access it")
-            }
-
+            LUCARIA_DEBUG_ASSERT(has_value(), "Failed to get fetched const value&, please check has_value() before trying to access it")
             return _cache.value();
         }
 
@@ -142,7 +120,6 @@ namespace detail {
                 callback(_cache.value());
                 return;
             }
-
             _callbacks.emplace_back(std::move(callback));
         }
 
@@ -172,7 +149,6 @@ namespace detail {
                 return;
             }
             _callbacks_invoked = true;
-
             for (std::function<void(Asset&)>& _callback : _callbacks) {
                 _callback(_cache.value());
             }
