@@ -71,17 +71,17 @@ namespace detail {
 
     LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(asset_animation, animations)
     LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(asset_audio, audios)
-    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_cubemap, cubemaps)
+    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(asset_cubemap, cubemaps)
     LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_event_track, event_tracks)
     LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_font, fonts)
     LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(asset_geometry, geometries)
-    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_image, images)
-    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_mesh, meshes)
+    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(asset_image, images)
+    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(asset_mesh, meshes)
     LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_motion_track, motion_tracks)
     LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_shape, shapes)
     LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_skeleton, skeletons)
     LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_sound_track, sound_tracks)
-    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(object_texture, textures)
+    LUCARIA_DETAIL_DEFINE_ASSET_STORAGE(asset_texture, textures)
 
 #undef LUCARIA_DETAIL_DEFINE_ASSET_STORAGE
 
@@ -259,12 +259,12 @@ namespace detail {
             return cereal::get_user_data<mappings_manager_game_save>(*archive);
         }, context.archive);
 
-        save_asset_buffer_direct<object_image>(context, "images", *this, mappings.objects.images);
-        save_asset_buffer_direct<object_texture>(context, "textures", *this, mappings.objects.textures);
-        save_asset_buffer_direct<object_cubemap>(context, "cubemaps", *this, mappings.objects.cubemaps);
+        save_asset_buffer_direct<asset_image>(context, "images", *this, mappings.objects.images);
+        save_asset_buffer_direct<asset_texture>(context, "textures", *this, mappings.objects.textures);
+        save_asset_buffer_direct<asset_cubemap>(context, "cubemaps", *this, mappings.objects.cubemaps);
         save_asset_buffer_direct<asset_geometry>(context, "geometries", *this, mappings.objects.geometries);
         save_asset_buffer_direct<object_shape>(context, "shapes", *this, mappings.objects.shapes);
-        save_asset_buffer_direct<object_mesh>(context, "meshes", *this, mappings.objects.meshes);
+        save_asset_buffer_direct<asset_mesh>(context, "meshes", *this, mappings.objects.meshes);
         save_asset_buffer_direct<object_font>(context, "fonts", *this, mappings.objects.fonts);
         save_asset_buffer_direct<asset_audio>(context, "audios", *this, mappings.objects.audios);
         save_asset_buffer_direct<object_sound_track>(context, "sound_tracks", *this, mappings.objects.sound_tracks);
@@ -296,12 +296,12 @@ namespace detail {
             }
         }, context.archive);
 
-        load_asset_buffer_direct<object_image>(context, "images", *this, mappings.objects.images);
-        load_asset_buffer_direct<object_texture>(context, "textures", *this, mappings.objects.textures);
-        load_asset_buffer_direct<object_cubemap>(context, "cubemaps", *this, mappings.objects.cubemaps);
+        load_asset_buffer_direct<asset_image>(context, "images", *this, mappings.objects.images);
+        load_asset_buffer_direct<asset_texture>(context, "textures", *this, mappings.objects.textures);
+        load_asset_buffer_direct<asset_cubemap>(context, "cubemaps", *this, mappings.objects.cubemaps);
         load_asset_buffer_direct<asset_geometry>(context, "geometries", *this, mappings.objects.geometries);
         load_asset_buffer_direct<object_shape>(context, "shapes", *this, mappings.objects.shapes);
-        load_asset_buffer_direct<object_mesh>(context, "meshes", *this, mappings.objects.meshes);
+        load_asset_buffer_direct<asset_mesh>(context, "meshes", *this, mappings.objects.meshes);
         load_asset_buffer_direct<object_font>(context, "fonts", *this, mappings.objects.fonts);
         load_asset_buffer_direct<asset_audio>(context, "audios", *this, mappings.objects.audios);
         load_asset_buffer_direct<object_sound_track>(context, "sound_tracks", *this, mappings.objects.sound_tracks);

@@ -63,6 +63,7 @@ namespace detail {
                 scenes.update_systems(*this);
                 objects.gc_unused();
 
+#if !defined(LUCARIA_DISABLE_RELOAD)
                 int _cmake_return;
                 std::string _cmake_output;
                 object_reload_module_status _status = user_module.poll_sources_and_recompile_library(_cmake_return, _cmake_output);
@@ -79,6 +80,7 @@ namespace detail {
                     const std::filesystem::path _snapshot_path = user_module.cache_directory / "reload_snapshot.json";
                     bool ok = hot_reload(_snapshot_path);
                 }
+#endif
             });
     }
 

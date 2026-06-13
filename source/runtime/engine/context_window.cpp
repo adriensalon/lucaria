@@ -13,7 +13,7 @@ bool context_window::is_locked()
     return _manager->is_audio_locked && _manager->is_mouse_locked;
 #endif
 
-#if defined(LUCARIA_PLATFORM_GLFW)
+#if defined(LUCARIA_PLATFORM_WIN32) || defined(LUCARIA_PLATFORM_LINUX)
     return _manager->is_mouse_locked;
 #endif
 

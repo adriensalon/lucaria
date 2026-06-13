@@ -1,6 +1,6 @@
 #include <set>
 
-#include <lucaria/engine/asset_mesh.hpp>
+#include <lucaria/core/rendering_mesh.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -104,83 +104,82 @@ namespace detail {
 
     }
 
-    object_mesh::~object_mesh()
+    rendering_mesh::~rendering_mesh()
     {
-        if (ownership.owns()) {
+        if (_ownership.owns()) {
             glDeleteVertexArrays(1, &array_id);
             glDeleteBuffers(1, &elements_id);
-            for (const std::pair<const object_mesh_attribute, GLuint>& _pair : attribute_ids) {
+            for (const std::pair<const rendering_mesh_attribute, GLuint>& _pair : attribute_ids) {
                 glDeleteBuffers(1, &_pair.second);
             }
         }
     }
 
-    object_mesh::object_mesh(const asset_geometry& from)
-        : origin(from.origin == object_geometry_origin::path ? object_mesh_origin::path : object_mesh_origin::data)
+    rendering_mesh::rendering_mesh(const data_geometry& from)
     {
         array_id = _create_vertex_array();
-        elements_id = _create_elements_buffer(from.data.indices);
+        elements_id = _create_elements_buffer(from.indices);
 
-        if (!from.data.positions.empty()) {
-            attribute_ids[object_mesh_attribute::position] = _create_attribute_buffer(from.data.positions);
+        if (!from.positions.empty()) {
+            attribute_ids[rendering_mesh_attribute::position] = _create_attribute_buffer(from.positions);
         }
-        if (!from.data.colors.empty()) {
-            attribute_ids[object_mesh_attribute::color] = _create_attribute_buffer(from.data.colors);
+        if (!from.colors.empty()) {
+            attribute_ids[rendering_mesh_attribute::color] = _create_attribute_buffer(from.colors);
         }
-        if (!from.data.normals.empty()) {
-            attribute_ids[object_mesh_attribute::normal] = _create_attribute_buffer(from.data.normals);
+        if (!from.normals.empty()) {
+            attribute_ids[rendering_mesh_attribute::normal] = _create_attribute_buffer(from.normals);
         }
-        if (!from.data.tangents.empty()) {
-            attribute_ids[object_mesh_attribute::tangent] = _create_attribute_buffer(from.data.tangents);
+        if (!from.tangents.empty()) {
+            attribute_ids[rendering_mesh_attribute::tangent] = _create_attribute_buffer(from.tangents);
         }
-        if (!from.data.bitangents.empty()) {
-            attribute_ids[object_mesh_attribute::bitangent] = _create_attribute_buffer(from.data.bitangents);
+        if (!from.bitangents.empty()) {
+            attribute_ids[rendering_mesh_attribute::bitangent] = _create_attribute_buffer(from.bitangents);
         }
-        if (!from.data.texcoords.empty()) {
-            attribute_ids[object_mesh_attribute::texcoord] = _create_attribute_buffer(from.data.texcoords);
+        if (!from.texcoords.empty()) {
+            attribute_ids[rendering_mesh_attribute::texcoord] = _create_attribute_buffer(from.texcoords);
         }
-        if (!from.data.bones.empty()) {
-            attribute_ids[object_mesh_attribute::bones] = _create_attribute_buffer(from.data.bones);
+        if (!from.bones.empty()) {
+            attribute_ids[rendering_mesh_attribute::bones] = _create_attribute_buffer(from.bones);
         }
-        if (!from.data.weights.empty()) {
-            attribute_ids[object_mesh_attribute::weights] = _create_attribute_buffer(from.data.weights);
+        if (!from.weights.empty()) {
+            attribute_ids[rendering_mesh_attribute::weights] = _create_attribute_buffer(from.weights);
         }
 
-        invposes = from.data.invposes;
-        size = 3 * static_cast<uint32>(from.data.indices.size());
+        invposes = from.invposes;
+        size = 3 * static_cast<uint32>(from.indices.size());
 
-        ownership.emplace();
+        _ownership.emplace();
     }
 
-    object_mesh_line::~object_mesh_line()
+    rendering_mesh_line::~rendering_mesh_line()
     {
-        if (ownership.owns()) {
+        if (_ownership.owns()) {
             glDeleteVertexArrays(1, &array_handle);
             glDeleteBuffers(1, &elements_handle);
             glDeleteBuffers(1, &positions_handle);
         }
     }
 
-    object_mesh_line::object_mesh_line(const asset_geometry& from)
+    rendering_mesh_line::rendering_mesh_line(const data_geometry& from)
     {
-        const std::vector<uint32x2> _line_indices = _generate_line_indices(from.data.indices);
+        const std::vector<uint32x2> _line_indices = _generate_line_indices(from.indices);
         array_handle = _create_vertex_array();
         size = 2 * static_cast<GLuint>(_line_indices.size());
         elements_handle = _create_elements_buffer(_line_indices);
-        positions_handle = _create_attribute_buffer(from.data.positions);
-        ownership.emplace();
+        positions_handle = _create_attribute_buffer(from.positions);
+        _ownership.emplace();
     }
 
-    object_mesh_line::object_mesh_line(const std::vector<float32x3>& positions, const std::vector<uint32x2>& indices)
+    rendering_mesh_line::rendering_mesh_line(const std::vector<float32x3>& positions, const std::vector<uint32x2>& indices)
     {
         array_handle = _create_vertex_array();
         size = 2 * static_cast<GLuint>(indices.size());
         elements_handle = _create_elements_buffer(indices);
         positions_handle = _create_attribute_buffer(positions);
-        ownership.emplace();
+        _ownership.emplace();
     }
 
-    void object_mesh_line::update(const std::vector<float32x3>& positions, const std::vector<uint32x2>& indices)
+    void rendering_mesh_line::update(const std::vector<float32x3>& positions, const std::vector<uint32x2>& indices)
     {
         glBindVertexArray(array_handle);
         glBindBuffer(GL_ARRAY_BUFFER, positions_handle);
@@ -189,6 +188,6 @@ namespace detail {
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, 2 * indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
         size = 2 * static_cast<GLuint>(indices.size());
     }
-	
+
 }
 }

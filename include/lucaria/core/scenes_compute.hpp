@@ -1,9 +1,6 @@
 #pragma once
 
-#if !defined(LUCARIA_DISABLE_OPENGL)
-#include <lucaria/core/backend_opengl.hpp>
-#endif
-
+#include <lucaria/core/rendering_backend.hpp>
 #include <lucaria/core/scenes_entity.hpp>
 
 namespace lucaria {

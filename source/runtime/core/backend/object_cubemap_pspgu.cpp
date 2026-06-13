@@ -5,20 +5,20 @@
 namespace lucaria {
 namespace detail {
 
-    object_cubemap::object_cubemap(object_cubemap&& other)
+    asset_cubemap::asset_cubemap(asset_cubemap&& other)
     {
     }
 
-    object_cubemap& object_cubemap::operator=(object_cubemap&& other)
+    asset_cubemap& asset_cubemap::operator=(asset_cubemap&& other)
     {
         return *this;
     }
 
-    object_cubemap::~object_cubemap()
+    asset_cubemap::~asset_cubemap()
     {
     }
 
-    object_cubemap::object_cubemap(const std::array<object_image, 6>& images)
+    asset_cubemap::asset_cubemap(const std::array<asset_image, 6>& images)
     {
     }
 

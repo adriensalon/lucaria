@@ -3,10 +3,10 @@
 
 #include <lucaria/core/app_error.hpp>
 #include <lucaria/core/manager_app.hpp>
+#include <lucaria/core/rendering_backend.hpp>
 
 #if defined(LUCARIA_BACKEND_OPENGL)
 #include <backends/imgui_impl_opengl3.h>
-#include <lucaria/core/backend_opengl.hpp>
 #endif
 
 namespace lucaria {
@@ -24,7 +24,7 @@ namespace detail {
         }
 #endif
 
-#if defined(LUCARIA_PLATFORM_GLFW)
+#if defined(LUCARIA_PLATFORM_WIN32) || defined(LUCARIA_PLATFORM_LINUX)
         if (must_install_imgui_callbacks) {
             ImGui_ImplGlfw_InitForOpenGL(window, true);
             must_install_imgui_callbacks = false;
@@ -90,7 +90,7 @@ namespace detail {
         _font_atlas_data.height = _height;
         _font_atlas_data.pixels = std::vector<glm::uint8>(_pixels, _pixels + (_width * _height * 4));
 
-        object_image _font_atlas_image(std::move(_font_atlas_data));
+        asset_image _font_atlas_image(std::move(_font_atlas_data));
 
         if (!shared_font_texture) {
             shared_font_texture.emplace(_font_atlas_image);

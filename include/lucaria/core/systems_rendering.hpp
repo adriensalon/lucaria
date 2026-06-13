@@ -76,12 +76,12 @@ namespace detail {
         handle_cubemap skybox_cubemap = {};
         float32 skybox_rotation = 0.f;
         bool show_free_camera = false;
-        std::optional<detail::object_program> _persistent_unlit_program = std::nullopt;
+        std::optional<detail::rendering_program> _persistent_unlit_program = std::nullopt;
 
         // post processing
-        std::optional<detail::object_framebuffer> scene_framebuffer;
-        std::optional<detail::object_texture> scene_color_texture = std::nullopt;
-        std::optional<detail::object_renderbuffer> scene_depth_renderbuffer;
+        std::optional<detail::rendering_framebuffer> scene_framebuffer;
+        std::optional<detail::asset_texture> scene_color_texture = std::nullopt;
+        std::optional<detail::rendering_renderbuffer> scene_depth_renderbuffer;
 
         // fxaa
         bool fxaa_enable = false;
@@ -90,8 +90,8 @@ namespace detail {
         float32 fxaa_edge_sharpness = 1.5f;
 
 #if defined(LUCARIA_DEBUG)
-        object_guizmo_draw guizmo_draw = {};
-        std::unordered_map<float32x3, object_mesh_line, float32x3_hash> object_mesh_linees = {};
+        rendering_guizmos guizmo_draw = {};
+        std::unordered_map<float32x3, rendering_mesh_line, float32x3_hash> object_mesh_linees = {};
         bool show_physics_guizmos = false;
         bool last_show_physics_guizmos_key = false;
 #endif

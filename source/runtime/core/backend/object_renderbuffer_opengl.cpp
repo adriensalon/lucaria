@@ -3,14 +3,14 @@
 namespace lucaria {
 namespace detail {
 
-    object_renderbuffer::~object_renderbuffer()
+    rendering_renderbuffer::~rendering_renderbuffer()
     {
         if (ownership.owns()) {
             glDeleteRenderbuffers(1, &id);
         }
     }
 
-    object_renderbuffer::object_renderbuffer(const glm::uvec2 size, const uint32 format, const uint32 samples)
+    rendering_renderbuffer::rendering_renderbuffer(const glm::uvec2 size, const uint32 format, const uint32 samples)
         : size(size)
 		, internal_format(format)
     {
@@ -29,7 +29,7 @@ namespace detail {
         ownership.emplace();
     }
 
-    void object_renderbuffer::resize(const glm::uvec2 new_size)
+    void rendering_renderbuffer::resize(const glm::uvec2 new_size)
     {
         if (size == new_size) {
             return;

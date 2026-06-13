@@ -65,12 +65,12 @@ private:
     std::optional<glm::vec2> _interaction_screen_position = std::nullopt;
     handle_texture _interaction_texture = {};
     handle_geometry _viewport_geometry = {};
-    std::optional<detail::object_mesh> _viewport_mesh = std::nullopt;
+    std::optional<detail::asset_mesh> _viewport_mesh = std::nullopt;
     glm::vec2 _cursor_size = { 10, 10 };
     std::function<void()> _imgui_callback = nullptr;
     ImGuiContext* _imgui_context = nullptr;
-    std::optional<detail::object_texture> _imgui_color_texture = std::nullopt;
-    std::optional<detail::object_framebuffer> _imgui_framebuffer = std::nullopt;
+    std::optional<detail::asset_texture> _imgui_color_texture = std::nullopt;
+    std::optional<detail::rendering_framebuffer> _imgui_framebuffer = std::nullopt;
 
     template <typename ArchiveType>
     void save(ArchiveType& archive) const

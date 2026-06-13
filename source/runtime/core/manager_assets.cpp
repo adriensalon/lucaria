@@ -74,7 +74,7 @@ namespace detail {
                 _context->assets->async_fetches_waiting--; }, new _fetch_context { &assets, _fetch_file_path, std::move(callback) }, 0);
 #endif
 
-#if defined(LUCARIA_PLATFORM_ANDROID) || defined(LUCARIA_PLATFORM_GLFW)
+#if defined(LUCARIA_PLATFORM_ANDROID) || defined(LUCARIA_PLATFORM_WIN32) || defined(LUCARIA_PLATFORM_LINUX)
             std::thread([&assets, _fetch_file_path, callback]() {
                 assets.load_bytes(_fetch_file_path, callback);
                 assets.async_fetches_waiting--;

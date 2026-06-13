@@ -1,37 +1,27 @@
 #pragma once
 
+#include <lucaria/core/rendering_backend.hpp>
 #include <lucaria/core/rendering_shader.hpp>
-#include <lucaria/engine/asset_cubemap.hpp>
-#include <lucaria/engine/asset_mesh.hpp>
-#include <lucaria/engine/asset_texture.hpp>
-
-#if defined(LUCARIA_BACKEND_OPENGL)
-#include <lucaria/core/backend_opengl.hpp>
-#endif
-
-#if defined(LUCARIA_BACKEND_PSPGU)
-#include <lucaria/core/backend_pspgu.hpp>
-#endif
+#include <lucaria/core/rendering_texture.hpp>
+#include <lucaria/core/rendering_cubemap.hpp>
+#include <lucaria/core/rendering_mesh.hpp>
 
 namespace lucaria {
 namespace detail {
 
-    struct storage_save_context;
-    struct storage_load_context;
+    struct rendering_program {
+        rendering_program() = delete;
+        rendering_program(const rendering_program& other) = delete;
+        rendering_program& operator=(const rendering_program& other) = delete;
+        rendering_program(rendering_program&& other) = default;
+        rendering_program& operator=(rendering_program&& other) = default;
+        ~rendering_program();
 
-    struct object_program {
-        object_program() = delete;
-        object_program(const object_program& other) = delete;
-        object_program& operator=(const object_program& other) = delete;
-        object_program(object_program&& other) = default;
-        object_program& operator=(object_program&& other) = default;
-        ~object_program();
-
-        object_program(const object_shader& vertex, const object_shader& fragment);
+        rendering_program(const object_shader& vertex, const object_shader& fragment);
         void use() const;
-        void bind_attribute(const std::string& name, const object_mesh& mesh, const object_mesh_attribute attribute);
-        void bind_uniform(const std::string& name, const object_cubemap& cubemap, const uint32 slot = 0) const;
-        void bind_uniform(const std::string& name, const object_texture& texture, const uint32 slot = 0) const;
+        void bind_attribute(const std::string& name, const rendering_mesh& mesh, const rendering_mesh_attribute attribute);
+        void bind_uniform(const std::string& name, const rendering_cubemap& cubemap, const uint32 slot = 0) const;
+        void bind_uniform(const std::string& name, const rendering_texture& texture, const uint32 slot = 0) const;
         template <typename T>
         void bind_uniform(const std::string& name, const T& value);
         void draw(const bool use_depth = true) const;
@@ -40,7 +30,7 @@ namespace detail {
         static void clear(const bool clear_depth = false);
 
 #if defined(LUCARIA_DEBUG)
-        void bind_guizmo(const std::string& name, const object_mesh_line& from);
+        void bind_guizmo(const std::string& name, const rendering_mesh_line& from);
         void draw_guizmo() const;
 #endif
 

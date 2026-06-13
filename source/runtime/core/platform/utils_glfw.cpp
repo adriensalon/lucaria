@@ -1,4 +1,6 @@
-#if defined(LUCARIA_PLATFORM_GLFW) && defined(LUCARIA_BACKEND_OPENGL)
+#if defined(LUCARIA_PLATFORM_WIN32) || defined(LUCARIA_PLATFORM_LINUX)
+#if defined(LUCARIA_BACKEND_OPENGL)
 #define GLAD_GL_IMPLEMENTATION
 #include <glad/gl.h>
+#endif
 #endif

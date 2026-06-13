@@ -18,7 +18,7 @@ namespace detail {
         }
     };
 
-    struct object_guizmo_draw : public btIDebugDraw {
+    struct rendering_guizmos : public btIDebugDraw {
 
         std::unordered_map<float32x3, std::vector<float32x3>, float32x3_hash> positions = {};
         std::unordered_map<float32x3, std::vector<uint32x2>, float32x3_hash> indices = {};

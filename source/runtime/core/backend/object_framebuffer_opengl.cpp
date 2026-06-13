@@ -1,4 +1,5 @@
 #include <lucaria/core/rendering_framebuffer.hpp>
+#include <lucaria/core/app_error.hpp>
 
 namespace lucaria {
 namespace {
@@ -18,14 +19,14 @@ namespace {
 namespace detail {
 
     
-    object_framebuffer::~object_framebuffer()
+    rendering_framebuffer::~rendering_framebuffer()
     {
         if (ownership.owns()) {
             glDeleteFramebuffers(1, &id);
         }
     }
 
-    object_framebuffer::object_framebuffer()
+    rendering_framebuffer::rendering_framebuffer()
     {
         glGenFramebuffers(1, &id);
         glBindFramebuffer(GL_FRAMEBUFFER, id);
@@ -37,17 +38,17 @@ namespace detail {
         ownership.emplace();
     }
 
-    void object_framebuffer::use_default()
+    void rendering_framebuffer::use_default()
     {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void object_framebuffer::use()
+    void rendering_framebuffer::use()
     {
         glBindFramebuffer(GL_FRAMEBUFFER, id);
     }
 
-    void object_framebuffer::bind_color(const object_texture& color)
+    void rendering_framebuffer::bind_color(const rendering_texture& color)
     {
         const GLuint _texture_handle = static_cast<GLuint>(color.id);
 
@@ -68,7 +69,7 @@ namespace detail {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void object_framebuffer::bind_color(object_renderbuffer& color)
+    void rendering_framebuffer::bind_color(rendering_renderbuffer& color)
     {
         if (renderbuffer_color_id && renderbuffer_color_id.value() == color.id) {
             return;
@@ -87,7 +88,7 @@ namespace detail {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void object_framebuffer::bind_depth(object_texture& depth)
+    void rendering_framebuffer::bind_depth(rendering_texture& depth)
     {
         if (texture_depth_id && texture_depth_id.value() == depth.id) {
             return;
@@ -109,7 +110,7 @@ namespace detail {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void object_framebuffer::bind_depth(object_renderbuffer& depth)
+    void rendering_framebuffer::bind_depth(rendering_renderbuffer& depth)
     {
         if (renderbuffer_depth_id && renderbuffer_depth_id.value() == depth.id) {
             return;

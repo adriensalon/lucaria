@@ -1,18 +1,8 @@
 #pragma once
 
-#include <lucaria/core/utils_owning.hpp>
+#include <lucaria/core/rendering_mesh.hpp>
 #include <lucaria/engine/asset_geometry.hpp>
 #include <lucaria/engine/handle_asset.hpp>
-
-#if defined(LUCARIA_BACKEND_OPENGL)
-#include <lucaria/core/backend_opengl.hpp>
-#endif
-
-#if defined(LUCARIA_BACKEND_PSPGU)
-#include <lucaria/core/backend_pspgu.hpp>
-#endif
-
-#include <lucaria/core/serialize_context.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -20,106 +10,31 @@ namespace detail {
     struct storage_save_context;
     struct storage_load_context;
 
-    struct system_rendering;
-    struct manager_assets;
-
-    enum struct object_mesh_attribute {
-        position,
-        color,
-        normal,
-        tangent,
-        bitangent,
-        texcoord,
-        bones,
-        weights
-    };
-
-    enum struct object_mesh_origin {
+    enum struct asset_mesh_origin {
         path,
         data
     };
 
-    struct object_mesh {
-        object_mesh() = default;
-        object_mesh(const object_mesh& other) = delete;
-        object_mesh& operator=(const object_mesh& other) = delete;
-        object_mesh(object_mesh&& other) = default;
-        object_mesh& operator=(object_mesh&& other) = default;
-        ~object_mesh();
+    struct asset_mesh {
+        asset_mesh() = default;
+        asset_mesh(const asset_mesh& other) = delete;
+        asset_mesh& operator=(const asset_mesh& other) = delete;
+        asset_mesh(asset_mesh&& other) = default;
+        asset_mesh& operator=(asset_mesh&& other) = default;
 
-        object_mesh(const asset_geometry& geometry);
+        asset_mesh(const asset_geometry& geometry);
 
-        object_mesh_origin origin;
+        asset_mesh_origin origin;
         std::filesystem::path origin_path;
-        std::vector<float32x4x4> invposes;
-        uint32 size;
+		rendering_mesh mesh;
 
-        void save(storage_save_context& context) const
-        {
-            context.field("origin", origin);
-            if (origin == object_mesh_origin::path) {
-                context.field("origin_path", origin_path);
-            }
-        }
-
-        void load(storage_load_context& context)
-        {
-            context.field("origin", origin);
-            if (origin == object_mesh_origin::path) {
-                context.field("origin_path", origin_path);
-                const std::filesystem::path _path = origin_path;
-                context.fetch(_path, [this, _path](const std::vector<char>& bytes) {
-                    asset_geometry _geometry(bytes);
-                    *this = object_mesh(_geometry);
-                    origin_path = _path;
-                });
-            }
-        }
-
-#if defined(LUCARIA_BACKEND_OPENGL)
-        flag_owning ownership = {};
-        GLuint array_id = 0;
-        GLuint elements_id = 0;
-        std::unordered_map<object_mesh_attribute, GLuint> attribute_ids = {};
-#endif
-
-#if defined(LUCARIA_BACKEND_PSPGU)
-        flag_owning ownership = {};
-        void* vertices = nullptr; // aligned CPU memory
-        uint32 vertex_count = 0;
-        int vertex_type = 0; // GU_VERTEX_32BITF | GU_TEXTURE_32BITF...
-        int primitive = GU_TRIANGLES;
-#endif
-    };
-
-    struct object_mesh_line {
-        object_mesh_line() = delete;
-        object_mesh_line(const object_mesh_line& other) = delete;
-        object_mesh_line& operator=(const object_mesh_line& other) = delete;
-        object_mesh_line(object_mesh_line&& other) = default;
-        object_mesh_line& operator=(object_mesh_line&& other) = default;
-        ~object_mesh_line();
-
-        object_mesh_line(const asset_geometry& from);
-        object_mesh_line(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices);
-        void update(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices);
-
-        uint32 size;
-
-#if defined(LUCARIA_BACKEND_OPENGL)
-        flag_owning ownership = {};
-        GLuint array_handle = 0;
-        GLuint elements_handle = 0;
-        GLuint positions_handle = 0;
-#endif
-
-#if defined(LUCARIA_BACKEND_PSPGU)
-#endif
+        void save(storage_save_context& context) const;
+        void load(storage_load_context& context);
     };
 }
 
-struct handle_mesh : handle_asset<detail::object_mesh> {
-    using handle_asset<detail::object_mesh>::handle_asset;
+struct handle_mesh : handle_asset<detail::asset_mesh> {
+    using handle_asset<detail::asset_mesh>::handle_asset;
 };
 
 }

@@ -11,8 +11,8 @@ namespace detail {
     struct storage_save_context;
     struct storage_load_context;
 
-    struct object_cubemap;
-    struct object_texture;
+    struct asset_cubemap;
+    struct asset_texture;
     struct manager_assets;
 
     [[nodiscard]] std::filesystem::path resolve_profile(
@@ -30,17 +30,17 @@ namespace detail {
         data
     };
 
-    struct object_image {
-        object_image() = default;
-        object_image(const object_image& other) = delete;
-        object_image& operator=(const object_image& other) = delete;
-        object_image(object_image&& other) noexcept = default;
-        object_image& operator=(object_image&& other) noexcept = default;
+    struct asset_image {
+        asset_image() = default;
+        asset_image(const asset_image& other) = delete;
+        asset_image& operator=(const asset_image& other) = delete;
+        asset_image(asset_image&& other) noexcept = default;
+        asset_image& operator=(asset_image&& other) noexcept = default;
 
-        object_image(const std::vector<char>& bytes);
-        object_image(data_image&& data);
-        // object_image(const object_texture& texture);
-        // object_image(const object_cubemap& cubemap, const uint32 face_index);
+        asset_image(const std::vector<char>& bytes);
+        asset_image(data_image&& data);
+        // asset_image(const asset_texture& texture);
+        // asset_image(const asset_cubemap& cubemap, const uint32 face_index);
 
         object_image_origin origin;
         std::filesystem::path origin_path;
@@ -69,7 +69,7 @@ namespace detail {
                 const data_image_profile _profile = profile;
                 const std::filesystem::path _resolved_path = resolve_profile(context.objects, _path, _profile);
                 context.fetch(_resolved_path, [this, _path](const std::vector<char>& bytes) {
-                    *this = object_image(bytes);
+                    *this = asset_image(bytes);
                     origin_path = _path;
                 });
             }
@@ -80,8 +80,8 @@ namespace detail {
     };
 }
 
-struct handle_image : handle_asset<detail::object_image> {
-    using handle_asset<detail::object_image>::handle_asset;
+struct handle_image : handle_asset<detail::asset_image> {
+    using handle_asset<detail::asset_image>::handle_asset;
 
     /// @brief Resizes the image to the specified size
     /// @param size the new size of the image

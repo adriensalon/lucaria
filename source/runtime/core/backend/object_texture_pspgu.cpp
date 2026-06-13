@@ -19,13 +19,13 @@ namespace detail {
 		}
 	}
 
-    object_texture::object_texture(object_texture&& other)
+    asset_texture::asset_texture(asset_texture&& other)
     {
         implementation_pspgu.is_owning = false;
         *this = std::move(other);
     }
 
-    object_texture& object_texture::operator=(object_texture&& other)
+    asset_texture& asset_texture::operator=(asset_texture&& other)
     {
         if (implementation_pspgu.is_owning) {
             LUCARIA_DEBUG_ERROR("Object already owning resources")
@@ -39,7 +39,7 @@ namespace detail {
         return *this;
     }
 
-    object_texture::~object_texture()
+    asset_texture::~asset_texture()
     {
         if (implementation_pspgu.is_owning) {
             // glBindTexture(GL_TEXTURE_2D, 0);
@@ -47,13 +47,13 @@ namespace detail {
         }
     }
 
-    object_texture::object_texture(const object_image& from)
+    asset_texture::asset_texture(const asset_image& from)
     {
         
         implementation_pspgu.is_owning = true;
     }
 
-    object_texture::object_texture(const uint32x2 size)
+    asset_texture::asset_texture(const uint32x2 size)
         : size(size)
     {
 		implementation_pspgu.psm = GU_PSM_8888;
@@ -68,7 +68,7 @@ namespace detail {
         implementation_pspgu.is_owning = true;
     }
 
-    void object_texture::resize(const uint32x2 new_size)
+    void asset_texture::resize(const uint32x2 new_size)
     {
         if (size != new_size) {
             size = new_size;
@@ -76,7 +76,7 @@ namespace detail {
         }
     }
 
-    void object_texture::update(const object_image& image)
+    void asset_texture::update(const asset_image& image)
     {
 		// if (image.size != size) {
 			// resize(image.data.size);
@@ -92,7 +92,7 @@ namespace detail {
 		// sceKernelDcacheWritebackInvalidateAll();
     }
 
-    ImTextureID object_texture::imgui_texture() const
+    ImTextureID asset_texture::imgui_texture() const
     {
         return reinterpret_cast<ImTextureID>(implementation_pspgu.pixels);
     }

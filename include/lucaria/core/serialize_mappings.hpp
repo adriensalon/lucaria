@@ -163,28 +163,28 @@ namespace detail {
     struct mappings_manager_object_save {
         mappings_container_cache_vector_save<asset_animation> animations = {};
         mappings_container_cache_vector_save<asset_audio> audios = {};
-        mappings_container_cache_vector_save<object_cubemap> cubemaps = {};
+        mappings_container_cache_vector_save<asset_cubemap> cubemaps = {};
         mappings_container_cache_vector_save<object_event_track> event_tracks = {};
         mappings_container_cache_vector_save<object_font> fonts = {};
         mappings_container_cache_vector_save<asset_geometry> geometries = {};
-        mappings_container_cache_vector_save<object_image> images = {};
-        mappings_container_cache_vector_save<object_mesh> meshes = {};
+        mappings_container_cache_vector_save<asset_image> images = {};
+        mappings_container_cache_vector_save<asset_mesh> meshes = {};
         mappings_container_cache_vector_save<object_motion_track> motion_tracks = {};
         mappings_container_cache_vector_save<object_shape> shapes = {};
         mappings_container_cache_vector_save<object_skeleton> skeletons = {};
         mappings_container_cache_vector_save<object_sound_track> sound_tracks = {};
-        mappings_container_cache_vector_save<object_texture> textures = {};
+        mappings_container_cache_vector_save<asset_texture> textures = {};
 
         mappings_user_assets_save user_assets = {};
     };
 
     struct mappings_manager_object_load {
-        mappings_container_cache_vector_load<object_image> images = {};
-        mappings_container_cache_vector_load<object_texture> textures = {};
-        mappings_container_cache_vector_load<object_cubemap> cubemaps = {};
+        mappings_container_cache_vector_load<asset_image> images = {};
+        mappings_container_cache_vector_load<asset_texture> textures = {};
+        mappings_container_cache_vector_load<asset_cubemap> cubemaps = {};
         mappings_container_cache_vector_load<asset_geometry> geometries = {};
         mappings_container_cache_vector_load<object_shape> shapes = {};
-        mappings_container_cache_vector_load<object_mesh> meshes = {};
+        mappings_container_cache_vector_load<asset_mesh> meshes = {};
         mappings_container_cache_vector_load<object_font> fonts = {};
         mappings_container_cache_vector_load<asset_audio> audios = {};
         mappings_container_cache_vector_load<object_sound_track> sound_tracks = {};
@@ -268,17 +268,17 @@ namespace detail {
 
 LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::asset_animation, animations, animations, "animation")
 LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::asset_audio, audios, audios, "audio")
-LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_cubemap, cubemaps, cubemaps, "cubemap")
+LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::asset_cubemap, cubemaps, cubemaps, "cubemap")
 LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_event_track, event_tracks, event_tracks, "event_track")
 LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_font, fonts, fonts, "font")
 LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::asset_geometry, geometries, geometries, "geometry")
-LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_image, images, images, "image")
-LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_mesh, meshes, meshes, "mesh")
+LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::asset_image, images, images, "image")
+LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::asset_mesh, meshes, meshes, "mesh")
 LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_motion_track, motion_tracks, motion_tracks, "motion_track")
 LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_shape, shapes, shapes, "shape")
 LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_skeleton, skeletons, skeletons, "skeleton")
 LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_sound_track, sound_tracks, sound_tracks, "sound_track")
-LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_texture, textures, textures, "texture")
+LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::asset_texture, textures, textures, "texture")
 
 #undef LUCARIA_DEFINE_HANDLE_ASSET_MAPPING
 

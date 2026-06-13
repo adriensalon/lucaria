@@ -1,3 +1,5 @@
+#if !defined(LUCARIA_DISABLE_RELOAD)
+
 #include <future>
 
 #include <lucaria/core/app_error.hpp>
@@ -190,3 +192,5 @@ namespace detail {
 
 }
 }
+
+#endif

@@ -39,13 +39,13 @@ component_interface_spatial& component_interface_spatial::use_viewport(const han
     _viewport_geometry = geometry;
     _viewport_geometry._cached->fetched.on_ready([this](detail::asset_geometry& _on_ready_geometry) {
         _invert_texcoords(_on_ready_geometry.data.texcoords);
-        _viewport_mesh.emplace(_viewport_geometry._cached->fetched.value());
+        _viewport_mesh.emplace(_viewport_geometry.value());
     });
 
     _viewport_size = size;
     _imgui_color_texture.emplace(size);
     _imgui_framebuffer.emplace();
-    _imgui_framebuffer->bind_color(_imgui_color_texture.value());
+    _imgui_framebuffer->bind_color(_imgui_color_texture.value().texture);
     return *this;
 }
 

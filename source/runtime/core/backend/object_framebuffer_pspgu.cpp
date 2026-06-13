@@ -3,44 +3,44 @@
 namespace lucaria {
 namespace detail {
 
-    object_framebuffer::object_framebuffer(object_framebuffer&& other)
+    rendering_framebuffer::rendering_framebuffer(rendering_framebuffer&& other)
     {
     }
 
-    object_framebuffer& object_framebuffer::operator=(object_framebuffer&& other)
+    rendering_framebuffer& rendering_framebuffer::operator=(rendering_framebuffer&& other)
     {
         return *this;
     }
 
-    object_framebuffer::~object_framebuffer()
+    rendering_framebuffer::~rendering_framebuffer()
     {
     }
 
-    object_framebuffer::object_framebuffer()
+    rendering_framebuffer::rendering_framebuffer()
     {
     }
 
-    void object_framebuffer::use_default()
+    void rendering_framebuffer::use_default()
     {
     }
 
-    void object_framebuffer::use()
+    void rendering_framebuffer::use()
     {
     }
 
-    void object_framebuffer::bind_color(const object_texture& color)
+    void rendering_framebuffer::bind_color(const asset_texture& color)
     {
     }
 
-    void object_framebuffer::bind_color(object_renderbuffer& color)
+    void rendering_framebuffer::bind_color(rendering_renderbuffer& color)
     {
     }
 
-    void object_framebuffer::bind_depth(object_texture& depth)
+    void rendering_framebuffer::bind_depth(asset_texture& depth)
     {
     }
 
-    void object_framebuffer::bind_depth(object_renderbuffer& depth)
+    void rendering_framebuffer::bind_depth(rendering_renderbuffer& depth)
     {
     }
 

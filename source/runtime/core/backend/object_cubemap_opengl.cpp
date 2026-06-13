@@ -1,5 +1,5 @@
 #include <lucaria/core/manager_assets.hpp>
-#include <lucaria/engine/asset_cubemap.hpp>
+#include <lucaria/core/rendering_cubemap.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -32,17 +32,16 @@ namespace detail {
 
     }
 
-    object_cubemap::~object_cubemap()
+    rendering_cubemap::~rendering_cubemap()
     {
-        if (ownership.owns()) {
+        if (_ownership.owns()) {
             glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
             glDeleteTextures(1, &id);
         }
     }
 
-    object_cubemap::object_cubemap(const std::array<object_image, 6>& images)
-        : origin(images[0].origin == object_image_origin::path ? object_cubemap_origin::path : object_cubemap_origin::data)
-        , profile(images[0].profile)
+    rendering_cubemap::rendering_cubemap(const std::array<data_image, 6>& images)
+        : profile(images[0].profile)
     {
         glGenTextures(1, &id);
         glBindTexture(GL_TEXTURE_CUBE_MAP, id);
@@ -52,27 +51,27 @@ namespace detail {
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         for (uint32 _index = 0; _index < 6; ++_index) {
-            const object_image& _image = images[_index];
-            const GLsizei _pixels_count = static_cast<GLsizei>(_image.data.pixels.size());
-            const GLubyte* _pixels_ptr = _image.data.pixels.data();
+            const data_image& _image = images[_index];
+            const GLsizei _pixels_count = static_cast<GLsizei>(_image.pixels.size());
+            const GLubyte* _pixels_ptr = _image.pixels.data();
             const GLenum _side_enum = cubemap_enums[_index];
-            switch (_image.data.channels) {
+            switch (_image.channels) {
             case 3:
-                if ((_image.data.profile == data_image_profile::etc2_compressed)) {
-                    glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGB8_ETC2, _image.data.width, _image.data.height, 0, _pixels_count, _pixels_ptr);
-                } else if ((_image.data.profile == data_image_profile::s3tc_compressed)) {
-                    glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, _image.data.width, _image.data.height, 0, _pixels_count, _pixels_ptr);
+                if ((_image.profile == data_image_profile::etc2_compressed)) {
+                    glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGB8_ETC2, _image.width, _image.height, 0, _pixels_count, _pixels_ptr);
+                } else if ((_image.profile == data_image_profile::s3tc_compressed)) {
+                    glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, _image.width, _image.height, 0, _pixels_count, _pixels_ptr);
                 } else {
-                    glTexImage2D(_side_enum, 0, GL_RGB, _image.data.width, _image.data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
+                    glTexImage2D(_side_enum, 0, GL_RGB, _image.width, _image.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
                 }
                 break;
             case 4:
-                if ((_image.data.profile == data_image_profile::etc2_compressed)) {
-                    glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGBA8_ETC2_EAC, _image.data.width, _image.data.height, 0, _pixels_count, _pixels_ptr);
-                } else if ((_image.data.profile == data_image_profile::s3tc_compressed)) {
-                    glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, _image.data.width, _image.data.height, 0, _pixels_count, _pixels_ptr);
+                if ((_image.profile == data_image_profile::etc2_compressed)) {
+                    glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGBA8_ETC2_EAC, _image.width, _image.height, 0, _pixels_count, _pixels_ptr);
+                } else if ((_image.profile == data_image_profile::s3tc_compressed)) {
+                    glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, _image.width, _image.height, 0, _pixels_count, _pixels_ptr);
                 } else {
-                    glTexImage2D(_side_enum, 0, GL_RGBA, _image.data.width, _image.data.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);
+                    glTexImage2D(_side_enum, 0, GL_RGBA, _image.width, _image.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);
                 }
                 break;
             default:
@@ -81,7 +80,50 @@ namespace detail {
             }
         }
 
-        ownership.emplace();
+        _ownership.emplace();
+    }
+
+    rendering_cubemap::rendering_cubemap(const std::array<asset_image, 6>& images)
+        : profile(images[0].profile)
+    {
+        glGenTextures(1, &id);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, id);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        for (uint32 _index = 0; _index < 6; ++_index) {
+            const data_image& _image = images[_index].data;
+            const GLsizei _pixels_count = static_cast<GLsizei>(_image.pixels.size());
+            const GLubyte* _pixels_ptr = _image.pixels.data();
+            const GLenum _side_enum = cubemap_enums[_index];
+            switch (_image.channels) {
+            case 3:
+                if ((_image.profile == data_image_profile::etc2_compressed)) {
+                    glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGB8_ETC2, _image.width, _image.height, 0, _pixels_count, _pixels_ptr);
+                } else if ((_image.profile == data_image_profile::s3tc_compressed)) {
+                    glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, _image.width, _image.height, 0, _pixels_count, _pixels_ptr);
+                } else {
+                    glTexImage2D(_side_enum, 0, GL_RGB, _image.width, _image.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
+                }
+                break;
+            case 4:
+                if ((_image.profile == data_image_profile::etc2_compressed)) {
+                    glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGBA8_ETC2_EAC, _image.width, _image.height, 0, _pixels_count, _pixels_ptr);
+                } else if ((_image.profile == data_image_profile::s3tc_compressed)) {
+                    glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, _image.width, _image.height, 0, _pixels_count, _pixels_ptr);
+                } else {
+                    glTexImage2D(_side_enum, 0, GL_RGBA, _image.width, _image.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);
+                }
+                break;
+            default:
+                LUCARIA_DEBUG_ERROR("Invalid channels count, must be 3 or 4")
+                break;
+            }
+        }
+
+        _ownership.emplace();
     }
 
 }

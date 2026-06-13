@@ -14,7 +14,7 @@
 #include <lucaria/core/platform_web.hpp>
 #endif
 
-#if defined(LUCARIA_PLATFORM_GLFW)
+#if defined(LUCARIA_PLATFORM_WIN32) || defined(LUCARIA_PLATFORM_LINUX)
 #include <lucaria/core/platform_glfw.hpp>
 #endif
 
@@ -40,7 +40,7 @@ namespace detail {
         std::function<void()> stored_update_callback = nullptr;
         std::unordered_map<uint32, float32x2> pointer_accumulators = {};
         std::unique_ptr<ImFontAtlas> shared_font_atlas = nullptr;
-        std::optional<object_texture> shared_font_texture = std::nullopt;
+        std::optional<asset_texture> shared_font_texture = std::nullopt;
         ImGuiContext* screen_context = nullptr;
 
 #if defined(LUCARIA_PLATFORM_ANDROID)
@@ -58,7 +58,7 @@ namespace detail {
         bool is_mouse_locked = false;
 #endif
 
-#if defined(LUCARIA_PLATFORM_GLFW)
+#if defined(LUCARIA_PLATFORM_WIN32) || defined(LUCARIA_PLATFORM_LINUX)
         GLFWwindow* window = nullptr;
         bool is_mouse_locked = false;
         bool must_install_imgui_callbacks = true;

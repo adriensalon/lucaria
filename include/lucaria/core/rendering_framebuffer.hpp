@@ -2,34 +2,23 @@
 
 #include <lucaria/core/rendering_renderbuffer.hpp>
 
-#if defined(LUCARIA_BACKEND_OPENGL)
-#include <lucaria/core/backend_opengl.hpp>
-#endif
-
-#if defined(LUCARIA_BACKEND_PSPGU)
-#include <lucaria/core/backend_pspgu.hpp>
-#endif
-
 namespace lucaria {
 namespace detail {
 
-    struct storage_save_context;
-    struct storage_load_context;
+    struct rendering_framebuffer {
+        rendering_framebuffer(const rendering_framebuffer& other) = delete;
+        rendering_framebuffer& operator=(const rendering_framebuffer& other) = delete;
+        rendering_framebuffer(rendering_framebuffer&& other) = default;
+        rendering_framebuffer& operator=(rendering_framebuffer&& other) = default;
+        ~rendering_framebuffer();
 
-    struct object_framebuffer {
-        object_framebuffer(const object_framebuffer& other) = delete;
-        object_framebuffer& operator=(const object_framebuffer& other) = delete;
-        object_framebuffer(object_framebuffer&& other) = default;
-        object_framebuffer& operator=(object_framebuffer&& other) = default;
-        ~object_framebuffer();
-
-        object_framebuffer();
+        rendering_framebuffer();
         static void use_default();
         void use();
-        void bind_color(const object_texture& color);
-        void bind_color(object_renderbuffer& color);
-        void bind_depth(object_texture& depth);
-        void bind_depth(object_renderbuffer& depth);
+        void bind_color(const rendering_texture& color);
+        void bind_color(rendering_renderbuffer& color);
+        void bind_depth(rendering_texture& depth);
+        void bind_depth(rendering_renderbuffer& depth);
 
 #if defined(LUCARIA_BACKEND_OPENGL)
         flag_owning ownership = {};

@@ -6,10 +6,7 @@
 #include <AL/alc.h>
 
 #include <lucaria/core/app_error.hpp>
-
-#if defined(LUCARIA_BACKEND_OPENGL)
-#include <lucaria/core/backend_opengl.hpp>
-#endif
+#include <lucaria/core/rendering_backend.hpp>
 
 namespace lucaria {
 namespace detail {

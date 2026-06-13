@@ -1,30 +1,19 @@
 #pragma once
 
-#include <lucaria/engine/asset_texture.hpp>
-
-#if defined(LUCARIA_BACKEND_OPENGL)
-#include <lucaria/core/backend_opengl.hpp>
-#endif
-
-#if defined(LUCARIA_BACKEND_PSPGU)
-#include <lucaria/core/backend_pspgu.hpp>
-#endif
+#include <lucaria/core/rendering_texture.hpp>
 
 namespace lucaria {
 namespace detail {
 
-    struct storage_save_context;
-    struct storage_load_context;
+    struct rendering_renderbuffer {
+        rendering_renderbuffer() = delete;
+        rendering_renderbuffer(const rendering_renderbuffer& other) = delete;
+        rendering_renderbuffer& operator=(const rendering_renderbuffer& other) = delete;
+        rendering_renderbuffer(rendering_renderbuffer&& other) = default;
+        rendering_renderbuffer& operator=(rendering_renderbuffer&& other) = default;
+        ~rendering_renderbuffer();
 
-    struct object_renderbuffer {
-        object_renderbuffer() = delete;
-        object_renderbuffer(const object_renderbuffer& other) = delete;
-        object_renderbuffer& operator=(const object_renderbuffer& other) = delete;
-        object_renderbuffer(object_renderbuffer&& other) = default;
-        object_renderbuffer& operator=(object_renderbuffer&& other) = default;
-        ~object_renderbuffer();
-
-        object_renderbuffer(const uint32x2 size, const uint32 internal_format, const uint32 samples = 1);
+        rendering_renderbuffer(const uint32x2 size, const uint32 internal_format, const uint32 samples = 1);
         void resize(const uint32x2 new_size);
 
 #if defined(LUCARIA_BACKEND_OPENGL)

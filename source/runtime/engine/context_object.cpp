@@ -26,12 +26,12 @@ handle_cubemap context_object::fetch_cubemap(const std::array<std::filesystem::p
 {
     const std::string _cache_id = paths[0].string(); // TODO include all paths and profile
 
-    return fetch_asset<detail::object_cubemap, handle_cubemap>(
+    return fetch_asset<detail::asset_cubemap, handle_cubemap>(
         _cache_id,
-        [paths, profile](detail::object_cubemap& cubemap) {
-            cubemap.origin = detail::object_cubemap_origin::path;
+        [paths, profile](detail::asset_cubemap& cubemap) {
+            cubemap.origin = detail::asset_cubemap_origin::path;
             cubemap.origin_paths = paths;
-            cubemap.profile = profile.value_or(data_image_profile::binary);
+            cubemap.cubemap.profile = profile.value_or(data_image_profile::binary);
         });
 }
 
@@ -70,9 +70,9 @@ handle_geometry context_object::fetch_geometry(const std::filesystem::path& path
 
 handle_image context_object::fetch_image(const std::filesystem::path& path, const std::optional<data_image_profile> profile)
 {
-    return fetch_asset<detail::object_image, handle_image>(
+    return fetch_asset<detail::asset_image, handle_image>(
         path.string(),
-        [path, profile](detail::object_image& image) {
+        [path, profile](detail::asset_image& image) {
             image.origin = detail::object_image_origin::path;
             image.origin_path = path;
             image.profile = profile.value_or(data_image_profile {});
@@ -81,10 +81,10 @@ handle_image context_object::fetch_image(const std::filesystem::path& path, cons
 
 handle_mesh context_object::fetch_mesh(const std::filesystem::path& path)
 {
-    return fetch_asset<detail::object_mesh, handle_mesh>(
+    return fetch_asset<detail::asset_mesh, handle_mesh>(
         path.string(),
-        [path](detail::object_mesh& mesh) {
-            mesh.origin = detail::object_mesh_origin::path;
+        [path](detail::asset_mesh& mesh) {
+            mesh.origin = detail::asset_mesh_origin::path;
             mesh.origin_path = path;
         });
 }
@@ -134,9 +134,9 @@ handle_sound_track context_object::fetch_sound_track(const std::filesystem::path
 
 handle_texture context_object::fetch_texture(const std::filesystem::path& path, const std::optional<data_image_profile> profile)
 {
-    return fetch_asset<detail::object_texture, handle_texture>(
+    return fetch_asset<detail::asset_texture, handle_texture>(
         path.string(),
-        [path, profile](detail::object_texture& texture) {
+        [path, profile](detail::asset_texture& texture) {
             texture.origin = detail::object_texture_origin::path;
             texture.origin_path = path;
             // texture.profile = profile.value_or(data_image_profile {});

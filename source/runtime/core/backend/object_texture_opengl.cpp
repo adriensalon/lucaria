@@ -1,4 +1,5 @@
-#include <lucaria/engine/asset_texture.hpp>
+#include <lucaria/core/rendering_texture.hpp>
+#include <lucaria/core/app_error.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -21,48 +22,47 @@ namespace detail {
 
     }
 
-    object_texture::~object_texture()
+    rendering_texture::~rendering_texture()
     {
-        if (ownership.owns()) {
+        if (_ownership.owns()) {
             glBindTexture(GL_TEXTURE_2D, 0);
             glDeleteTextures(1, &id);
         }
     }
 
-    object_texture::object_texture(const object_image& from)
-        : origin(from.origin == object_image_origin::path ? object_texture_origin::path : object_texture_origin::data)
-		, profile(from.profile)
+    rendering_texture::rendering_texture(const data_image& from)
+        : profile(from.profile)
+        , size(from.width, from.height)
     {
-        size = { from.data.width, from.data.height };
         glGenTextures(1, &id);
         glBindTexture(GL_TEXTURE_2D, id);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        const GLsizei _pixels_count = static_cast<GLsizei>(from.data.pixels.size());
-        const GLubyte* _pixels_ptr = from.data.pixels.data();
+        const GLsizei _pixels_count = static_cast<GLsizei>(from.pixels.size());
+        const GLubyte* _pixels_ptr = from.pixels.data();
 
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        switch (from.data.channels) {
+        switch (from.channels) {
 
         case 3:
-            if ((from.data.profile == data_image_profile::etc2_compressed)) {
-                glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB8_ETC2, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
-            } else if ((from.data.profile == data_image_profile::s3tc_compressed)) {
-                glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
+            if ((from.profile == data_image_profile::etc2_compressed)) {
+                glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB8_ETC2, from.width, from.height, 0, _pixels_count, _pixels_ptr);
+            } else if ((from.profile == data_image_profile::s3tc_compressed)) {
+                glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, from.width, from.height, 0, _pixels_count, _pixels_ptr);
             } else {
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, from.data.width, from.data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, from.width, from.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
             }
             break;
 
         case 4:
-            if ((from.data.profile == data_image_profile::etc2_compressed)) {
-                glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA8_ETC2_EAC, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
-            } else if ((from.data.profile == data_image_profile::s3tc_compressed)) {
-                glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
+            if ((from.profile == data_image_profile::etc2_compressed)) {
+                glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA8_ETC2_EAC, from.width, from.height, 0, _pixels_count, _pixels_ptr);
+            } else if ((from.profile == data_image_profile::s3tc_compressed)) {
+                glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, from.width, from.height, 0, _pixels_count, _pixels_ptr);
             } else {
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, from.data.width, from.data.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, from.width, from.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);
             }
             break;
         default:
@@ -70,12 +70,12 @@ namespace detail {
             break;
         }
 
-        ownership.emplace();
+        _ownership.emplace();
     }
 
-    object_texture::object_texture(const uint32x2 size)
-        : origin(object_texture_origin::size)
-        , size(size)
+    rendering_texture::rendering_texture(const uint32x2 size)
+		// PROFILE ?
+        : size(size)
     {
         glGenTextures(1, &id);
         glBindTexture(GL_TEXTURE_2D, id);
@@ -84,13 +84,11 @@ namespace detail {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-        ownership.emplace();
+        _ownership.emplace();
     }
 
-    void object_texture::resize(const uint32x2 new_size)
+    void rendering_texture::resize(const uint32x2 new_size)
     {
-		origin = object_texture_origin::size;
-
         if (size != new_size) {
             size = new_size;
             glBindTexture(GL_TEXTURE_2D, id);
@@ -98,35 +96,35 @@ namespace detail {
         }
     }
 
-    void object_texture::update(const object_image& from)
+    void rendering_texture::update(const data_image& from)
     {
-		origin = object_texture_origin::data;
+		profile = from.profile;
 
-        const GLsizei _pixels_count = static_cast<GLsizei>(from.data.pixels.size());
-        const GLubyte* _pixels_ptr = from.data.pixels.data();
+        const GLsizei _pixels_count = static_cast<GLsizei>(from.pixels.size());
+        const GLubyte* _pixels_ptr = from.pixels.data();
 
         glBindTexture(GL_TEXTURE_2D, id);
         glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        switch (from.data.channels) {
+        switch (from.channels) {
 
         case 3:
-            if ((from.data.profile == data_image_profile::etc2_compressed)) {
-                glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB8_ETC2, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
-            } else if ((from.data.profile == data_image_profile::s3tc_compressed)) {
-                glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
+            if ((from.profile == data_image_profile::etc2_compressed)) {
+                glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB8_ETC2, from.width, from.height, 0, _pixels_count, _pixels_ptr);
+            } else if ((from.profile == data_image_profile::s3tc_compressed)) {
+                glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, from.width, from.height, 0, _pixels_count, _pixels_ptr);
             } else {
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, from.data.width, from.data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, from.width, from.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
             }
             break;
 
         case 4:
-            if ((from.data.profile == data_image_profile::etc2_compressed)) {
-                glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA8_ETC2_EAC, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
-            } else if ((from.data.profile == data_image_profile::s3tc_compressed)) {
-                glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
+            if ((from.profile == data_image_profile::etc2_compressed)) {
+                glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA8_ETC2_EAC, from.width, from.height, 0, _pixels_count, _pixels_ptr);
+            } else if ((from.profile == data_image_profile::s3tc_compressed)) {
+                glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, from.width, from.height, 0, _pixels_count, _pixels_ptr);
             } else {
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, from.data.width, from.data.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, from.width, from.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);
             }
             break;
 
@@ -136,7 +134,7 @@ namespace detail {
         }
     }
 
-    ImTextureID object_texture::imgui_texture() const
+    ImTextureID rendering_texture::imgui_texture() const
     {
         return reinterpret_cast<ImTextureID>(static_cast<std::uintptr_t>(id));
     }

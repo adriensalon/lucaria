@@ -375,16 +375,16 @@ namespace detail {
         }
         if (!scene_color_texture) {
             scene_color_texture.emplace(window.screen_size);
-            scene_framebuffer->bind_color(scene_color_texture.value());
+            scene_framebuffer->bind_color(scene_color_texture.value().texture);
         } else {
             scene_color_texture->resize(window.screen_size);
         }
         if (!scene_depth_renderbuffer) {
 #if defined(LUCARIA_BACKEND_OPENGL)
-            scene_depth_renderbuffer = object_renderbuffer(window.screen_size, GL_DEPTH_COMPONENT24);
+            scene_depth_renderbuffer = rendering_renderbuffer(window.screen_size, GL_DEPTH_COMPONENT24);
 #endif
 #if defined(LUCARIA_BACKEND_PSPGU)
-            // scene_depth_renderbuffer = object_renderbuffer(window.screen_size, GL_DEPTH_COMPONENT24); TODO
+            // scene_depth_renderbuffer = rendering_renderbuffer(window.screen_size, GL_DEPTH_COMPONENT24); TODO
 #endif
             scene_framebuffer->bind_depth(scene_depth_renderbuffer.value());
         } else {
@@ -392,8 +392,8 @@ namespace detail {
         }
 
         scene_framebuffer->use();
-        object_program::viewport(window.screen_size);
-        object_program::clear(true);
+        rendering_program::viewport(window.screen_size);
+        rendering_program::clear(true);
     }
 
     void system_rendering::update_compute_projection(manager_window& window, manager_scenes& scenes)
@@ -466,8 +466,8 @@ namespace detail {
     {
         if (skybox_cubemap) {
             static bool _is_skybox_setup = false;
-            static std::optional<object_mesh> _persistent_skybox_mesh = std::nullopt;
-            static std::optional<object_program> _persistent_skybox_program = std::nullopt;
+            static std::optional<asset_mesh> _persistent_skybox_mesh = std::nullopt;
+            static std::optional<rendering_program> _persistent_skybox_program = std::nullopt;
 
             if (!_is_skybox_setup) {
                 data_geometry _geometry_data;
@@ -483,13 +483,13 @@ namespace detail {
                 _is_skybox_setup = true;
             }
 
-            object_mesh& _skybox_mesh = _persistent_skybox_mesh.value();
-            object_program& _skybox_program = _persistent_skybox_program.value();
-            object_cubemap& _skybox_cubemap = skybox_cubemap._cached->fetched.value();
+            rendering_mesh& _skybox_mesh = _persistent_skybox_mesh.value().mesh;
+            rendering_program& _skybox_program = _persistent_skybox_program.value();
+            rendering_cubemap& _skybox_cubemap = skybox_cubemap.value().cubemap;
             const float32x4x4 skybox_rotation_matrix = glm::rotate(glm::identity<float32x4x4>(), glm::radians(skybox_rotation), float32x3(0, 1, 0));
             const float32x4x4 _no_translation_view_projection = camera_projection * float32x4x4(float32x3x3(camera_view)) * skybox_rotation_matrix;
             _skybox_program.use();
-            _skybox_program.bind_attribute("vert_position", _skybox_mesh, object_mesh_attribute::position);
+            _skybox_program.bind_attribute("vert_position", _skybox_mesh, rendering_mesh_attribute::position);
             _skybox_program.bind_uniform("uniform_color", _skybox_cubemap, 0);
             _skybox_program.bind_uniform("uniform_projection", _no_translation_view_projection);
             _skybox_program.draw(false);
@@ -499,22 +499,22 @@ namespace detail {
     void system_rendering::update_draw_blockout_meshes(manager_scenes& scenes)
     {
         static bool _is_program_setup = false;
-        static std::optional<object_program> _persistent_blockout_program = std::nullopt;
+        static std::optional<rendering_program> _persistent_blockout_program = std::nullopt;
         if (!_is_program_setup) {
             object_shader _blockout_vertex_shader((data_shader { data_shader_profile::glsl, blockout_vertex }));
             object_shader _blockout_fragment_shader(data_shader { data_shader_profile::glsl, blockout_fragment });
-            _persistent_blockout_program = object_program(_blockout_vertex_shader, _blockout_fragment_shader);
+            _persistent_blockout_program = rendering_program(_blockout_vertex_shader, _blockout_fragment_shader);
             _is_program_setup = true;
         }
 
-        object_program& _blockout_program = _persistent_blockout_program.value();
+        rendering_program& _blockout_program = _persistent_blockout_program.value();
         scenes.each_view<component_model_blockout, component_transform>([&](component_model_blockout& _model, component_transform& _transform) {
             if (_model._mesh) {
                 const float32x4x4 _model_view_projection = camera_view_projection * _transform._transform;
-                const object_mesh& _mesh = _model._mesh._cached->fetched.value();
+                const rendering_mesh& _mesh = _model._mesh.value().mesh;
                 _blockout_program.use();
-                _blockout_program.bind_attribute("vert_position", _mesh, object_mesh_attribute::position);
-                _blockout_program.bind_attribute("vert_normal", _mesh, object_mesh_attribute::normal);
+                _blockout_program.bind_attribute("vert_position", _mesh, rendering_mesh_attribute::position);
+                _blockout_program.bind_attribute("vert_normal", _mesh, rendering_mesh_attribute::normal);
                 _blockout_program.bind_uniform("uniform_view", _model_view_projection);
                 _blockout_program.draw();
             }
@@ -522,10 +522,10 @@ namespace detail {
 
         scenes.each_view<component_model_blockout>(exclude<component_transform>, [&](component_model_blockout& _model) {
             if (_model._mesh) {
-                const object_mesh& _mesh = _model._mesh._cached->fetched.value();
+                const rendering_mesh& _mesh = _model._mesh.value().mesh;
                 _blockout_program.use();
-                _blockout_program.bind_attribute("vert_position", _mesh, object_mesh_attribute::position);
-                _blockout_program.bind_attribute("vert_normal", _mesh, object_mesh_attribute::normal);
+                _blockout_program.bind_attribute("vert_position", _mesh, rendering_mesh_attribute::position);
+                _blockout_program.bind_attribute("vert_normal", _mesh, rendering_mesh_attribute::normal);
                 _blockout_program.bind_uniform("uniform_view", camera_view_projection);
                 _blockout_program.draw();
             }
@@ -538,19 +538,19 @@ namespace detail {
         if (!_is_program_setup) {
             object_shader _unlit_vertex_shader(data_shader { data_shader_profile::glsl, unlit_vertex });
             object_shader _unlit_fragment_shader(data_shader { data_shader_profile::glsl, unlit_fragment });
-            _persistent_unlit_program = object_program(_unlit_vertex_shader, _unlit_fragment_shader);
+            _persistent_unlit_program = rendering_program(_unlit_vertex_shader, _unlit_fragment_shader);
             _is_program_setup = true;
         }
 
-        object_program& _unlit_program = _persistent_unlit_program.value();
+        rendering_program& _unlit_program = _persistent_unlit_program.value();
         scenes.each_view<component_model_unlit, component_transform>(exclude<component_animator>, [&](component_model_unlit& _model, component_transform& _transform) {
             if (_model._mesh && _model._color) {
                 const float32x4x4 _model_view_projection = camera_view_projection * _transform._transform;
-                const object_mesh& _mesh = _model._mesh._cached->fetched.value();
-                const object_texture& _color = _model._color._cached->fetched.value();
+                const rendering_mesh& _mesh = _model._mesh.value().mesh;
+                const rendering_texture& _color = _model._color.value().texture;
                 _unlit_program.use();
-                _unlit_program.bind_attribute("vert_position", _mesh, object_mesh_attribute::position);
-                _unlit_program.bind_attribute("vert_texcoord", _mesh, object_mesh_attribute::texcoord);
+                _unlit_program.bind_attribute("vert_position", _mesh, rendering_mesh_attribute::position);
+                _unlit_program.bind_attribute("vert_texcoord", _mesh, rendering_mesh_attribute::texcoord);
                 _unlit_program.bind_uniform("uniform_view", _model_view_projection);
                 _unlit_program.bind_uniform("uniform_color", _color, 0);
                 _unlit_program.draw();
@@ -559,11 +559,11 @@ namespace detail {
 
         scenes.each_view<component_model_unlit>(exclude<component_transform, component_animator>, [&](component_model_unlit& _model) {
             if (_model._mesh && _model._color) {
-                const object_mesh& _mesh = _model._mesh._cached->fetched.value();
-                const object_texture& _color = _model._color._cached->fetched.value();
+                const rendering_mesh& _mesh = _model._mesh.value().mesh;
+                const rendering_texture& _color = _model._color.value().texture;
                 _unlit_program.use();
-                _unlit_program.bind_attribute("vert_position", _mesh, object_mesh_attribute::position);
-                _unlit_program.bind_attribute("vert_texcoord", _mesh, object_mesh_attribute::texcoord);
+                _unlit_program.bind_attribute("vert_position", _mesh, rendering_mesh_attribute::position);
+                _unlit_program.bind_attribute("vert_texcoord", _mesh, rendering_mesh_attribute::texcoord);
                 _unlit_program.bind_uniform("uniform_color", _color, 0);
                 _unlit_program.bind_uniform("uniform_view", camera_view_projection);
                 _unlit_program.draw();
@@ -574,25 +574,25 @@ namespace detail {
     void system_rendering::update_draw_unlit_skinned_meshes(manager_scenes& scenes)
     {
         static bool _is_program_setup = false;
-        static std::optional<object_program> _persistent_unlit_skinned_program = std::nullopt;
+        static std::optional<rendering_program> _persistent_unlit_skinned_program = std::nullopt;
         if (!_is_program_setup) {
             object_shader _unlit_fragment_shader(data_shader { data_shader_profile::glsl, unlit_fragment });
             object_shader _unlit_skinned_vertex_shader(data_shader { data_shader_profile::glsl, unlit_skinned_vertex });
-            _persistent_unlit_skinned_program = object_program(_unlit_skinned_vertex_shader, _unlit_fragment_shader);
+            _persistent_unlit_skinned_program = rendering_program(_unlit_skinned_vertex_shader, _unlit_fragment_shader);
             _is_program_setup = true;
         }
 
-        object_program& _unlit_skinned_program = _persistent_unlit_skinned_program.value();
+        rendering_program& _unlit_skinned_program = _persistent_unlit_skinned_program.value();
         scenes.each_view<component_model_unlit, component_transform, component_animator>([&](component_model_unlit& _model, component_transform& _transform, component_animator& animator) {
             if (_model._mesh && _model._color && animator._skeleton.has_value()) {
                 const float32x4x4 _model_view_projection = camera_view_projection * _transform._transform;
-                const object_mesh& _mesh = _model._mesh._cached->fetched.value();
-                const object_texture& _color = _model._color._cached->fetched.value();
+                const rendering_mesh& _mesh = _model._mesh.value().mesh;
+                const rendering_texture& _color = _model._color.value().texture;
                 _unlit_skinned_program.use();
-                _unlit_skinned_program.bind_attribute("vert_position", _mesh, object_mesh_attribute::position);
-                _unlit_skinned_program.bind_attribute("vert_texcoord", _mesh, object_mesh_attribute::texcoord);
-                _unlit_skinned_program.bind_attribute("vert_bones", _mesh, object_mesh_attribute::bones);
-                _unlit_skinned_program.bind_attribute("vert_weights", _mesh, object_mesh_attribute::weights);
+                _unlit_skinned_program.bind_attribute("vert_position", _mesh, rendering_mesh_attribute::position);
+                _unlit_skinned_program.bind_attribute("vert_texcoord", _mesh, rendering_mesh_attribute::texcoord);
+                _unlit_skinned_program.bind_attribute("vert_bones", _mesh, rendering_mesh_attribute::bones);
+                _unlit_skinned_program.bind_attribute("vert_weights", _mesh, rendering_mesh_attribute::weights);
                 _unlit_skinned_program.bind_uniform("uniform_view", _model_view_projection);
                 _unlit_skinned_program.bind_uniform("uniform_bones_invposes[0]", _mesh.invposes);
                 _unlit_skinned_program.bind_uniform("uniform_bones_transforms[0]", animator._model_transforms);
@@ -603,13 +603,13 @@ namespace detail {
 
         scenes.each_view<component_model_unlit, component_animator>(exclude<component_transform>, [&](component_model_unlit& _model, component_animator& animator) {
             if (_model._mesh && _model._color && animator._skeleton.has_value()) {
-                const object_mesh& _mesh = _model._mesh._cached->fetched.value();
-                const object_texture& _color = _model._color._cached->fetched.value();
+                const rendering_mesh& _mesh = _model._mesh.value().mesh;
+                const rendering_texture& _color = _model._color.value().texture;
                 _unlit_skinned_program.use();
-                _unlit_skinned_program.bind_attribute("vert_position", _mesh, object_mesh_attribute::position);
-                _unlit_skinned_program.bind_attribute("vert_texcoord", _mesh, object_mesh_attribute::texcoord);
-                _unlit_skinned_program.bind_attribute("vert_bones", _mesh, object_mesh_attribute::bones);
-                _unlit_skinned_program.bind_attribute("vert_weights", _mesh, object_mesh_attribute::weights);
+                _unlit_skinned_program.bind_attribute("vert_position", _mesh, rendering_mesh_attribute::position);
+                _unlit_skinned_program.bind_attribute("vert_texcoord", _mesh, rendering_mesh_attribute::texcoord);
+                _unlit_skinned_program.bind_attribute("vert_bones", _mesh, rendering_mesh_attribute::bones);
+                _unlit_skinned_program.bind_attribute("vert_weights", _mesh, rendering_mesh_attribute::weights);
                 _unlit_skinned_program.bind_uniform("uniform_view", camera_view_projection);
                 _unlit_skinned_program.bind_uniform("uniform_bones_transforms[0]", animator._model_transforms);
                 _unlit_skinned_program.bind_uniform("uniform_bones_invposes[0]", _mesh.invposes);
@@ -636,7 +636,7 @@ namespace detail {
 
                 std::optional<float32x2> _raycasted_uvs;
                 if (interface._use_interaction) {
-                    _raycasted_uvs = viewport_raycast(camera_view, interface._viewport_geometry._cached->fetched.value());
+                    _raycasted_uvs = viewport_raycast(camera_view, interface._viewport_geometry.value());
                     if (_raycasted_uvs) {
                         interface._interaction_screen_position = {
                             (_raycasted_uvs.value().x) * interface._viewport_size.x,
@@ -650,7 +650,7 @@ namespace detail {
                 }
 
                 interface._imgui_framebuffer->use();
-                object_program::clear(false);
+                rendering_program::clear(false);
 #if defined(LUCARIA_BACKEND_OPENGL)
                 ImGui_ImplOpenGL3_NewFrame();
 #endif
@@ -684,11 +684,11 @@ namespace detail {
 #endif
 
                 scene_framebuffer->use();
-                object_program& _unlit_program = _persistent_unlit_program.value();
+                rendering_program& _unlit_program = _persistent_unlit_program.value();
                 _unlit_program.use();
-                _unlit_program.bind_attribute("vert_position", interface._viewport_mesh.value(), object_mesh_attribute::position);
-                _unlit_program.bind_attribute("vert_texcoord", interface._viewport_mesh.value(), object_mesh_attribute::texcoord);
-                _unlit_program.bind_uniform("uniform_color", interface._imgui_color_texture.value(), 0);
+                _unlit_program.bind_attribute("vert_position", interface._viewport_mesh.value().mesh, rendering_mesh_attribute::position);
+                _unlit_program.bind_attribute("vert_texcoord", interface._viewport_mesh.value().mesh, rendering_mesh_attribute::texcoord);
+                _unlit_program.bind_uniform("uniform_color", interface._imgui_color_texture.value().texture, 0);
                 _unlit_program.bind_uniform("uniform_view", camera_view_projection);
                 _unlit_program.draw();
             }
@@ -725,8 +725,8 @@ namespace detail {
     void system_rendering::update_draw_post_processing(manager_window& window, manager_scenes& scenes)
     {
         static bool _is_post_processing_setup = false;
-        static std::optional<object_mesh> _persistent_post_processing_mesh = std::nullopt;
-        static std::optional<object_program> _persistent_post_processing_program = std::nullopt;
+        static std::optional<asset_mesh> _persistent_post_processing_mesh = std::nullopt;
+        static std::optional<rendering_program> _persistent_post_processing_program = std::nullopt;
 
         if (!_is_post_processing_setup) {
             data_geometry _geometry_data;
@@ -748,18 +748,18 @@ namespace detail {
             object_shader _post_processing_fragment_shader(data_shader { data_shader_profile::glsl, post_processing_fragment });
 
             _persistent_post_processing_mesh.emplace(_post_processing_geometry);
-            _persistent_post_processing_program = object_program(_post_processing_vertex_shader, _post_processing_fragment_shader);
+            _persistent_post_processing_program = rendering_program(_post_processing_vertex_shader, _post_processing_fragment_shader);
             _is_post_processing_setup = true;
         }
 
-        object_mesh& _post_processing_mesh = _persistent_post_processing_mesh.value();
-        object_program& _post_processing_program = _persistent_post_processing_program.value();
+        rendering_mesh& _post_processing_mesh = _persistent_post_processing_mesh.value().mesh;
+        rendering_program& _post_processing_program = _persistent_post_processing_program.value();
 
-        object_framebuffer::use_default();
+        rendering_framebuffer::use_default();
 
         _post_processing_program.use();
-        _post_processing_program.bind_attribute("vert_position", _post_processing_mesh, object_mesh_attribute::position);
-        _post_processing_program.bind_uniform("uniform_color", scene_color_texture.value(), 0);
+        _post_processing_program.bind_attribute("vert_position", _post_processing_mesh, rendering_mesh_attribute::position);
+        _post_processing_program.bind_uniform("uniform_color", scene_color_texture.value().texture, 0);
         _post_processing_program.bind_uniform("uniform_texel_size", 1.f / float32x2(window.screen_size));
 
         // fxaa
@@ -790,22 +790,22 @@ namespace detail {
                 const std::vector<float32x3>& _positions = _pair.second;
                 const std::vector<glm::uvec2>& _indices = guizmo_draw.indices.at(_color);
                 if (object_mesh_linees.find(_color) == object_mesh_linees.end()) {
-                    object_mesh_linees.emplace(_color, object_mesh_line(_positions, _indices));
+                    object_mesh_linees.emplace(_color, rendering_mesh_line(_positions, _indices));
                 } else {
                     object_mesh_linees.at(_color).update(_positions, _indices);
                 }
             }
             static bool _is_program_setup = false;
-            static std::optional<object_program> _persistent_guizmo_program = std::nullopt;
+            static std::optional<rendering_program> _persistent_guizmo_program = std::nullopt;
             if (!_is_program_setup) {
                 object_shader _guizmo_vertex_shader(data_shader { data_shader_profile::glsl, guizmo_vertex });
                 object_shader _guizmo_fragment_shader(data_shader { data_shader_profile::glsl, guizmo_fragment });
-                _persistent_guizmo_program = object_program(_guizmo_vertex_shader, _guizmo_fragment_shader);
+                _persistent_guizmo_program = rendering_program(_guizmo_vertex_shader, _guizmo_fragment_shader);
                 _is_program_setup = true;
             }
-            object_program& _guizmo_program = _persistent_guizmo_program.value();
+            rendering_program& _guizmo_program = _persistent_guizmo_program.value();
             _guizmo_program.use();
-            for (const std::pair<const float32x3, object_mesh_line>& _pair : object_mesh_linees) {
+            for (const std::pair<const float32x3, rendering_mesh_line>& _pair : object_mesh_linees) {
                 _guizmo_program.bind_guizmo("vert_position", _pair.second);
                 _guizmo_program.bind_uniform("uniform_color", _pair.first);
                 _guizmo_program.bind_uniform("uniform_mvp", camera_view_projection);

@@ -9,15 +9,15 @@ namespace detail {
 
     namespace {
 
-        static const std::unordered_map<object_mesh_attribute, uint32> _mesh_attribute_sizes = {
-            { object_mesh_attribute::position, 3 },
-            { object_mesh_attribute::color, 3 },
-            { object_mesh_attribute::normal, 3 },
-            { object_mesh_attribute::tangent, 3 },
-            { object_mesh_attribute::bitangent, 3 },
-            { object_mesh_attribute::texcoord, 2 },
-            { object_mesh_attribute::bones, 4 },
-            { object_mesh_attribute::weights, 4 },
+        static const std::unordered_map<rendering_mesh_attribute, uint32> _mesh_attribute_sizes = {
+            { rendering_mesh_attribute::position, 3 },
+            { rendering_mesh_attribute::color, 3 },
+            { rendering_mesh_attribute::normal, 3 },
+            { rendering_mesh_attribute::tangent, 3 },
+            { rendering_mesh_attribute::bitangent, 3 },
+            { rendering_mesh_attribute::texcoord, 2 },
+            { rendering_mesh_attribute::bones, 4 },
+            { rendering_mesh_attribute::weights, 4 },
         };
 
         [[nodiscard]] static GLuint _make_shader(const GLenum type, const std::string& text)
@@ -85,7 +85,7 @@ namespace detail {
 
     }
 
-    object_program::~object_program()
+    rendering_program::~rendering_program()
     {
         if (ownership.owns()) {
             glUseProgram(0);
@@ -93,7 +93,7 @@ namespace detail {
         }
     }
 
-    object_program::object_program(const object_shader& vertex, const object_shader& fragment)
+    rendering_program::rendering_program(const object_shader& vertex, const object_shader& fragment)
     {
         GLuint _vertex_id = _make_shader(GL_VERTEX_SHADER, vertex.data.text);
         GLuint _fragment_id = _make_shader(GL_FRAGMENT_SHADER, fragment.data.text);
@@ -125,7 +125,7 @@ namespace detail {
 		ownership.emplace();
     }
 
-    void object_program::use() const
+    void rendering_program::use() const
     {
         glUseProgram(id);
         glEnable(GL_DEPTH_TEST);
@@ -133,11 +133,11 @@ namespace detail {
         glCullFace(GL_BACK);
     }
 
-    void object_program::bind_attribute(const std::string& name, const object_mesh& mesh, const object_mesh_attribute attribute)
+    void rendering_program::bind_attribute(const std::string& name, const rendering_mesh& mesh, const rendering_mesh_attribute attribute)
     {
         bound_indices_count = mesh.size;
         bound_array_id = mesh.array_id;
-        const std::unordered_map<object_mesh_attribute, GLuint>& _attribute_handles = mesh.attribute_ids;
+        const std::unordered_map<rendering_mesh_attribute, GLuint>& _attribute_handles = mesh.attribute_ids;
         if (reflected_attributes.find(name) == reflected_attributes.end()) {
             LUCARIA_DEBUG_ERROR("Name " + name + " not found in object_shader")
         }
@@ -148,7 +148,7 @@ namespace detail {
             LUCARIA_DEBUG_ERROR("Attribute " + std::to_string(static_cast<int>(attribute)) + " is not in mesh")
         }
         glBindBuffer(GL_ARRAY_BUFFER, _attribute_handles.at(attribute));
-        if (attribute == object_mesh_attribute::bones) {
+        if (attribute == rendering_mesh_attribute::bones) {
             glVertexAttribIPointer(_location, _size, GL_INT, _size * sizeof(GLint), (void*)0);
         } else {
             glVertexAttribPointer(_location, _size, GL_FLOAT, GL_FALSE, _size * sizeof(float32), (void*)0);
@@ -156,7 +156,7 @@ namespace detail {
         glEnableVertexAttribArray(_location);
     }
 
-    void object_program::bind_uniform(const std::string& name, const object_cubemap& cubemap, const GLuint slot) const
+    void rendering_program::bind_uniform(const std::string& name, const rendering_cubemap& cubemap, const GLuint slot) const
     {
         GLint _location = reflected_uniforms.at(name);
         glUniform1i(_location, slot);
@@ -164,7 +164,7 @@ namespace detail {
         glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.id);
     }
 
-    void object_program::bind_uniform(const std::string& name, const object_texture& texture, const GLuint slot) const
+    void rendering_program::bind_uniform(const std::string& name, const rendering_texture& texture, const GLuint slot) const
     {
         GLint _location = reflected_uniforms.at(name);
         glUniform1i(_location, slot);
@@ -173,21 +173,21 @@ namespace detail {
     }
 
     template <>
-    void object_program::bind_uniform<int32>(const std::string& name, const int32& value)
+    void rendering_program::bind_uniform<int32>(const std::string& name, const int32& value)
     {
         const GLint _location = reflected_uniforms.at(name);
         glUniform1i(_location, value);
     }
 
     template <>
-    void object_program::bind_uniform<float32>(const std::string& name, const float32& value)
+    void rendering_program::bind_uniform<float32>(const std::string& name, const float32& value)
     {
         const GLint _location = reflected_uniforms.at(name);
         glUniform1f(_location, value);
     }
 
     template <>
-    void object_program::bind_uniform<std::vector<float32>>(const std::string& name, const std::vector<float32>& value)
+    void rendering_program::bind_uniform<std::vector<float32>>(const std::string& name, const std::vector<float32>& value)
     {
         const GLint _location = reflected_uniforms.at(name);
         const GLuint _count = static_cast<GLuint>(value.size());
@@ -196,14 +196,14 @@ namespace detail {
     }
 
     template <>
-    void object_program::bind_uniform<float32x2>(const std::string& name, const float32x2& value)
+    void rendering_program::bind_uniform<float32x2>(const std::string& name, const float32x2& value)
     {
         const GLint _location = reflected_uniforms.at(name);
         glUniform2f(_location, value.x, value.y);
     }
 
     template <>
-    void object_program::bind_uniform<std::vector<float32x2>>(const std::string& name, const std::vector<float32x2>& value)
+    void rendering_program::bind_uniform<std::vector<float32x2>>(const std::string& name, const std::vector<float32x2>& value)
     {
         const GLint _location = reflected_uniforms.at(name);
         const GLuint _count = static_cast<GLuint>(value.size());
@@ -212,14 +212,14 @@ namespace detail {
     }
 
     template <>
-    void object_program::bind_uniform<float32x3>(const std::string& name, const float32x3& value)
+    void rendering_program::bind_uniform<float32x3>(const std::string& name, const float32x3& value)
     {
         const GLint _location = reflected_uniforms.at(name);
         glUniform3f(_location, value.x, value.y, value.z);
     }
 
     template <>
-    void object_program::bind_uniform<std::vector<float32x3>>(const std::string& name, const std::vector<float32x3>& value)
+    void rendering_program::bind_uniform<std::vector<float32x3>>(const std::string& name, const std::vector<float32x3>& value)
     {
         const GLint _location = reflected_uniforms.at(name);
         const GLuint _count = static_cast<GLuint>(value.size());
@@ -228,14 +228,14 @@ namespace detail {
     }
 
     template <>
-    void object_program::bind_uniform<float32x4>(const std::string& name, const float32x4& value)
+    void rendering_program::bind_uniform<float32x4>(const std::string& name, const float32x4& value)
     {
         const GLint _location = reflected_uniforms.at(name);
         glUniform4f(_location, value.x, value.y, value.z, value.w);
     }
 
     template <>
-    void object_program::bind_uniform<std::vector<float32x4>>(const std::string& name, const std::vector<float32x4>& value)
+    void rendering_program::bind_uniform<std::vector<float32x4>>(const std::string& name, const std::vector<float32x4>& value)
     {
         const GLint _location = reflected_uniforms.at(name);
         const GLuint _count = static_cast<GLuint>(value.size());
@@ -246,14 +246,14 @@ namespace detail {
     // TODO MATRICES
 
     template <>
-    void object_program::bind_uniform<float32x4x4>(const std::string& name, const float32x4x4& value)
+    void rendering_program::bind_uniform<float32x4x4>(const std::string& name, const float32x4x4& value)
     {
         const GLint _location = reflected_uniforms.at(name);
         glUniformMatrix4fv(_location, 1, GL_FALSE, glm::value_ptr(value));
     }
 
     template <>
-    void object_program::bind_uniform<std::vector<float32x4x4>>(const std::string& name, const std::vector<float32x4x4>& value)
+    void rendering_program::bind_uniform<std::vector<float32x4x4>>(const std::string& name, const std::vector<float32x4x4>& value)
     {
         const GLint _location = reflected_uniforms.at(name);
         const GLuint _count = static_cast<GLuint>(value.size());
@@ -262,7 +262,7 @@ namespace detail {
     }
 
     template <>
-    void object_program::bind_uniform<ozz::vector<ozz::math::Float4x4>>(const std::string& name, const ozz::vector<ozz::math::Float4x4>& value)
+    void rendering_program::bind_uniform<ozz::vector<ozz::math::Float4x4>>(const std::string& name, const ozz::vector<ozz::math::Float4x4>& value)
     {
         const GLint _location = reflected_uniforms.at(name);
         const GLuint _count = static_cast<GLuint>(value.size());
@@ -270,7 +270,7 @@ namespace detail {
         glUniformMatrix4fv(_location, _count, GL_FALSE, _ptr);
     }
 
-    void object_program::draw(const bool use_depth) const
+    void rendering_program::draw(const bool use_depth) const
     {
         if (use_depth) {
             glEnable(GL_DEPTH_TEST);
@@ -285,7 +285,7 @@ namespace detail {
     }
 
 #if defined(LUCARIA_DEBUG)
-    void object_program::bind_guizmo(const std::string& name, const object_mesh_line& from)
+    void rendering_program::bind_guizmo(const std::string& name, const rendering_mesh_line& from)
     {
         bound_indices_count = from.size;
         bound_array_id = from.array_handle;
@@ -298,7 +298,7 @@ namespace detail {
         glEnableVertexAttribArray(_location);
     }
 
-    void object_program::draw_guizmo() const
+    void rendering_program::draw_guizmo() const
     {
         glDisable(GL_DEPTH_TEST);
         glDepthMask(GL_TRUE);
@@ -307,12 +307,12 @@ namespace detail {
     }
 #endif
 
-	void object_program::viewport(const uint32x2 size)
+	void rendering_program::viewport(const uint32x2 size)
 	{
 		glViewport(0, 0, size.x, size.y);
 	}
 	
-	void object_program::clear(const bool clear_depth)
+	void rendering_program::clear(const bool clear_depth)
 	{
 		static bool _is_clear_color_set = false;
 		if (!_is_clear_color_set) {

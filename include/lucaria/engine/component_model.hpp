@@ -4,6 +4,9 @@
 #include <lucaria/engine/asset_texture.hpp>
 
 namespace lucaria {
+namespace detail {
+	struct system_rendering;
+}
 
 /// @brief
 struct component_model_blockout {

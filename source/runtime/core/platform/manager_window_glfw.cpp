@@ -210,10 +210,10 @@ namespace detail {
             exit(EXIT_FAILURE);
         }
 
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        window = glfwCreateWindow(1600, 900, "Lucaria", NULL, NULL);
+        window = glfwCreateWindow(1600, 900, "Lucaria", nullptr, nullptr);
         if (!window) {
             glfwTerminate();
             exit(EXIT_FAILURE);
@@ -224,9 +224,9 @@ namespace detail {
         glfwSetKeyCallback(window, _glfw_key_callback);
         glfwSetCursorPosCallback(window, _glfw_mouse_position_callback);
         glfwSetMouseButtonCallback(window, _glfw_mouse_button_callback);
-        glfwMakeContextCurrent(window);
         glfwSetWindowFocusCallback(window, _glfw_window_focus_callback);
 
+        glfwMakeContextCurrent(window);
         gladLoadGL(glfwGetProcAddress);
         glfwSwapInterval(0);
 

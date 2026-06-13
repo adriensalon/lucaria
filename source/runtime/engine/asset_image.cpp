@@ -60,7 +60,7 @@ namespace detail {
         return paths;
     }
 
-    object_image::object_image(const std::vector<char>& bytes)
+    asset_image::asset_image(const std::vector<char>& bytes)
         : origin(object_image_origin::path)
     {
         const std::vector<uint8_t>& _content = *(reinterpret_cast<const std::vector<uint8_t>*>(&bytes));
@@ -140,7 +140,7 @@ namespace detail {
 		profile = data.profile;
     }
 
-    object_image::object_image(data_image&& data)
+    asset_image::asset_image(data_image&& data)
         : origin(object_image_origin::data)
         , profile(data.profile)
         , data(std::move(data))
