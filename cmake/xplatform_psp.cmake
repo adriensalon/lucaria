@@ -1,6 +1,6 @@
 include_guard(GLOBAL)
 
-function(lucaria_find_xplatform_psp)
+function(_lucaria_find_xplatform_psp)
 	find_program(_pspcmake_executable psp-cmake)
 	if(_pspcmake_executable)
 		get_filename_component(_pspsdk_dir "${_pspcmake_executable}" DIRECTORY)

@@ -1,6 +1,6 @@
 include_guard(GLOBAL)
 
-function(lucaria_find_xplatform_android)
+function(_lucaria_find_xplatform_android)
     set(_ndk_candidates)
     if(DEFINED ENV{ANDROID_NDK_ROOT})
         list(APPEND _ndk_candidates "$ENV{ANDROID_NDK_ROOT}")

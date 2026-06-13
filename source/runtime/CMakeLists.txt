@@ -44,37 +44,17 @@ function(embed_gslc target gslc_file)
     target_sources(${target} PUBLIC "${wrapper_cpp}")
 endfunction()
 
-if(NOT LUCARIA_USER_TARGET)
-    set(LUCARIA_USER_TARGET user_game)
+# non desktop platforms dont enable code hotreload for now
+if(PSP OR ANDROID OR EMSCRIPTEN)
+	set(LUCARIA_DISABLE_RELOAD ON)
 endif()
 
-# if(NOT LUCARIA_DISABLE_RELOAD)
-#     set(LUCARIA_RELOAD_SOURCE_DIR "${CMAKE_SOURCE_DIR}")
-#     set(LUCARIA_RELOAD_BUILD_DIR "${CMAKE_BINARY_DIR}")
-#     set(LUCARIA_RELOAD_TARGET "${LUCARIA_USER_TARGET}")
-#     set(LUCARIA_RELOAD_CMAKE_CONFIGURE_COMMAND
-#         "cmake -S ${LUCARIA_RELOAD_SOURCE_DIR} -B ${LUCARIA_RELOAD_BUILD_DIR}")
-#     set(LUCARIA_RELOAD_CMAKE_BUILD_COMMAND
-#         "cmake --build ${LUCARIA_RELOAD_BUILD_DIR} --target ${LUCARIA_RELOAD_TARGET} --config $<CONFIG>")
-#     set(LUCARIA_RELOAD_SHARED_LIBRARY_PATH
-#         "$<TARGET_FILE:${LUCARIA_RELOAD_TARGET}>")
-#     set(LUCARIA_RELOAD_CACHE_DIRECTORY 
-#         "${CMAKE_BINARY_DIR}/lucaria_hotreload")
-#     set(LUCARIA_RELOAD_WATCHED_PATHS "")
-#     foreach(path IN LISTS LUCARIA_TARGET_SOURCES)
-#         file(TO_CMAKE_PATH "${path}" path_normalized)
-#     	string(APPEND LUCARIA_RELOAD_WATCHED_PATHS "        \"${path_normalized}\",\n")
-#     endforeach()
-#     set(LUCARIA_RELOAD_CONFIG_TEMPLATE
-#     "${CMAKE_BINARY_DIR}/generated/lucaria/core/reload_config.hpp.gen")
-# 	configure_file(
-# 		"${LUCARIA_INCLUDE_DIR}/lucaria/core/reload_config.hpp.in"
-# 		"${LUCARIA_RELOAD_CONFIG_TEMPLATE}"
-# 		@ONLY)
-# 	file(GENERATE
-# 		OUTPUT "${CMAKE_BINARY_DIR}/generated/$<CONFIG>/lucaria/core/reload_config.hpp"
-# 		INPUT "${LUCARIA_RELOAD_CONFIG_TEMPLATE}")
-# endif()
+# release builds strip maximum code
+if(NOT LUCARIA_GAME_DEBUG)
+	set(LUCARIA_DISABLE_DEBUG ON)
+	set(LUCARIA_DISABLE_HOTRELOAD ON)
+	set(LUCARIA_DISABLE_GUIZMOS ON)
+endif()
 
 # lucaria engine/core library, no main() here
 file(GLOB lucaria_runtime_core_sources "core/*.cpp")
@@ -186,7 +166,7 @@ message("-- Configuring Lucaria engine with ${CMAKE_CXX_COMPILER_ID} compiler")
 target_compile_definitions(lucaria_runtime PUBLIC -DLUCARIA_COMPILER_NAME=${CMAKE_CXX_COMPILER_ID})
 
 # debug
-if(LUCARIA_DEBUG)
+if(LUCARIA_GAME_DEBUG)
     message(STATUS "Configuring Lucaria engine with Debug enabled")
     target_compile_definitions(lucaria_runtime PUBLIC -DLUCARIA_DEBUG)
 else()

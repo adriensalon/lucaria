@@ -1,0 +1,23 @@
+include_guard(GLOBAL)
+
+function(add_game TARGET)
+    if(DEFINED LUCARIA_TARGET)
+        message(FATAL_ERROR "add_game() was already called")
+    endif()
+    if(NOT TARGET)
+        message(FATAL_ERROR "add_game requires a target/output name")
+    endif()
+    set(LUCARIA_TARGET "${TARGET}" PARENT_SCOPE)
+	add_library(${TARGET} ALIAS lucaria_game)
+    if(ARGN)
+        target_sources(lucaria_game PRIVATE ${ARGN})
+    endif()
+endfunction()
+
+function(game_include_directories TARGET INCLUDE_DIRS)
+	target_include_directories(lucaria_game PRIVATE ${ARGN})
+endfunction()
+
+function(game_sources TARGET)
+	target_sources(lucaria_game PRIVATE ${ARGN})
+endfunction()

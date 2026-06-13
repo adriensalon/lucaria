@@ -1,6 +1,6 @@
 include_guard(GLOBAL)
 
-function(lucaria_find_xplatform_web)
+function(_lucaria_find_xplatform_web)
     if(DEFINED ENV{EMSDK})
         set(_emsdk_dir "$ENV{EMSDK}")
     elseif(DEFINED ENV{EMSCRIPTEN})
