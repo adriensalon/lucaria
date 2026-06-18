@@ -5,10 +5,11 @@
 namespace lucaria {
 namespace detail {
 
-	asset_mesh::asset_mesh(const asset_geometry& geometry)
-	{
-
-	}
+    asset_mesh::asset_mesh(const asset_geometry& geometry)
+        : origin(geometry.origin == object_geometry_origin::path ? asset_mesh_origin::path : asset_mesh_origin::data)
+		, mesh(geometry.data)
+    {
+    }
 
     void asset_mesh::save(storage_save_context& context) const
     {

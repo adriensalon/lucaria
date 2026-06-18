@@ -31,7 +31,7 @@ handle_cubemap context_object::fetch_cubemap(const std::array<std::filesystem::p
         [paths, profile](detail::asset_cubemap& cubemap) {
             cubemap.origin = detail::asset_cubemap_origin::path;
             cubemap.origin_paths = paths;
-            cubemap.cubemap.profile = profile.value_or(data_image_profile::binary);
+            cubemap.cubemap.profile = profile.value_or(data_image_profile::rgba8888);
         });
 }
 

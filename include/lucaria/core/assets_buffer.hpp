@@ -6,16 +6,6 @@
 #include <lucaria/core/assets_storage.hpp>
 #include <lucaria/core/reload_filewatch.hpp>
 
-#include <filesystem>
-#include <functional>
-#include <memory>
-#include <string>
-#include <typeindex>
-#include <typeinfo>
-#include <unordered_map>
-#include <utility>
-#include <vector>
-
 namespace lucaria {
 namespace detail {
 

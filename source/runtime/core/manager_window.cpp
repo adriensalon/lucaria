@@ -85,7 +85,7 @@ namespace detail {
 
         data_image _font_atlas_data = {};
         _font_atlas_data.channels = 4;
-        _font_atlas_data.profile = data_image_profile::binary;
+        _font_atlas_data.profile = data_image_profile::rgba8888;
         _font_atlas_data.width = _width;
         _font_atlas_data.height = _height;
         _font_atlas_data.pixels = std::vector<glm::uint8>(_pixels, _pixels + (_width * _height * 4));

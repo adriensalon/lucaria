@@ -11,6 +11,9 @@ include("${LUCARIA_CMAKE_DIR}/xplatform_android.cmake")
 include("${LUCARIA_CMAKE_DIR}/xplatform_psp.cmake")
 include("${LUCARIA_CMAKE_DIR}/xplatform_web.cmake")
 
+set(LUCARIA_BUILD_COMPILERS ON)
+add_subdirectory("source/compiler")
+
 function(_lucaria_make_configure)
     set(options)
     set(one_value_args PLATFORM GAME_DIR GAME_BINARY_DIR)

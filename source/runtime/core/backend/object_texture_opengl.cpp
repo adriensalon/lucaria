@@ -47,9 +47,9 @@ namespace detail {
         switch (from.channels) {
 
         case 3:
-            if ((from.profile == data_image_profile::etc2_compressed)) {
+            if ((from.profile == data_image_profile::etc2_rgba8)) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB8_ETC2, from.width, from.height, 0, _pixels_count, _pixels_ptr);
-            } else if ((from.profile == data_image_profile::s3tc_compressed)) {
+            } else if ((from.profile == data_image_profile::s3tc_rgba8)) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, from.width, from.height, 0, _pixels_count, _pixels_ptr);
             } else {
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, from.width, from.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
@@ -57,9 +57,9 @@ namespace detail {
             break;
 
         case 4:
-            if ((from.profile == data_image_profile::etc2_compressed)) {
+            if ((from.profile == data_image_profile::etc2_rgba8)) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA8_ETC2_EAC, from.width, from.height, 0, _pixels_count, _pixels_ptr);
-            } else if ((from.profile == data_image_profile::s3tc_compressed)) {
+            } else if ((from.profile == data_image_profile::s3tc_rgba8)) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, from.width, from.height, 0, _pixels_count, _pixels_ptr);
             } else {
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, from.width, from.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);
@@ -74,8 +74,8 @@ namespace detail {
     }
 
     rendering_texture::rendering_texture(const uint32x2 size)
-		// PROFILE ?
-        : size(size)
+		: profile(data_image_profile::rgba8888)
+        , size(size)
     {
         glGenTextures(1, &id);
         glBindTexture(GL_TEXTURE_2D, id);
@@ -89,6 +89,7 @@ namespace detail {
 
     void rendering_texture::resize(const uint32x2 new_size)
     {
+		profile = data_image_profile::rgba8888;
         if (size != new_size) {
             size = new_size;
             glBindTexture(GL_TEXTURE_2D, id);
@@ -109,9 +110,9 @@ namespace detail {
         switch (from.channels) {
 
         case 3:
-            if ((from.profile == data_image_profile::etc2_compressed)) {
+            if ((from.profile == data_image_profile::etc2_rgba8)) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB8_ETC2, from.width, from.height, 0, _pixels_count, _pixels_ptr);
-            } else if ((from.profile == data_image_profile::s3tc_compressed)) {
+            } else if ((from.profile == data_image_profile::s3tc_rgba8)) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, from.width, from.height, 0, _pixels_count, _pixels_ptr);
             } else {
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, from.width, from.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
@@ -119,9 +120,9 @@ namespace detail {
             break;
 
         case 4:
-            if ((from.profile == data_image_profile::etc2_compressed)) {
+            if ((from.profile == data_image_profile::etc2_rgba8)) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA8_ETC2_EAC, from.width, from.height, 0, _pixels_count, _pixels_ptr);
-            } else if ((from.profile == data_image_profile::s3tc_compressed)) {
+            } else if ((from.profile == data_image_profile::s3tc_rgba8)) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, from.width, from.height, 0, _pixels_count, _pixels_ptr);
             } else {
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, from.width, from.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);

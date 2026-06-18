@@ -5,7 +5,21 @@
 
 namespace lucaria {
 
+enum struct data_vertex_attribute : uint32 {
+    position = 1 << 0,
+    color = 1 << 1,
+    normal = 1 << 2,
+    tangent = 1 << 3,
+    bitangent = 1 << 4,
+    texcoord = 1 << 5,
+    bones = 1 << 6,
+    weights = 1 << 7,
+};
+
+using data_geometry_profile = uint32;
+
 struct data_geometry {
+	data_geometry_profile profile = 0;
     uint32 vertices_count = 0;
     std::vector<float32x3> positions = {};
     std::vector<float32x4> colors = {};
@@ -17,10 +31,11 @@ struct data_geometry {
     std::vector<float32x4> weights = {};
     std::vector<uint32x3> indices = {};
     std::vector<float32x4x4> invposes = {};
-    
+
     template <typename archive_t>
     void serialize(archive_t& archive)
     {
+        archive(cereal::make_nvp("profile", profile));
         archive(cereal::make_nvp("vertices_count", vertices_count));
         archive(cereal::make_nvp("positions", positions));
         archive(cereal::make_nvp("colors", colors));

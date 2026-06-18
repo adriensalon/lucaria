@@ -5,9 +5,9 @@
 namespace lucaria {
 namespace detail {
 
-    asset_texture::asset_texture(const asset_image& from)
-        : origin(from.origin == object_image_origin::path ? object_texture_origin::path : object_texture_origin::data)
-        , texture(from.data)
+    asset_texture::asset_texture(const asset_image& image)
+        : origin(image.origin == object_image_origin::path ? object_texture_origin::path : object_texture_origin::data)
+        , texture(image.data)
     {
     }
 

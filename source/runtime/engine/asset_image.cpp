@@ -13,14 +13,14 @@ namespace detail {
         const std::filesystem::path& path,
         const std::optional<data_image_profile> profile)
     {
-        if ((profile == data_image_profile::etc2_compressed) || object.is_etc2_supported) {
+        if ((profile == data_image_profile::etc2_rgba8) || object.is_etc2_supported) {
             std::filesystem::path _etc2_path = path;
             _etc2_path = _etc2_path.replace_extension().string() + "_etc.bin";
             if (std::filesystem::exists(object.async_prefix_path / _etc2_path)) {
                 return _etc2_path;
             }
         }
-        if ((profile == data_image_profile::s3tc_compressed) || object.is_s3tc_supported) {
+        if ((profile == data_image_profile::s3tc_rgba8) || object.is_s3tc_supported) {
             std::filesystem::path _s3tc_path = path;
             _s3tc_path = _s3tc_path.replace_extension().string() + "_s3tc.bin";
             if (std::filesystem::exists(object.async_prefix_path / _s3tc_path)) {
@@ -35,7 +35,7 @@ namespace detail {
         const std::array<std::filesystem::path, 6>& paths,
         const std::optional<data_image_profile> profile)
     {
-        if ((profile == data_image_profile::etc2_compressed) || object.is_etc2_supported) {
+        if ((profile == data_image_profile::etc2_rgba8) || object.is_etc2_supported) {
             std::array<std::filesystem::path, 6> _etc2_paths = paths;
             bool _all_exist = true;
             for (std::size_t _index = 0; _index < 6; ++_index) {
@@ -46,7 +46,7 @@ namespace detail {
                 return _etc2_paths;
             }
         }
-        if ((profile == data_image_profile::s3tc_compressed) || object.is_s3tc_supported) {
+        if ((profile == data_image_profile::s3tc_rgba8) || object.is_s3tc_supported) {
             std::array<std::filesystem::path, 6> _s3tc_paths = paths;
             bool _all_exist = true;
             for (std::size_t _index = 0; _index < 6; ++_index) {
@@ -65,7 +65,7 @@ namespace detail {
     {
         const std::vector<uint8_t>& _content = *(reinterpret_cast<const std::vector<uint8_t>*>(&bytes));
         const uint32_t* _data32 = (uint32_t*)_content.data();
-        data.profile = data_image_profile::binary;
+        data.profile = data_image_profile::rgba8888;
 
         // PVR
         if (*_data32 == 0x03525650) {
@@ -73,22 +73,22 @@ namespace detail {
             case 7:
                 // std::cout << "PVR DXT1 RGB" << std::endl;
                 data.channels = 3;
-                data.profile = data_image_profile::s3tc_compressed;
+                data.profile = data_image_profile::s3tc_rgba8;
                 break;
             case 11:
                 // std::cout << "PVR DXT5 RGBA" << std::endl;
                 data.channels = 4;
-                data.profile = data_image_profile::s3tc_compressed;
+                data.profile = data_image_profile::s3tc_rgba8;
                 break;
             case 22:
                 // std::cout << "PVR ETC2 RGB" << std::endl;
                 data.channels = 3;
-                data.profile = data_image_profile::etc2_compressed;
+                data.profile = data_image_profile::etc2_rgba8;
                 break;
             case 23:
                 // std::cout << "PVR ETC2 RGBA" << std::endl;
                 data.channels = 4;
-                data.profile = data_image_profile::etc2_compressed;
+                data.profile = data_image_profile::etc2_rgba8;
                 break;
             default:
                 LUCARIA_DEBUG_ERROR("Invalid S3TC image data")
@@ -107,12 +107,12 @@ namespace detail {
             case 0x9274:
                 // std::cout << "KTX ETC2 RGB" << std::endl;
                 data.channels = 3;
-                data.profile = data_image_profile::etc2_compressed;
+                data.profile = data_image_profile::etc2_rgba8;
                 break;
             case 0x9278:
                 // std::cout << "KTX ETC2 RGBA" << std::endl;
                 data.channels = 4;
-                data.profile = data_image_profile::etc2_compressed;
+                data.profile = data_image_profile::etc2_rgba8;
                 break;
             default:
                 LUCARIA_DEBUG_ERROR("Invalid ETC2 image data")
