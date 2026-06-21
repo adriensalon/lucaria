@@ -19,6 +19,10 @@
 namespace lucaria {
 namespace detail {
 
+	system_rendering::system_rendering()
+	{
+		asset_mesh::mesh_registry = &mesh_registry;
+	}
 
     void system_rendering::clear_runtime_references_for_reload()
     {
@@ -489,7 +493,7 @@ namespace detail {
             const float32x4x4 skybox_rotation_matrix = glm::rotate(glm::identity<float32x4x4>(), glm::radians(skybox_rotation), float32x3(0, 1, 0));
             const float32x4x4 _no_translation_view_projection = camera_projection * float32x4x4(float32x3x3(camera_view)) * skybox_rotation_matrix;
             _skybox_program.use();
-            _skybox_program.bind_attribute("vert_position", _skybox_mesh, rendering_mesh_attribute::position);
+            _skybox_program.bind_attribute("vert_position", _skybox_mesh, data_vertex_attribute::position);
             _skybox_program.bind_uniform("uniform_color", _skybox_cubemap, 0);
             _skybox_program.bind_uniform("uniform_projection", _no_translation_view_projection);
             _skybox_program.draw(false);
@@ -513,8 +517,8 @@ namespace detail {
                 const float32x4x4 _model_view_projection = camera_view_projection * _transform._transform;
                 const rendering_mesh& _mesh = _model._mesh.value().mesh;
                 _blockout_program.use();
-                _blockout_program.bind_attribute("vert_position", _mesh, rendering_mesh_attribute::position);
-                _blockout_program.bind_attribute("vert_normal", _mesh, rendering_mesh_attribute::normal);
+                _blockout_program.bind_attribute("vert_position", _mesh, data_vertex_attribute::position);
+                _blockout_program.bind_attribute("vert_normal", _mesh, data_vertex_attribute::normal);
                 _blockout_program.bind_uniform("uniform_view", _model_view_projection);
                 _blockout_program.draw();
             }
@@ -524,8 +528,8 @@ namespace detail {
             if (_model._mesh) {
                 const rendering_mesh& _mesh = _model._mesh.value().mesh;
                 _blockout_program.use();
-                _blockout_program.bind_attribute("vert_position", _mesh, rendering_mesh_attribute::position);
-                _blockout_program.bind_attribute("vert_normal", _mesh, rendering_mesh_attribute::normal);
+                _blockout_program.bind_attribute("vert_position", _mesh, data_vertex_attribute::position);
+                _blockout_program.bind_attribute("vert_normal", _mesh, data_vertex_attribute::normal);
                 _blockout_program.bind_uniform("uniform_view", camera_view_projection);
                 _blockout_program.draw();
             }
@@ -549,8 +553,8 @@ namespace detail {
                 const rendering_mesh& _mesh = _model._mesh.value().mesh;
                 const rendering_texture& _color = _model._color.value().texture;
                 _unlit_program.use();
-                _unlit_program.bind_attribute("vert_position", _mesh, rendering_mesh_attribute::position);
-                _unlit_program.bind_attribute("vert_texcoord", _mesh, rendering_mesh_attribute::texcoord);
+                _unlit_program.bind_attribute("vert_position", _mesh, data_vertex_attribute::position);
+                _unlit_program.bind_attribute("vert_texcoord", _mesh, data_vertex_attribute::texcoord);
                 _unlit_program.bind_uniform("uniform_view", _model_view_projection);
                 _unlit_program.bind_uniform("uniform_color", _color, 0);
                 _unlit_program.draw();
@@ -562,8 +566,8 @@ namespace detail {
                 const rendering_mesh& _mesh = _model._mesh.value().mesh;
                 const rendering_texture& _color = _model._color.value().texture;
                 _unlit_program.use();
-                _unlit_program.bind_attribute("vert_position", _mesh, rendering_mesh_attribute::position);
-                _unlit_program.bind_attribute("vert_texcoord", _mesh, rendering_mesh_attribute::texcoord);
+                _unlit_program.bind_attribute("vert_position", _mesh, data_vertex_attribute::position);
+                _unlit_program.bind_attribute("vert_texcoord", _mesh, data_vertex_attribute::texcoord);
                 _unlit_program.bind_uniform("uniform_color", _color, 0);
                 _unlit_program.bind_uniform("uniform_view", camera_view_projection);
                 _unlit_program.draw();
@@ -589,10 +593,10 @@ namespace detail {
                 const rendering_mesh& _mesh = _model._mesh.value().mesh;
                 const rendering_texture& _color = _model._color.value().texture;
                 _unlit_skinned_program.use();
-                _unlit_skinned_program.bind_attribute("vert_position", _mesh, rendering_mesh_attribute::position);
-                _unlit_skinned_program.bind_attribute("vert_texcoord", _mesh, rendering_mesh_attribute::texcoord);
-                _unlit_skinned_program.bind_attribute("vert_bones", _mesh, rendering_mesh_attribute::bones);
-                _unlit_skinned_program.bind_attribute("vert_weights", _mesh, rendering_mesh_attribute::weights);
+                _unlit_skinned_program.bind_attribute("vert_position", _mesh, data_vertex_attribute::position);
+                _unlit_skinned_program.bind_attribute("vert_texcoord", _mesh, data_vertex_attribute::texcoord);
+                _unlit_skinned_program.bind_attribute("vert_bones", _mesh, data_vertex_attribute::bones);
+                _unlit_skinned_program.bind_attribute("vert_weights", _mesh, data_vertex_attribute::weights);
                 _unlit_skinned_program.bind_uniform("uniform_view", _model_view_projection);
                 _unlit_skinned_program.bind_uniform("uniform_bones_invposes[0]", _mesh.invposes);
                 _unlit_skinned_program.bind_uniform("uniform_bones_transforms[0]", animator._model_transforms);
@@ -606,10 +610,10 @@ namespace detail {
                 const rendering_mesh& _mesh = _model._mesh.value().mesh;
                 const rendering_texture& _color = _model._color.value().texture;
                 _unlit_skinned_program.use();
-                _unlit_skinned_program.bind_attribute("vert_position", _mesh, rendering_mesh_attribute::position);
-                _unlit_skinned_program.bind_attribute("vert_texcoord", _mesh, rendering_mesh_attribute::texcoord);
-                _unlit_skinned_program.bind_attribute("vert_bones", _mesh, rendering_mesh_attribute::bones);
-                _unlit_skinned_program.bind_attribute("vert_weights", _mesh, rendering_mesh_attribute::weights);
+                _unlit_skinned_program.bind_attribute("vert_position", _mesh, data_vertex_attribute::position);
+                _unlit_skinned_program.bind_attribute("vert_texcoord", _mesh, data_vertex_attribute::texcoord);
+                _unlit_skinned_program.bind_attribute("vert_bones", _mesh, data_vertex_attribute::bones);
+                _unlit_skinned_program.bind_attribute("vert_weights", _mesh, data_vertex_attribute::weights);
                 _unlit_skinned_program.bind_uniform("uniform_view", camera_view_projection);
                 _unlit_skinned_program.bind_uniform("uniform_bones_transforms[0]", animator._model_transforms);
                 _unlit_skinned_program.bind_uniform("uniform_bones_invposes[0]", _mesh.invposes);
@@ -686,8 +690,8 @@ namespace detail {
                 scene_framebuffer->use();
                 rendering_program& _unlit_program = _persistent_unlit_program.value();
                 _unlit_program.use();
-                _unlit_program.bind_attribute("vert_position", interface._viewport_mesh.value().mesh, rendering_mesh_attribute::position);
-                _unlit_program.bind_attribute("vert_texcoord", interface._viewport_mesh.value().mesh, rendering_mesh_attribute::texcoord);
+                _unlit_program.bind_attribute("vert_position", interface._viewport_mesh.value().mesh, data_vertex_attribute::position);
+                _unlit_program.bind_attribute("vert_texcoord", interface._viewport_mesh.value().mesh, data_vertex_attribute::texcoord);
                 _unlit_program.bind_uniform("uniform_color", interface._imgui_color_texture.value().texture, 0);
                 _unlit_program.bind_uniform("uniform_view", camera_view_projection);
                 _unlit_program.draw();
@@ -758,7 +762,7 @@ namespace detail {
         rendering_framebuffer::use_default();
 
         _post_processing_program.use();
-        _post_processing_program.bind_attribute("vert_position", _post_processing_mesh, rendering_mesh_attribute::position);
+        _post_processing_program.bind_attribute("vert_position", _post_processing_mesh, data_vertex_attribute::position);
         _post_processing_program.bind_uniform("uniform_color", scene_color_texture.value().texture, 0);
         _post_processing_program.bind_uniform("uniform_texel_size", 1.f / float32x2(window.screen_size));
 

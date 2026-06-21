@@ -7,8 +7,9 @@ namespace detail {
 
     asset_mesh::asset_mesh(const asset_geometry& geometry)
         : origin(geometry.origin == object_geometry_origin::path ? asset_mesh_origin::path : asset_mesh_origin::data)
-		, mesh(geometry.data)
+        , mesh(*mesh_registry, geometry.data)
     {
+        LUCARIA_DEBUG_ASSERT(mesh_registry, "asset_mesh::mesh_registry is null")
     }
 
     void asset_mesh::save(storage_save_context& context) const

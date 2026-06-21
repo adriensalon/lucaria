@@ -19,7 +19,7 @@ namespace detail {
 
         rendering_program(const object_shader& vertex, const object_shader& fragment);
         void use() const;
-        void bind_attribute(const std::string& name, const rendering_mesh& mesh, const rendering_mesh_attribute attribute);
+        void bind_attribute(const std::string& name, const rendering_mesh& mesh, const data_vertex_attribute attribute);
         void bind_uniform(const std::string& name, const rendering_cubemap& cubemap, const uint32 slot = 0) const;
         void bind_uniform(const std::string& name, const rendering_texture& texture, const uint32 slot = 0) const;
         template <typename T>
@@ -41,6 +41,7 @@ namespace detail {
         std::unordered_map<std::string, GLint> reflected_uniforms = {};
         GLuint bound_array_id = 0;
         GLuint bound_indices_count = 0;
+        uint32 bound_index_offset = 0;
 #endif
 
 #if defined(LUCARIA_BACKEND_PSPGU)

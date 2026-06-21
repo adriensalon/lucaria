@@ -188,22 +188,23 @@ if(PSP)
     message("-- Configuring Lucaria engine with PSPGU graphics backend")
     target_compile_definitions(lucaria_runtime PUBLIC -DLUCARIA_BACKEND_PSPGU)
     target_sources(lucaria_runtime PRIVATE
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/object_cubemap_pspgu.cpp"
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/object_framebuffer_pspgu.cpp"
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/object_mesh_pspgu.cpp"
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/object_program_pspgu.cpp"
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/object_texture_pspgu.cpp"
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/object_renderbuffer_pspgu.cpp")
+        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_cubemap_pspgu.cpp"
+        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_framebuffer_pspgu.cpp"
+        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_mesh_pspgu.cpp"
+        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_program_pspgu.cpp"
+        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_texture_pspgu.cpp"
+        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_renderbuffer_pspgu.cpp")
 else()
     message("-- Configuring Lucaria engine with OpenGL graphics backend")
     target_compile_definitions(lucaria_runtime PUBLIC -DLUCARIA_BACKEND_OPENGL)
     target_sources(lucaria_runtime PRIVATE
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/object_cubemap_opengl.cpp"
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/object_framebuffer_opengl.cpp"
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/object_mesh_opengl.cpp"
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/object_program_opengl.cpp"
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/object_texture_opengl.cpp"
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/object_renderbuffer_opengl.cpp")
+        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_storage_opengl.cpp"
+        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_cubemap_opengl.cpp"
+        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_framebuffer_opengl.cpp"
+        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_mesh_opengl.cpp"
+        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_program_opengl.cpp"
+        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_texture_opengl.cpp"
+        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_renderbuffer_opengl.cpp")
 endif()
 
 # simd

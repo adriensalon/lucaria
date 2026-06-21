@@ -1,22 +1,11 @@
 #pragma once
 
 #include <lucaria/bin/data_geometry.hpp>
-#include <lucaria/core/rendering_backend.hpp>
+#include <lucaria/core/rendering_storage.hpp>
 #include <lucaria/core/utils_owning.hpp>
 
 namespace lucaria {
 namespace detail {
-
-    enum struct rendering_mesh_attribute {
-        position,
-        color,
-        normal,
-        tangent,
-        bitangent,
-        texcoord,
-        bones,
-        weights
-    };
 
     struct rendering_mesh {
         rendering_mesh() = default;
@@ -24,17 +13,25 @@ namespace detail {
         rendering_mesh& operator=(const rendering_mesh& other) = delete;
         rendering_mesh(rendering_mesh&& other) = default;
         rendering_mesh& operator=(rendering_mesh&& other) = default;
-		~rendering_mesh();
+        ~rendering_mesh();
 
-        rendering_mesh(const data_geometry& geometry);
+        rendering_mesh(rendering_mesh_registry& registry, const data_geometry& geometry);
 
         std::vector<float32x4x4> invposes;
-        uint32 size;
+        data_geometry_profile profile = 0;
+        uint32 size = 0;
 
 #if defined(LUCARIA_BACKEND_OPENGL)
         GLuint array_id = 0;
         GLuint elements_id = 0;
-        std::unordered_map<rendering_mesh_attribute, GLuint> attribute_ids = {};
+        GLuint vertices_id = 0;
+        uint32 geometry_page = 0;
+        uint32 vertex_offset = 0;
+        uint32 vertex_size = 0;
+        uint32 element_offset = 0;
+        uint32 element_size = 0;
+        uint32 vertex_stride = 0;
+        std::unordered_map<data_vertex_attribute, uint32> attribute_offsets = {};
 #endif
 
 #if defined(LUCARIA_BACKEND_VULKAN)
@@ -48,6 +45,7 @@ namespace detail {
 #endif
 
     private:
+		rendering_mesh_registry* _registry = nullptr;
         flag_owning _ownership = {};
     };
 

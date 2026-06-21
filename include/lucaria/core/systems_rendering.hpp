@@ -4,6 +4,7 @@
 #include <lucaria/core/manager_input.hpp>
 #include <lucaria/core/manager_scenes.hpp>
 #include <lucaria/core/manager_app.hpp>
+#include <lucaria/core/rendering_storage.hpp>
 #include <lucaria/core/rendering_framebuffer.hpp>
 #include <lucaria/core/rendering_program.hpp>
 #include <lucaria/core/rendering_guizmos.hpp>
@@ -20,11 +21,13 @@ namespace detail {
     struct system_dynamics;
 
     struct system_rendering {
-        system_rendering() = default;
+        system_rendering();
         system_rendering(const system_rendering& other) = delete;
         system_rendering& operator=(const system_rendering& other) = delete;
         system_rendering(system_rendering&& other) = delete;
         system_rendering& operator=(system_rendering&& other) = delete;
+
+		rendering_mesh_registry mesh_registry = {};
 
         const std::vector<float32x3> skybox_positions = {
             float32x3(-1.f, -1.f, -1.f),

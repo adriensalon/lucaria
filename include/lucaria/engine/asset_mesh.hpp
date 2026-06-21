@@ -30,6 +30,8 @@ namespace detail {
 
         void save(storage_save_context& context) const;
         void load(storage_load_context& context);
+
+		inline static rendering_mesh_registry* mesh_registry = nullptr;
     };
 }
 

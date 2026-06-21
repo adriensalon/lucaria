@@ -1,3 +1,5 @@
+#include <cstdint>
+
 #include <glm/gtc/type_ptr.hpp>
 #include <ozz/base/containers/vector.h>
 #include <ozz/base/maths/simd_math.h>
@@ -9,15 +11,15 @@ namespace detail {
 
     namespace {
 
-        static const std::unordered_map<rendering_mesh_attribute, uint32> _mesh_attribute_sizes = {
-            { rendering_mesh_attribute::position, 3 },
-            { rendering_mesh_attribute::color, 3 },
-            { rendering_mesh_attribute::normal, 3 },
-            { rendering_mesh_attribute::tangent, 3 },
-            { rendering_mesh_attribute::bitangent, 3 },
-            { rendering_mesh_attribute::texcoord, 2 },
-            { rendering_mesh_attribute::bones, 4 },
-            { rendering_mesh_attribute::weights, 4 },
+        static const std::unordered_map<data_vertex_attribute, uint32> _mesh_attribute_sizes = {
+            { data_vertex_attribute::position, 3 },
+            { data_vertex_attribute::color, 3 },
+            { data_vertex_attribute::normal, 3 },
+            { data_vertex_attribute::tangent, 3 },
+            { data_vertex_attribute::bitangent, 3 },
+            { data_vertex_attribute::texcoord, 2 },
+            { data_vertex_attribute::bones, 4 },
+            { data_vertex_attribute::weights, 4 },
         };
 
         [[nodiscard]] static GLuint _make_shader(const GLenum type, const std::string& text)
@@ -133,25 +135,28 @@ namespace detail {
         glCullFace(GL_BACK);
     }
 
-    void rendering_program::bind_attribute(const std::string& name, const rendering_mesh& mesh, const rendering_mesh_attribute attribute)
+    void rendering_program::bind_attribute(const std::string& name, const rendering_mesh& mesh, const data_vertex_attribute attribute)
     {
         bound_indices_count = mesh.size;
         bound_array_id = mesh.array_id;
-        const std::unordered_map<rendering_mesh_attribute, GLuint>& _attribute_handles = mesh.attribute_ids;
+        bound_index_offset = mesh.element_offset;
+        const std::unordered_map<data_vertex_attribute, uint32>& _attribute_offsets = mesh.attribute_offsets;
         if (reflected_attributes.find(name) == reflected_attributes.end()) {
             LUCARIA_DEBUG_ERROR("Name " + name + " not found in object_shader")
         }
         GLint _location = reflected_attributes.at(name);
         GLuint _size = _mesh_attribute_sizes.at(attribute);
         glBindVertexArray(bound_array_id);
-        if (_attribute_handles.find(attribute) == _attribute_handles.end()) {
+        if (_attribute_offsets.find(attribute) == _attribute_offsets.end()) {
             LUCARIA_DEBUG_ERROR("Attribute " + std::to_string(static_cast<int>(attribute)) + " is not in mesh")
         }
-        glBindBuffer(GL_ARRAY_BUFFER, _attribute_handles.at(attribute));
-        if (attribute == rendering_mesh_attribute::bones) {
-            glVertexAttribIPointer(_location, _size, GL_INT, _size * sizeof(GLint), (void*)0);
+        glBindBuffer(GL_ARRAY_BUFFER, mesh.vertices_id);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.elements_id);
+        const void* _offset = reinterpret_cast<const void*>(static_cast<uintptr_t>(mesh.vertex_offset + _attribute_offsets.at(attribute)));
+        if (attribute == data_vertex_attribute::bones) {
+            glVertexAttribIPointer(_location, _size, GL_INT, mesh.vertex_stride, _offset);
         } else {
-            glVertexAttribPointer(_location, _size, GL_FLOAT, GL_FALSE, _size * sizeof(float32), (void*)0);
+            glVertexAttribPointer(_location, _size, GL_FLOAT, GL_FALSE, mesh.vertex_stride, _offset);
         }
         glEnableVertexAttribArray(_location);
     }
@@ -281,7 +286,11 @@ namespace detail {
             glDepthMask(GL_FALSE);
         }
         glBindVertexArray(bound_array_id);
-        glDrawElements(GL_TRIANGLES, bound_indices_count, GL_UNSIGNED_INT, 0);
+        glDrawElements(
+            GL_TRIANGLES,
+            bound_indices_count,
+            GL_UNSIGNED_INT,
+            reinterpret_cast<const void*>(static_cast<uintptr_t>(bound_index_offset)));
     }
 
 #if defined(LUCARIA_DEBUG)
@@ -289,6 +298,7 @@ namespace detail {
     {
         bound_indices_count = from.size;
         bound_array_id = from.array_handle;
+        bound_index_offset = 0;
         GLuint _positions_id = from.positions_handle;
         GLint _location = reflected_attributes.at(name);
         GLuint _size = 3;
