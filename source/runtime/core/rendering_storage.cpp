@@ -62,10 +62,10 @@ namespace detail {
         ranges = std::move(_merged);
     }
 
-    std::optional<rendering_mesh_allocation> rendering_mesh_pool::allocate(const uint32 vertex_size, const uint32 element_size, const uint32 vertex_alignment, const uint32 element_alignment)
+    std::optional<rendering_mesh_allocation> rendering_meshes_buffer::allocate(const uint32 vertex_size, const uint32 element_size, const uint32 vertex_alignment, const uint32 element_alignment)
     {
         for (uint32 _page_index = 0; _page_index < pages.size(); ++_page_index) {
-            rendering_mesh_page& _page = pages[_page_index];
+            rendering_meshes_page& _page = pages[_page_index];
             std::optional<rendering_allocator_range> _vertices_range = _page.vertices.allocate(vertex_size, vertex_alignment);
             if (!_vertices_range) {
                 continue;
@@ -85,12 +85,12 @@ namespace detail {
         return std::nullopt;
     }
 
-    void rendering_mesh_pool::free(const rendering_mesh_allocation allocation)
+    void rendering_meshes_buffer::free(const rendering_mesh_allocation allocation)
     {
         if (allocation.page >= pages.size()) {
             return;
         }
-        rendering_mesh_page& _page = pages[allocation.page];
+        rendering_meshes_page& _page = pages[allocation.page];
         _page.vertices.free(allocation.vertices);
         _page.elements.free(allocation.elements);
         if (_page.allocations > 0) {
@@ -98,14 +98,14 @@ namespace detail {
         }
     }
 
-    rendering_mesh_pool& rendering_mesh_registry::assure_pool(const data_geometry_profile profile)
+    rendering_meshes_buffer& rendering_meshes_registry::assure_pool(const data_geometry_profile profile)
     {
-        rendering_mesh_pool& _pool = pools[profile];
+        rendering_meshes_buffer& _pool = pools[profile];
         _pool.profile = profile;
         return _pool;
     }
 
-    rendering_mesh_pool* rendering_mesh_registry::find_pool(const data_geometry_profile profile)
+    rendering_meshes_buffer* rendering_meshes_registry::find_pool(const data_geometry_profile profile)
     {
         auto _iterator = pools.find(profile);
         if (_iterator == pools.end()) {

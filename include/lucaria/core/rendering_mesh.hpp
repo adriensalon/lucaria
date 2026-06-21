@@ -15,37 +15,29 @@ namespace detail {
         rendering_mesh& operator=(rendering_mesh&& other) = default;
         ~rendering_mesh();
 
-        rendering_mesh(rendering_mesh_registry& registry, const data_geometry& geometry);
+        rendering_mesh(rendering_meshes_registry& registry, const data_geometry& geometry);
 
         std::vector<float32x4x4> invposes;
         data_geometry_profile profile = 0;
         uint32 size = 0;
+        rendering_mesh_allocation allocation = {};
+        uint32 vertex_stride = 0;
+        std::unordered_map<data_vertex_attribute, uint32> attribute_offsets = {};
 
 #if defined(LUCARIA_BACKEND_OPENGL)
         GLuint array_id = 0;
         GLuint elements_id = 0;
         GLuint vertices_id = 0;
-        uint32 geometry_page = 0;
-        uint32 vertex_offset = 0;
-        uint32 vertex_size = 0;
-        uint32 element_offset = 0;
-        uint32 element_size = 0;
-        uint32 vertex_stride = 0;
-        std::unordered_map<data_vertex_attribute, uint32> attribute_offsets = {};
 #endif
 
 #if defined(LUCARIA_BACKEND_VULKAN)
 #endif
 
 #if defined(LUCARIA_BACKEND_PSPGU)
-        void* vertices = nullptr; // aligned CPU memory
-        uint32 vertex_count = 0;
-        int vertex_type = 0; // GU_VERTEX_32BITF | GU_TEXTURE_32BITF...
-        int primitive = GU_TRIANGLES;
 #endif
 
     private:
-		rendering_mesh_registry* _registry = nullptr;
+        rendering_meshes_registry* _registry = nullptr;
         flag_owning _ownership = {};
     };
 

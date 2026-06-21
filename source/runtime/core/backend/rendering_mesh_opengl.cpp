@@ -12,14 +12,10 @@ namespace lucaria {
 namespace detail {
 
     namespace {
-        struct _packed_attribute_layout {
-            uint32 offset = 0;
-            uint32 size = 0;
-        };
-
+		
         struct _packed_vertex_layout {
             uint32 stride = 0;
-            std::unordered_map<data_vertex_attribute, _packed_attribute_layout> attributes = {};
+            std::unordered_map<data_vertex_attribute, rendering_allocator_range> attributes = {};
         };
 
         [[nodiscard]] static GLuint _create_vertex_array()
@@ -35,14 +31,12 @@ namespace detail {
             if (from.vertices_count != 0) {
                 return from.vertices_count;
             }
-
             uint32 _count = 0;
             auto _read = [&](const auto& values) {
                 if (!values.empty()) {
                     _count = static_cast<uint32>(values.size());
                 }
             };
-
             _read(from.positions);
             _read(from.colors);
             _read(from.normals);
@@ -51,7 +45,6 @@ namespace detail {
             _read(from.texcoords);
             _read(from.bones);
             _read(from.weights);
-
             return _count;
         }
 
@@ -75,20 +68,17 @@ namespace detail {
             case data_vertex_attribute::weights:
                 return sizeof(float32x4);
             }
-
             return 0;
         }
 
         [[nodiscard]] static _packed_vertex_layout _make_packed_vertex_layout(const data_geometry& from)
         {
             _packed_vertex_layout _layout = {};
-
             auto _append = [&](const data_vertex_attribute attribute) {
                 const uint32 _size = _attribute_storage_size(attribute);
                 _layout.attributes[attribute] = { _layout.stride, _size };
                 _layout.stride += _size;
             };
-
             if (!from.positions.empty()) {
                 _append(data_vertex_attribute::position);
             }
@@ -113,50 +103,32 @@ namespace detail {
             if (!from.weights.empty()) {
                 _append(data_vertex_attribute::weights);
             }
-
             return _layout;
         }
 
         template <typename VectorType>
-        static void _write_packed_attribute(
-            std::vector<uint8>& packed,
-            const _packed_vertex_layout& layout,
-            const data_vertex_attribute attribute,
-            const std::vector<VectorType>& values,
-            const uint32 vertices_count)
+        static void _write_packed_attribute(std::vector<uint8>& packed, const _packed_vertex_layout& layout, const data_vertex_attribute attribute, const std::vector<VectorType>& values, const uint32 vertices_count)
         {
             if (values.empty()) {
                 return;
             }
-
             const auto _iterator = layout.attributes.find(attribute);
             if (_iterator == layout.attributes.end()) {
                 return;
             }
-
-            const _packed_attribute_layout& _attribute = _iterator->second;
-
-#if defined(LUCARIA_DEBUG)
-            if (values.size() != vertices_count) {
-                LUCARIA_DEBUG_ERROR("Invalid mesh attribute size")
-            }
-#endif
-
+            const rendering_allocator_range& _attribute = _iterator->second;
+            LUCARIA_DEBUG_ASSERT(values.size() == vertices_count, "Invalid mesh attribute size")
             for (uint32 _index = 0; _index < vertices_count; ++_index) {
                 uint8* _destination = packed.data() + static_cast<std::size_t>(_index) * layout.stride + _attribute.offset;
-
                 std::memcpy(_destination, &values[_index], sizeof(VectorType));
             }
         }
 
-        [[nodiscard]] static std::vector<uint8> _pack_vertices(
-            const data_geometry& from,
-            const _packed_vertex_layout& layout)
+        [[nodiscard]] static std::vector<uint8> _pack_vertices(const data_geometry& from, const _packed_vertex_layout& layout)
         {
             std::vector<uint8> _packed;
             const uint32 _vertices_count = _get_vertices_count(from);
             _packed.resize(static_cast<std::size_t>(_vertices_count) * layout.stride);
-
             _write_packed_attribute(_packed, layout, data_vertex_attribute::position, from.positions, _vertices_count);
             _write_packed_attribute(_packed, layout, data_vertex_attribute::color, from.colors, _vertices_count);
             _write_packed_attribute(_packed, layout, data_vertex_attribute::normal, from.normals, _vertices_count);
@@ -165,7 +137,6 @@ namespace detail {
             _write_packed_attribute(_packed, layout, data_vertex_attribute::texcoord, from.texcoords, _vertices_count);
             _write_packed_attribute(_packed, layout, data_vertex_attribute::bones, from.bones, _vertices_count);
             _write_packed_attribute(_packed, layout, data_vertex_attribute::weights, from.weights, _vertices_count);
-
             return _packed;
         }
 
@@ -173,13 +144,11 @@ namespace detail {
         {
             std::vector<uint32> _packed;
             _packed.reserve(indices.size() * 3);
-
             for (const uint32x3& _index : indices) {
                 _packed.push_back(_index.x);
                 _packed.push_back(_index.y);
                 _packed.push_back(_index.z);
             }
-
             return _packed;
         }
 
@@ -231,7 +200,7 @@ namespace detail {
         }
     }
 
-    rendering_mesh::rendering_mesh(rendering_mesh_registry& registry, const data_geometry& from)
+    rendering_mesh::rendering_mesh(rendering_meshes_registry& registry, const data_geometry& from)
         : _registry(&registry)
     {
         array_id = _create_vertex_array();
@@ -240,7 +209,7 @@ namespace detail {
         const std::vector<uint32> _packed_indices = _pack_triangle_indices(from.indices);
         profile = from.profile;
         vertex_stride = _layout.stride;
-        for (const std::pair<const data_vertex_attribute, _packed_attribute_layout>& _pair : _layout.attributes) {
+        for (const std::pair<const data_vertex_attribute, rendering_allocator_range>& _pair : _layout.attributes) {
             attribute_offsets[_pair.first] = _pair.second.offset;
         }
         _registry->upload(*this, _packed_vertices, _packed_indices);

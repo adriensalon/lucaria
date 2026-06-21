@@ -57,9 +57,6 @@ namespace detail {
                 _name[_length] = '\0';
                 GLint _location = glGetAttribLocation(program_id, _name);
                 _attributes[_name] = _location;
-// #if defined(LUCARIA_DEBUG)
-//                 std::cout << "Program has attribute '" << _name << "' at location " << _location << std::endl;
-// #endif
             }
             return _attributes;
         }
@@ -78,9 +75,6 @@ namespace detail {
                 _name[_length] = '\0';
                 GLint _location = glGetUniformLocation(program_id, _name);
                 _uniforms[_name] = _location;
-// #if defined(LUCARIA_DEBUG)
-//                 std::cout << "Program has uniform '" << _name << "' at location " << _location << std::endl;
-// #endif
             }
             return _uniforms;
         }
@@ -139,7 +133,7 @@ namespace detail {
     {
         bound_indices_count = mesh.size;
         bound_array_id = mesh.array_id;
-        bound_index_offset = mesh.element_offset;
+        bound_index_offset = mesh.allocation.elements.offset;
         const std::unordered_map<data_vertex_attribute, uint32>& _attribute_offsets = mesh.attribute_offsets;
         if (reflected_attributes.find(name) == reflected_attributes.end()) {
             LUCARIA_DEBUG_ERROR("Name " + name + " not found in object_shader")
@@ -152,7 +146,7 @@ namespace detail {
         }
         glBindBuffer(GL_ARRAY_BUFFER, mesh.vertices_id);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.elements_id);
-        const void* _offset = reinterpret_cast<const void*>(static_cast<uintptr_t>(mesh.vertex_offset + _attribute_offsets.at(attribute)));
+        const void* _offset = reinterpret_cast<const void*>(static_cast<uintptr_t>(mesh.allocation.vertices.offset + _attribute_offsets.at(attribute)));
         if (attribute == data_vertex_attribute::bones) {
             glVertexAttribIPointer(_location, _size, GL_INT, mesh.vertex_stride, _offset);
         } else {
