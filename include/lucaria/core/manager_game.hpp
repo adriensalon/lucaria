@@ -1,15 +1,12 @@
 #pragma once
 
+#include <filesystem>
+
 #include <lucaria/core/manager_app.hpp>
 #include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/manager_input.hpp>
 #include <lucaria/core/manager_scenes.hpp>
 #include <lucaria/core/reload_module.hpp>
-#include <lucaria/core/serialize_archives.hpp>
-#include <lucaria/core/serialize_assets.hpp>
-#include <lucaria/core/serialize_containers.hpp>
-#include <lucaria/core/serialize_mappings.hpp>
-#include <lucaria/core/serialize_scenes.hpp>
 #include <lucaria/core/systems_dynamics.hpp>
 #include <lucaria/core/systems_mixer.hpp>
 #include <lucaria/core/systems_motion.hpp>

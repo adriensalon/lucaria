@@ -10,7 +10,7 @@
 #include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/scenes_dispatch.hpp>
 #include <lucaria/core/scenes_registry.hpp>
-#include <lucaria/core/serialize_context.hpp>
+#include <lucaria/engine/context_serialize.hpp>
 #include <lucaria/core/user_scenes.hpp>
 
 namespace lucaria {
@@ -151,7 +151,7 @@ namespace detail {
                         LUCARIA_DEBUG_ERROR("Missing game context while saving user scene");
                         return;
                     }
-                    game_save_context _context { archive, *_mappings.saving_objects, *_mappings.scenes.saving_scene_manager, _mappings };
+                    context_save_game _context { archive, *_mappings.saving_objects, *_mappings.scenes.saving_scene_manager, _mappings };
                     _context.field("user_scene", _typed_scene);
                 } else {
                     archive(cereal::make_nvp("user_scene", _typed_scene));
@@ -166,7 +166,7 @@ namespace detail {
                         LUCARIA_DEBUG_ERROR("Missing game context while loading user scene");
                         return;
                     }
-                    game_load_context _context { archive, *_mappings.loading_objects, *_mappings.loading_scene_manager, _mappings.dynamics, _mappings };
+                    context_load_game _context { archive, *_mappings.loading_objects, *_mappings.loading_scene_manager, _mappings.dynamics, _mappings };
                     _context.field("user_scene", _typed_scene);
                 } else {
                     archive(cereal::make_nvp("user_scene", _typed_scene));
@@ -181,7 +181,7 @@ namespace detail {
                         LUCARIA_DEBUG_ERROR("Missing game context while saving user scene");
                         return;
                     }
-                    game_save_context _context { archive, *_mappings.saving_objects, *_mappings.scenes.saving_scene_manager, _mappings };
+                    context_save_game _context { archive, *_mappings.saving_objects, *_mappings.scenes.saving_scene_manager, _mappings };
                     _context.field("user_scene", _typed_scene);
                 } else {
                     archive(cereal::make_nvp("user_scene", _typed_scene));
@@ -196,7 +196,7 @@ namespace detail {
                         LUCARIA_DEBUG_ERROR("Missing game context while loading user scene");
                         return;
                     }
-                    game_load_context _context { archive, *_mappings.loading_objects, *_mappings.loading_scene_manager, _mappings.dynamics, _mappings };
+                    context_load_game _context { archive, *_mappings.loading_objects, *_mappings.loading_scene_manager, _mappings.dynamics, _mappings };
                     _context.field("user_scene", _typed_scene);
                 } else {
                     archive(cereal::make_nvp("user_scene", _typed_scene));
@@ -230,8 +230,8 @@ namespace detail {
         void update_callbacks(context_game& game);
         void update_systems(manager_game& game);
 
-        void save(game_save_context& context);
-        void load(game_load_context& context);
+        void save(context_save_game& context);
+        void load(context_load_game& context);
     };
 
 }

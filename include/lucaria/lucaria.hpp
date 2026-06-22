@@ -30,7 +30,7 @@
 #include <lucaria/engine/context_assets.hpp>
 #include <lucaria/engine/context_rendering.hpp>
 #include <lucaria/engine/context_scenes.hpp>
+#include <lucaria/engine/context_serialize.hpp>
 #include <lucaria/engine/context_window.hpp>
 
 #include <lucaria/core/game_register.hpp>
-

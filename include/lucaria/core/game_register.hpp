@@ -1,5 +1,7 @@
 #pragma once
 
+#include <lucaria/core/serialize_assets.hpp>
+#include <lucaria/core/serialize_scenes.hpp>
 #include <lucaria/engine/context_game.hpp>
 
 #if !defined(LUCARIA_DISABLE_COMPUTE)
@@ -89,8 +91,8 @@ struct context_game;
 
 namespace detail {
 
-	struct manager_scenes;
-	struct manager_assets;
+    struct manager_scenes;
+    struct manager_assets;
 
     struct pending_gsl_system_registration {
         const char* name = nullptr;

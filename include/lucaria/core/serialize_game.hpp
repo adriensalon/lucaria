@@ -127,6 +127,98 @@ namespace detail {
         }
     };
 
+    template <typename Callback>
+    decltype(auto) visit_save_archive(storage_save_archive_variant& archive, Callback&& callback)
+    {
+        return std::visit([&](auto* archive_value) -> decltype(auto) {
+            return std::forward<Callback>(callback)(*archive_value);
+        }, archive);
+    }
+
+    template <typename Callback>
+    bool visit_load_archive(storage_load_archive_variant& archive, Callback&& callback)
+    {
+        return std::visit([&](auto archive_value) {
+            using archive_value_type = std::decay_t<decltype(archive_value)>;
+            if constexpr (std::is_same_v<archive_value_type, std::monostate>) {
+                return false;
+            } else {
+                std::forward<Callback>(callback)(*archive_value);
+                return true;
+            }
+        }, archive);
+    }
+
+    template <typename ArchiveType, typename CallbacksType, typename ObjectType>
+    void save_registered_object(ArchiveType& archive, CallbacksType& callbacks, ObjectType& object)
+    {
+        if constexpr (std::is_base_of_v<cereal::JSONOutputArchive, ArchiveType>) {
+            if (callbacks.json_save) {
+                callbacks.json_save(object, archive);
+            }
+        } else if constexpr (std::is_base_of_v<cereal::PortableBinaryOutputArchive, ArchiveType>) {
+            if (callbacks.binary_save) {
+                callbacks.binary_save(object, archive);
+            }
+        }
+    }
+
+    template <typename ArchiveType, typename CallbacksType, typename ObjectType>
+    void load_registered_object(ArchiveType& archive, CallbacksType& callbacks, ObjectType& object, std::string_view scope, std::string_view type_id)
+    {
+        if constexpr (std::is_base_of_v<cereal::JSONInputArchive, ArchiveType>) {
+            if (callbacks.json_load) {
+                try_snapshot_load(scope, type_id, [&]() {
+                    callbacks.json_load(object, archive);
+                });
+            }
+        } else if constexpr (std::is_base_of_v<cereal::PortableBinaryInputArchive, ArchiveType>) {
+            if (callbacks.binary_load) {
+                try_snapshot_load(scope, type_id, [&]() {
+                    callbacks.binary_load(object, archive);
+                });
+            }
+        }
+    }
+
+    template <typename ContextType, typename ValueType>
+    void save_context_field(ContextType& context, storage_save_archive_variant& archive, std::string_view name, const ValueType& value)
+    {
+        const std::string _name(name);
+        if constexpr (has_context_save_v<ValueType, ContextType>) {
+            context_save_field_wrapper<ContextType, ValueType> _wrapper { &context, &value };
+            visit_save_archive(archive, [&](auto& archive_value) {
+                archive_value(cereal::make_nvp(_name, _wrapper));
+            });
+        } else {
+            visit_save_archive(archive, [&](auto& archive_value) {
+                archive_value(cereal::make_nvp(_name, value));
+            });
+        }
+    }
+
+    template <typename ContextType, typename ValueType>
+    void load_context_field(std::string_view scope, ContextType& context, storage_load_archive_variant& archive, std::string_view name, ValueType& value)
+    {
+        if (std::holds_alternative<std::monostate>(archive)) {
+            return;
+        }
+
+        const std::string _name(name);
+        try_snapshot_load(scope, _name, [&]() {
+            if constexpr (has_context_load_v<ValueType, ContextType>) {
+                context_load_field_wrapper<ContextType, ValueType> _wrapper { &context, &value };
+                visit_load_archive(archive, [&](auto& archive_value) {
+                    archive_value(cereal::make_nvp(_name, _wrapper));
+                });
+            } else {
+                visit_load_archive(archive, [&](auto& archive_value) {
+                    archive_value(cereal::make_nvp(_name, value));
+                });
+            }
+        });
+    }
+
 
     struct game_save_context {
         storage_save_archive_variant archive;
@@ -134,31 +226,8 @@ namespace detail {
         manager_scenes& scenes;
         mappings_manager_game_save& mappings;
 
-        game_save_context(archive_json_output& archive, manager_assets& objects, manager_scenes& scenes, mappings_manager_game_save& mappings)
-            : archive(&archive)
-            , objects(objects)
-            , scenes(scenes)
-            , mappings(mappings)
-        {
-        }
-
-        game_save_context(archive_binary_output& archive, manager_assets& objects, manager_scenes& scenes, mappings_manager_game_save& mappings)
-            : archive(&archive)
-            , objects(objects)
-            , scenes(scenes)
-            , mappings(mappings)
-        {
-        }
-
-        game_save_context(cereal::JSONOutputArchive& archive, manager_assets& objects, manager_scenes& scenes, mappings_manager_game_save& mappings)
-            : archive(&archive)
-            , objects(objects)
-            , scenes(scenes)
-            , mappings(mappings)
-        {
-        }
-
-        game_save_context(cereal::PortableBinaryOutputArchive& archive, manager_assets& objects, manager_scenes& scenes, mappings_manager_game_save& mappings)
+        template <typename ArchiveType, std::enable_if_t<std::is_constructible_v<storage_save_archive_variant, ArchiveType*>, int> = 0>
+        game_save_context(ArchiveType& archive, manager_assets& objects, manager_scenes& scenes, mappings_manager_game_save& mappings)
             : archive(&archive)
             , objects(objects)
             , scenes(scenes)
@@ -169,17 +238,7 @@ namespace detail {
         template <typename ValueType>
         void field(std::string_view name, const ValueType& value)
         {
-            const std::string _name(name);
-            if constexpr (has_context_save_v<ValueType, game_save_context>) {
-                context_save_field_wrapper<game_save_context, ValueType> _wrapper { this, &value };
-                std::visit([&](auto* archive) {
-                    (*archive)(cereal::make_nvp(_name, _wrapper));
-                }, archive);
-            } else {
-                std::visit([&](auto* archive) {
-                    (*archive)(cereal::make_nvp(_name, value));
-                }, archive);
-            }
+            save_context_field(*this, archive, name, value);
         }
     };
 
@@ -190,34 +249,8 @@ namespace detail {
         context_dynamics* dynamics = nullptr;
         mappings_manager_game_load& mappings;
 
-        game_load_context(archive_json_input& archive, manager_assets& objects, manager_scenes& scenes, context_dynamics* dynamics, mappings_manager_game_load& mappings)
-            : archive(&archive)
-            , objects(objects)
-            , scenes(scenes)
-            , dynamics(dynamics)
-            , mappings(mappings)
-        {
-        }
-
-        game_load_context(archive_binary_input& archive, manager_assets& objects, manager_scenes& scenes, context_dynamics* dynamics, mappings_manager_game_load& mappings)
-            : archive(&archive)
-            , objects(objects)
-            , scenes(scenes)
-            , dynamics(dynamics)
-            , mappings(mappings)
-        {
-        }
-
-        game_load_context(cereal::JSONInputArchive& archive, manager_assets& objects, manager_scenes& scenes, context_dynamics* dynamics, mappings_manager_game_load& mappings)
-            : archive(&archive)
-            , objects(objects)
-            , scenes(scenes)
-            , dynamics(dynamics)
-            , mappings(mappings)
-        {
-        }
-
-        game_load_context(cereal::PortableBinaryInputArchive& archive, manager_assets& objects, manager_scenes& scenes, context_dynamics* dynamics, mappings_manager_game_load& mappings)
+        template <typename ArchiveType, std::enable_if_t<std::is_constructible_v<storage_load_archive_variant, ArchiveType*>, int> = 0>
+        game_load_context(ArchiveType& archive, manager_assets& objects, manager_scenes& scenes, context_dynamics* dynamics, mappings_manager_game_load& mappings)
             : archive(&archive)
             , objects(objects)
             , scenes(scenes)
@@ -229,25 +262,7 @@ namespace detail {
         template <typename ValueType>
         void field(std::string_view name, ValueType& value)
         {
-            const std::string _name(name);
-            try_snapshot_load("game_load_context", _name, [&]() {
-                if constexpr (has_context_load_v<ValueType, game_load_context>) {
-                    context_load_field_wrapper<game_load_context, ValueType> _wrapper { this, &value };
-                    std::visit([&](auto archive_value) {
-                        using archive_value_type = std::decay_t<decltype(archive_value)>;
-                        if constexpr (!std::is_same_v<archive_value_type, std::monostate>) {
-                            (*archive_value)(cereal::make_nvp(_name, _wrapper));
-                        }
-                    }, archive);
-                } else {
-                    std::visit([&](auto archive_value) {
-                        using archive_value_type = std::decay_t<decltype(archive_value)>;
-                        if constexpr (!std::is_same_v<archive_value_type, std::monostate>) {
-                            (*archive_value)(cereal::make_nvp(_name, value));
-                        }
-                    }, archive);
-                }
-            });
+            load_context_field("game_load_context", *this, archive, name, value);
         }
     };
 
@@ -255,25 +270,8 @@ namespace detail {
         storage_save_archive_variant archive;
         manager_assets& objects;
 
-        storage_save_context(archive_json_output& archive, manager_assets& objects)
-            : archive(&archive)
-            , objects(objects)
-        {
-        }
-
-        storage_save_context(archive_binary_output& archive, manager_assets& objects)
-            : archive(&archive)
-            , objects(objects)
-        {
-        }
-
-        storage_save_context(cereal::JSONOutputArchive& archive, manager_assets& objects)
-            : archive(&archive)
-            , objects(objects)
-        {
-        }
-
-        storage_save_context(cereal::PortableBinaryOutputArchive& archive, manager_assets& objects)
+        template <typename ArchiveType, std::enable_if_t<std::is_constructible_v<storage_save_archive_variant, ArchiveType*>, int> = 0>
+        storage_save_context(ArchiveType& archive, manager_assets& objects)
             : archive(&archive)
             , objects(objects)
         {
@@ -282,17 +280,7 @@ namespace detail {
         template <typename ValueType>
         void field(std::string_view name, const ValueType& value)
         {
-            const std::string _name(name);
-            if constexpr (has_context_save_v<ValueType, storage_save_context>) {
-                context_save_field_wrapper<storage_save_context, ValueType> _wrapper { this, &value };
-                std::visit([&](auto* archive) {
-                    (*archive)(cereal::make_nvp(_name, _wrapper));
-                }, archive);
-            } else {
-                std::visit([&](auto* archive) {
-                    (*archive)(cereal::make_nvp(_name, value));
-                }, archive);
-            }
+            save_context_field(*this, archive, name, value);
         }
     };
 
@@ -441,28 +429,8 @@ namespace detail {
         storage_load_archive_variant archive = std::monostate {};
         manager_window* loading_window = nullptr;
 
-        storage_load_context(archive_json_input& archive, manager_assets& objects, manager_window* window = nullptr)
-            : asset_fetch_context(objects)
-            , archive(&archive)
-            , loading_window(window)
-        {
-        }
-
-        storage_load_context(archive_binary_input& archive, manager_assets& objects, manager_window* window = nullptr)
-            : asset_fetch_context(objects)
-            , archive(&archive)
-            , loading_window(window)
-        {
-        }
-
-        storage_load_context(cereal::JSONInputArchive& archive, manager_assets& objects, manager_window* window = nullptr)
-            : asset_fetch_context(objects)
-            , archive(&archive)
-            , loading_window(window)
-        {
-        }
-
-        storage_load_context(cereal::PortableBinaryInputArchive& archive, manager_assets& objects, manager_window* window = nullptr)
+        template <typename ArchiveType, std::enable_if_t<std::is_constructible_v<storage_load_archive_variant, ArchiveType*>, int> = 0>
+        storage_load_context(ArchiveType& archive, manager_assets& objects, manager_window* window = nullptr)
             : asset_fetch_context(objects)
             , archive(&archive)
             , loading_window(window)
@@ -484,28 +452,7 @@ namespace detail {
         template <typename ValueType>
         void field(std::string_view name, ValueType& value)
         {
-            if (!has_archive()) {
-                return;
-            }
-            const std::string _name(name);
-            try_snapshot_load("storage_load_context", _name, [&]() {
-                if constexpr (has_context_load_v<ValueType, storage_load_context>) {
-                    context_load_field_wrapper<storage_load_context, ValueType> _wrapper { this, &value };
-                    std::visit([&](auto archive_value) {
-                        using archive_value_type = std::decay_t<decltype(archive_value)>;
-                        if constexpr (!std::is_same_v<archive_value_type, std::monostate>) {
-                            (*archive_value)(cereal::make_nvp(_name, _wrapper));
-                        }
-                    }, archive);
-                } else {
-                    std::visit([&](auto archive_value) {
-                        using archive_value_type = std::decay_t<decltype(archive_value)>;
-                        if constexpr (!std::is_same_v<archive_value_type, std::monostate>) {
-                            (*archive_value)(cereal::make_nvp(_name, value));
-                        }
-                    }, archive);
-                }
-            });
+            load_context_field("storage_load_context", *this, archive, name, value);
         }
 
         [[nodiscard]] manager_window* window()
@@ -514,120 +461,5 @@ namespace detail {
         }
     };
 
-    template <typename ValueType, typename Callback>
-    struct load_context_value_task final : load_context_task_base {
-        assets_async_slot<ValueType> value = {};
-        Callback callback;
-        bool done = false;
-
-        load_context_value_task(std::future<ValueType>&& future, Callback&& callback)
-            : value(std::move(future), [](const ValueType& value) {
-                return value;
-            })
-            , callback(std::move(callback))
-        {
-        }
-
-        bool poll() override
-        {
-            if (done) {
-                return true;
-            }
-            if (!value.has_value()) {
-                return false;
-            }
-            callback(std::as_const(value.value()));
-            done = true;
-            return true;
-        }
-
-        bool finished() const override
-        {
-            return done;
-        }
-    };
-
-    template <typename AssetType, typename ArchiveType>
-    struct load_storage_context final : storage_load_context {
-        assets_cell<AssetType>* cell;
-        AssetType& self;
-
-        load_storage_context(ArchiveType& archive, manager_assets& objects, assets_cell<AssetType>* cell, AssetType& self, manager_window* window = nullptr)
-            : storage_load_context(archive, objects, window)
-            , cell(cell)
-            , self(self)
-        {
-        }
-
-    protected:
-        void track_resolved_fetch_path(const std::filesystem::path& path) override
-        {
-            if (cell == nullptr) {
-                return;
-            }
-
-            std::vector<object_filewatched_path>& watched_paths = cell->object_filewatched_paths;
-            const auto existing = std::find_if(watched_paths.begin(), watched_paths.end(), [&](const object_filewatched_path& watched_path) {
-                return watched_path.get() == path;
-            });
-            if (existing == watched_paths.end()) {
-                watched_paths.emplace_back(path);
-            }
-        }
-
-        void notify_finished() override
-        {
-            if (cell != nullptr) {
-                cell->fetched.mark_ready();
-            }
-        }
-    };
-
-    template <typename AssetType>
-    struct runtime_storage_context final : storage_load_context {
-        assets_cell<AssetType>* cell;
-        AssetType& self;
-
-        runtime_storage_context(manager_assets& objects, assets_cell<AssetType>* cell, AssetType& self, manager_window* runtime_window = nullptr)
-            : storage_load_context(objects, runtime_window)
-            , cell(cell)
-            , self(self)
-        {
-        }
-
-    protected:
-        void track_resolved_fetch_path(const std::filesystem::path& path) override
-        {
-            if (cell == nullptr) {
-                return;
-            }
-
-            std::vector<object_filewatched_path>& watched_paths = cell->object_filewatched_paths;
-            const auto existing = std::find_if(watched_paths.begin(), watched_paths.end(), [&](const object_filewatched_path& watched_path) {
-                return watched_path.get() == path;
-            });
-            if (existing == watched_paths.end()) {
-                watched_paths.emplace_back(path);
-            }
-        }
-
-        void notify_finished() override
-        {
-            if (cell != nullptr) {
-                cell->fetched.mark_ready();
-            }
-        }
-    };
-
-    using save_storage_context = storage_save_context;
-
 }
 }
-
-namespace lucaria {
-    using game_save_context = detail::game_save_context;
-    using game_load_context = detail::game_load_context;
-    using storage_save_context = detail::storage_save_context;
-    using storage_load_context = detail::storage_load_context;
-}
-

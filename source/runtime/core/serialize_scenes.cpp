@@ -2,6 +2,7 @@
 
 #include <lucaria/core/manager_game.hpp>
 #include <lucaria/core/manager_scenes.hpp>
+#include <lucaria/core/serialize_scenes.hpp>
 #include <lucaria/engine/component_animator.hpp>
 #include <lucaria/engine/component_interface.hpp>
 #include <lucaria/engine/component_model.hpp>
@@ -210,13 +211,13 @@ namespace detail {
 namespace lucaria {
 namespace detail {
 
-    void manager_scenes::save(game_save_context& context)
+    void manager_scenes::save(context_save_game& context)
     {
         snapshot_manager_scene snapshot = make_snapshot(*this, context.mappings.scenes);
         context.field("scenes", snapshot.scenes);
     }
 
-    void manager_scenes::load(game_load_context& context)
+    void manager_scenes::load(context_load_game& context)
     {
         std::vector<snapshot_object_scene> loaded_scenes = {};
         context.field("scenes", loaded_scenes);

@@ -4,17 +4,18 @@
 
 #include <btBulletDynamicsCommon.h>
 
-#include <lucaria/core/serialize_context.hpp>
+#include <lucaria/engine/context_serialize.hpp>
 #include <lucaria/core/utils_math.hpp>
 #include <lucaria/engine/asset_geometry.hpp>
 #include <lucaria/engine/asset_skeleton.hpp>
 #include <lucaria/engine/handle_asset.hpp>
 
 namespace lucaria {
-namespace detail {
 
-    struct storage_save_context;
-    struct storage_load_context;
+struct context_save_storage;
+struct context_load_storage;
+
+namespace detail {
 
     struct manager_assets;
 
@@ -53,7 +54,7 @@ namespace detail {
         glm::mat4 center_to_feet;
         glm::float32 half_height;
 
-        void save(storage_save_context& context) const
+        void save(context_save_storage& context) const
         {
             context.field("origin", origin);
             context.field("feet_to_center", feet_to_center);
@@ -68,7 +69,7 @@ namespace detail {
             }
         }
 
-        void load(storage_load_context& context)
+        void load(context_load_storage& context)
         {
             context.field("origin", origin);
             context.field("feet_to_center", feet_to_center);

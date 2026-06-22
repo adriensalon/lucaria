@@ -1,10 +1,12 @@
 #pragma once
 
-#include <lucaria/core/systems_rendering.hpp>
 #include <lucaria/engine/asset_cubemap.hpp>
 #include <lucaria/engine/handle_entity.hpp>
 
 namespace lucaria {
+namespace detail {
+    struct system_rendering;
+}
 
 /// @brief 
 struct context_rendering {

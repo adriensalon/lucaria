@@ -1,11 +1,11 @@
 #pragma once
 
-#include <lucaria/core/systems_mixer.hpp>
-#include <lucaria/engine/component_transform.hpp>
-#include <lucaria/engine/component_speaker.hpp>
 #include <lucaria/engine/handle_entity.hpp>
 
 namespace lucaria {
+namespace detail {
+    struct system_mixer;
+}
 
 struct context_mixer {
 

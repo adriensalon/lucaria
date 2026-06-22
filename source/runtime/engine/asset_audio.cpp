@@ -3,7 +3,7 @@
 #include <vorbis/vorbisfile.h>
 
 #include <lucaria/core/manager_assets.hpp>
-#include <lucaria/core/serialize_context.hpp>
+#include <lucaria/engine/context_serialize.hpp>
 #include <lucaria/engine/asset_audio.hpp>
 
 namespace lucaria {
@@ -124,7 +124,7 @@ namespace detail {
     {
     }
 
-    void asset_audio::save(storage_save_context& context) const
+    void asset_audio::save(context_save_storage& context) const
     {
         context.field("origin", origin);
         if (origin == object_audio_origin::path) {
@@ -135,7 +135,7 @@ namespace detail {
         }
     }
 
-    void asset_audio::load(storage_load_context& context)
+    void asset_audio::load(context_load_storage& context)
     {
         context.field("origin", origin);
         if (origin == object_audio_origin::path) {

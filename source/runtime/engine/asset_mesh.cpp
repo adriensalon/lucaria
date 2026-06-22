@@ -12,7 +12,7 @@ namespace detail {
         LUCARIA_DEBUG_ASSERT(meshes_registry, "asset_mesh::meshes_registry is null")
     }
 
-    void asset_mesh::save(storage_save_context& context) const
+    void asset_mesh::save(context_save_storage& context) const
     {
         context.field("origin", origin);
         if (origin == asset_mesh_origin::path) {
@@ -20,7 +20,7 @@ namespace detail {
         }
     }
 
-    void asset_mesh::load(storage_load_context& context)
+    void asset_mesh::load(context_load_storage& context)
     {
         context.field("origin", origin);
         if (origin == asset_mesh_origin::path) {

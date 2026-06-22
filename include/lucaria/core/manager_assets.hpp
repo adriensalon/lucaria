@@ -20,7 +20,7 @@
 #include <lucaria/core/assets_stream.hpp>
 #include <lucaria/core/serialize_archives.hpp>
 #include <lucaria/core/serialize_containers.hpp>
-#include <lucaria/core/serialize_context.hpp>
+#include <lucaria/core/serialize_storage.hpp>
 #include <lucaria/core/serialize_mappings.hpp>
 #include <lucaria/core/user_assets.hpp>
 #include <lucaria/engine/asset_animation.hpp>
@@ -206,8 +206,8 @@ namespace detail {
         void fetch_bytes(const std::vector<std::filesystem::path>& paths, const std::function<void(const std::vector<std::vector<char>>&)>& callback, bool must_persist = true);
         void fetch_bytes(const std::array<std::filesystem::path, 6>& paths, const std::function<void(const std::vector<std::vector<char>>&)>& callback, bool must_persist = true);
         void poll_load_contexts();
-        void save(storage_save_context& context);
-        void load(storage_load_context& context);
+        void save(context_save_storage& context);
+        void load(context_load_storage& context);
         void gc_unused();
     };
 

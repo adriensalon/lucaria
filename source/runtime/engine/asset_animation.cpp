@@ -1,6 +1,6 @@
 #include <lucaria/core/assets_stream.hpp>
 #include <lucaria/core/manager_assets.hpp>
-#include <lucaria/core/serialize_context.hpp>
+#include <lucaria/engine/context_serialize.hpp>
 #include <lucaria/engine/asset_animation.hpp>
 
 namespace lucaria {
@@ -16,12 +16,12 @@ namespace detail {
         _ozz_archive >> animation;
     }
 
-    void asset_animation::save(storage_save_context& context) const
+    void asset_animation::save(context_save_storage& context) const
     {
         context.field("origin_path", origin_path);
     }
 
-    void asset_animation::load(storage_load_context& context)
+    void asset_animation::load(context_load_storage& context)
     {
         context.field("origin_path", origin_path);
         const std::filesystem::path _path = origin_path;

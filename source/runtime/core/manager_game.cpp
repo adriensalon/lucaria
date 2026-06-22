@@ -8,6 +8,11 @@
 #include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/manager_game.hpp>
 #include <lucaria/core/manager_scenes.hpp>
+#include <lucaria/core/serialize_archives.hpp>
+#include <lucaria/core/serialize_assets.hpp>
+#include <lucaria/core/serialize_containers.hpp>
+#include <lucaria/core/serialize_mappings.hpp>
+#include <lucaria/core/serialize_scenes.hpp>
 #include <lucaria/engine/component_animator.hpp>
 #include <lucaria/engine/component_interface.hpp>
 #include <lucaria/engine/component_model.hpp>

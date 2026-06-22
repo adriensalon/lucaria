@@ -3,14 +3,15 @@
 #include <ozz/animation/runtime/skeleton.h>
 
 #include <lucaria/core/assets_buffer.hpp>
-#include <lucaria/core/serialize_context.hpp>
+#include <lucaria/engine/context_serialize.hpp>
 #include <lucaria/engine/handle_asset.hpp>
 
 namespace lucaria {
-namespace detail {
 
-    struct storage_save_context;
-    struct storage_load_context;
+struct context_save_storage;
+struct context_load_storage;
+
+namespace detail {
 
     struct system_motion;
     struct manager_assets;
@@ -32,7 +33,7 @@ namespace detail {
         std::filesystem::path origin_path;
         ozz::animation::Skeleton skeleton;
 
-        void save(storage_save_context& context) const
+        void save(context_save_storage& context) const
         {
             context.field("origin", origin);
             if (origin == object_skeleton_origin::path) {
@@ -40,7 +41,7 @@ namespace detail {
             }
         }
 
-        void load(storage_load_context& context)
+        void load(context_load_storage& context)
         {
             context.field("origin", origin);
             if (origin == object_skeleton_origin::path) {

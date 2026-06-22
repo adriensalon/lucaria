@@ -2,7 +2,7 @@
 
 #include <lucaria/core/assets_stream.hpp>
 #include <lucaria/core/manager_assets.hpp>
-#include <lucaria/core/serialize_context.hpp>
+#include <lucaria/engine/context_serialize.hpp>
 #include <lucaria/engine/asset_geometry.hpp>
 
 namespace lucaria {
@@ -22,7 +22,7 @@ namespace detail {
     {
     }
 
-    void asset_geometry::save(storage_save_context& context) const
+    void asset_geometry::save(context_save_storage& context) const
     {
         context.field("origin", origin);
         if (origin == object_geometry_origin::path) {
@@ -33,7 +33,7 @@ namespace detail {
         }
     }
 
-    void asset_geometry::load(storage_load_context& context)
+    void asset_geometry::load(context_load_storage& context)
     {
         context.field("origin", origin);
         if (origin == object_geometry_origin::path) {

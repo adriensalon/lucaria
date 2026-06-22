@@ -2,14 +2,15 @@
 
 #include <lucaria/bin/data_image.hpp>
 #include <lucaria/core/assets_buffer.hpp>
-#include <lucaria/core/serialize_context.hpp>
+#include <lucaria/engine/context_serialize.hpp>
 #include <lucaria/engine/handle_asset.hpp>
 
 namespace lucaria {
-namespace detail {
 
-    struct storage_save_context;
-    struct storage_load_context;
+struct context_save_storage;
+struct context_load_storage;
+
+namespace detail {
 
     struct asset_cubemap;
     struct asset_texture;
@@ -47,7 +48,7 @@ namespace detail {
         data_image_profile profile;
         data_image data;
 
-        void save(storage_save_context& context) const
+        void save(context_save_storage& context) const
         {
             context.field("origin", origin);
             context.field("profile", profile);
@@ -59,7 +60,7 @@ namespace detail {
             }
         }
 
-        void load(storage_load_context& context)
+        void load(context_load_storage& context)
         {
             context.field("origin", origin);
             context.field("profile", profile);

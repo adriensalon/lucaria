@@ -3,6 +3,7 @@
 #include <cassert>
 #include <limits>
 
+#include <lucaria/core/manager_scenes.hpp>
 #include <lucaria/core/serialize_containers.hpp>
 #include <lucaria/core/serialize_mappings.hpp>
 #include <lucaria/core/user_scenes.hpp>
@@ -103,7 +104,7 @@ namespace detail {
                     LUCARIA_DEBUG_ERROR("Missing game context while saving component");
                     return;
                 }
-                game_save_context context { archive, *game_mappings.saving_objects, *game_mappings.scenes.saving_scene_manager, game_mappings };
+                context_save_game context { archive, *game_mappings.saving_objects, *game_mappings.scenes.saving_scene_manager, game_mappings };
                 context.field("component", *component_save);
             } else {
                 archive(cereal::make_nvp("component", *component_save));
@@ -136,7 +137,7 @@ namespace detail {
                     LUCARIA_DEBUG_ERROR("Missing manager_assets while loading component");
                     return;
                 }
-                game_load_context context { archive, *game_mappings.loading_objects, *game_mappings.loading_scene_manager, game_mappings.dynamics, game_mappings };
+                context_load_game context { archive, *game_mappings.loading_objects, *game_mappings.loading_scene_manager, game_mappings.dynamics, game_mappings };
                 context.field("component", component);
             } else {
                 archive(cereal::make_nvp("component", component));
@@ -157,20 +158,26 @@ namespace detail {
         std::vector<snapshot_object_scene_component<component_transform>> transforms = {};
         std::vector<uint32> entity_save_ids = {};
 
+        template <typename ArchiveType, typename RegistryType>
+        static void serialize_components(ArchiveType& archive, RegistryType& registry)
+        {
+            archive(cereal::make_nvp("animators", registry.animators));
+            archive(cereal::make_nvp("screen_interfaces", registry.screen_interfaces));
+            archive(cereal::make_nvp("spatial_interfaces", registry.spatial_interfaces));
+            archive(cereal::make_nvp("blockout_models", registry.blockout_models));
+            archive(cereal::make_nvp("unlit_models", registry.unlit_models));
+            archive(cereal::make_nvp("passive_rigidbodies", registry.passive_rigidbodies));
+            archive(cereal::make_nvp("kinematic_rigidbodies", registry.kinematic_rigidbodies));
+            archive(cereal::make_nvp("dynamic_rigidbodies", registry.dynamic_rigidbodies));
+            archive(cereal::make_nvp("speakers", registry.speakers));
+            archive(cereal::make_nvp("transforms", registry.transforms));
+        }
+
         template <typename ArchiveType>
         void save(ArchiveType& archive) const
         {
             archive(cereal::make_nvp("entity_save_ids", entity_save_ids));
-            archive(cereal::make_nvp("animators", animators));
-            archive(cereal::make_nvp("screen_interfaces", screen_interfaces));
-            archive(cereal::make_nvp("spatial_interfaces", spatial_interfaces));
-            archive(cereal::make_nvp("blockout_models", blockout_models));
-            archive(cereal::make_nvp("unlit_models", unlit_models));
-            archive(cereal::make_nvp("passive_rigidbodies", passive_rigidbodies));
-            archive(cereal::make_nvp("kinematic_rigidbodies", kinematic_rigidbodies));
-            archive(cereal::make_nvp("dynamic_rigidbodies", dynamic_rigidbodies));
-            archive(cereal::make_nvp("speakers", speakers));
-            archive(cereal::make_nvp("transforms", transforms));
+            serialize_components(archive, *this);
         }
 
         template <typename ArchiveType>
@@ -194,16 +201,7 @@ namespace detail {
                 entity_map[entity_save_id] = entity;
             }
 
-            archive(cereal::make_nvp("animators", animators));
-            archive(cereal::make_nvp("screen_interfaces", screen_interfaces));
-            archive(cereal::make_nvp("spatial_interfaces", spatial_interfaces));
-            archive(cereal::make_nvp("blockout_models", blockout_models));
-            archive(cereal::make_nvp("unlit_models", unlit_models));
-            archive(cereal::make_nvp("passive_rigidbodies", passive_rigidbodies));
-            archive(cereal::make_nvp("kinematic_rigidbodies", kinematic_rigidbodies));
-            archive(cereal::make_nvp("dynamic_rigidbodies", dynamic_rigidbodies));
-            archive(cereal::make_nvp("speakers", speakers));
-            archive(cereal::make_nvp("transforms", transforms));
+            serialize_components(archive, *this);
         }
     };
 
@@ -216,11 +214,7 @@ namespace detail {
         void save(ArchiveType& archive) const
         {
             archive(cereal::make_nvp("type_id", type_id));
-            if constexpr (std::is_base_of_v<cereal::JSONOutputArchive, ArchiveType>) {
-                component_type_callbacks->json_save(*scene, archive);
-            } else if constexpr (std::is_base_of_v<cereal::PortableBinaryOutputArchive, ArchiveType>) {
-                component_type_callbacks->binary_save(*scene, archive);
-            }
+            save_registered_object(archive, *component_type_callbacks, *scene);
         }
 
         template <typename ArchiveType>
@@ -241,19 +235,7 @@ namespace detail {
                 return;
             }
 
-            if constexpr (std::is_base_of_v<cereal::JSONInputArchive, ArchiveType>) {
-                if (it->second.json_load) {
-                    try_snapshot_load("user_component_group", type_id, [&]() {
-                        it->second.json_load(*game_mappings.loading_scene, archive);
-                    });
-                }
-            } else if constexpr (std::is_base_of_v<cereal::PortableBinaryInputArchive, ArchiveType>) {
-                if (it->second.binary_load) {
-                    try_snapshot_load("user_component_group", type_id, [&]() {
-                        it->second.binary_load(*game_mappings.loading_scene, archive);
-                    });
-                }
-            }
+            load_registered_object(archive, it->second, *game_mappings.loading_scene, "user_component_group", type_id);
         }
     };
 
@@ -272,11 +254,7 @@ namespace detail {
             archive(cereal::make_nvp("type_id", type_id));
             archive(cereal::make_nvp("components", components));
             archive(cereal::make_nvp("user_components", user_components));
-            if constexpr (std::is_base_of_v<cereal::JSONOutputArchive, ArchiveType>) {
-                scene_type_callbacks->json_save(*scene, archive);
-            } else if constexpr (std::is_base_of_v<cereal::PortableBinaryOutputArchive, ArchiveType>) {
-                scene_type_callbacks->binary_save(*scene, archive);
-            }
+            save_registered_object(archive, *scene_type_callbacks, *scene);
         }
 
         template <typename ArchiveType>
@@ -322,19 +300,7 @@ namespace detail {
             archive(cereal::make_nvp("components", components));
             archive(cereal::make_nvp("user_components", user_components));
 
-            if constexpr (std::is_base_of_v<cereal::JSONInputArchive, ArchiveType>) {
-                if (it->second.json_load) {
-                    try_snapshot_load("user_scene", type_id, [&]() {
-                        it->second.json_load(loaded_scene, archive);
-                    });
-                }
-            } else if constexpr (std::is_base_of_v<cereal::PortableBinaryInputArchive, ArchiveType>) {
-                if (it->second.binary_load) {
-                    try_snapshot_load("user_scene", type_id, [&]() {
-                        it->second.binary_load(loaded_scene, archive);
-                    });
-                }
-            }
+            load_registered_object(archive, it->second, loaded_scene, "user_scene", type_id);
 
             game_mappings.loading_scene = previous_scene;
             game_mappings.loading_scene_save_id = previous_scene_id;
@@ -369,7 +335,7 @@ namespace detail {
                 return;
             }
 
-            game_save_context context { archive, *mappings.saving_objects, scenes, mappings };
+            context_save_game context { archive, *mappings.saving_objects, scenes, mappings };
             scenes.save(context);
         }
 
@@ -383,7 +349,7 @@ namespace detail {
                 return;
             }
 
-            game_load_context context { archive, *mappings.loading_objects, scenes, mappings.dynamics, mappings };
+            context_load_game context { archive, *mappings.loading_objects, scenes, mappings.dynamics, mappings };
             scenes.load(context);
         }
     };

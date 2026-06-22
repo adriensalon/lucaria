@@ -4,10 +4,11 @@
 #include <lucaria/engine/handle_asset.hpp>
 
 namespace lucaria {
-namespace detail {
 
-    struct storage_save_context;
-    struct storage_load_context;
+struct context_save_storage;
+struct context_load_storage;
+
+namespace detail {
 
     enum struct object_audio_origin {
         path,
@@ -28,8 +29,8 @@ namespace detail {
         std::filesystem::path origin_path;
         data_audio data;
 
-        void save(storage_save_context& context) const;
-        void load(storage_load_context& context);
+        void save(context_save_storage& context) const;
+        void load(context_load_storage& context);
     };
 }
 

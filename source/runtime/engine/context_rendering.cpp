@@ -1,3 +1,4 @@
+#include <lucaria/core/systems_rendering.hpp>
 #include <lucaria/engine/context_rendering.hpp>
 
 namespace lucaria {

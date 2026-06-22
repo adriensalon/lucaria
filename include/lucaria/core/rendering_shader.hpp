@@ -3,10 +3,11 @@
 #include <lucaria/bin/data_shader.hpp>
 
 namespace lucaria {
-namespace detail {
 
-    struct storage_save_context;
-    struct storage_load_context;
+struct context_save_storage;
+struct context_load_storage;
+
+namespace detail {
 
     struct object_shader {
         object_shader() = delete;

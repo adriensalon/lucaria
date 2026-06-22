@@ -2,16 +2,17 @@
 
 #include <AL/al.h>
 
-#include <lucaria/core/serialize_context.hpp>
+#include <lucaria/engine/context_serialize.hpp>
 #include <lucaria/core/utils_owning.hpp>
 #include <lucaria/engine/asset_audio.hpp>
 #include <lucaria/engine/handle_asset.hpp>
 
 namespace lucaria {
-namespace detail {
 
-    struct storage_save_context;
-    struct storage_load_context;
+struct context_save_storage;
+struct context_load_storage;
+
+namespace detail {
 
     struct manager_assets;
 
@@ -37,7 +38,7 @@ namespace detail {
         uint32 sample_rate;
         uint32 samples_count;
 
-        void save(storage_save_context& context) const
+        void save(context_save_storage& context) const
         {
             context.field("origin", origin);
             if (origin == object_sound_track_origin::path) {
@@ -45,7 +46,7 @@ namespace detail {
             }
         }
 
-        void load(storage_load_context& context)
+        void load(context_load_storage& context)
         {
             context.field("origin", origin);
             if (origin == object_sound_track_origin::path) {

@@ -5,7 +5,7 @@
 #include <lucaria/core/assets_stream.hpp>
 #include <lucaria/core/manager_app.hpp>
 #include <lucaria/core/manager_assets.hpp>
-#include <lucaria/core/serialize_context.hpp>
+#include <lucaria/engine/context_serialize.hpp>
 #include <lucaria/engine/asset_font.hpp>
 
 namespace lucaria {
@@ -24,14 +24,14 @@ namespace detail {
         window.reupload_shared_imgui_font_texture();
     }
 
-    void object_font::save(storage_save_context& context) const
+    void object_font::save(context_save_storage& context) const
     {
         context.field("origin_path", origin_path);
         const float32 _font_size = font != nullptr ? font->FontSize : font_size;
         context.field("font_size", _font_size);
     }
 
-    void object_font::load(storage_load_context& context)
+    void object_font::load(context_load_storage& context)
     {
         context.field("origin_path", origin_path);
         context.field("font_size", font_size);

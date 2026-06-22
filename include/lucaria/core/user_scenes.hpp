@@ -9,10 +9,10 @@
 namespace lucaria {
 
 struct context_game;
-namespace detail {
+struct context_save_game;
+struct context_load_game;
 
-    struct game_save_context;
-    struct game_load_context;
+namespace detail {
 
     template <typename, typename = void>
     struct has_user_scene_start : std::false_type { };
@@ -54,7 +54,7 @@ namespace detail {
     struct has_user_scene_save_game : std::false_type { };
 
     template <typename T>
-    struct has_user_scene_save_game<T, std::void_t<decltype(std::declval<const T&>().save(std::declval<game_save_context&>()))>> : std::true_type { };
+    struct has_user_scene_save_game<T, std::void_t<decltype(std::declval<const T&>().save(std::declval<context_save_game&>()))>> : std::true_type { };
 
     template <typename SceneType>
     inline constexpr bool has_user_scene_save_game_v = has_user_scene_save_game<SceneType>::value;
@@ -63,7 +63,7 @@ namespace detail {
     struct has_user_scene_load_game : std::false_type { };
 
     template <typename T>
-    struct has_user_scene_load_game<T, std::void_t<decltype(std::declval<T&>().load(std::declval<game_load_context&>()))>> : std::true_type { };
+    struct has_user_scene_load_game<T, std::void_t<decltype(std::declval<T&>().load(std::declval<context_load_game&>()))>> : std::true_type { };
 
     template <typename SceneType>
     inline constexpr bool has_user_scene_load_game_v = has_user_scene_load_game<SceneType>::value;
@@ -72,7 +72,7 @@ namespace detail {
     struct has_user_component_save_game : std::false_type { };
 
     template <typename T>
-    struct has_user_component_save_game<T, std::void_t<decltype(std::declval<const T&>().save(std::declval<game_save_context&>()))>> : std::true_type { };
+    struct has_user_component_save_game<T, std::void_t<decltype(std::declval<const T&>().save(std::declval<context_save_game&>()))>> : std::true_type { };
 
     template <typename ComponentType>
     inline constexpr bool has_user_component_save_game_v = has_user_component_save_game<ComponentType>::value;
@@ -81,7 +81,7 @@ namespace detail {
     struct has_user_component_load_game : std::false_type { };
 
     template <typename T>
-    struct has_user_component_load_game<T, std::void_t<decltype(std::declval<T&>().load(std::declval<game_load_context&>()))>> : std::true_type { };
+    struct has_user_component_load_game<T, std::void_t<decltype(std::declval<T&>().load(std::declval<context_load_game&>()))>> : std::true_type { };
 
     template <typename ComponentType>
     inline constexpr bool has_user_component_load_game_v = has_user_component_load_game<ComponentType>::value;
@@ -94,7 +94,7 @@ namespace detail {
     {
         if constexpr (!is_user_scene_v<SceneType>) {
             static_assert(is_any_compatible_v<SceneType>, "User scene type must be compatible with std::any storage");
-            static_assert(is_cereal_compatible_v<SceneType> || (has_user_scene_save_game_v<SceneType> && has_user_scene_load_game_v<SceneType>), "User scene type must be compatible with cereal serialization or implement save(game_save_context&) and load(game_load_context&)");
+            static_assert(is_cereal_compatible_v<SceneType> || (has_user_scene_save_game_v<SceneType> && has_user_scene_load_game_v<SceneType>), "User scene type must be compatible with cereal serialization or implement save(context_save_game&) and load(context_load_game&)");
         }
     }
 
@@ -106,7 +106,7 @@ namespace detail {
     {
         if constexpr (!is_user_component_v<ComponentType>) {
             static_assert(is_entt_compatible_v<ComponentType>, "User component type must be compatible with entt storage");
-            static_assert(is_cereal_compatible_v<ComponentType> || (has_user_component_save_game_v<ComponentType> && has_user_component_load_game_v<ComponentType>), "User component type must be compatible with cereal serialization or implement save(game_save_context&) and load(game_load_context&)");
+            static_assert(is_cereal_compatible_v<ComponentType> || (has_user_component_save_game_v<ComponentType> && has_user_component_load_game_v<ComponentType>), "User component type must be compatible with cereal serialization or implement save(context_save_game&) and load(context_load_game&)");
         }
     }
 

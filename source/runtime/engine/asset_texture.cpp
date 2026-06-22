@@ -46,7 +46,7 @@ namespace detail {
         return texture.imgui_uv1();
     }
 
-    void asset_texture::save(storage_save_context& context) const
+    void asset_texture::save(context_save_storage& context) const
     {
         context.field("origin", origin);
         context.field("profile", texture.profile);
@@ -58,7 +58,7 @@ namespace detail {
         }
     }
 
-    void asset_texture::load(storage_load_context& context)
+    void asset_texture::load(context_load_storage& context)
     {
         context.field("origin", origin);
         context.field("profile", texture.profile);

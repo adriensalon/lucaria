@@ -1,5 +1,5 @@
 #include <lucaria/core/manager_assets.hpp>
-#include <lucaria/core/serialize_context.hpp>
+#include <lucaria/engine/context_serialize.hpp>
 #include <lucaria/engine/asset_cubemap.hpp>
 
 namespace lucaria {
@@ -11,7 +11,7 @@ namespace detail {
     {
     }
 
-    void asset_cubemap::save(storage_save_context& context) const
+    void asset_cubemap::save(context_save_storage& context) const
     {
         context.field("origin", origin);
         context.field("profile", cubemap.profile);
@@ -20,7 +20,7 @@ namespace detail {
         }
     }
 
-    void asset_cubemap::load(storage_load_context& context)
+    void asset_cubemap::load(context_load_storage& context)
     {
         context.field("origin", origin);
         context.field("profile", cubemap.profile);

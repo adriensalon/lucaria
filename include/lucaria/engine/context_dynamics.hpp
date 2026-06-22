@@ -1,7 +1,8 @@
 #pragma once
 
+#include <optional>
+
 #include <lucaria/bin/types_math.hpp>
-#include <lucaria/bin/types_containers.hpp>
 
 namespace lucaria {
 namespace detail {
