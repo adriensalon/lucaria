@@ -50,7 +50,7 @@ namespace detail {
 
     void rendering_framebuffer::bind_color(const rendering_texture& color)
     {
-        const GLuint _texture_handle = static_cast<GLuint>(color.id);
+        const GLuint _texture_handle = static_cast<GLuint>(color.texture_id);
 
         if (texture_color_id && texture_color_id.value() == _texture_handle) {
             return;
@@ -90,11 +90,11 @@ namespace detail {
 
     void rendering_framebuffer::bind_depth(rendering_texture& depth)
     {
-        if (texture_depth_id && texture_depth_id.value() == depth.id) {
+        if (texture_depth_id && texture_depth_id.value() == depth.texture_id) {
             return;
         }
 
-        const GLuint _depth_id = static_cast<GLuint>(depth.id);
+        const GLuint _depth_id = static_cast<GLuint>(depth.texture_id);
         texture_depth_id = _depth_id;
         renderbuffer_depth_id = std::nullopt;
         glBindFramebuffer(GL_FRAMEBUFFER, id);

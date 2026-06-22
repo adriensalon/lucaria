@@ -93,10 +93,11 @@ namespace detail {
         asset_image _font_atlas_image(std::move(_font_atlas_data));
 
         if (!shared_font_texture) {
-            shared_font_texture.emplace(_font_atlas_image);
-        } else {
-            shared_font_texture->update(_font_atlas_image);
+            // ImGui's glyph UVs address the entire font texture, so the font
+            // atlas must not be packed into Lucaria's shared texture atlas.
+            shared_font_texture.emplace(uint32x2(_width, _height));
         }
+        shared_font_texture->update(_font_atlas_image);
 
         shared_font_atlas->SetTexID(shared_font_texture->imgui_texture());
     }

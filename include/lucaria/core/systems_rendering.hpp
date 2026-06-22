@@ -27,7 +27,8 @@ namespace detail {
         system_rendering(system_rendering&& other) = delete;
         system_rendering& operator=(system_rendering&& other) = delete;
 
-		rendering_meshes_registry mesh_registry = {};
+		rendering_meshes_registry meshes_registry = {};
+		rendering_textures_registry textures_registry = {};
 
         const std::vector<float32x3> skybox_positions = {
             float32x3(-1.f, -1.f, -1.f),

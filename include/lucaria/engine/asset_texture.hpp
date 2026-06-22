@@ -27,6 +27,8 @@ namespace detail {
         void resize(const uint32x2 new_size);
         void update(const asset_image& image);
         [[nodiscard]] ImTextureID imgui_texture() const;
+        [[nodiscard]] ImVec2 imgui_uv0() const;
+        [[nodiscard]] ImVec2 imgui_uv1() const;
 
         object_texture_origin origin;
         std::filesystem::path origin_path;
@@ -34,6 +36,8 @@ namespace detail {
 
         void save(storage_save_context& context) const;
         void load(storage_load_context& context);
+
+		inline static rendering_textures_registry* textures_registry = nullptr;
     };
 }
 
@@ -49,6 +53,8 @@ struct handle_texture : handle_asset<detail::asset_texture> {
     uint32x2 size() const;
 
     ImTextureID imgui_texture() const;
+    ImVec2 imgui_uv0() const;
+    ImVec2 imgui_uv1() const;
 };
 
 }

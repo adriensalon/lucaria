@@ -7,14 +7,16 @@ namespace detail {
 
     asset_texture::asset_texture(const asset_image& image)
         : origin(image.origin == object_image_origin::path ? object_texture_origin::path : object_texture_origin::data)
-        , texture(image.data)
+        , texture(*textures_registry, image.data)
     {
+        LUCARIA_DEBUG_ASSERT(textures_registry, "asset_texture::textures_registry is null")
     }
 
     asset_texture::asset_texture(const uint32x2 size)
         : origin(object_texture_origin::size)
         , texture(size)
     {
+		LUCARIA_DEBUG_ASSERT(textures_registry, "asset_texture::textures_registry is null")
     }
 
     void asset_texture::resize(const uint32x2 new_size)
@@ -32,6 +34,16 @@ namespace detail {
     ImTextureID asset_texture::imgui_texture() const
     {
         return texture.imgui_texture();
+    }
+
+    ImVec2 asset_texture::imgui_uv0() const
+    {
+        return texture.imgui_uv0();
+    }
+
+    ImVec2 asset_texture::imgui_uv1() const
+    {
+        return texture.imgui_uv1();
     }
 
     void asset_texture::save(storage_save_context& context) const

@@ -12,10 +12,10 @@ namespace lucaria {
 namespace detail {
 
     namespace {
-		
+
         struct _packed_vertex_layout {
             uint32 stride = 0;
-            std::unordered_map<data_vertex_attribute, rendering_allocator_range> attributes = {};
+            std::unordered_map<data_vertex_attribute, rendering_mesh_range> attributes = {};
         };
 
         [[nodiscard]] static GLuint _create_vertex_array()
@@ -116,7 +116,7 @@ namespace detail {
             if (_iterator == layout.attributes.end()) {
                 return;
             }
-            const rendering_allocator_range& _attribute = _iterator->second;
+            const rendering_mesh_range& _attribute = _iterator->second;
             LUCARIA_DEBUG_ASSERT(values.size() == vertices_count, "Invalid mesh attribute size")
             for (uint32 _index = 0; _index < vertices_count; ++_index) {
                 uint8* _destination = packed.data() + static_cast<std::size_t>(_index) * layout.stride + _attribute.offset;
@@ -194,7 +194,7 @@ namespace detail {
     rendering_mesh::~rendering_mesh()
     {
         if (_ownership.owns()) {
-            LUCARIA_DEBUG_ASSERT(_registry, "Unset rendering_mesh::mesh_registry")
+            LUCARIA_DEBUG_ASSERT(_registry, "Unset rendering_mesh::meshes_registry")
             _registry->release(*this);
             glDeleteVertexArrays(1, &array_id);
         }
@@ -209,7 +209,7 @@ namespace detail {
         const std::vector<uint32> _packed_indices = _pack_triangle_indices(from.indices);
         profile = from.profile;
         vertex_stride = _layout.stride;
-        for (const std::pair<const data_vertex_attribute, rendering_allocator_range>& _pair : _layout.attributes) {
+        for (const std::pair<const data_vertex_attribute, rendering_mesh_range>& _pair : _layout.attributes) {
             attribute_offsets[_pair.first] = _pair.second.offset;
         }
         _registry->upload(*this, _packed_vertices, _packed_indices);

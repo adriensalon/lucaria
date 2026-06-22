@@ -168,7 +168,12 @@ namespace detail {
         GLint _location = reflected_uniforms.at(name);
         glUniform1i(_location, slot);
         glActiveTexture(GL_TEXTURE0 + slot);
-        glBindTexture(GL_TEXTURE_2D, texture.id);
+        glBindTexture(GL_TEXTURE_2D, texture.texture_id);
+        const std::string _uv_rect_name = name + "_uv_rect";
+        const auto _uv_rect = reflected_uniforms.find(_uv_rect_name);
+        if (_uv_rect != reflected_uniforms.end()) {
+            glUniform4f(_uv_rect->second, texture.uv_rect.x, texture.uv_rect.y, texture.uv_rect.z, texture.uv_rect.w);
+        }
     }
 
     template <>

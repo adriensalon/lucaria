@@ -21,7 +21,8 @@ namespace detail {
 
 	system_rendering::system_rendering()
 	{
-		asset_mesh::mesh_registry = &mesh_registry;
+		asset_mesh::meshes_registry = &meshes_registry;
+		asset_texture::textures_registry = &textures_registry;
 	}
 
     void system_rendering::clear_runtime_references_for_reload()
@@ -71,9 +72,11 @@ namespace detail {
     precision mediump float;
     in vec2 frag_texcoord;
     uniform sampler2D uniform_color;
+    uniform vec4 uniform_color_uv_rect;
     out vec4 output_color;
     void main() {
-        output_color = texture(uniform_color, frag_texcoord);
+        vec2 _atlas_texcoord = uniform_color_uv_rect.xy + frag_texcoord * uniform_color_uv_rect.zw;
+        output_color = texture(uniform_color, _atlas_texcoord);
     })";
 
         static const std::string blockout_vertex = R"(#version 300 es
@@ -674,7 +677,12 @@ namespace detail {
                             _cursor_min.y + interface._cursor_size.y);
 
                         ImDrawList* _drawlist = ImGui::GetForegroundDrawList(); // screen space
-                        _drawlist->AddImage(_texture_id, _cursor_min, _cursor_max); // UVs default (0,0)-(1,1), color = white
+                        _drawlist->AddImage(
+                            _texture_id,
+                            _cursor_min,
+                            _cursor_max,
+                            interface._interaction_texture.imgui_uv0(),
+                            interface._interaction_texture.imgui_uv1());
                     }
                 }
 
