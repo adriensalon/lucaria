@@ -282,6 +282,7 @@ if(NOT LUCARIA_DISABLE_RELOAD AND NOT ANDROID AND NOT EMSCRIPTEN AND NOT PSP)
 	set(LUCARIA_USER_LIBRARY_TYPE SHARED)
 endif()
 add_library(lucaria_game ${LUCARIA_USER_LIBRARY_TYPE})
+target_precompile_headers(lucaria_game PRIVATE "<lucaria/lucaria.hpp>")
 
 string(JSON LUCARIA_TARGET ERROR_VARIABLE lucaria_target_error
     GET "${LUCARIA_GAME_JSON}" game name)
