@@ -13,7 +13,7 @@
 #define LUCARIA_DEBUG_OPENGL_ASSERT lucaria::detail::runtime_opengl_assert(__FILE__, __LINE__);
 #else
 #define LUCARIA_DEBUG_ERROR(Message)
-#define LUCARIA_DEBUG_ASSERT(Condition, Message)
+#define LUCARIA_DEBUG_ASSERT(Condition, Message) static_cast<void>(Condition);
 #define LUCARIA_DEBUG_OPENAL_ASSERT
 #define LUCARIA_DEBUG_OPENGL_ASSERT
 #endif

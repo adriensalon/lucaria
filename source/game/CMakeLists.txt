@@ -98,7 +98,7 @@ function(embed_gslc target gslc_file)
         "${LUCARIA_SOURCE_DIR}/runtime/core/gsl_template.cpp.in"
         "${wrapper_cpp}"
         @ONLY)
-    target_sources(${target} PUBLIC "${wrapper_cpp}")
+    target_sources(${target} PRIVATE "${wrapper_cpp}")
 endfunction()
 
 # non desktop platforms dont enable code hotreload for now
@@ -226,8 +226,10 @@ target_compile_definitions(lucaria_runtime PUBLIC -DLUCARIA_COMPILER_NAME=${CMAK
 if(LUCARIA_GAME_DEBUG)
     message(STATUS "Configuring Lucaria engine with Debug enabled")
     target_compile_definitions(lucaria_runtime PUBLIC -DLUCARIA_DEBUG)
+	set(LUCARIA_USER_LIBRARY_TYPE SHARED)
 else()
-    message(STATUS "Configuring Lucaria engine with Debug disabled (${LUCARIA_CONFIG} build)")
+    message(STATUS "Configuring Lucaria engine with Debug disabled")
+	set(LUCARIA_USER_LIBRARY_TYPE STATIC)
 endif()
 
 # backend
@@ -277,10 +279,7 @@ else()
     message("-- Configuring Lucaria engine with assets packaging disabled")
 endif()
 
-set(LUCARIA_USER_LIBRARY_TYPE STATIC)
-if(NOT LUCARIA_DISABLE_RELOAD AND NOT ANDROID AND NOT EMSCRIPTEN AND NOT PSP)
-	set(LUCARIA_USER_LIBRARY_TYPE SHARED)
-endif()
+
 add_library(lucaria_game ${LUCARIA_USER_LIBRARY_TYPE})
 target_precompile_headers(lucaria_game PRIVATE "<lucaria/lucaria.hpp>")
 
@@ -384,10 +383,13 @@ endif()
 
 # main executable/shared lib output name
 set_target_properties(lucaria_main PROPERTIES OUTPUT_NAME "${LUCARIA_TARGET}")
-if(NOT LUCARIA_DISABLE_RELOAD AND NOT ANDROID AND NOT EMSCRIPTEN AND NOT PSP)
+if(LUCARIA_GAME_DEBUG)
 	add_dependencies(lucaria_main lucaria_game)
 else()
 	target_link_libraries(lucaria_main PRIVATE lucaria_game)
+	if(MSVC)
+		target_link_options(lucaria_main PRIVATE "/WHOLEARCHIVE:$<TARGET_FILE:lucaria_game>")
+	endif()
 endif()
 
 # PSP package
@@ -461,7 +463,7 @@ function(lucaria_enable_ipo_recursive TARGET_NAME)
 	endforeach()
 endfunction()
 
-if(NOT LUCARIA_GAME_DEBUG AND LUCARIA_DISABLE_RELOAD)
+if(NOT LUCARIA_GAME_DEBUG)
 	if(_lucaria_ipo_supported)
 		lucaria_enable_ipo_recursive(lucaria_main)
 		lucaria_enable_ipo_recursive(lucaria_game)
