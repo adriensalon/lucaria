@@ -75,6 +75,7 @@ namespace detail {
                 LUCARIA_DEBUG_ERROR("Invalid texture channels count, must be 3 or 4")
                 break;
             }
+            LUCARIA_DEBUG_OPENGL_ASSERT
         }
     }
 

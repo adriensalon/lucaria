@@ -35,15 +35,14 @@ namespace detail {
             }
         }
 
-        [[nodiscard]] static GLenum _texture_format(const data_image_profile profile, const uint32 channels)
+        [[nodiscard]] static GLenum _texture_format(const data_image_profile profile)
         {
-            if (profile == data_image_profile::rgb565) {
+            switch (profile) {
+            case data_image_profile::rgb565:
                 return GL_RGB;
+            default:
+                return GL_RGBA;
             }
-            if (channels == 3) {
-                return GL_RGB;
-            }
-            return GL_RGBA;
         }
 
         [[nodiscard]] static GLenum _texture_type(const data_image_profile profile)
@@ -68,6 +67,18 @@ namespace detail {
             case data_image_profile::rgba4444:
                 return 2;
             default:
+                return 4;
+            }
+        }
+
+        [[nodiscard]] static uint32 _texture_source_bytes_per_pixel(const data_image& image)
+        {
+            switch (image.profile) {
+            case data_image_profile::rgb565:
+            case data_image_profile::rgba5551:
+            case data_image_profile::rgba4444:
+                return 2;
+            default:
                 return image.channels;
             }
         }
@@ -75,12 +86,17 @@ namespace detail {
         [[nodiscard]] static std::vector<uint8> _make_padded_pixels(const data_image& image)
         {
             const uint32 _bytes_per_pixel = _texture_bytes_per_pixel(image);
-            if (image.width == 0 || image.height == 0 || _bytes_per_pixel == 0) {
+            const uint32 _source_bytes_per_pixel = _texture_source_bytes_per_pixel(image);
+            if (image.width == 0 || image.height == 0 || _bytes_per_pixel == 0 || _source_bytes_per_pixel == 0) {
                 return {};
             }
-            const std::size_t _required_bytes = static_cast<std::size_t>(image.width) * image.height * _bytes_per_pixel;
+            const std::size_t _required_bytes = static_cast<std::size_t>(image.width) * image.height * _source_bytes_per_pixel;
             if (image.pixels.size() < _required_bytes) {
                 LUCARIA_DEBUG_ERROR("Texture pixel data is smaller than its dimensions and profile require")
+                return {};
+            }
+            if (_source_bytes_per_pixel != _bytes_per_pixel && !(image.profile == data_image_profile::rgba8888 && image.channels == 3)) {
+                LUCARIA_DEBUG_ERROR("Texture pixel data cannot be converted to its storage profile")
                 return {};
             }
             const uint32 _padded_width = image.width + _texture_gutter * 2;
@@ -90,9 +106,14 @@ namespace detail {
                 const uint32 _source_y = std::min(std::max(_y, _texture_gutter) - _texture_gutter, image.height - 1);
                 for (uint32 _x = 0; _x < _padded_width; ++_x) {
                     const uint32 _source_x = std::min(std::max(_x, _texture_gutter) - _texture_gutter, image.width - 1);
-                    const std::size_t _source_offset = (static_cast<std::size_t>(_source_y) * image.width + _source_x) * _bytes_per_pixel;
+                    const std::size_t _source_offset = (static_cast<std::size_t>(_source_y) * image.width + _source_x) * _source_bytes_per_pixel;
                     const std::size_t _destination_offset = (static_cast<std::size_t>(_y) * _padded_width + _x) * _bytes_per_pixel;
-                    std::copy_n(image.pixels.data() + _source_offset, _bytes_per_pixel, _padded.data() + _destination_offset);
+                    if (_source_bytes_per_pixel == _bytes_per_pixel) {
+                        std::copy_n(image.pixels.data() + _source_offset, _bytes_per_pixel, _padded.data() + _destination_offset);
+                    } else {
+                        std::copy_n(image.pixels.data() + _source_offset, _source_bytes_per_pixel, _padded.data() + _destination_offset);
+                        _padded[_destination_offset + 3] = 255;
+                    }
                 }
             }
             return _padded;
@@ -122,8 +143,9 @@ namespace detail {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            const GLenum _format = profile == data_image_profile::rgb565 ? GL_RGB : GL_RGBA;
+            const GLenum _format = _texture_format(profile);
             glTexImage2D(GL_TEXTURE_2D, 0, _texture_internal_format(profile), _page.capacity.x, _page.capacity.y, 0, _format, _texture_type(profile), nullptr);
+            LUCARIA_DEBUG_OPENGL_ASSERT
             _page.free_pixels.push_back({ { 0, 0 }, _page.capacity });
             return _page;
         }
@@ -234,13 +256,18 @@ namespace detail {
             return;
         }
         rendering_textures_page& _page = _buffer.pages[_allocation->page];
+        LUCARIA_DEBUG_OPENGL_ASSERT
         glBindTexture(GL_TEXTURE_2D, _page.texture_id);
+        LUCARIA_DEBUG_OPENGL_ASSERT
         glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+        LUCARIA_DEBUG_OPENGL_ASSERT
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        LUCARIA_DEBUG_OPENGL_ASSERT
         glTexSubImage2D(GL_TEXTURE_2D, 0, _allocation->pixels.offset.x, _allocation->pixels.offset.y, _padded_size.x, _padded_size.y,
-            _texture_format(image.profile, image.channels),
+            _texture_format(image.profile),
             _texture_type(image.profile),
             _padded_pixels.data());
+        LUCARIA_DEBUG_OPENGL_ASSERT
         texture.profile = image.profile;
         texture.size = _size;
         texture.allocation = *_allocation;

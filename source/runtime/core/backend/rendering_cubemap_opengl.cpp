@@ -1,3 +1,4 @@
+#include <lucaria/core/app_error.hpp>
 #include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/rendering_cubemap.hpp>
 
@@ -78,6 +79,7 @@ namespace detail {
                 LUCARIA_DEBUG_ERROR("Invalid channels count, must be 3 or 4")
                 break;
             }
+            LUCARIA_DEBUG_OPENGL_ASSERT
         }
 
         _ownership.emplace();
@@ -121,6 +123,7 @@ namespace detail {
                 LUCARIA_DEBUG_ERROR("Invalid channels count, must be 3 or 4")
                 break;
             }
+            LUCARIA_DEBUG_OPENGL_ASSERT
         }
 
         _ownership.emplace();
