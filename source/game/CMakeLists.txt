@@ -201,7 +201,8 @@ if(ANDROID)
     set(lucaria_runtime_main_sources "${LUCARIA_SOURCE_DIR}/runtime/core/platform/main_android.cpp")
 elseif(EMSCRIPTEN)
     message("-- Configuring Lucaria engine for Web platform")
-    target_compile_definitions(lucaria_runtime PUBLIC -DLUCARIA_PLATFORM_WEB 
+    target_compile_definitions(lucaria_runtime PUBLIC 
+		-DLUCARIA_PLATFORM_WEB 
         -DLUCARIA_DISABLE_COMPUTE_SPIRV)
     list(APPEND lucaria_runtime_platform_sources "${LUCARIA_SOURCE_DIR}/runtime/core/platform/manager_window_web.cpp")
     set(lucaria_runtime_main_sources "${LUCARIA_SOURCE_DIR}/runtime/core/platform/main_web.cpp")
@@ -215,10 +216,12 @@ elseif(WIN32)
     set(lucaria_runtime_main_sources "${LUCARIA_SOURCE_DIR}/runtime/core/platform/main_glfw.cpp")
 elseif(PSP)
     message("-- Configuring Lucaria engine for PlayStation Portable platform")
-    target_compile_definitions(lucaria_runtime PUBLIC -DLUCARIA_PLATFORM_PSP)
+    target_compile_definitions(lucaria_runtime PUBLIC 
+		-DLUCARIA_PLATFORM_PSP
+		-DLUCARIA_DISABLE_COMPUTE_SPIRV)
     target_link_libraries(lucaria_runtime PUBLIC pspdebug pspge pspdisplay)
     list(APPEND lucaria_runtime_platform_sources "${LUCARIA_SOURCE_DIR}/runtime/core/platform/manager_window_psp.cpp")
-    set(lucaria_runtime_main_sources "core/platform/main_psp.cpp")
+    set(lucaria_runtime_main_sources "${LUCARIA_SOURCE_DIR}/runtime/core/platform/main_psp.cpp")
 endif()
 target_sources(lucaria_runtime PRIVATE ${lucaria_runtime_platform_sources})
 

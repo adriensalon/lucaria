@@ -10,6 +10,11 @@ if(NOT LUCARIA_BUILD_COMPILERS)
 	add_library(lucaria_external_tracy STATIC EXCLUDE_FROM_ALL "${lucaria_tracy_client_source}")
 	target_compile_features(lucaria_external_tracy PUBLIC cxx_std_11)
 	target_include_directories(lucaria_external_tracy SYSTEM PUBLIC "upstream/tracy/public")
+	if(PSP)
+		target_include_directories(lucaria_external_tracy PRIVATE
+			"upstream/tracy/public/common"
+			"upstream/tracy/public/client")
+	endif()
 	target_compile_definitions(lucaria_external_tracy PUBLIC
 		TRACY_ENABLE
 		TRACY_ON_DEMAND
