@@ -135,7 +135,16 @@ namespace detail {
                 _user_context->window->is_mouse_locked = true;
             }
 
-            const input_key _key(_emscripten_keyboard_mappings.at(std::string(event->key)));
+            std::string _event_key(event->key);
+            if (_event_key.size() == 1 && _event_key[0] >= 'A' && _event_key[0] <= 'Z') {
+                _event_key[0] = static_cast<char>(_event_key[0] - 'A' + 'a');
+            }
+            const std::unordered_map<std::string, input_key>::const_iterator _key_iterator = _emscripten_keyboard_mappings.find(_event_key);
+            if (_key_iterator == _emscripten_keyboard_mappings.end()) {
+                return 0;
+            }
+
+            const input_key _key(_key_iterator->second);
             if (event_type == EMSCRIPTEN_EVENT_KEYDOWN) {
                 _user_context->input->key_events[_key].state = true;
             } else if (event_type == EMSCRIPTEN_EVENT_KEYUP) {

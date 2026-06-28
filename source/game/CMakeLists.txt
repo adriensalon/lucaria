@@ -47,6 +47,29 @@ function(_lucaria_read_json_string_array OUT_VAR FIELD REQUIRED)
     set(${OUT_VAR} ${values} PARENT_SCOPE)
 endfunction()
 
+function(_lucaria_read_json_string OUT_VAR FIELD REQUIRED)
+    string(JSON value_type ERROR_VARIABLE value_type_error
+        TYPE "${LUCARIA_GAME_JSON}" game ${FIELD})
+    if(value_type_error)
+        if(REQUIRED)
+            message(FATAL_ERROR
+                "Missing required build.json field: game.${FIELD}: ${value_type_error}")
+        endif()
+        set(${OUT_VAR} "" PARENT_SCOPE)
+        return()
+    endif()
+    if(NOT value_type STREQUAL "STRING")
+        message(FATAL_ERROR "build.json field game.${FIELD} must be a string")
+    endif()
+    string(JSON value ERROR_VARIABLE value_error
+        GET "${LUCARIA_GAME_JSON}" game ${FIELD})
+    if(value_error)
+        message(FATAL_ERROR
+            "Could not read build.json field game.${FIELD}: ${value_error}")
+    endif()
+    set(${OUT_VAR} "${value}" PARENT_SCOPE)
+endfunction()
+
 function(_lucaria_make_game_path OUT_VAR VALUE)
     if(IS_ABSOLUTE "${VALUE}")
         set(${OUT_VAR} "${VALUE}" PARENT_SCOPE)
@@ -101,15 +124,16 @@ function(embed_gslc target gslc_file)
     target_sources(${target} PRIVATE "${wrapper_cpp}")
 endfunction()
 
-# non desktop platforms dont enable code hotreload for now
-if(PSP OR ANDROID OR EMSCRIPTEN)
+# debug native desktop builds enable code hotreload
+if(LUCARIA_GAME_DEBUG AND (WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Linux"))
+	set(LUCARIA_DISABLE_RELOAD OFF)
+else()
 	set(LUCARIA_DISABLE_RELOAD ON)
 endif()
 
 # release builds strip maximum code
 if(NOT LUCARIA_GAME_DEBUG)
 	set(LUCARIA_DISABLE_DEBUG ON)
-	set(LUCARIA_DISABLE_RELOAD ON)
 	set(LUCARIA_DISABLE_GUIZMOS ON)
 endif()
 
@@ -161,10 +185,6 @@ if (MSVC)
     target_compile_options(lucaria_runtime PRIVATE /bigobj)
 endif()
 
-# if(NOT LUCARIA_DISABLE_RELOAD)
-#     target_include_directories(lucaria_runtime PUBLIC "${CMAKE_BINARY_DIR}/generated/$<CONFIG>")
-# endif()
-
 set(lucaria_runtime_platform_sources "")
 set(lucaria_runtime_main_sources "")
 
@@ -177,16 +197,14 @@ if(ANDROID)
     add_library(android_native_app_glue STATIC ${NATIVE_APP_GLUE_DIR}/android_native_app_glue.c)
     target_include_directories(android_native_app_glue PUBLIC ${NATIVE_APP_GLUE_DIR})
     target_link_libraries(lucaria_runtime PUBLIC EGL android log android_native_app_glue)
-    list(APPEND lucaria_runtime_platform_sources
-        "${LUCARIA_SOURCE_DIR}/runtime/core/platform/manager_window_android.cpp")
-    set(lucaria_runtime_main_sources "core/platform/main_android.cpp")
+    list(APPEND lucaria_runtime_platform_sources "${LUCARIA_SOURCE_DIR}/runtime/core/platform/manager_window_android.cpp")
+    set(lucaria_runtime_main_sources "${LUCARIA_SOURCE_DIR}/runtime/core/platform/main_android.cpp")
 elseif(EMSCRIPTEN)
     message("-- Configuring Lucaria engine for Web platform")
     target_compile_definitions(lucaria_runtime PUBLIC -DLUCARIA_PLATFORM_WEB 
         -DLUCARIA_DISABLE_COMPUTE_SPIRV)
-    list(APPEND lucaria_runtime_platform_sources
-        "${LUCARIA_SOURCE_DIR}/runtime/core/platform/manager_window_web.cpp")
-    set(lucaria_runtime_main_sources "core/platform/main_web.cpp")
+    list(APPEND lucaria_runtime_platform_sources "${LUCARIA_SOURCE_DIR}/runtime/core/platform/manager_window_web.cpp")
+    set(lucaria_runtime_main_sources "${LUCARIA_SOURCE_DIR}/runtime/core/platform/main_web.cpp")
 elseif(WIN32)
     message("-- Configuring Lucaria engine for Win32/MacOS/Linux platform")
     target_compile_definitions(lucaria_runtime PUBLIC -DLUCARIA_PLATFORM_WIN32)
@@ -199,8 +217,7 @@ elseif(PSP)
     message("-- Configuring Lucaria engine for PlayStation Portable platform")
     target_compile_definitions(lucaria_runtime PUBLIC -DLUCARIA_PLATFORM_PSP)
     target_link_libraries(lucaria_runtime PUBLIC pspdebug pspge pspdisplay)
-    list(APPEND lucaria_runtime_platform_sources
-        "${LUCARIA_SOURCE_DIR}/runtime/core/platform/manager_window_psp.cpp")
+    list(APPEND lucaria_runtime_platform_sources "${LUCARIA_SOURCE_DIR}/runtime/core/platform/manager_window_psp.cpp")
     set(lucaria_runtime_main_sources "core/platform/main_psp.cpp")
 endif()
 target_sources(lucaria_runtime PRIVATE ${lucaria_runtime_platform_sources})
@@ -226,9 +243,12 @@ target_compile_definitions(lucaria_runtime PUBLIC -DLUCARIA_COMPILER_NAME=${CMAK
 if(LUCARIA_GAME_DEBUG)
     message(STATUS "Configuring Lucaria engine with Debug enabled")
     target_compile_definitions(lucaria_runtime PUBLIC -DLUCARIA_DEBUG)
-	set(LUCARIA_USER_LIBRARY_TYPE SHARED)
 else()
     message(STATUS "Configuring Lucaria engine with Debug disabled")
+endif()
+if(NOT LUCARIA_DISABLE_RELOAD)
+	set(LUCARIA_USER_LIBRARY_TYPE SHARED)
+else()
 	set(LUCARIA_USER_LIBRARY_TYPE STATIC)
 endif()
 
@@ -293,6 +313,12 @@ if(NOT LUCARIA_TARGET)
     message(FATAL_ERROR "build.json field game.name must not be empty")
 endif()
 add_library(${LUCARIA_TARGET} ALIAS lucaria_game)
+
+_lucaria_read_json_string(lucaria_install_dir install_dir TRUE)
+if(NOT lucaria_install_dir)
+	message(FATAL_ERROR "build.json field game.install_dir must not be empty")
+endif()
+_lucaria_make_game_path(LUCARIA_INSTALL_DIR "${lucaria_install_dir}")
 
 _lucaria_read_json_string_array(lucaria_source_patterns sources TRUE)
 set(LUCARIA_TARGET_SOURCES)
@@ -383,12 +409,35 @@ endif()
 
 # main executable/shared lib output name
 set_target_properties(lucaria_main PROPERTIES OUTPUT_NAME "${LUCARIA_TARGET}")
-if(LUCARIA_GAME_DEBUG)
+if(NOT LUCARIA_DISABLE_RELOAD)
 	add_dependencies(lucaria_main lucaria_game)
 else()
 	target_link_libraries(lucaria_main PRIVATE lucaria_game)
 	if(MSVC)
 		target_link_options(lucaria_main PRIVATE "/WHOLEARCHIVE:$<TARGET_FILE:lucaria_game>")
+	elseif(EMSCRIPTEN OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
+		target_link_options(lucaria_main PRIVATE
+			"SHELL:-Wl,--whole-archive $<TARGET_FILE:lucaria_game> -Wl,--no-whole-archive")
+	endif()
+endif()
+
+if(WIN32)
+	add_custom_command(
+		TARGET lucaria_main
+		POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E make_directory "${LUCARIA_INSTALL_DIR}"
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			"$<TARGET_FILE:lucaria_main>"
+			"${LUCARIA_INSTALL_DIR}/$<TARGET_FILE_NAME:lucaria_main>"
+		VERBATIM)
+	if(MSVC)
+		add_custom_command(
+			TARGET lucaria_main
+			POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+				"$<TARGET_PDB_FILE:lucaria_main>"
+				"${LUCARIA_INSTALL_DIR}/$<TARGET_PDB_FILE_NAME:lucaria_main>"
+			VERBATIM)
 	endif()
 endif()
 
@@ -429,6 +478,20 @@ if(EMSCRIPTEN)
 			-O3
 			-sGL_DEBUG=0)
 	endif()
+	add_custom_command(
+		TARGET lucaria_main
+		POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E make_directory "${LUCARIA_INSTALL_DIR}"
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			"$<TARGET_FILE:lucaria_main>"
+			"${LUCARIA_INSTALL_DIR}/index.html"
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			"$<TARGET_FILE_DIR:lucaria_main>/${LUCARIA_TARGET}.js"
+			"${LUCARIA_INSTALL_DIR}/${LUCARIA_TARGET}.js"
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			"$<TARGET_FILE_DIR:lucaria_main>/${LUCARIA_TARGET}.wasm"
+			"${LUCARIA_INSTALL_DIR}/${LUCARIA_TARGET}.wasm"
+		VERBATIM)
 endif()
 
 # Win32 console
