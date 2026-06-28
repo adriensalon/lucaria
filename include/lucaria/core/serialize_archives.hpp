@@ -5,7 +5,6 @@
 #include <cereal/archives/json.hpp>
 #include <cereal/archives/portable_binary.hpp>
 
-
 namespace lucaria {
 namespace detail {
 

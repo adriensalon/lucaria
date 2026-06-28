@@ -6,6 +6,7 @@
 #include <lucaria/core/manager_scenes.hpp>
 #include <lucaria/core/serialize_containers.hpp>
 #include <lucaria/core/serialize_mappings.hpp>
+#include <lucaria/core/user_components.hpp>
 #include <lucaria/core/user_scenes.hpp>
 #include <lucaria/engine/component_animator.hpp>
 #include <lucaria/engine/component_interface.hpp>
@@ -13,71 +14,43 @@
 #include <lucaria/engine/component_rigidbody.hpp>
 #include <lucaria/engine/component_speaker.hpp>
 #include <lucaria/engine/component_transform.hpp>
-#include <lucaria/core/user_components.hpp>
 
 namespace lucaria {
 namespace detail {
 
     template <>
     struct entt_emplace_factory<component_rigidbody_passive> {
+
         template <typename ArchiveType>
-        static component_rigidbody_passive& emplace(
-            ArchiveType& archive,
-            storage_registry& registry,
-            object_entity entity)
+        static component_rigidbody_passive& emplace(ArchiveType& archive, storage_registry& registry, object_entity entity)
         {
-            const auto& mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
-
-            if (mappings.dynamics == nullptr) {
-                LUCARIA_DEBUG_ERROR("Missing dynamics while loading component_rigidbody_passive");
-                throw std::runtime_error("Missing dynamics while loading component_rigidbody_passive");
-            }
-
-            return registry.emplace_or_replace<component_rigidbody_passive>(
-                entity,
-                *mappings.dynamics);
+            const mappings_manager_game_load& _mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
+            LUCARIA_DEBUG_ASSERT(_mappings.dynamics != nullptr, "Missing dynamics while loading component_rigidbody_passive");
+            return registry.emplace_or_replace<component_rigidbody_passive>(entity, *_mappings.dynamics);
         }
     };
 
     template <>
     struct entt_emplace_factory<component_rigidbody_kinematic> {
+
         template <typename ArchiveType>
-        static component_rigidbody_kinematic& emplace(
-            ArchiveType& archive,
-            storage_registry& registry,
-            object_entity entity)
+        static component_rigidbody_kinematic& emplace(ArchiveType& archive, storage_registry& registry, object_entity entity)
         {
-            const auto& mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
-
-            if (mappings.dynamics == nullptr) {
-                LUCARIA_DEBUG_ERROR("Missing dynamics while loading component_rigidbody_kinematic");
-                throw std::runtime_error("Missing dynamics while loading component_rigidbody_kinematic");
-            }
-
-            return registry.emplace_or_replace<component_rigidbody_kinematic>(
-                entity,
-                *mappings.dynamics);
+            const mappings_manager_game_load& _mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
+            LUCARIA_DEBUG_ASSERT(_mappings.dynamics != nullptr, "Missing dynamics while loading component_rigidbody_kinematic");
+            return registry.emplace_or_replace<component_rigidbody_kinematic>(entity, *_mappings.dynamics);
         }
     };
 
     template <>
     struct entt_emplace_factory<component_rigidbody_dynamic> {
+
         template <typename ArchiveType>
-        static component_rigidbody_dynamic& emplace(
-            ArchiveType& archive,
-            storage_registry& registry,
-            object_entity entity)
+        static component_rigidbody_dynamic& emplace(ArchiveType& archive, storage_registry& registry, object_entity entity)
         {
-            const auto& mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
-
-            if (mappings.dynamics == nullptr) {
-                LUCARIA_DEBUG_ERROR("Missing dynamics while loading component_rigidbody_dynamic");
-                throw std::runtime_error("Missing dynamics while loading component_rigidbody_dynamic");
-            }
-
-            return registry.emplace_or_replace<component_rigidbody_dynamic>(
-                entity,
-                *mappings.dynamics);
+            const mappings_manager_game_load& _mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
+            LUCARIA_DEBUG_ASSERT(_mappings.dynamics != nullptr, "Missing dynamics while loading component_rigidbody_dynamic");
+            return registry.emplace_or_replace<component_rigidbody_dynamic>(entity, *_mappings.dynamics);
         }
     };
 
@@ -92,20 +65,12 @@ namespace detail {
         void save(ArchiveType& archive) const
         {
             archive(cereal::make_nvp("component_save_id", component_save_id));
-
-            if (component_save == nullptr) {
-                LUCARIA_DEBUG_ERROR("Missing component while saving scene component snapshot");
-                return;
-            }
-
+            LUCARIA_DEBUG_ASSERT(component_save != nullptr, "Missing component while saving scene component snapshot");
             if constexpr (has_user_component_save_game_v<ComponentType>) {
-                mappings_manager_game_save& game_mappings = cereal::get_user_data<mappings_manager_game_save>(archive);
-                if (game_mappings.saving_objects == nullptr || game_mappings.scenes.saving_scene_manager == nullptr) {
-                    LUCARIA_DEBUG_ERROR("Missing game context while saving component");
-                    return;
-                }
-                context_save_game context { archive, *game_mappings.saving_objects, *game_mappings.scenes.saving_scene_manager, game_mappings };
-                context.field("component", *component_save);
+                mappings_manager_game_save& _mappings = cereal::get_user_data<mappings_manager_game_save>(archive);
+                LUCARIA_DEBUG_ASSERT(_mappings.saving_objects != nullptr && _mappings.scenes.saving_scene_manager != nullptr, "Missing game context while saving component");
+                context_save_game _context { archive, *_mappings.saving_objects, *_mappings.scenes.saving_scene_manager, _mappings };
+                _context.field("component", *component_save);
             } else {
                 archive(cereal::make_nvp("component", *component_save));
             }
@@ -115,32 +80,16 @@ namespace detail {
         void load(ArchiveType& archive)
         {
             archive(cereal::make_nvp("component_save_id", component_save_id));
-
-            auto& game_mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
-
-            if (game_mappings.loading_scene == nullptr || game_mappings.loading_scene_manager == nullptr) {
-                LUCARIA_DEBUG_ERROR("Missing scene while loading component");
-                return;
-            }
-
-            object_entity entity = game_mappings.scenes.load_map_scene_entities
-                                       .at(game_mappings.loading_scene_save_id)
-                                       .at(component_save_id);
-
-            ComponentType& component = entt_emplace_factory<ComponentType>::emplace(
-                archive,
-                game_mappings.loading_scene_manager->registry,
-                entity);
-
+            mappings_manager_game_load& _mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
+            LUCARIA_DEBUG_ASSERT(_mappings.loading_scene != nullptr && _mappings.loading_scene_manager != nullptr, "Missing scene while loading component");
+            object_entity _entity = _mappings.scenes.load_map_scene_entities.at(_mappings.loading_scene_save_id).at(component_save_id);
+            ComponentType& _component = entt_emplace_factory<ComponentType>::emplace(archive, _mappings.loading_scene_manager->registry, _entity);
             if constexpr (has_user_component_load_game_v<ComponentType>) {
-                if (game_mappings.loading_objects == nullptr) {
-                    LUCARIA_DEBUG_ERROR("Missing manager_assets while loading component");
-                    return;
-                }
-                context_load_game context { archive, *game_mappings.loading_objects, *game_mappings.loading_scene_manager, game_mappings.dynamics, game_mappings };
-                context.field("component", component);
+                LUCARIA_DEBUG_ASSERT(_mappings.loading_objects != nullptr, "Missing manager_assets while loading component");
+                context_load_game _context { archive, *_mappings.loading_objects, *_mappings.loading_scene_manager, _mappings.dynamics, _mappings };
+                _context.field("component", _component);
             } else {
-                archive(cereal::make_nvp("component", component));
+                archive(cereal::make_nvp("component", _component));
             }
         }
     };
@@ -184,23 +133,13 @@ namespace detail {
         void load(ArchiveType& archive)
         {
             archive(cereal::make_nvp("entity_save_ids", entity_save_ids));
-
-            auto& game_mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
-
-            if (game_mappings.loading_scene == nullptr || game_mappings.loading_scene_manager == nullptr) {
-                LUCARIA_DEBUG_ERROR("Missing scene while loading scene registry");
-                return;
+            mappings_manager_game_load& _mappings = cereal::get_user_data<mappings_manager_game_load>(archive);
+			LUCARIA_DEBUG_ASSERT(_mappings.loading_scene != nullptr && _mappings.loading_scene_manager != nullptr, "Missing scene while loading scene registry");
+            std::unordered_map<uint32, object_entity>& _entity_map = _mappings.scenes.load_map_scene_entities[_mappings.loading_scene_save_id];
+            for (uint32 _entity_save_id : entity_save_ids) {
+                object_entity _entity = _mappings.loading_scene_manager->registry.create(_mappings.loading_scene->index_for_context);
+                _entity_map[_entity_save_id] = _entity;
             }
-
-            auto& entity_map = game_mappings.scenes.load_map_scene_entities
-                                   [game_mappings.loading_scene_save_id];
-
-            for (uint32 entity_save_id : entity_save_ids) {
-                object_entity entity = game_mappings.loading_scene_manager->registry.create(
-                    game_mappings.loading_scene->index_for_context);
-                entity_map[entity_save_id] = entity;
-            }
-
             serialize_components(archive, *this);
         }
     };
@@ -397,7 +336,7 @@ namespace detail {
                 std::vector<snapshot_object_scene_component<ComponentType>> components = {};
                 archive(cereal::make_nvp("components", components));
             };
-		}
+        }
 
         user_component_type_ids[std::type_index(typeid(ComponentType))] = type_id;
         user_component_types[std::move(type_id)] = std::move(_component_type);

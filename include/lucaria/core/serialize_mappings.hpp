@@ -88,31 +88,31 @@ namespace detail {
         virtual ~mappings_user_asset_base_save() = default;
     };
 
-    template <typename AssetType>
+    template <typename Asset>
     struct mappings_user_asset_save final : mappings_user_asset_base_save {
-        mappings_container_cache_vector_save<AssetType> typed_mapping = {};
+        mappings_container_cache_vector_save<Asset> typed_mapping = {};
     };
 
     struct mappings_user_assets_save {
 
-        template <typename AssetType>
-        [[nodiscard]] mappings_container_cache_vector_save<AssetType>& get_mapping()
+        template <typename Asset>
+        [[nodiscard]] mappings_container_cache_vector_save<Asset>& get_mapping()
         {
-            const std::type_index _type = std::type_index(typeid(AssetType));
+            const std::type_index _type = std::type_index(typeid(Asset));
             typename std::unordered_map<std::type_index, std::unique_ptr<mappings_user_asset_base_save>>::const_iterator _iterator = _mappings.find(_type);
             if (_iterator == _mappings.end()) {
-                std::unique_ptr<mappings_user_asset_save<AssetType>> _mapping_ptr = std::make_unique<mappings_user_asset_save<AssetType>>();
-                mappings_user_asset_save<AssetType>* _mapping_raw = _mapping_ptr.get();
+                std::unique_ptr<mappings_user_asset_save<Asset>> _mapping_ptr = std::make_unique<mappings_user_asset_save<Asset>>();
+                mappings_user_asset_save<Asset>* _mapping_raw = _mapping_ptr.get();
                 _mappings.emplace(_type, std::move(_mapping_ptr));
                 return _mapping_raw->typed_mapping;
             }
-            return static_cast<mappings_user_asset_save<AssetType>*>(_iterator->second.get())->typed_mapping;
+            return static_cast<mappings_user_asset_save<Asset>*>(_iterator->second.get())->typed_mapping;
         }
 
-        template <typename AssetType>
-        [[nodiscard]] uint32 get_or_create(const assets_cell<AssetType>* cell)
+        template <typename Asset>
+        [[nodiscard]] uint32 get_or_create(const assets_cell<Asset>* cell)
         {
-            return get_mapping<AssetType>().get_or_create(cell);
+            return get_mapping<Asset>().get_or_create(cell);
         }
 
     private:
@@ -123,37 +123,37 @@ namespace detail {
         virtual ~mappings_user_asset_base_load() = default;
     };
 
-    template <typename AssetType>
+    template <typename Asset>
     struct mappings_user_asset_load final : mappings_user_asset_base_load {
-        mappings_container_cache_vector_load<AssetType> typed_mapping = {};
+        mappings_container_cache_vector_load<Asset> typed_mapping = {};
     };
 
     struct mappings_user_assets_load {
 
-        template <typename AssetType>
-        [[nodiscard]] mappings_container_cache_vector_load<AssetType>& get_mapping()
+        template <typename Asset>
+        [[nodiscard]] mappings_container_cache_vector_load<Asset>& get_mapping()
         {
-            const std::type_index _type = std::type_index(typeid(AssetType));
+            const std::type_index _type = std::type_index(typeid(Asset));
             typename std::unordered_map<std::type_index, std::unique_ptr<mappings_user_asset_base_load>>::const_iterator _iterator = _mappings.find(_type);
             if (_iterator == _mappings.end()) {
-                std::unique_ptr<mappings_user_asset_load<AssetType>> _mapping_ptr = std::make_unique<mappings_user_asset_load<AssetType>>();
-                mappings_user_asset_load<AssetType>* _mapping_raw = _mapping_ptr.get();
+                std::unique_ptr<mappings_user_asset_load<Asset>> _mapping_ptr = std::make_unique<mappings_user_asset_load<Asset>>();
+                mappings_user_asset_load<Asset>* _mapping_raw = _mapping_ptr.get();
                 _mappings.emplace(_type, std::move(_mapping_ptr));
                 return _mapping_raw->typed_mapping;
             }
-            return static_cast<mappings_user_asset_load<AssetType>*>(_iterator->second.get())->typed_mapping;
+            return static_cast<mappings_user_asset_load<Asset>*>(_iterator->second.get())->typed_mapping;
         }
 
-        template <typename AssetType>
-        void set(uint32 id, assets_cell<AssetType>* cell)
+        template <typename Asset>
+        void set(uint32 id, assets_cell<Asset>* cell)
         {
-            get_mapping<AssetType>().set(id, cell);
+            get_mapping<Asset>().set(id, cell);
         }
 
-        template <typename AssetType>
-        [[nodiscard]] assets_cell<AssetType>* get(uint32 id)
+        template <typename Asset>
+        [[nodiscard]] assets_cell<Asset>* get(uint32 id)
         {
-            return get_mapping<AssetType>().get(id);
+            return get_mapping<Asset>().get(id);
         }
 
     private:
@@ -174,7 +174,6 @@ namespace detail {
         mappings_container_cache_vector_save<object_skeleton> skeletons = {};
         mappings_container_cache_vector_save<object_sound_track> sound_tracks = {};
         mappings_container_cache_vector_save<asset_texture> textures = {};
-
         mappings_user_assets_save user_assets = {};
     };
 
@@ -192,20 +191,20 @@ namespace detail {
         mappings_container_cache_vector_load<asset_animation> animations = {};
         mappings_container_cache_vector_load<object_motion_track> motion_tracks = {};
         mappings_container_cache_vector_load<object_event_track> event_tracks = {};
-
         mappings_user_assets_load user_assets = {};
     };
 
-    template <typename AssetType>
+    template <typename Asset>
     struct handle_asset_mapping {
-        static uint32 save(mappings_manager_object_save& mappings, const assets_cell<AssetType>* cell)
+		
+        static uint32 save(mappings_manager_object_save& mappings, const assets_cell<Asset>* cell)
         {
-            return mappings.user_assets.template get_or_create<AssetType>(cell);
+            return mappings.user_assets.template get_or_create<Asset>(cell);
         }
 
-        static assets_cell<AssetType>* load(mappings_manager_object_load& mappings, const uint32 id)
+        static assets_cell<Asset>* load(mappings_manager_object_load& mappings, const uint32 id)
         {
-            return mappings.user_assets.template get<AssetType>(id);
+            return mappings.user_assets.template get<Asset>(id);
         }
 
         static constexpr const char* name()
@@ -247,25 +246,23 @@ namespace detail {
     };
 
 }
-// impl
 
-#define LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(AssetType, SaveMember, LoadMember, NameLiteral)                            \
-    template <>                                                                                                        \
-    struct detail::handle_asset_mapping<AssetType> {                                                                   \
-        static uint32 save(detail::mappings_manager_object_save& mappings, const detail::assets_cell<AssetType>* cell) \
-        {                                                                                                              \
-            return mappings.SaveMember.get(cell);                                                                      \
-        }                                                                                                              \
-        static detail::assets_cell<AssetType>* load(detail::mappings_manager_object_load& mappings, const uint32 id)   \
-        {                                                                                                              \
-            return mappings.LoadMember.get(id);                                                                        \
-        }                                                                                                              \
-        static constexpr const char* name()                                                                            \
-        {                                                                                                              \
-            return NameLiteral;                                                                                        \
-        }                                                                                                              \
+#define LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(Asset, SaveMember, LoadMember, NameLiteral)                            \
+    template <>                                                                                                    \
+    struct detail::handle_asset_mapping<Asset> {                                                                   \
+        static uint32 save(detail::mappings_manager_object_save& mappings, const detail::assets_cell<Asset>* cell) \
+        {                                                                                                          \
+            return mappings.SaveMember.get(cell);                                                                  \
+        }                                                                                                          \
+        static detail::assets_cell<Asset>* load(detail::mappings_manager_object_load& mappings, const uint32 id)   \
+        {                                                                                                          \
+            return mappings.LoadMember.get(id);                                                                    \
+        }                                                                                                          \
+        static constexpr const char* name()                                                                        \
+        {                                                                                                          \
+            return NameLiteral;                                                                                    \
+        }                                                                                                          \
     };
-
 LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::asset_animation, animations, animations, "animation")
 LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::asset_audio, audios, audios, "audio")
 LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::asset_cubemap, cubemaps, cubemaps, "cubemap")
@@ -279,43 +276,36 @@ LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_shape, shapes, shapes, "shape
 LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_skeleton, skeletons, skeletons, "skeleton")
 LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::object_sound_track, sound_tracks, sound_tracks, "sound_track")
 LUCARIA_DEFINE_HANDLE_ASSET_MAPPING(detail::asset_texture, textures, textures, "texture")
-
 #undef LUCARIA_DEFINE_HANDLE_ASSET_MAPPING
 
-template <typename AssetType>
-template <typename ArchiveType>
-void handle_asset<AssetType>::save(ArchiveType& archive) const
+template <typename Asset>
+template <typename Archive>
+void handle_asset<Asset>::save(Archive& archive) const
 {
     detail::mappings_manager_game_save& mappings = cereal::get_user_data<detail::mappings_manager_game_save>(archive);
-    const uint32 asset_id = _cached == nullptr ? 0u : detail::handle_asset_mapping<AssetType>::save(mappings.objects, _cached);
+    const uint32 asset_id = _cached == nullptr ? 0u : detail::handle_asset_mapping<Asset>::save(mappings.objects, _cached);
     archive(cereal::make_nvp("object_save_id", asset_id));
 }
 
-template <typename AssetType>
-template <typename ArchiveType>
-void handle_asset<AssetType>::load(ArchiveType& archive)
+template <typename Asset>
+template <typename Archive>
+void handle_asset<Asset>::load(Archive& archive)
 {
     uint32 asset_id = 0;
     archive(cereal::make_nvp("object_save_id", asset_id));
-
     if (asset_id == 0) {
         reset();
         return;
     }
-
     detail::mappings_manager_game_load& mappings = cereal::get_user_data<detail::mappings_manager_game_load>(archive);
-    detail::assets_cell<AssetType>* cached_cell = detail::handle_asset_mapping<AssetType>::load(mappings.objects, asset_id);
-
+    detail::assets_cell<Asset>* cached_cell = detail::handle_asset_mapping<Asset>::load(mappings.objects, asset_id);
     if (cached_cell == nullptr) {
-        LUCARIA_DEBUG_ERROR(std::string("Failed to resolve ") + detail::handle_asset_mapping<AssetType>::name() + " handle while loading");
+        LUCARIA_DEBUG_ERROR(std::string("Failed to resolve ") + detail::handle_asset_mapping<Asset>::name() + " handle while loading");
         reset();
         return;
     }
-
     _cached = cached_cell;
     _refcount = detail::flag_refcount(&_cached->refcount_control);
 }
-
-
 
 }

@@ -24,19 +24,15 @@
 #include <lucaria/bin/types_containers.hpp>
 
 namespace lucaria {
-namespace detail {
+struct context_dynamics;
+struct context_game;
 
+namespace detail {
     struct manager_assets;
     struct manager_window;
     struct manager_scenes;
     struct mappings_manager_game_save;
     struct mappings_manager_game_load;
-
-}
-
-struct context_dynamics;
-struct context_game;
-namespace detail {
 
     template <typename AssetType>
     void load_user_asset_from_bytes(manager_assets& objects, AssetType& asset, const std::vector<char>& bytes);
@@ -85,28 +81,28 @@ namespace detail {
     }
 
 
-    template <typename ValueType, typename ContextType, typename = void>
+    template <typename Value, typename ContextType, typename = void>
     struct has_context_save : std::false_type { };
 
-    template <typename ValueType, typename ContextType>
-    struct has_context_save<ValueType, ContextType, std::void_t<decltype(std::declval<const ValueType&>().save(std::declval<ContextType&>()))>> : std::true_type { };
+    template <typename Value, typename ContextType>
+    struct has_context_save<Value, ContextType, std::void_t<decltype(std::declval<const Value&>().save(std::declval<ContextType&>()))>> : std::true_type { };
 
-    template <typename ValueType, typename ContextType>
-    inline constexpr bool has_context_save_v = has_context_save<ValueType, ContextType>::value;
+    template <typename Value, typename ContextType>
+    inline constexpr bool has_context_save_v = has_context_save<Value, ContextType>::value;
 
-    template <typename ValueType, typename ContextType, typename = void>
+    template <typename Value, typename ContextType, typename = void>
     struct has_context_load : std::false_type { };
 
-    template <typename ValueType, typename ContextType>
-    struct has_context_load<ValueType, ContextType, std::void_t<decltype(std::declval<ValueType&>().load(std::declval<ContextType&>()))>> : std::true_type { };
+    template <typename Value, typename ContextType>
+    struct has_context_load<Value, ContextType, std::void_t<decltype(std::declval<Value&>().load(std::declval<ContextType&>()))>> : std::true_type { };
 
-    template <typename ValueType, typename ContextType>
-    inline constexpr bool has_context_load_v = has_context_load<ValueType, ContextType>::value;
+    template <typename Value, typename ContextType>
+    inline constexpr bool has_context_load_v = has_context_load<Value, ContextType>::value;
 
-    template <typename ContextType, typename ValueType>
+    template <typename ContextType, typename Value>
     struct context_save_field_wrapper {
         ContextType* context = nullptr;
-        const ValueType* value = nullptr;
+        const Value* value = nullptr;
 
         template <typename ArchiveType>
         void save(ArchiveType&) const
@@ -115,10 +111,10 @@ namespace detail {
         }
     };
 
-    template <typename ContextType, typename ValueType>
+    template <typename ContextType, typename Value>
     struct context_load_field_wrapper {
         ContextType* context = nullptr;
-        ValueType* value = nullptr;
+        Value* value = nullptr;
 
         template <typename ArchiveType>
         void load(ArchiveType&)
@@ -181,12 +177,12 @@ namespace detail {
         }
     }
 
-    template <typename ContextType, typename ValueType>
-    void save_context_field(ContextType& context, storage_save_archive_variant& archive, std::string_view name, const ValueType& value)
+    template <typename ContextType, typename Value>
+    void save_context_field(ContextType& context, storage_save_archive_variant& archive, std::string_view name, const Value& value)
     {
         const std::string _name(name);
-        if constexpr (has_context_save_v<ValueType, ContextType>) {
-            context_save_field_wrapper<ContextType, ValueType> _wrapper { &context, &value };
+        if constexpr (has_context_save_v<Value, ContextType>) {
+            context_save_field_wrapper<ContextType, Value> _wrapper { &context, &value };
             visit_save_archive(archive, [&](auto& archive_value) {
                 archive_value(cereal::make_nvp(_name, _wrapper));
             });
@@ -197,17 +193,16 @@ namespace detail {
         }
     }
 
-    template <typename ContextType, typename ValueType>
-    void load_context_field(std::string_view scope, ContextType& context, storage_load_archive_variant& archive, std::string_view name, ValueType& value)
+    template <typename ContextType, typename Value>
+    void load_context_field(std::string_view scope, ContextType& context, storage_load_archive_variant& archive, std::string_view name, Value& value)
     {
         if (std::holds_alternative<std::monostate>(archive)) {
             return;
         }
-
         const std::string _name(name);
         try_snapshot_load(scope, _name, [&]() {
-            if constexpr (has_context_load_v<ValueType, ContextType>) {
-                context_load_field_wrapper<ContextType, ValueType> _wrapper { &context, &value };
+            if constexpr (has_context_load_v<Value, ContextType>) {
+                context_load_field_wrapper<ContextType, Value> _wrapper { &context, &value };
                 visit_load_archive(archive, [&](auto& archive_value) {
                     archive_value(cereal::make_nvp(_name, _wrapper));
                 });
@@ -235,8 +230,8 @@ namespace detail {
         {
         }
 
-        template <typename ValueType>
-        void field(std::string_view name, const ValueType& value)
+        template <typename Value>
+        void field(std::string_view name, const Value& value)
         {
             save_context_field(*this, archive, name, value);
         }
@@ -259,8 +254,8 @@ namespace detail {
         {
         }
 
-        template <typename ValueType>
-        void field(std::string_view name, ValueType& value)
+        template <typename Value>
+        void field(std::string_view name, Value& value)
         {
             load_context_field("game_load_context", *this, archive, name, value);
         }
@@ -277,8 +272,8 @@ namespace detail {
         {
         }
 
-        template <typename ValueType>
-        void field(std::string_view name, const ValueType& value)
+        template <typename Value>
+        void field(std::string_view name, const Value& value)
         {
             save_context_field(*this, archive, name, value);
         }
@@ -345,7 +340,6 @@ namespace detail {
                 callback();
                 return;
             }
-
             std::scoped_lock _lock(finish_callbacks_mutex);
             if (finished()) {
                 callback();
@@ -370,7 +364,6 @@ namespace detail {
                 _task->poll();
                 ++_index;
             }
-
             try_finish();
             return finished();
         }
@@ -380,7 +373,6 @@ namespace detail {
             if (!closed.load(std::memory_order_acquire) || pending_worker_fetches.load(std::memory_order_acquire) != 0) {
                 return false;
             }
-
             std::scoped_lock _lock(tasks_mutex);
             for (const std::unique_ptr<load_context_task_base>& _task : tasks) {
                 if (!_task->finished()) {
@@ -411,9 +403,7 @@ namespace detail {
             if (!finish_invoked.compare_exchange_strong(_expected, true, std::memory_order_acq_rel)) {
                 return;
             }
-
             notify_finished();
-
             std::vector<std::function<void()>> _callbacks;
             {
                 std::scoped_lock _lock(finish_callbacks_mutex);
@@ -449,8 +439,8 @@ namespace detail {
             return !std::holds_alternative<std::monostate>(archive);
         }
 
-        template <typename ValueType>
-        void field(std::string_view name, ValueType& value)
+        template <typename Value>
+        void field(std::string_view name, Value& value)
         {
             load_context_field("storage_load_context", *this, archive, name, value);
         }
