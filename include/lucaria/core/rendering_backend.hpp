@@ -30,5 +30,6 @@
 #include <pspdisplay.h>
 #include <pspgu.h>
 #include <pspgum.h>
+#include <pspkernel.h>
 #endif
 #endif

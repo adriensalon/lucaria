@@ -1,10 +1,70 @@
 #pragma once
 
+#include <cstdint>
+#include <vector>
+
 #include <lucaria/core/rendering_backend.hpp>
 #include <lucaria/core/scenes_entity.hpp>
 
 namespace lucaria {
 namespace detail {
+
+    template <typename T, typename Entity, std::uint32_t PageSize = 1024>
+    struct storage_compute_allocator_cpu_shadow {
+        using value_type = T;
+        using entity_type = Entity;
+
+        static constexpr std::uint32_t page_size = PageSize;
+        static constexpr std::uint32_t invalid_page = 0xffffffffu;
+
+        struct allocation_type {
+            std::uint32_t page = invalid_page;
+            std::uint32_t base_index = 0;
+        };
+
+        std::uint32_t page_count = 0;
+        std::vector<std::uint32_t> free_pages = {};
+
+        allocation_type allocate_page()
+        {
+            std::uint32_t page = invalid_page;
+            if (!free_pages.empty()) {
+                page = free_pages.back();
+                free_pages.pop_back();
+            } else {
+                page = page_count++;
+            }
+            return {
+                page,
+                page * page_size
+            };
+        }
+
+        void release_page(allocation_type allocation)
+        {
+            if (allocation.page != invalid_page) {
+                free_pages.push_back(allocation.page);
+            }
+        }
+
+        template <typename... Args>
+        void construct(allocation_type, std::uint32_t, Args&&...)
+        {
+        }
+
+        void destroy(allocation_type, std::uint32_t)
+        {
+        }
+
+        void move_construct(allocation_type, std::uint32_t, allocation_type, std::uint32_t)
+        {
+        }
+
+        std::uint32_t backend_index(allocation_type allocation, std::uint32_t offset) const
+        {
+            return allocation.base_index + offset;
+        }
+    };
 
     // #if !defined(LUCARIA_DISABLE_OPENGL_COMPUTE)
     //     template <typename T, typename Entity, std::uint32_t PageSize = 1024>
@@ -102,7 +162,7 @@ namespace detail {
     //     };
     // #endif
 
-#if !defined(LUCARIA_DISABLE_OPENGL_COMPUTE_TEXTURE)
+#if defined(LUCARIA_BACKEND_OPENGL) && !defined(LUCARIA_DISABLE_OPENGL_COMPUTE_TEXTURE)
     template <typename T, typename Entity, std::uint32_t PageSize = 1024>
     struct storage_compute_allocator_opengl_texture {
         using value_type = T;

@@ -116,6 +116,7 @@ namespace detail {
         _view.each(gsl_fallback_invoker<SystemFunction> {});
     }
 
+#if defined(LUCARIA_BACKEND_OPENGL)
     struct gsl_opengl_texture_dispatch_context {
         const char* system_name = nullptr;
         const char* gsl_id = nullptr;
@@ -147,6 +148,7 @@ namespace detail {
         // Draw fullscreen rect/triangle.
         // dispatch_opengl_texture_system<SystemFunction, ComponentTypes...>(registry, _view, _dispatch_items, _context);
     }
+#endif
 
 }
 }

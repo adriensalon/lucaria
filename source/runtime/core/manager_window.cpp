@@ -32,9 +32,9 @@ namespace detail {
 #endif
 
 #if defined(LUCARIA_PLATFORM_PSP)
-        if (implementation_psp.must_install_imgui_callbacks) {
+        if (must_install_imgui_callbacks) {
             ImGui_ImplPSP_Init();
-            implementation_psp.must_install_imgui_callbacks = false;
+            must_install_imgui_callbacks = false;
         }
 #endif
 

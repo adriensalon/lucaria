@@ -39,6 +39,10 @@ namespace detail {
 #endif
 
 #if defined(LUCARIA_BACKEND_PSPGU)
+        void* pixels = nullptr;
+        int psm = GU_PSM_8888;
+        int tbw = 0;
+        uint32x2 texture_capacity = {};
 #endif
 
     private:

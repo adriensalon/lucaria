@@ -34,6 +34,9 @@ namespace detail {
 #endif
 
 #if defined(LUCARIA_BACKEND_PSPGU)
+        std::vector<uint8> vertex_bytes = {};
+        std::vector<uint16> elements_16 = {};
+        int vertex_format = 0;
 #endif
 
     private:
@@ -50,8 +53,8 @@ namespace detail {
         ~rendering_mesh_line();
 
         rendering_mesh_line(const data_geometry& from);
-        rendering_mesh_line(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices);
-        void update(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices);
+        rendering_mesh_line(const std::vector<float32x3>& positions, const std::vector<uint32x2>& indices);
+        void update(const std::vector<float32x3>& positions, const std::vector<uint32x2>& indices);
 
         uint32 size;
 
@@ -65,6 +68,8 @@ namespace detail {
 #endif
 
 #if defined(LUCARIA_BACKEND_PSPGU)
+        std::vector<float32x3> positions = {};
+        std::vector<uint16> elements_16 = {};
 #endif
 
     private:

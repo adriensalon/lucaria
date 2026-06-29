@@ -78,6 +78,10 @@ function(_lucaria_make_game_path OUT_VAR VALUE)
     endif()
 endfunction()
 
+if(PSP)
+	add_compile_options(-Os)
+endif()
+
 # external libraries
 if(NOT EMSCRIPTEN)
     add_subdirectory(${LUCARIA_EXTERNAL_DIR}/alsoft ${CMAKE_CURRENT_BINARY_DIR}/external/alsoft)
@@ -219,7 +223,15 @@ elseif(PSP)
     target_compile_definitions(lucaria_runtime PUBLIC 
 		-DLUCARIA_PLATFORM_PSP
 		-DLUCARIA_DISABLE_COMPUTE_SPIRV)
-    target_link_libraries(lucaria_runtime PUBLIC pspdebug pspge pspdisplay)
+    set(lucaria_psp_sdk_libraries
+        pspaudio
+        pspctrl
+        psprtc
+        pspdebug
+        pspge
+        pspdisplay
+        pspgum
+        pspgu)
     list(APPEND lucaria_runtime_platform_sources "${LUCARIA_SOURCE_DIR}/runtime/core/platform/manager_window_psp.cpp")
     set(lucaria_runtime_main_sources "${LUCARIA_SOURCE_DIR}/runtime/core/platform/main_psp.cpp")
 endif()
@@ -233,6 +245,16 @@ else()
 endif()
 set_target_properties(lucaria_main PROPERTIES CXX_STANDARD 17)
 target_link_libraries(lucaria_main PRIVATE lucaria_runtime)
+if(PSP)
+	target_link_libraries(lucaria_main PRIVATE ${lucaria_psp_sdk_libraries})
+	if(BUILD_PRX)
+		add_custom_command(
+			TARGET lucaria_main
+			POST_BUILD
+			COMMAND ${CMAKE_STRIP} --strip-debug "$<TARGET_FILE:lucaria_main>"
+			VERBATIM)
+	endif()
+endif()
 
 # generator
 message("-- Configuring Lucaria engine with ${CMAKE_GENERATOR} generator")
@@ -453,6 +475,14 @@ if(PSP)
 		PREVIEW_PATH NULL
 		TITLE ${LUCARIA_TARGET}
 		VERSION 01.00)
+	add_custom_command(
+		TARGET lucaria_main
+		POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E make_directory "${LUCARIA_INSTALL_DIR}"
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			"$<TARGET_FILE_DIR:lucaria_main>/EBOOT.PBP"
+			"${LUCARIA_INSTALL_DIR}/EBOOT.PBP"
+		VERBATIM)
 endif()
 
 # Web final link options

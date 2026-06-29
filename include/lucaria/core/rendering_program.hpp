@@ -46,9 +46,9 @@ namespace detail {
 
 #if defined(LUCARIA_BACKEND_PSPGU)
         flag_owning ownership = {};
-        const object_mesh_pspgu* mesh = nullptr;
-        const object_texture_pspgu* texture = nullptr;
-        bool texture_enabled = false;
+        const rendering_mesh* mesh = nullptr;
+        mutable const rendering_texture* texture = nullptr;
+        mutable bool texture_enabled = false;
         bool lighting_enabled = false;
         bool depth_enabled = true;
 #endif

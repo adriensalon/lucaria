@@ -46,7 +46,7 @@ struct component_interface_spatial {
     component_interface_spatial& operator=(component_interface_spatial&& other) = default;
     ~component_interface_spatial();
 
-    component_interface_spatial& use_viewport(const handle_geometry geometry, const glm::uvec2& size);
+    component_interface_spatial& use_viewport(const handle_geometry geometry, const uint32x2& size);
     component_interface_spatial& use_interaction_texture(const handle_texture texture);
     component_interface_spatial& set_interaction(const bool interaction);
     component_interface_spatial& set_cursor_size(const glm::vec2& size);
@@ -61,7 +61,7 @@ private:
     std::function<void(detail::manager_window&)> _setup_callback = nullptr;
     detail::flag_owning _ownership = {};
     bool _use_interaction = false;
-    glm::uvec2 _viewport_size = glm::uvec2(0);
+    uint32x2 _viewport_size = uint32x2(0);
     std::optional<glm::vec2> _interaction_screen_position = std::nullopt;
     handle_texture _interaction_texture = {};
     handle_geometry _viewport_geometry = {};

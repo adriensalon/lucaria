@@ -1,7 +1,8 @@
-#include <lucaria/core/error.hpp>
-#include <lucaria/core/window.hpp>
+#include <chrono>
 
-extern "C" void __lucaria_main_scene();
+#include <lucaria/core/app_error.hpp>
+#include <lucaria/core/manager_assets.hpp>
+#include <lucaria/core/manager_app.hpp>
 
 #define BUFFER_WIDTH 512
 #define SCREEN_WIDTH 480
@@ -29,7 +30,7 @@ namespace detail {
 		}
 		
 
-        void _update_loop(manager_window& window)
+        void _update_loop(manager_window& window, manager_input& input)
         {
             static std::chrono::high_resolution_clock::time_point _last_render_time = std::chrono::high_resolution_clock::now();
             const std::chrono::high_resolution_clock::time_point _render_time = std::chrono::high_resolution_clock::now();
@@ -37,7 +38,7 @@ namespace detail {
             _last_render_time = _render_time;
 
             for (std::pair<const uint32, float32x2>& _accumulator : window.pointer_accumulators) {
-                window.pointer_events[_accumulator.first].delta = _accumulator.second;
+                input.pointer_events[_accumulator.first].delta = _accumulator.second;
                 _accumulator.second = float32x2(0);
             }
 
@@ -53,15 +54,19 @@ namespace detail {
         }
     }
 
-    manager_window::manager_window(
-		const std::function<void()>& update_callback, 
-		const std::function<void()>& initialize_callback, 
-		const std::function<void()>& destroy_callback
-	)
+    void manager_window::run(
+        manager_input& input,
+        manager_assets& objects,
+        const std::function<void()>& setup_callback,
+        const std::function<void()>& update_callback)
     {
-		set_engine_window(this);
-
 		screen_size = uint32x2(SCREEN_WIDTH, SCREEN_HEIGHT);
+        objects.is_etc2_supported = false;
+        objects.is_s3tc_supported = false;
+        input.is_mouse_supported = false;
+        input.is_keyboard_supported = true;
+        input.is_touch_supported = false;
+
 		pspDebugScreenInit();
 		const int _thread_id = sceKernelCreateThread("update_thread", _callback_thread, 0x11, 0xFA0, 0, 0);
 		if (_thread_id >= 0) {
@@ -85,25 +90,15 @@ namespace detail {
 
         initialize_imgui();
         initialize_openal();
-
-        is_mouse_supported = false;
-        is_keyboard_supported = true;
-        is_touch_supported = false;
 		
-        if (initialize_callback) {
-            initialize_callback();
+        if (setup_callback) {
+            setup_callback();
         }
         stored_update_callback = update_callback;
-		
-		__lucaria_main_scene();
 
 		while (true) {
-			_update_loop(*this);
+			_update_loop(*this, input);
 		}
-
-        if (destroy_callback) {
-            destroy_callback();
-        }
     }
 
 }

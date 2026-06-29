@@ -9,7 +9,11 @@ namespace lucaria {
 namespace detail {
 
     template <typename Component, typename Entity>
+#if defined(LUCARIA_BACKEND_OPENGL)
     using default_compute_allocator = storage_compute_allocator_opengl_texture<Component, Entity>;
+#else
+    using default_compute_allocator = storage_compute_allocator_cpu_shadow<Component, Entity>;
+#endif
 
     //
 
@@ -374,7 +378,8 @@ namespace detail {
         struct basic_each_iterator {
             using storage_type = std::conditional_t<IsConst, const storage_buffer, storage_buffer>;
             using base_iterator_type = std::conditional_t<IsConst, typename base_type::const_iterator, typename base_type::iterator>;
-            using component_ref = std::conditional_t<IsConst, const value_type&, value_type&>;
+            using component_value_type = typename storage_buffer::value_type;
+            using component_ref = std::conditional_t<IsConst, const component_value_type&, component_value_type&>;
 
             using difference_type = std::ptrdiff_t;
             using value_type_tuple = std::tuple<entity_type, component_ref>;

@@ -800,7 +800,7 @@ namespace detail {
             for (const std::pair<const float32x3, std::vector<float32x3>>& _pair : guizmo_draw.positions) {
                 const float32x3& _color = _pair.first;
                 const std::vector<float32x3>& _positions = _pair.second;
-                const std::vector<glm::uvec2>& _indices = guizmo_draw.indices.at(_color);
+                const std::vector<uint32x2>& _indices = guizmo_draw.indices.at(_color);
                 if (object_mesh_linees.find(_color) == object_mesh_linees.end()) {
                     object_mesh_linees.emplace(_color, rendering_mesh_line(_positions, _indices));
                 } else {

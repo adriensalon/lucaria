@@ -23,7 +23,7 @@ namespace detail {
 #endif
 
 #if defined(LUCARIA_BACKEND_PSPGU)
-        bool is_owning = false;
+        flag_owning ownership = {};
         void* pixels = nullptr;
 		int psm = GU_PSM_8888;
 		int fbw = 512;

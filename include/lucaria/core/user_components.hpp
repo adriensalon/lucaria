@@ -18,3 +18,4 @@ namespace traits {
         struct component_compute_enable<ComponentType> \
             : std::true_type { };                       \
     }
+	
