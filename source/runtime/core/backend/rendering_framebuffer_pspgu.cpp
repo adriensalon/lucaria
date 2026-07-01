@@ -3,6 +3,10 @@
 namespace lucaria {
 namespace detail {
 
+    void* psp_current_draw_buffer();
+    void* psp_default_depth_buffer();
+    int psp_default_buffer_width();
+
     rendering_framebuffer::~rendering_framebuffer() = default;
 
     rendering_framebuffer::rendering_framebuffer()
@@ -12,8 +16,8 @@ namespace detail {
 
     void rendering_framebuffer::use_default()
     {
-        sceGuDrawBuffer(GU_PSM_8888, reinterpret_cast<void*>(0), 512);
-        sceGuDepthBuffer(reinterpret_cast<void*>(2 * 512 * 272 * 4), 512);
+        sceGuDrawBufferList(GU_PSM_8888, psp_current_draw_buffer(), psp_default_buffer_width());
+        sceGuDepthBuffer(psp_default_depth_buffer(), psp_default_buffer_width());
     }
 
     void rendering_framebuffer::use()

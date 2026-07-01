@@ -3,6 +3,7 @@
 
 #include <pspctrl.h>
 #include <pspgu.h>
+#include <pspkernel.h>
 #include <psprtc.h>
 
 #include "imgui.h"
@@ -31,10 +32,48 @@ static ImVec2 _mouse_position(240, 136); // Center
 static int _next_pot(const int v)
 {
     int _result = 1;
-    while (_result < v && _result < 512) {
+    while (_result < v) {
         _result <<= 1;
     }
     return _result;
+}
+
+static bool _upload_font_texture(ImFontAtlas* atlas)
+{
+    if (_font_texture) {
+        free(_font_texture);
+        _font_texture = nullptr;
+    }
+
+    unsigned char* _pixels = nullptr;
+    int _width = 0, _height = 0;
+    atlas->GetTexDataAsRGBA32(&_pixels, &_width, &_height);
+    _font_texture_width = _width;
+    _font_texture_height = _height;
+    _font_texture_pot_width = _next_pot(_width);
+    _font_texture_pot_height = _next_pot(_height);
+
+    if (_font_texture_pot_width > 512 || _font_texture_pot_height > 512) {
+        atlas->TexID = nullptr;
+        return false;
+    }
+
+    const std::size_t _texture_size = static_cast<std::size_t>(_font_texture_pot_width) * _font_texture_pot_height * 4;
+    _font_texture = memalign(16, _texture_size);
+    if (!_font_texture) {
+        atlas->TexID = nullptr;
+        return false;
+    }
+    memset(_font_texture, 0, _texture_size);
+    for (int _y_index = 0; _y_index < _height; ++_y_index) {
+        memcpy(
+            (unsigned char*)_font_texture + _y_index * _font_texture_pot_width * 4,
+            _pixels + _y_index * _width * 4,
+            _width * 4);
+    }
+    sceKernelDcacheWritebackInvalidateAll();
+    atlas->TexID = (ImTextureID)_font_texture;
+    return true;
 }
 }
 
@@ -50,27 +89,9 @@ IMGUI_IMPL_API bool ImGui_ImplPSP_Init()
     _io.DisplaySize = ImVec2(_psp_screen_width, _psp_screen_height);
     _io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
 
-    // Build font atlas
-    unsigned char* _pixels = nullptr;
-    int _width = 0, _height = 0;
-    _io.Fonts->GetTexDataAsRGBA32(&_pixels, &_width, &_height);
-    _font_texture_width = _width;
-    _font_texture_height = _height;
-    _font_texture_pot_width = _next_pot(_width);
-    _font_texture_pot_height = _next_pot(_height);
-    const std::size_t _texture_size = _font_texture_pot_width * _font_texture_pot_height * 4;
-    _font_texture = memalign(16, _texture_size);
-    if (!_font_texture) {
+    if (!_upload_font_texture(_io.Fonts)) {
         return false;
     }
-    memset(_font_texture, 0, _texture_size);
-    for (int _y_index = 0; _y_index < _height; ++_y_index) {
-        memcpy(
-            (unsigned char*)_font_texture + _y_index * _font_texture_pot_width * 4,
-            _pixels + _y_index * _width * 4,
-            _width * 4);
-    }
-    _io.Fonts->TexID = (ImTextureID)_font_texture;
 
     // Init input
     sceCtrlSetSamplingCycle(0);
@@ -87,6 +108,11 @@ IMGUI_IMPL_API void ImGui_ImplPSP_Shutdown()
         free(_font_texture);
         _font_texture = nullptr;
     }
+}
+
+IMGUI_IMPL_API bool ImGui_ImplPSP_UpdateFontsTexture(ImFontAtlas* atlas)
+{
+    return _upload_font_texture(atlas);
 }
 
 IMGUI_IMPL_API void ImGui_ImplPSP_NewFrame()

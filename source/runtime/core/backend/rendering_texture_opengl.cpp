@@ -56,7 +56,7 @@ namespace detail {
             case 3:
                 if (from.profile == data_image_profile::etc2_rgba8) {
                     glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB8_ETC2, from.width, from.height, 0, _pixels_count, _pixels_ptr);
-                } else if (from.profile == data_image_profile::s3tc_rgba8) {
+                } else if (from.profile == data_image_profile::s3tc_rgb4 || from.profile == data_image_profile::s3tc_rgba8) {
                     glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, from.width, from.height, 0, _pixels_count, _pixels_ptr);
                 } else {
                     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, from.width, from.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);

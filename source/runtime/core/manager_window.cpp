@@ -9,6 +9,10 @@
 #include <backends/imgui_impl_opengl3.h>
 #endif
 
+#if defined(LUCARIA_BACKEND_PSPGU)
+#include <backends/imgui_impl_psp.h>
+#endif
+
 namespace lucaria {
 namespace detail {
 
@@ -100,6 +104,10 @@ namespace detail {
         shared_font_texture->update(_font_atlas_image);
 
         shared_font_atlas->SetTexID(shared_font_texture->imgui_texture());
+
+#if defined(LUCARIA_BACKEND_PSPGU)
+        ImGui_ImplPSP_UpdateFontsTexture(shared_font_atlas.get());
+#endif
     }
 
     void manager_window::initialize_imgui()

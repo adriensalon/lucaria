@@ -18,7 +18,7 @@ bool context_window::is_locked()
 #endif
 
 #if defined(LUCARIA_PLATFORM_PSP)
-    return true;
+    return _manager->is_mouse_locked;
 #endif
 
     return false;

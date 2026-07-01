@@ -157,6 +157,34 @@ namespace detail {
         output_color = texture(uniform_color, frag_texcoord);
     })";
 
+#if defined(LUCARIA_BACKEND_PSPGU)
+        [[nodiscard]] static data_geometry _make_skybox_face_geometry(const uint32 face)
+        {
+            static const std::array<std::array<float32x3, 4>, 6> _positions = {
+                std::array<float32x3, 4> { float32x3(1.f, -1.f, -1.f), float32x3(1.f, -1.f, 1.f), float32x3(1.f, 1.f, 1.f), float32x3(1.f, 1.f, -1.f) },
+                std::array<float32x3, 4> { float32x3(-1.f, 1.f, -1.f), float32x3(1.f, 1.f, -1.f), float32x3(1.f, 1.f, 1.f), float32x3(-1.f, 1.f, 1.f) },
+                std::array<float32x3, 4> { float32x3(1.f, -1.f, 1.f), float32x3(-1.f, -1.f, 1.f), float32x3(-1.f, 1.f, 1.f), float32x3(1.f, 1.f, 1.f) },
+                std::array<float32x3, 4> { float32x3(-1.f, -1.f, 1.f), float32x3(-1.f, -1.f, -1.f), float32x3(-1.f, 1.f, -1.f), float32x3(-1.f, 1.f, 1.f) },
+                std::array<float32x3, 4> { float32x3(-1.f, -1.f, 1.f), float32x3(1.f, -1.f, 1.f), float32x3(1.f, -1.f, -1.f), float32x3(-1.f, -1.f, -1.f) },
+                std::array<float32x3, 4> { float32x3(-1.f, -1.f, -1.f), float32x3(1.f, -1.f, -1.f), float32x3(1.f, 1.f, -1.f), float32x3(-1.f, 1.f, -1.f) },
+            };
+
+            data_geometry _geometry = {};
+            _geometry.positions.assign(_positions[face].begin(), _positions[face].end());
+            _geometry.texcoords = {
+                float32x2(0.f, 1.f),
+                float32x2(1.f, 1.f),
+                float32x2(1.f, 0.f),
+                float32x2(0.f, 0.f)
+            };
+            _geometry.indices = {
+                uint32x3(0, 1, 2),
+                uint32x3(0, 2, 3)
+            };
+            return _geometry;
+        }
+#endif
+
 #if defined(LUCARIA_DEBUG)
         static const std::string guizmo_vertex = R"(#version 300 es
     in vec3 vert_position;
@@ -377,6 +405,13 @@ namespace detail {
 
     void system_rendering::update_clear_screen(manager_window& window, manager_scenes& scenes)
     {
+#if defined(LUCARIA_BACKEND_PSPGU)
+        rendering_framebuffer::use_default();
+        rendering_program::viewport(window.screen_size);
+        rendering_program::clear(true);
+        return;
+#endif
+
         if (!scene_framebuffer) {
             scene_framebuffer.emplace();
         }
@@ -473,33 +508,63 @@ namespace detail {
     {
         if (skybox_cubemap) {
             static bool _is_skybox_setup = false;
+#if defined(LUCARIA_BACKEND_PSPGU)
+            static std::array<std::optional<asset_mesh>, 6> _persistent_skybox_face_meshes = {};
+#else
             static std::optional<asset_mesh> _persistent_skybox_mesh = std::nullopt;
+#endif
             static std::optional<rendering_program> _persistent_skybox_program = std::nullopt;
 
             if (!_is_skybox_setup) {
+#if defined(LUCARIA_BACKEND_PSPGU)
+                for (uint32 _face = 0; _face < _persistent_skybox_face_meshes.size(); ++_face) {
+                    data_geometry _geometry_data = _make_skybox_face_geometry(_face);
+                    asset_geometry _skybox_geometry(std::move(_geometry_data));
+                    _persistent_skybox_face_meshes[_face].emplace(_skybox_geometry);
+                }
+#else
                 data_geometry _geometry_data;
                 _geometry_data.positions = skybox_positions;
                 _geometry_data.indices = skybox_indices;
                 asset_geometry _skybox_geometry(std::move(_geometry_data));
+#endif
 
                 object_shader _skybox_vertex_shader(data_shader { data_shader_profile::glsl, skybox_vertex });
                 object_shader _skybox_fragment_shader(data_shader { data_shader_profile::glsl, skybox_fragment });
 
+#if !defined(LUCARIA_BACKEND_PSPGU)
                 _persistent_skybox_mesh.emplace(_skybox_geometry);
+#endif
                 _persistent_skybox_program.emplace(_skybox_vertex_shader, _skybox_fragment_shader);
                 _is_skybox_setup = true;
             }
 
-            rendering_mesh& _skybox_mesh = _persistent_skybox_mesh.value().mesh;
             rendering_program& _skybox_program = _persistent_skybox_program.value();
             rendering_cubemap& _skybox_cubemap = skybox_cubemap.value().cubemap;
             const float32x4x4 skybox_rotation_matrix = glm::rotate(glm::identity<float32x4x4>(), glm::radians(skybox_rotation), float32x3(0, 1, 0));
             const float32x4x4 _no_translation_view_projection = camera_projection * float32x4x4(float32x3x3(camera_view)) * skybox_rotation_matrix;
+#if defined(LUCARIA_BACKEND_PSPGU)
+            for (uint32 _face = 0; _face < _persistent_skybox_face_meshes.size(); ++_face) {
+                if (!_persistent_skybox_face_meshes[_face].has_value() || !_skybox_cubemap.faces[_face].has_value()) {
+                    continue;
+                }
+                rendering_mesh& _skybox_mesh = _persistent_skybox_face_meshes[_face].value().mesh;
+                _skybox_program.use();
+                sceGuDisable(GU_CULL_FACE);
+                _skybox_program.bind_attribute("vert_position", _skybox_mesh, data_vertex_attribute::position);
+                _skybox_program.bind_attribute("vert_texcoord", _skybox_mesh, data_vertex_attribute::texcoord);
+                _skybox_program.bind_uniform("uniform_color", _skybox_cubemap.faces[_face].value(), 0);
+                _skybox_program.bind_uniform("uniform_projection", _no_translation_view_projection);
+                _skybox_program.draw(false);
+            }
+#else
+            rendering_mesh& _skybox_mesh = _persistent_skybox_mesh.value().mesh;
             _skybox_program.use();
             _skybox_program.bind_attribute("vert_position", _skybox_mesh, data_vertex_attribute::position);
             _skybox_program.bind_uniform("uniform_color", _skybox_cubemap, 0);
             _skybox_program.bind_uniform("uniform_projection", _no_translation_view_projection);
             _skybox_program.draw(false);
+#endif
         }
     }
 
@@ -631,6 +696,8 @@ namespace detail {
         scenes.each_view<component_interface_spatial>([this, &window, &input](component_interface_spatial& interface) {
             if (interface._viewport_geometry.has_value()
                 && interface._viewport_mesh
+                && interface._imgui_color_texture
+                && interface._imgui_framebuffer
                 && interface._imgui_callback) {
 
                 if (interface._setup_callback) {
@@ -639,15 +706,18 @@ namespace detail {
                 }
 
                 ImGui::SetCurrentContext(interface._imgui_context);
-                ImGui::GetIO().DisplaySize = ImVec2(static_cast<float32>(interface._viewport_size.x), static_cast<float32>(interface._viewport_size.y));
+                const uint32x2 _imgui_render_size = interface._imgui_render_size == uint32x2(0)
+                    ? interface._viewport_size
+                    : interface._imgui_render_size;
+                ImGui::GetIO().DisplaySize = ImVec2(static_cast<float32>(_imgui_render_size.x), static_cast<float32>(_imgui_render_size.y));
 
                 std::optional<float32x2> _raycasted_uvs;
                 if (interface._use_interaction) {
                     _raycasted_uvs = viewport_raycast(camera_view, interface._viewport_geometry.value());
                     if (_raycasted_uvs) {
                         interface._interaction_screen_position = {
-                            (_raycasted_uvs.value().x) * interface._viewport_size.x,
-                            (1.f - _raycasted_uvs.value().y) * interface._viewport_size.y
+                            (_raycasted_uvs.value().x) * _imgui_render_size.x,
+                            (1.f - _raycasted_uvs.value().y) * _imgui_render_size.y
                         };
                         ImGui::GetIO().MousePos = ImVec2(interface._interaction_screen_position.value().x, interface._interaction_screen_position.value().y);
                         ImGui::GetIO().MouseDown[0] = input.key_events[input_key::mouse_left].state;
@@ -657,6 +727,7 @@ namespace detail {
                 }
 
                 interface._imgui_framebuffer->use();
+                rendering_program::viewport(_imgui_render_size);
                 rendering_program::clear(false);
 #if defined(LUCARIA_BACKEND_OPENGL)
                 ImGui_ImplOpenGL3_NewFrame();
@@ -695,7 +766,13 @@ namespace detail {
                 ImGui_ImplPSP_RenderDrawData(ImGui::GetDrawData());
 #endif
 
+#if defined(LUCARIA_BACKEND_PSPGU)
+                rendering_framebuffer::use_default();
+                rendering_program::viewport(window.screen_size);
+#else
                 scene_framebuffer->use();
+                rendering_program::viewport(window.screen_size);
+#endif
                 rendering_program& _unlit_program = _persistent_unlit_program.value();
                 _unlit_program.use();
                 _unlit_program.bind_attribute("vert_position", interface._viewport_mesh.value().mesh, data_vertex_attribute::position);
@@ -736,6 +813,10 @@ namespace detail {
 
     void system_rendering::update_draw_post_processing(manager_window& window, manager_scenes& scenes)
     {
+#if defined(LUCARIA_BACKEND_PSPGU)
+        return;
+#endif
+
         static bool _is_post_processing_setup = false;
         static std::optional<asset_mesh> _persistent_post_processing_mesh = std::nullopt;
         static std::optional<rendering_program> _persistent_post_processing_program = std::nullopt;

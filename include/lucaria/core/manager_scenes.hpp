@@ -1,8 +1,7 @@
 #pragma once
 
-#include <cassert>
-#include <deque>
 #include <limits>
+#include <stdexcept>
 #include <typeindex>
 
 #include <lucaria/core/app_error.hpp>
@@ -214,11 +213,15 @@ namespace detail {
         template <typename SceneType>
         [[nodiscard]] std::pair<SceneType&, object_user_scene&> construct_scene()
         {
-            assert(scenes.size() <= std::numeric_limits<object_entity_scene_index>::max());
-
+            LUCARIA_DEBUG_ASSERT(scenes.size() <= std::numeric_limits<object_entity_scene_index>::max(), "Failed to create scene because of OOM");
             index_for_context = static_cast<uint16>(scenes.size());
             object_user_scene& scene = scenes.emplace_back();
-            scene.type_id = scene_type_ids.at(std::type_index(typeid(SceneType)));
+            const std::type_index _scene_type_index(typeid(SceneType));
+            typename std::unordered_map<std::type_index, std::string>::const_iterator _scene_type_id = scene_type_ids.find(_scene_type_index);
+            if (_scene_type_id == scene_type_ids.end()) {
+                throw std::out_of_range(std::string("Unregistered scene type: ") + typeid(SceneType).name());
+            }
+            scene.type_id = _scene_type_id->second;
             scene.index_for_context = index_for_context;
             SceneType& typed_scene = scene.user_data.emplace<SceneType>();
             return { typed_scene, scene };

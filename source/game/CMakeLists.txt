@@ -229,6 +229,7 @@ elseif(PSP)
         psprtc
         pspdebug
         pspge
+        psphprm
         pspdisplay
         pspgum
         pspgu)
@@ -246,12 +247,13 @@ endif()
 set_target_properties(lucaria_main PROPERTIES CXX_STANDARD 17)
 target_link_libraries(lucaria_main PRIVATE lucaria_runtime)
 if(PSP)
-	target_link_libraries(lucaria_main PRIVATE ${lucaria_psp_sdk_libraries})
 	if(BUILD_PRX)
 		add_custom_command(
 			TARGET lucaria_main
 			POST_BUILD
-			COMMAND ${CMAKE_STRIP} --strip-debug "$<TARGET_FILE:lucaria_main>"
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+				"$<TARGET_FILE:lucaria_main>"
+				"$<TARGET_FILE:lucaria_main>.sym"
 			VERBATIM)
 	endif()
 endif()
@@ -437,13 +439,25 @@ set_target_properties(lucaria_main PROPERTIES OUTPUT_NAME "${LUCARIA_TARGET}")
 if(NOT LUCARIA_DISABLE_RELOAD)
 	add_dependencies(lucaria_main lucaria_game)
 else()
-	target_link_libraries(lucaria_main PRIVATE lucaria_game)
-	if(MSVC)
+	if(PSP)
+		add_dependencies(lucaria_main lucaria_game)
+		target_link_libraries(lucaria_main PRIVATE
+			"-Wl,--whole-archive"
+			"$<TARGET_FILE:lucaria_game>"
+			"-Wl,--no-whole-archive")
+	elseif(MSVC)
+		target_link_libraries(lucaria_main PRIVATE lucaria_game)
 		target_link_options(lucaria_main PRIVATE "/WHOLEARCHIVE:$<TARGET_FILE:lucaria_game>")
 	elseif(EMSCRIPTEN OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
+		target_link_libraries(lucaria_main PRIVATE lucaria_game)
 		target_link_options(lucaria_main PRIVATE
 			"SHELL:-Wl,--whole-archive $<TARGET_FILE:lucaria_game> -Wl,--no-whole-archive")
+	else()
+		target_link_libraries(lucaria_main PRIVATE lucaria_game)
 	endif()
+endif()
+if(PSP)
+	target_link_libraries(lucaria_main PRIVATE ${lucaria_psp_sdk_libraries})
 endif()
 
 if(WIN32)

@@ -11,4 +11,5 @@
 IMGUI_IMPL_API bool ImGui_ImplPSP_Init();
 IMGUI_IMPL_API void ImGui_ImplPSP_Shutdown();
 IMGUI_IMPL_API void ImGui_ImplPSP_NewFrame();
+IMGUI_IMPL_API bool ImGui_ImplPSP_UpdateFontsTexture(ImFontAtlas* atlas);
 IMGUI_IMPL_API void ImGui_ImplPSP_RenderDrawData(ImDrawData* draw_data);

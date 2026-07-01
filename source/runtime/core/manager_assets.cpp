@@ -1,6 +1,9 @@
 #include <cstring>
+#include <deque>
+#include <exception>
 #include <fstream>
 #include <iostream>
+#include <mutex>
 
 #include <lucaria/core/assets_async.hpp>
 #include <lucaria/core/manager_assets.hpp>
@@ -8,8 +11,15 @@
 
 #if defined(LUCARIA_PLATFORM_WEB)
 #include <emscripten/fetch.h>
-#else
+#endif
+
+#if defined(LUCARIA_PLATFORM_ANDROID) || defined(LUCARIA_PLATFORM_WIN32) || defined(LUCARIA_PLATFORM_LINUX)
 #include <thread>
+#endif
+
+#if defined(LUCARIA_PLATFORM_PSP)
+#include <pspkernel.h>
+#include <pspiofilemgr.h>
 #endif
 
 #if defined(LUCARIA_PLATFORM_ANDROID)
@@ -24,6 +34,113 @@ namespace lucaria {
 namespace detail {
 
     namespace {
+
+#if defined(LUCARIA_PLATFORM_PSP)
+        struct _psp_fetch_context {
+            manager_assets* assets;
+            std::filesystem::path file_path;
+            std::function<void(std::vector<char>)> callback;
+        };
+
+        static std::deque<_psp_fetch_context*> _psp_fetch_queue;
+        static std::mutex _psp_fetch_queue_mutex;
+        static SceUID _psp_fetch_semaphore = -1;
+        static SceUID _psp_fetch_thread_id = -1;
+
+        static void _psp_log(const char* message)
+        {
+            const SceUID _file = sceIoOpen("ms0:/lucaria_psp.log", PSP_O_WRONLY | PSP_O_CREAT | PSP_O_APPEND, 0777);
+            if (_file >= 0) {
+                sceIoWrite(_file, message, std::strlen(message));
+                sceIoWrite(_file, "\n", 1);
+                sceIoClose(_file);
+            }
+        }
+
+        static void _psp_log_path(const char* prefix, const std::filesystem::path& path)
+        {
+            const std::string _message = std::string(prefix) + path.string();
+            _psp_log(_message.c_str());
+        }
+
+        static int _psp_fetch_thread(SceSize, void*)
+        {
+            while (true) {
+                sceKernelWaitSema(_psp_fetch_semaphore, 1, nullptr);
+
+                _psp_fetch_context* _context = nullptr;
+                {
+                    std::scoped_lock _lock(_psp_fetch_queue_mutex);
+                    if (!_psp_fetch_queue.empty()) {
+                        _context = _psp_fetch_queue.front();
+                        _psp_fetch_queue.pop_front();
+                    }
+                }
+                if (_context == nullptr) {
+                    continue;
+                }
+
+                try {
+                    _psp_log_path("lucaria: fetch begin ", _context->file_path);
+                    _context->assets->load_bytes(_context->file_path, _context->callback);
+                    _psp_log_path("lucaria: fetch end ", _context->file_path);
+                }
+                catch (const std::exception& exception) {
+                    _psp_log_path("lucaria: fetch exception ", _context->file_path);
+                    _psp_log(exception.what());
+                }
+                catch (...) {
+                    _psp_log_path("lucaria: fetch unknown exception ", _context->file_path);
+                }
+
+                _context->assets->async_fetches_waiting--;
+                delete _context;
+            }
+            return 0;
+        }
+
+        static bool _psp_ensure_fetch_worker()
+        {
+            if (_psp_fetch_thread_id >= 0) {
+                return true;
+            }
+
+            if (_psp_fetch_semaphore < 0) {
+                _psp_fetch_semaphore = sceKernelCreateSema("lucaria_fetch_sema", 0, 0, 256, nullptr);
+                if (_psp_fetch_semaphore < 0) {
+                    _psp_log("lucaria: fetch semaphore create failed");
+                    return false;
+                }
+            }
+
+            _psp_fetch_thread_id = sceKernelCreateThread("lucaria_fetch", _psp_fetch_thread, 0x18, 0x10000, PSP_THREAD_ATTR_USER, nullptr);
+            if (_psp_fetch_thread_id < 0) {
+                _psp_log("lucaria: fetch thread create failed");
+                return false;
+            }
+            if (sceKernelStartThread(_psp_fetch_thread_id, 0, nullptr) < 0) {
+                _psp_log("lucaria: fetch thread start failed");
+                sceKernelDeleteThread(_psp_fetch_thread_id);
+                _psp_fetch_thread_id = -1;
+                return false;
+            }
+            _psp_log("lucaria: fetch worker started");
+            return true;
+        }
+
+        static bool _psp_enqueue_fetch(_psp_fetch_context* context)
+        {
+            if (!_psp_ensure_fetch_worker()) {
+                return false;
+            }
+            {
+                std::scoped_lock _lock(_psp_fetch_queue_mutex);
+                _psp_fetch_queue.push_back(context);
+            }
+            sceKernelSignalSema(_psp_fetch_semaphore, 1);
+            return true;
+        }
+#endif
 
         static void _fetch_bytes_impl(manager_assets& assets, const std::filesystem::path& file_path, std::function<void(std::vector<char>)> callback, bool persist)
         {
@@ -79,6 +196,17 @@ namespace detail {
                 assets.load_bytes(_fetch_file_path, callback);
                 assets.async_fetches_waiting--;
             }).detach();
+#endif
+
+#if defined(LUCARIA_PLATFORM_PSP)
+            _psp_fetch_context* _context = new _psp_fetch_context { &assets, _fetch_file_path, std::move(callback) };
+            if (_psp_enqueue_fetch(_context)) {
+                return;
+            }
+
+            _context->assets->load_bytes(_context->file_path, _context->callback);
+            _context->assets->async_fetches_waiting--;
+            delete _context;
 #endif
         }
 

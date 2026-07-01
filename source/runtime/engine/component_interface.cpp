@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include <lucaria/core/manager_app.hpp>
 #include <lucaria/engine/component_interface.hpp>
 
@@ -10,6 +12,21 @@ namespace {
             _texcoord = float32x2(_texcoord.x, 1.0f - _texcoord.y);
         }
     }
+
+#if defined(LUCARIA_BACKEND_PSPGU)
+    static uint32x2 _psp_spatial_render_size(const uint32x2 size)
+    {
+        constexpr float32 _max_width = 480.f;
+        constexpr float32 _max_height = 272.f;
+        if (size.x == 0 || size.y == 0) {
+            return uint32x2(1, 1);
+        }
+        const float32 _scale = std::min({ 1.f, _max_width / static_cast<float32>(size.x), _max_height / static_cast<float32>(size.y) });
+        return uint32x2(
+            std::max<uint32>(1, static_cast<uint32>(static_cast<float32>(size.x) * _scale)),
+            std::max<uint32>(1, static_cast<uint32>(static_cast<float32>(size.y) * _scale)));
+    }
+#endif
 
 }
 
@@ -43,7 +60,12 @@ component_interface_spatial& component_interface_spatial::use_viewport(const han
     });
 
     _viewport_size = size;
-    _imgui_color_texture.emplace(size);
+#if defined(LUCARIA_BACKEND_PSPGU)
+    _imgui_render_size = _psp_spatial_render_size(size);
+#else
+    _imgui_render_size = size;
+#endif
+    _imgui_color_texture.emplace(_imgui_render_size);
     _imgui_framebuffer.emplace();
     _imgui_framebuffer->bind_color(_imgui_color_texture.value().texture);
     return *this;

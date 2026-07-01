@@ -51,6 +51,7 @@ namespace detail {
         mutable bool texture_enabled = false;
         bool lighting_enabled = false;
         bool depth_enabled = true;
+        mutable bool transform_bound = false;
 #endif
     };
 

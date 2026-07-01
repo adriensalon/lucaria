@@ -19,7 +19,13 @@ namespace detail {
             return _result;
         }
 
-        [[nodiscard]] static int _texture_psm(const data_image_profile profile)
+        [[nodiscard]] static bool _is_compressed(const data_image_profile profile)
+        {
+            return profile == data_image_profile::s3tc_rgb4
+                || profile == data_image_profile::s3tc_rgba8;
+        }
+
+        [[nodiscard]] static int _texture_psm(const data_image_profile profile, const uint32 channels)
         {
             switch (profile) {
             case data_image_profile::rgb565:
@@ -28,6 +34,10 @@ namespace detail {
                 return GU_PSM_5551;
             case data_image_profile::rgba4444:
                 return GU_PSM_4444;
+            case data_image_profile::s3tc_rgb4:
+                return GU_PSM_DXT1;
+            case data_image_profile::s3tc_rgba8:
+                return channels <= 3 ? GU_PSM_DXT1 : GU_PSM_DXT5;
             default:
                 return GU_PSM_8888;
             }
@@ -59,6 +69,15 @@ namespace detail {
 
         static void _copy_pixels(rendering_texture& texture, const data_image& image)
         {
+            if (_is_compressed(image.profile)) {
+                if (texture.pixels == nullptr || image.pixels.empty()) {
+                    return;
+                }
+                std::memcpy(texture.pixels, image.pixels.data(), image.pixels.size());
+                sceKernelDcacheWritebackInvalidateAll();
+                return;
+            }
+
             const uint32 _destination_bpp = _texture_bytes_per_pixel(texture.profile);
             const uint32 _source_bpp = _source_bytes_per_pixel(image);
             if (texture.pixels == nullptr || image.width == 0 || image.height == 0) {
@@ -94,7 +113,12 @@ namespace detail {
             sceKernelDcacheWritebackInvalidateAll();
         }
 
-        static void _allocate(rendering_texture& texture, const uint32x2 size, const data_image_profile profile)
+        static void _allocate(
+            rendering_texture& texture,
+            const uint32x2 size,
+            const data_image_profile profile,
+            const uint32 channels = 4,
+            const std::size_t compressed_bytes = 0)
         {
             if (texture.pixels != nullptr) {
                 std::free(texture.pixels);
@@ -102,13 +126,19 @@ namespace detail {
             }
             texture.profile = profile;
             texture.size = size;
-            texture.psm = _texture_psm(profile);
+            texture.psm = _texture_psm(profile, channels);
             texture.tbw = static_cast<int>(_next_pow2(std::max<uint32>(size.x, 1)));
             texture.texture_capacity = {
                 static_cast<uint32>(texture.tbw),
                 _next_pow2(std::max<uint32>(size.y, 1))
             };
-            const std::size_t _bytes = static_cast<std::size_t>(texture.texture_capacity.x) * texture.texture_capacity.y * _texture_bytes_per_pixel(profile);
+            const std::size_t _bytes = _is_compressed(profile)
+                ? compressed_bytes
+                : static_cast<std::size_t>(texture.texture_capacity.x) * texture.texture_capacity.y * _texture_bytes_per_pixel(profile);
+            if (_bytes == 0) {
+                LUCARIA_DEBUG_ERROR("Invalid PSP texture allocation size")
+                return;
+            }
             texture.pixels = memalign(16, _bytes);
             if (texture.pixels == nullptr) {
                 LUCARIA_DEBUG_ERROR("Failed to allocate PSP texture")
@@ -126,7 +156,7 @@ namespace detail {
 
     void rendering_textures_registry::upload(rendering_texture& texture, const data_image& image)
     {
-        _allocate(texture, { image.width, image.height }, image.profile);
+        _allocate(texture, { image.width, image.height }, image.profile, image.channels, image.pixels.size());
         _copy_pixels(texture, image);
     }
 
@@ -157,7 +187,7 @@ namespace detail {
         , size(from.width, from.height)
         , _registry(&registry)
     {
-        _allocate(*this, size, profile);
+        _allocate(*this, size, profile, from.channels, from.pixels.size());
         _copy_pixels(*this, from);
         _ownership.emplace();
     }
@@ -181,7 +211,7 @@ namespace detail {
     void rendering_texture::update(const data_image& from)
     {
         if (size != uint32x2(from.width, from.height) || profile != from.profile || pixels == nullptr) {
-            _allocate(*this, { from.width, from.height }, from.profile);
+            _allocate(*this, { from.width, from.height }, from.profile, from.channels, from.pixels.size());
         }
         _copy_pixels(*this, from);
     }

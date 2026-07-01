@@ -62,6 +62,7 @@ private:
     detail::flag_owning _ownership = {};
     bool _use_interaction = false;
     uint32x2 _viewport_size = uint32x2(0);
+    uint32x2 _imgui_render_size = uint32x2(0);
     std::optional<glm::vec2> _interaction_screen_position = std::nullopt;
     handle_texture _interaction_texture = {};
     handle_geometry _viewport_geometry = {};

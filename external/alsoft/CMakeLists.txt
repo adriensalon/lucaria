@@ -42,6 +42,7 @@ if(PSP)
 		"upstream/alsoft_psp/src/Alc/alcRing.c"
 		"upstream/alsoft_psp/src/Alc/alcThread.c"
 		"upstream/alsoft_psp/src/Alc/bs2b.c"
+		"upstream/alsoft_psp/src/Alc/psp.c"
 		"upstream/alsoft_psp/src/Alc/wave.c")
 else()
 	set(alsoft_sources
@@ -225,6 +226,7 @@ add_library(lucaria_external_alsoft STATIC EXCLUDE_FROM_ALL ${alsoft_sources})
 target_link_libraries(lucaria_external_alsoft PRIVATE lucaria_external_fmt)
 
 if(PSP)
+	target_include_directories(lucaria_external_alsoft PRIVATE "upstream/alsoft_psp")
 	target_include_directories(lucaria_external_alsoft PRIVATE "upstream/alsoft_psp/src")
 	target_include_directories(lucaria_external_alsoft PRIVATE "upstream/alsoft_psp/src/OpenAL/include")
 	target_include_directories(lucaria_external_alsoft PUBLIC "upstream/alsoft_psp/src/include")
@@ -253,7 +255,6 @@ target_compile_definitions(lucaria_external_alsoft PRIVATE AL_BUILD_LIBRARY)
 
 if(PSP)
 	target_compile_options(lucaria_external_alsoft PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/psp/fix_alint64.h")
-	target_compile_definitions(lucaria_external_alsoft PRIVATE ALSOFT_VERSION="${LIB_VERSION}")
 else()
 	target_compile_definitions(lucaria_external_alsoft PRIVATE AL_ALEXT_PROTOTYPES
 		"AL_API="

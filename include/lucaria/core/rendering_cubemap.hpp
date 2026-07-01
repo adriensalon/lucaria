@@ -1,5 +1,8 @@
 #pragma once
 
+#include <array>
+#include <optional>
+
 #include <lucaria/core/rendering_texture.hpp>
 #include <lucaria/engine/asset_image.hpp>
 
@@ -29,7 +32,7 @@ namespace detail {
 #endif
 
 #if defined(LUCARIA_BACKEND_PSPGU)
-        // TODO
+        std::array<std::optional<rendering_texture>, 6> faces = {};
 #endif
 
     private:

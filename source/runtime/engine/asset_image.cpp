@@ -20,7 +20,7 @@ namespace detail {
                 return _etc2_path;
             }
         }
-        if ((profile == data_image_profile::s3tc_rgba8) || object.is_s3tc_supported) {
+        if ((profile == data_image_profile::s3tc_rgb4) || (profile == data_image_profile::s3tc_rgba8) || object.is_s3tc_supported) {
             std::filesystem::path _s3tc_path = path;
             _s3tc_path = _s3tc_path.replace_extension().string() + "_s3tc.bin";
             if (std::filesystem::exists(object.async_prefix_path / _s3tc_path)) {
@@ -46,7 +46,7 @@ namespace detail {
                 return _etc2_paths;
             }
         }
-        if ((profile == data_image_profile::s3tc_rgba8) || object.is_s3tc_supported) {
+        if ((profile == data_image_profile::s3tc_rgb4) || (profile == data_image_profile::s3tc_rgba8) || object.is_s3tc_supported) {
             std::array<std::filesystem::path, 6> _s3tc_paths = paths;
             bool _all_exist = true;
             for (std::size_t _index = 0; _index < 6; ++_index) {
@@ -73,7 +73,7 @@ namespace detail {
             case 7:
                 // std::cout << "PVR DXT1 RGB" << std::endl;
                 data.channels = 3;
-                data.profile = data_image_profile::s3tc_rgba8;
+                data.profile = data_image_profile::s3tc_rgb4;
                 break;
             case 11:
                 // std::cout << "PVR DXT5 RGBA" << std::endl;

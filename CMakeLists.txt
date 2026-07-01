@@ -14,8 +14,27 @@ include("${LUCARIA_CMAKE_DIR}/xplatform_web.cmake")
 set(LUCARIA_BUILD_COMPILERS ON)
 add_subdirectory("source/compiler")
 
+function(_lucaria_read_json_platform_bool OUT_VAR PLATFORM FIELD DEFAULT_VALUE)
+    string(JSON value_type ERROR_VARIABLE value_type_error
+        TYPE "${LUCARIA_GAME_JSON}" platform ${PLATFORM} ${FIELD})
+    if(value_type_error)
+        set(${OUT_VAR} "${DEFAULT_VALUE}" PARENT_SCOPE)
+        return()
+    endif()
+    if(NOT value_type STREQUAL "BOOLEAN")
+        message(FATAL_ERROR "build.json field platform.${PLATFORM}.${FIELD} must be a boolean")
+    endif()
+    string(JSON value ERROR_VARIABLE value_error
+        GET "${LUCARIA_GAME_JSON}" platform ${PLATFORM} ${FIELD})
+    if(value_error)
+        message(FATAL_ERROR
+            "Could not read build.json field platform.${PLATFORM}.${FIELD}: ${value_error}")
+    endif()
+    set(${OUT_VAR} "${value}" PARENT_SCOPE)
+endfunction()
+
 function(_lucaria_make_configure)
-    set(options)
+    set(options EXCLUDE_FROM_ALL)
     set(one_value_args PLATFORM GAME_DIR GAME_BINARY_DIR)
     set(multi_value_args EXTRA_CMAKE_ARGS)
     cmake_parse_arguments(PARSE_ARGV 0 LCP "${options}" "${one_value_args}" "${multi_value_args}")
@@ -64,14 +83,24 @@ function(_lucaria_make_configure)
             return()
         endif()
         set(_cmake_command "${lucaria_xplatform_psp_cmake_executable}")
-        list(APPEND _platform_args
-            "-DBUILD_PRX=1"
-            "-DENC_PRX=1")
+        file(READ "${LCP_GAME_DIR}/build.json" LUCARIA_GAME_JSON)
+        _lucaria_read_json_platform_bool(_psp_encrypt_prx psp encrypt ON)
+        _lucaria_read_json_platform_bool(_psp_build_prx psp prx "${_psp_encrypt_prx}")
+        if(_psp_encrypt_prx AND NOT _psp_build_prx)
+            message(FATAL_ERROR "build.json field platform.psp.encrypt requires platform.psp.prx to be true")
+        endif()
+		list(APPEND _platform_args
+			"-DBUILD_PRX=${_psp_build_prx}"
+			"-DENC_PRX=${_psp_encrypt_prx}")
     else()
         message(FATAL_ERROR "Unknown Lucaria platform: ${LCP_PLATFORM}")
     endif()
+    set(_all_arg)
+    if(NOT LCP_EXCLUDE_FROM_ALL)
+        set(_all_arg ALL)
+    endif()
     add_custom_target(${_superbuild_target}
-        ALL
+        ${_all_arg}
         COMMAND "${_cmake_command}"
             -Wno-dev
             -S "${LUCARIA_SOURCE_DIR}/game"

@@ -65,6 +65,7 @@ namespace detail {
 #endif
 
 #if defined(LUCARIA_PLATFORM_PSP)
+        bool is_mouse_locked = false;
         bool must_install_imgui_callbacks = true;
 #endif
 
@@ -90,24 +91,6 @@ namespace detail {
             const std::function<void()>& update_callback);
 #endif
     };
-
-    // snapshots
-
-    struct snapshot_manager_window {
-        bool is_locked;
-        float64 time_delta;
-        float32x2 screen_size;
-
-        template <typename ArchiveType>
-        void serialize(ArchiveType& archive)
-        {
-            archive(cereal::make_nvp("is_locked", is_locked));
-            archive(cereal::make_nvp("time_delta", time_delta));
-            archive(cereal::make_nvp("screen_size", screen_size));
-        }
-    };
-
-    [[nodiscard]] snapshot_manager_window make_snapshot();
 
 }
 }

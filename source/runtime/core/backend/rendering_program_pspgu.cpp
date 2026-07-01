@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include <ozz/base/containers/vector.h>
 #include <ozz/base/maths/simd_math.h>
 
@@ -5,6 +7,18 @@
 
 namespace lucaria {
 namespace detail {
+
+    namespace {
+
+        [[nodiscard]] ScePspFMatrix4 _to_psp_matrix(const float32x4x4& value)
+        {
+            ScePspFMatrix4 _matrix;
+            static_assert(sizeof(_matrix) == sizeof(value));
+            std::memcpy(&_matrix, &value, sizeof(_matrix));
+            return _matrix;
+        }
+
+    }
 
     rendering_program::~rendering_program() = default;
 
@@ -17,6 +31,10 @@ namespace detail {
     {
         sceGuEnable(GU_CULL_FACE);
         sceGuFrontFace(GU_CCW);
+        sceGuColor(0xffffffff);
+        texture = nullptr;
+        texture_enabled = false;
+        transform_bound = false;
     }
 
     void rendering_program::bind_attribute(const std::string&, const rendering_mesh& from, const data_vertex_attribute)
@@ -24,8 +42,15 @@ namespace detail {
         mesh = &from;
     }
 
-    void rendering_program::bind_uniform(const std::string&, const rendering_cubemap&, const uint32) const
+    void rendering_program::bind_uniform(const std::string&, const rendering_cubemap& from, const uint32) const
     {
+        for (const std::optional<rendering_texture>& _face : from.faces) {
+            if (_face.has_value()) {
+                texture = &_face.value();
+                texture_enabled = true;
+                return;
+            }
+        }
     }
 
     void rendering_program::bind_uniform(const std::string&, const rendering_texture& from, const uint32) const
@@ -80,8 +105,16 @@ namespace detail {
     }
 
     template <>
-    void rendering_program::bind_uniform<float32x4x4>(const std::string&, const float32x4x4&)
+    void rendering_program::bind_uniform<float32x4x4>(const std::string&, const float32x4x4& value)
     {
+        ScePspFMatrix4 _matrix = _to_psp_matrix(value);
+        sceGumMatrixMode(GU_PROJECTION);
+        sceGumLoadMatrix(&_matrix);
+        sceGumMatrixMode(GU_VIEW);
+        sceGumLoadIdentity();
+        sceGumMatrixMode(GU_MODEL);
+        sceGumLoadIdentity();
+        transform_bound = true;
     }
 
     template <>
@@ -99,6 +132,14 @@ namespace detail {
         if (mesh == nullptr || mesh->vertex_bytes.empty() || mesh->elements_16.empty()) {
             return;
         }
+        if (!transform_bound) {
+            sceGumMatrixMode(GU_PROJECTION);
+            sceGumLoadIdentity();
+            sceGumMatrixMode(GU_VIEW);
+            sceGumLoadIdentity();
+            sceGumMatrixMode(GU_MODEL);
+            sceGumLoadIdentity();
+        }
         if (use_depth && depth_enabled) {
             sceGuEnable(GU_DEPTH_TEST);
             sceGuDepthMask(GU_FALSE);
@@ -112,6 +153,9 @@ namespace detail {
             sceGuTexImage(0, texture->texture_capacity.x, texture->texture_capacity.y, texture->tbw, texture->pixels);
             sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
             sceGuTexFilter(GU_LINEAR, GU_LINEAR);
+            sceGuTexWrap(GU_CLAMP, GU_CLAMP);
+            sceGuTexScale(static_cast<float32>(texture->size.x), static_cast<float32>(texture->size.y));
+            sceGuTexOffset(0.f, 0.f);
         } else {
             sceGuDisable(GU_TEXTURE_2D);
         }

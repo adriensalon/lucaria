@@ -60,7 +60,7 @@ namespace detail {
             case 3:
                 if ((_image.profile == data_image_profile::etc2_rgba8)) {
                     glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGB8_ETC2, _image.width, _image.height, 0, _pixels_count, _pixels_ptr);
-                } else if ((_image.profile == data_image_profile::s3tc_rgba8)) {
+                } else if ((_image.profile == data_image_profile::s3tc_rgb4 || _image.profile == data_image_profile::s3tc_rgba8)) {
                     glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, _image.width, _image.height, 0, _pixels_count, _pixels_ptr);
                 } else {
                     glTexImage2D(_side_enum, 0, GL_RGB, _image.width, _image.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
@@ -69,7 +69,7 @@ namespace detail {
             case 4:
                 if ((_image.profile == data_image_profile::etc2_rgba8)) {
                     glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGBA8_ETC2_EAC, _image.width, _image.height, 0, _pixels_count, _pixels_ptr);
-                } else if ((_image.profile == data_image_profile::s3tc_rgba8)) {
+                } else if ((_image.profile == data_image_profile::s3tc_rgb4 || _image.profile == data_image_profile::s3tc_rgba8)) {
                     glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, _image.width, _image.height, 0, _pixels_count, _pixels_ptr);
                 } else {
                     glTexImage2D(_side_enum, 0, GL_RGBA, _image.width, _image.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);
@@ -104,7 +104,7 @@ namespace detail {
             case 3:
                 if ((_image.profile == data_image_profile::etc2_rgba8)) {
                     glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGB8_ETC2, _image.width, _image.height, 0, _pixels_count, _pixels_ptr);
-                } else if ((_image.profile == data_image_profile::s3tc_rgba8)) {
+                } else if ((_image.profile == data_image_profile::s3tc_rgb4 || _image.profile == data_image_profile::s3tc_rgba8)) {
                     glCompressedTexImage2D(_side_enum, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, _image.width, _image.height, 0, _pixels_count, _pixels_ptr);
                 } else {
                     glTexImage2D(_side_enum, 0, GL_RGB, _image.width, _image.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
