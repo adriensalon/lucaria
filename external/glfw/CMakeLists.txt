@@ -30,8 +30,15 @@ elseif(WIN32)
 else()
     set(glfw_platform_sources 
         "upstream/glfw/src/posix_module.c"
+        "upstream/glfw/src/posix_poll.c"
         "upstream/glfw/src/posix_time.c"
-        "upstream/glfw/src/posix_thread.c")
+        "upstream/glfw/src/posix_thread.c"
+        "upstream/glfw/src/linux_joystick.c"
+        "upstream/glfw/src/x11_init.c"
+        "upstream/glfw/src/x11_monitor.c"
+        "upstream/glfw/src/x11_window.c"
+        "upstream/glfw/src/xkb_unicode.c"
+        "upstream/glfw/src/glx_context.c")
 endif()
 set(glfw_sources 
     ${glfw_main_sources}
@@ -44,6 +51,11 @@ target_include_directories(lucaria_external_glfw PUBLIC "upstream/glfw/deps")
 
 if(WIN32)
     target_compile_definitions(lucaria_external_glfw PRIVATE _GLFW_WIN32)
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_compile_definitions(lucaria_external_glfw PRIVATE _GLFW_X11)
+    target_link_libraries(lucaria_external_glfw PUBLIC X11 Xrandr Xi Xcursor Xinerama)
 endif()
 
 if(MSVC)

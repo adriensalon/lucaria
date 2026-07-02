@@ -31,6 +31,10 @@ namespace detail {
 #endif
 
 #if defined(LUCARIA_BACKEND_VULKAN)
+        VkBuffer vertices_buffer = VK_NULL_HANDLE;
+        VkDeviceMemory vertices_memory = VK_NULL_HANDLE;
+        VkBuffer elements_buffer = VK_NULL_HANDLE;
+        VkDeviceMemory elements_memory = VK_NULL_HANDLE;
 #endif
 
 #if defined(LUCARIA_BACKEND_PSPGU)
@@ -65,6 +69,10 @@ namespace detail {
 #endif
 
 #if defined(LUCARIA_BACKEND_VULKAN)
+        VkBuffer positions_buffer = VK_NULL_HANDLE;
+        VkDeviceMemory positions_memory = VK_NULL_HANDLE;
+        VkBuffer elements_buffer = VK_NULL_HANDLE;
+        VkDeviceMemory elements_memory = VK_NULL_HANDLE;
 #endif
 
 #if defined(LUCARIA_BACKEND_PSPGU)

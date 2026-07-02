@@ -22,6 +22,15 @@ namespace detail {
         GLuint internal_format = 0;
 #endif
 
+#if defined(LUCARIA_BACKEND_VULKAN)
+        flag_owning ownership = {};
+        VkImage image = VK_NULL_HANDLE;
+        VkDeviceMemory memory = VK_NULL_HANDLE;
+        VkImageView image_view = VK_NULL_HANDLE;
+        VkFormat internal_format = VK_FORMAT_D32_SFLOAT;
+        VkImageLayout layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+#endif
+
 #if defined(LUCARIA_BACKEND_PSPGU)
         flag_owning ownership = {};
         void* pixels = nullptr;

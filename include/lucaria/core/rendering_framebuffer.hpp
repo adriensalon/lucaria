@@ -1,6 +1,7 @@
 #pragma once
 
 #include <lucaria/core/rendering_renderbuffer.hpp>
+#include <lucaria/core/rendering_texture.hpp>
 
 namespace lucaria {
 namespace detail {
@@ -27,6 +28,14 @@ namespace detail {
         std::optional<GLuint> texture_depth_id = std::nullopt;
         std::optional<GLuint> renderbuffer_color_id = std::nullopt;
         std::optional<GLuint> renderbuffer_depth_id = std::nullopt;
+#endif
+
+#if defined(LUCARIA_BACKEND_VULKAN)
+        flag_owning ownership = {};
+        const rendering_texture* texture_color = nullptr;
+        const rendering_texture* texture_depth = nullptr;
+        const rendering_renderbuffer* renderbuffer_color = nullptr;
+        const rendering_renderbuffer* renderbuffer_depth = nullptr;
 #endif
 
 #if defined(LUCARIA_BACKEND_PSPGU)

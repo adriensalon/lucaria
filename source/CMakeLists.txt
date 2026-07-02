@@ -5,6 +5,15 @@ if(NOT LUCARIA_GAME_DIR)
     message(FATAL_ERROR "LUCARIA_GAME_DIR is required")
 endif()
 
+if(NOT LUCARIA_BACKEND)
+    if(PSP)
+        set(LUCARIA_BACKEND "PSPGU")
+    else()
+        set(LUCARIA_BACKEND "OPENGL")
+    endif()
+endif()
+string(TOUPPER "${LUCARIA_BACKEND}" LUCARIA_BACKEND)
+
 function(_lucaria_make_game_path OUT_VAR VALUE)
     if(IS_ABSOLUTE "${VALUE}")
         set(${OUT_VAR} "${VALUE}" PARENT_SCOPE)
@@ -24,7 +33,7 @@ endif()
 add_subdirectory(${LUCARIA_EXTERNAL_DIR}/bullet ${CMAKE_CURRENT_BINARY_DIR}/external/bullet)
 add_subdirectory(${LUCARIA_EXTERNAL_DIR}/cereal ${CMAKE_CURRENT_BINARY_DIR}/external/cereal)
 add_subdirectory(${LUCARIA_EXTERNAL_DIR}/entt ${CMAKE_CURRENT_BINARY_DIR}/external/entt)
-if(WIN32)
+if(WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_subdirectory(${LUCARIA_EXTERNAL_DIR}/glfw ${CMAKE_CURRENT_BINARY_DIR}/external/glfw)
 endif()
 add_subdirectory(${LUCARIA_EXTERNAL_DIR}/glm ${CMAKE_CURRENT_BINARY_DIR}/external/glm)
@@ -64,16 +73,10 @@ function(embed_gslc target gslc_file)
 endfunction()
 
 # debug native desktop builds enable code hotreload
-if(LUCARIA_GAME_DEBUG AND (WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Linux"))
+if(LUCARIA_DEBUG AND (WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Linux"))
 	set(LUCARIA_DISABLE_RELOAD OFF)
 else()
 	set(LUCARIA_DISABLE_RELOAD ON)
-endif()
-
-# release builds strip maximum code
-if(NOT LUCARIA_GAME_DEBUG)
-	set(LUCARIA_DISABLE_DEBUG ON)
-	set(LUCARIA_DISABLE_GUIZMOS ON)
 endif()
 
 # lucaria engine/core library, no main() here
@@ -124,7 +127,7 @@ target_link_libraries(lucaria_runtime PUBLIC lucaria_external_glm)
 if(NOT PSP AND NOT EMSCRIPTEN)
     target_link_libraries(lucaria_runtime PUBLIC lucaria_external_glslang)
 endif()
-if(WIN32)
+if(WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(lucaria_runtime PUBLIC lucaria_external_glfw)
 endif()
 target_link_libraries(lucaria_runtime PRIVATE lucaria_external_imgui)
@@ -165,13 +168,22 @@ elseif(EMSCRIPTEN)
         -DLUCARIA_DISABLE_COMPUTE_SPIRV)
     list(APPEND lucaria_runtime_platform_sources "${LUCARIA_SOURCE_DIR}/core/manager_window_web.cpp")
     set(lucaria_runtime_main_sources "${LUCARIA_SOURCE_DIR}/core/main_web.cpp")
-elseif(WIN32)
-    message("-- Configuring Lucaria engine for Win32/MacOS/Linux platform")
-    target_compile_definitions(lucaria_runtime PUBLIC -DLUCARIA_PLATFORM_WIN32)
+elseif(WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    message("-- Configuring Lucaria engine for GLFW desktop platform")
+    if(WIN32)
+        target_compile_definitions(lucaria_runtime PUBLIC -DLUCARIA_PLATFORM_WIN32)
+    else()
+        target_compile_definitions(lucaria_runtime PUBLIC -DLUCARIA_PLATFORM_LINUX)
+    endif()
     list(APPEND lucaria_runtime_platform_sources
         "${LUCARIA_SOURCE_DIR}/core/manager_window_glfw.cpp"
-        "${LUCARIA_SOURCE_DIR}/core/utils_reload_win32.cpp"
         "${LUCARIA_SOURCE_DIR}/core/utils_glfw.cpp")
+    if(WIN32)
+        list(APPEND lucaria_runtime_platform_sources "${LUCARIA_SOURCE_DIR}/core/utils_reload_win32.cpp")
+    else()
+        list(APPEND lucaria_runtime_platform_sources "${LUCARIA_SOURCE_DIR}/core/utils_reload_linux.cpp")
+        target_link_libraries(lucaria_runtime PUBLIC dl)
+    endif()
     set(lucaria_runtime_main_sources "${LUCARIA_SOURCE_DIR}/core/main_glfw.cpp")
 elseif(PSP)
     message("-- Configuring Lucaria engine for PlayStation Portable platform")
@@ -222,7 +234,7 @@ message("-- Configuring Lucaria engine with ${CMAKE_CXX_COMPILER_ID} compiler")
 target_compile_definitions(lucaria_runtime PUBLIC -DLUCARIA_COMPILER_NAME=${CMAKE_CXX_COMPILER_ID})
 
 # debug
-if(LUCARIA_GAME_DEBUG)
+if(LUCARIA_DEBUG)
     message(STATUS "Configuring Lucaria engine with Debug enabled")
     target_compile_definitions(lucaria_runtime PUBLIC -DLUCARIA_DEBUG)
 else()
@@ -235,7 +247,10 @@ else()
 endif()
 
 # backend
-if(PSP)
+if(LUCARIA_BACKEND STREQUAL "PSPGU")
+    if(NOT PSP)
+        message(FATAL_ERROR "LUCARIA_BACKEND=PSPGU is only supported on PSP")
+    endif()
     message("-- Configuring Lucaria engine with PSPGU graphics backend")
     target_compile_definitions(lucaria_runtime PUBLIC -DLUCARIA_BACKEND_PSPGU)
     target_sources(lucaria_runtime PRIVATE
@@ -245,7 +260,25 @@ if(PSP)
         "${LUCARIA_SOURCE_DIR}/core/rendering_program_pspgu.cpp"
         "${LUCARIA_SOURCE_DIR}/core/rendering_texture_pspgu.cpp"
         "${LUCARIA_SOURCE_DIR}/core/rendering_renderbuffer_pspgu.cpp")
-else()
+elseif(LUCARIA_BACKEND STREQUAL "VULKAN")
+    if(NOT ANDROID AND NOT WIN32 AND NOT (CMAKE_SYSTEM_NAME STREQUAL "Linux"))
+        message(FATAL_ERROR "LUCARIA_BACKEND=VULKAN is supported on Android, Win32, and Linux")
+    endif()
+    message("-- Configuring Lucaria engine with Vulkan graphics backend")
+    target_compile_definitions(lucaria_runtime PUBLIC -DLUCARIA_BACKEND_VULKAN)
+    if(ANDROID)
+        target_link_libraries(lucaria_runtime PUBLIC vulkan)
+    endif()
+    target_sources(lucaria_runtime PRIVATE
+        "${LUCARIA_SOURCE_DIR}/core/rendering_vulkan.cpp"
+        "${LUCARIA_SOURCE_DIR}/core/rendering_storage_vulkan.cpp"
+        "${LUCARIA_SOURCE_DIR}/core/rendering_cubemap_vulkan.cpp"
+        "${LUCARIA_SOURCE_DIR}/core/rendering_framebuffer_vulkan.cpp"
+        "${LUCARIA_SOURCE_DIR}/core/rendering_mesh_vulkan.cpp"
+        "${LUCARIA_SOURCE_DIR}/core/rendering_program_vulkan.cpp"
+        "${LUCARIA_SOURCE_DIR}/core/rendering_texture_vulkan.cpp"
+        "${LUCARIA_SOURCE_DIR}/core/rendering_renderbuffer_vulkan.cpp")
+elseif(LUCARIA_BACKEND STREQUAL "OPENGL")
     message("-- Configuring Lucaria engine with OpenGL graphics backend")
     target_compile_definitions(lucaria_runtime PUBLIC -DLUCARIA_BACKEND_OPENGL)
     target_sources(lucaria_runtime PRIVATE
@@ -256,6 +289,8 @@ else()
         "${LUCARIA_SOURCE_DIR}/core/rendering_program_opengl.cpp"
         "${LUCARIA_SOURCE_DIR}/core/rendering_texture_opengl.cpp"
         "${LUCARIA_SOURCE_DIR}/core/rendering_renderbuffer_opengl.cpp")
+else()
+    message(FATAL_ERROR "Unknown LUCARIA_BACKEND '${LUCARIA_BACKEND}'")
 endif()
 
 # simd
@@ -484,7 +519,7 @@ if(EMSCRIPTEN)
 		-sUSE_WEBGL2=1
 		-sFETCH
 		-lopenal)
-	if(LUCARIA_GAME_DEBUG)
+	if(LUCARIA_DEBUG)
 		target_link_options(lucaria_main PRIVATE
 			-g
 			-sGL_DEBUG=1
@@ -511,7 +546,7 @@ if(EMSCRIPTEN)
 endif()
 
 # Win32 console
-if(WIN32 AND NOT LUCARIA_GAME_DEBUG)
+if(WIN32 AND NOT LUCARIA_DEBUG)
 	target_compile_definitions(lucaria_main PRIVATE -DLUCARIA_HIDE_CONSOLE)
 	set_target_properties(lucaria_main PROPERTIES WIN32_EXECUTABLE TRUE)
 else()
@@ -542,7 +577,7 @@ function(lucaria_enable_ipo_recursive TARGET_NAME)
 	endforeach()
 endfunction()
 
-if(NOT LUCARIA_GAME_DEBUG)
+if(NOT LUCARIA_DEBUG)
 	if(_lucaria_ipo_supported)
 		lucaria_enable_ipo_recursive(lucaria_main)
 		lucaria_enable_ipo_recursive(lucaria_game)

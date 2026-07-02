@@ -18,9 +18,12 @@
 #endif
 
 #if defined(LUCARIA_BACKEND_VULKAN)
+#include <vulkan/vulkan.h>
+#if defined(LUCARIA_PLATFORM_ANDROID)
+#include <vulkan/vulkan_android.h>
+#endif
 #if defined(LUCARIA_PLATFORM_WIN32) || defined(LUCARIA_PLATFORM_LINUX)
-#include <glad/vulkan.h>
-#define GLFW_INCLUDE_NONE
+#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #endif
 #endif

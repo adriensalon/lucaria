@@ -33,6 +33,7 @@ namespace detail {
         manager_window& operator=(const manager_window& other) = delete;
         manager_window(manager_window&& other) = delete;
         manager_window& operator=(manager_window&& other) = delete;
+        ~manager_window();
 
         bool is_fullscreen = false;
         uint32x2 screen_size = uint32x2(0);
@@ -45,9 +46,11 @@ namespace detail {
 
 #if defined(LUCARIA_PLATFORM_ANDROID)
         android_app* app = nullptr;
+#if defined(LUCARIA_BACKEND_OPENGL)
         EGLDisplay display = EGL_NO_DISPLAY;
         EGLSurface surface = EGL_NO_SURFACE;
         EGLContext context = EGL_NO_CONTEXT;
+#endif
         bool has_window = false;
         bool is_engine_initialized = false;
         bool must_install_imgui_callbacks = true;

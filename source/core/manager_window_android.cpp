@@ -1,49 +1,31 @@
-#include <lucaria/core/error.hpp>
-#include <lucaria/core/window.hpp>
+#include <chrono>
+#include <thread>
+#include <unordered_map>
 
-extern "C" void __lucaria_main_scene();
+#include <tracy/Tracy.hpp>
+
+#include <lucaria/core/manager_app.hpp>
+#include <lucaria/core/manager_assets.hpp>
+#include <lucaria/core/manager_input.hpp>
+#include <lucaria/core/rendering_vulkan.hpp>
+#include <lucaria/core/utils_math.hpp>
 
 namespace lucaria {
 namespace detail {
-
     namespace {
 
-        static const std::unordered_map<std::string, input_key> android_keyboard_mappings = {
-            { "a", input_key::keyboard_a },
-            { "z", input_key::keyboard_z },
-            { "e", input_key::keyboard_e },
-            { "r", input_key::keyboard_r },
-            { "t", input_key::keyboard_t },
-            { "y", input_key::keyboard_y },
-            { "u", input_key::keyboard_u },
-            { "i", input_key::keyboard_i },
-            { "o", input_key::keyboard_o },
-            { "p", input_key::keyboard_p },
-            { "q", input_key::keyboard_q },
-            { "s", input_key::keyboard_s },
-            { "d", input_key::keyboard_d },
-            { "f", input_key::keyboard_f },
-            { "g", input_key::keyboard_g },
-            { "h", input_key::keyboard_h },
-            { "j", input_key::keyboard_j },
-            { "k", input_key::keyboard_k },
-            { "l", input_key::keyboard_l },
-            { "m", input_key::keyboard_m },
-            { "w", input_key::keyboard_w },
-            { "x", input_key::keyboard_x },
-            { "c", input_key::keyboard_c },
-            { "v", input_key::keyboard_v },
-            { "b", input_key::keyboard_b },
-            { "n", input_key::keyboard_n },
+        struct android_window_context {
+            manager_window* window = nullptr;
+            manager_input* input = nullptr;
+            manager_assets* assets = nullptr;
         };
 
-        static void _redirect_stdio_to_log()
+        void _redirect_stdio_to_log()
         {
             int _pfd[2];
             pipe(_pfd);
             dup2(_pfd[1], STDOUT_FILENO);
             dup2(_pfd[1], STDERR_FILENO);
-
             std::thread([=]() {
                 char _buf[256];
                 ssize_t _r;
@@ -54,62 +36,36 @@ namespace detail {
             }).detach();
         }
 
-        static int32_t _android_on_input(android_app* app, AInputEvent* event)
+        int32_t _android_on_input(android_app* app, AInputEvent* event)
         {
-            // TODO: map touch / key events into your input system
-            // You can start super simple and just ignore input for now:
-
-            _is_mouse_locked = true;
+            android_window_context* _context = static_cast<android_window_context*>(app->userData);
+            if (_context == nullptr || _context->input == nullptr || _context->window == nullptr) {
+                return ImGui_ImplAndroid_HandleInputEvent(event);
+            }
 
             if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION) {
-
-                static std::unordered_map<glm::uint, glm::vec2> _last_positions = {};
-                for (int32_t _pointer_index = 0; _pointer_index < AMotionEvent_getPointerCount(event); _pointer_index++) {
-                    glm::uint _event_id = static_cast<glm::uint>(AMotionEvent_getPointerId(event, _pointer_index));
-                    glm::vec2& _last_position = _last_positions[_event_id];
-                    const glm::vec2 _new_position = glm::vec2(AMotionEvent_getX(event, _pointer_index), AMotionEvent_getY(event, _pointer_index));
-                    const glm::vec2 _delta_position = _new_position - _last_position;
+                static std::unordered_map<uint32, float32x2> _last_positions = {};
+                const int32_t _pointer_count = AMotionEvent_getPointerCount(event);
+                for (int32_t _pointer_index = 0; _pointer_index < _pointer_count; ++_pointer_index) {
+                    const uint32 _event_id = static_cast<uint32>(AMotionEvent_getPointerId(event, _pointer_index));
+                    float32x2& _last_position = _last_positions[_event_id];
+                    const float32x2 _new_position = float32x2(
+                        AMotionEvent_getX(event, _pointer_index),
+                        AMotionEvent_getY(event, _pointer_index));
+                    const float32x2 _delta_position = _new_position - _last_position;
                     _last_position = _new_position;
-                    _pointer_accumulators[_event_id] += _delta_position;
-                    _pointer_events[_event_id].position = _new_position;
+                    _context->window->pointer_accumulators[_event_id] += _delta_position;
+                    _context->input->pointer_events[_event_id].position = _new_position;
                 }
             }
 
             return ImGui_ImplAndroid_HandleInputEvent(event);
         }
 
-        static void _android_on_app_cmd(android_app* app, int32_t cmd)
+#if defined(LUCARIA_BACKEND_OPENGL)
+        void _initialize_opengl(manager_window& window)
         {
-            switch (cmd) {
-            case APP_CMD_INIT_WINDOW:
-                if (app->window != nullptr) {
-                    lucaria::setup_opengl();
-                    lucaria::setup_imgui();
-                    lucaria::is_audio_locked = lucaria::setup_openal();
-                    g_engine_initialized = true;
-                }
-                break;
-
-            case APP_CMD_TERM_WINDOW:
-                ImGui_ImplAndroid_Shutdown();
-                destroy_opengl();
-                destroy_openal();
-                break;
-
-            case APP_CMD_INPUT_CHANGED:
-                std::cout << "APP_CMD_INPUT_CHANGED, inputQueue = " << app->inputQueue << "\n";
-                break;
-
-            case APP_CMD_DESTROY:
-                destroy_opengl();
-                destroy_openal();
-                break;
-            }
-        }
-
-        void _initialize_backend()
-        {
-            const EGLint config_attribs[] = {
+            const EGLint _config_attribs[] = {
                 EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
                 EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
                 EGL_RED_SIZE, 8,
@@ -120,123 +76,189 @@ namespace detail {
                 EGL_STENCIL_SIZE, 8,
                 EGL_NONE
             };
-            const EGLint context_attribs[] = {
+            const EGLint _context_attribs[] = {
                 EGL_CONTEXT_CLIENT_VERSION, 3,
                 EGL_NONE
             };
-            g_display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-            eglInitialize(g_display, nullptr, nullptr);
-            EGLConfig config;
-            EGLint num_config;
-            eglChooseConfig(g_display, config_attribs, &config, 1, &num_config);
-            EGLint format;
-            eglGetConfigAttrib(g_display, config, EGL_NATIVE_VISUAL_ID, &format);
-            ANativeWindow_setBuffersGeometry(g_app->window, 0, 0, format);
-            g_surface = eglCreateWindowSurface(g_display, config, g_app->window, nullptr);
-            g_context = eglCreateContext(g_display, config, EGL_NO_CONTEXT, context_attribs);
-            eglMakeCurrent(g_display, g_surface, g_surface, g_context);
-            g_has_window = true;
+            window.display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+            eglInitialize(window.display, nullptr, nullptr);
+            EGLConfig _config;
+            EGLint _num_config;
+            eglChooseConfig(window.display, _config_attribs, &_config, 1, &_num_config);
+            EGLint _format;
+            eglGetConfigAttrib(window.display, _config, EGL_NATIVE_VISUAL_ID, &_format);
+            ANativeWindow_setBuffersGeometry(window.app->window, 0, 0, _format);
+            window.surface = eglCreateWindowSurface(window.display, _config, window.app->window, nullptr);
+            window.context = eglCreateContext(window.display, _config, EGL_NO_CONTEXT, _context_attribs);
+            eglMakeCurrent(window.display, window.surface, window.surface, window.context);
         }
 
-        void _destroy_backend()
+        void _destroy_opengl(manager_window& window)
         {
-            if (g_display != EGL_NO_DISPLAY) {
-                eglMakeCurrent(g_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-                if (g_context != EGL_NO_CONTEXT) {
-                    eglDestroyContext(g_display, g_context);
+            if (window.display != EGL_NO_DISPLAY) {
+                eglMakeCurrent(window.display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+                if (window.context != EGL_NO_CONTEXT) {
+                    eglDestroyContext(window.display, window.context);
                 }
-                if (g_surface != EGL_NO_SURFACE) {
-                    eglDestroySurface(g_display, g_surface);
+                if (window.surface != EGL_NO_SURFACE) {
+                    eglDestroySurface(window.display, window.surface);
                 }
-                eglTerminate(g_display);
+                eglTerminate(window.display);
             }
-            g_display = EGL_NO_DISPLAY;
-            g_context = EGL_NO_CONTEXT;
-            g_surface = EGL_NO_SURFACE;
-            g_has_window = false;
+            window.display = EGL_NO_DISPLAY;
+            window.context = EGL_NO_CONTEXT;
+            window.surface = EGL_NO_SURFACE;
+        }
+#endif
+
+        void _initialize_backend(manager_window& window, manager_assets& assets)
+        {
+#if defined(LUCARIA_BACKEND_OPENGL)
+            _initialize_opengl(window);
+#endif
+#if defined(LUCARIA_BACKEND_VULKAN)
+            rendering_vulkan_initialize(window.app->window);
+#endif
+            window.has_window = true;
+            assets.is_etc2_supported = true;
         }
 
-        void _update_loop(manager_window& window)
+        void _destroy_backend(manager_window& window)
+        {
+#if defined(LUCARIA_BACKEND_VULKAN)
+            rendering_vulkan_shutdown();
+#endif
+#if defined(LUCARIA_BACKEND_OPENGL)
+            _destroy_opengl(window);
+#endif
+            window.has_window = false;
+            window.is_engine_initialized = false;
+        }
+
+        void _android_on_app_cmd(android_app* app, int32_t cmd)
+        {
+            android_window_context* _context = static_cast<android_window_context*>(app->userData);
+            if (_context == nullptr || _context->window == nullptr || _context->assets == nullptr) {
+                return;
+            }
+            manager_window& _window = *_context->window;
+            switch (cmd) {
+            case APP_CMD_INIT_WINDOW:
+                if (app->window != nullptr) {
+                    _initialize_backend(_window, *_context->assets);
+                    _window.initialize_imgui();
+                    _window.initialize_openal();
+                    _window.is_engine_initialized = true;
+                }
+                break;
+            case APP_CMD_TERM_WINDOW:
+                _window.destroy_imgui();
+                _window.destroy_openal();
+                _destroy_backend(_window);
+                break;
+            case APP_CMD_DESTROY:
+                _destroy_backend(_window);
+                break;
+            default:
+                break;
+            }
+        }
+
+        void _update_screen_size(manager_window& window)
+        {
+#if defined(LUCARIA_BACKEND_OPENGL)
+            int32 _screen_width = 0;
+            int32 _screen_height = 0;
+            eglQuerySurface(window.display, window.surface, EGL_WIDTH, &_screen_width);
+            eglQuerySurface(window.display, window.surface, EGL_HEIGHT, &_screen_height);
+            window.screen_size = uint32x2(_screen_width, _screen_height);
+#endif
+#if defined(LUCARIA_BACKEND_VULKAN)
+            window.screen_size = uint32x2(
+                static_cast<uint32>(ANativeWindow_getWidth(window.app->window)),
+                static_cast<uint32>(ANativeWindow_getHeight(window.app->window)));
+#endif
+        }
+
+        void _update_loop(manager_window& window, manager_input& input)
         {
             static std::chrono::high_resolution_clock::time_point _last_render_time = std::chrono::high_resolution_clock::now();
             const std::chrono::high_resolution_clock::time_point _render_time = std::chrono::high_resolution_clock::now();
-            time_delta_seconds = std::chrono::duration<glm::float64>(_render_time - _last_render_time).count();
+            window.time_delta_seconds = std::chrono::duration<float64>(_render_time - _last_render_time).count();
             _last_render_time = _render_time;
 
-            glm::int32 _screen_width, _screen_height;
-            eglQuerySurface(g_display, g_surface, EGL_WIDTH, &_screen_width);
-            eglQuerySurface(g_display, g_surface, EGL_HEIGHT, &_screen_height);
-            screen_size = glm::uvec2(_screen_width, _screen_height);
-            if (screen_size == glm::uvec2(0)) {
+            _update_screen_size(window);
+            if (window.screen_size == uint32x2(0)) {
                 return;
             }
 
-            for (std::pair<const glm::uint, glm::vec2>& _accumulator : _pointer_accumulators) {
-                _pointer_events[_accumulator.first].delta = _accumulator.second;
-                _accumulator.second = glm::vec2(0);
+            for (std::pair<const uint32, float32x2>& _accumulator : window.pointer_accumulators) {
+                input.pointer_events[_accumulator.first].delta = _accumulator.second;
+                _accumulator.second = float32x2(0);
             }
 
             ImGui_ImplAndroid_NewFrame();
-            ImGui::GetIO().DisplaySize = ImVec2(static_cast<glm::float32>(screen_size.x), static_cast<glm::float32>(screen_size.y));
+            ImGui::GetIO().DisplaySize = convert_imgui(window.screen_size);
 
+#if defined(LUCARIA_BACKEND_VULKAN)
+            rendering_vulkan_begin_frame(window.screen_size);
+#endif
             window.stored_update_callback();
+#if defined(LUCARIA_BACKEND_VULKAN)
+            rendering_vulkan_end_frame();
+#endif
 
+#if defined(LUCARIA_BACKEND_OPENGL)
             eglSwapBuffers(window.display, window.surface);
+#endif
         }
+
     }
 
-    manager_window::manager_window(
+    void manager_window::run(
         android_app* app,
-        const std::function<void()>& update_callback,
-        const std::function<void()>& initialize_callback,
-        const std::function<void()>& destroy_callback)
+        manager_input& input,
+        manager_assets& objects,
+        const std::function<void()>& setup_callback,
+        const std::function<void()>& update_callback)
     {
-        set_engine_window(this);
-
+        tracy::SetThreadName("Main Thread");
         app_dummy();
         _redirect_stdio_to_log();
 
-        implementation_android.app = app;
-        implementation_android.app->onAppCmd = _android_on_app_cmd;
-        implementation_android.app->onInputEvent = _android_on_input;
+        this->app = app;
+        android_window_context _context = { this, &input, &objects };
+        app->userData = &_context;
+        app->onAppCmd = _android_on_app_cmd;
+        app->onInputEvent = _android_on_input;
 
-        is_mouse_supported = false;
-        is_keyboard_supported = false;
-        is_touch_supported = true;
-        is_etc2_supported = true;
+        input.is_mouse_supported = false;
+        input.is_keyboard_supported = false;
+        input.is_touch_supported = true;
+        objects.is_etc2_supported = true;
 
-        if (initialize_callback) {
-            initialize_callback();
-        }
+        setup_callback();
         stored_update_callback = update_callback;
-
-        __lucaria_main_scene();
 
         while (true) {
             int _ident;
             int _events;
             android_poll_source* _poll_source = nullptr;
-
-            while ((_ident = ALooper_pollOnce(has_window ? 0 : -1, nullptr, &_events, (void**)&_poll_source)) >= 0) {
-                if (_poll_source) {
+            while ((_ident = ALooper_pollOnce(has_window ? 0 : -1, nullptr, &_events, reinterpret_cast<void**>(&_poll_source))) >= 0) {
+                if (_poll_source != nullptr) {
                     _poll_source->process(app, _poll_source);
                 }
-
-                if (implementation_android.app->destroyRequested) {
-                    _destroy_backend();
-                    destroy_openal();
+                if (app->destroyRequested) {
+                    _destroy_backend(*this);
                     return;
                 }
             }
-
-            if (is_engine_initialized && has_window && surface != EGL_NO_SURFACE) {
-                _update_loop(*this);
+            if (is_engine_initialized && has_window) {
+                ZoneScopedN("Frame");
+                _update_loop(*this, input);
             }
         }
-
-        if (destroy_callback) {
-            destroy_callback();
-        }
     }
+
 }
 }

@@ -23,6 +23,7 @@ function(_lucaria_make_configure)
         NAME
         INSTALL_DIR
         PACKAGE
+        BACKEND
         PSP_PRX
         PSP_ENCRYPT)
     set(multi_value_args
@@ -97,6 +98,9 @@ function(_lucaria_make_configure)
     else()
         message(FATAL_ERROR "Unknown Lucaria platform: ${LCP_PLATFORM}")
     endif()
+    if(LCP_BACKEND)
+        list(APPEND _platform_args "-DLUCARIA_BACKEND=${LCP_BACKEND}")
+    endif()
     set(_all_arg)
     if(NOT LCP_EXCLUDE_FROM_ALL)
         set(_all_arg ALL)
@@ -116,7 +120,7 @@ function(_lucaria_make_configure)
             "-DLUCARIA_BINARY_DIR=${LCP_GAME_BINARY_DIR}"
 
             "-DLUCARIA_GAME_DIR=${LCP_GAME_DIR}"
-            "-DLUCARIA_GAME_DEBUG=$<IF:$<CONFIG:Debug>,ON,OFF>"
+            "-DLUCARIA_DEBUG=$<IF:$<CONFIG:Debug>,ON,OFF>"
             "-DLUCARIA_TARGET=${LCP_NAME}"
             "-DLUCARIA_INSTALL_DIR=${LCP_INSTALL_DIR}"
             "-DLUCARIA_PACKAGE=${LCP_PACKAGE}"
@@ -146,6 +150,7 @@ function(add_game)
         BINARY_DIR
         INSTALL_DIR
         PACKAGE
+        WIN32_BACKEND
         PSP_PRX
         PSP_ENCRYPT)
     set(multi_value_args
@@ -200,6 +205,10 @@ function(add_game)
         endif()
     endif()
     foreach(platform IN LISTS LSB_PLATFORMS)
+        set(_backend_args)
+        if(platform STREQUAL "win32" AND LSB_WIN32_BACKEND)
+            list(APPEND _backend_args BACKEND "${LSB_WIN32_BACKEND}")
+        endif()
         _lucaria_make_configure(
             PLATFORM "${platform}"
             GAME_DIR "${LSB_GAME_DIR}"
@@ -207,6 +216,7 @@ function(add_game)
             NAME "${LSB_NAME}"
             INSTALL_DIR "${LSB_INSTALL_DIR}"
             PACKAGE "${LSB_PACKAGE}"
+            ${_backend_args}
             PSP_PRX "${LSB_PSP_PRX}"
             PSP_ENCRYPT "${LSB_PSP_ENCRYPT}"
             SOURCES ${LSB_SOURCES}

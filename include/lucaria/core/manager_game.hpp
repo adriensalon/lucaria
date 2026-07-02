@@ -20,15 +20,18 @@ namespace detail {
 
     struct manager_game {
         manager_game();
+#if defined(LUCARIA_PLATFORM_ANDROID)
+        manager_game(android_app* app);
+#endif
         manager_game(const manager_game& other) = delete;
         manager_game& operator=(const manager_game& other) = delete;
         manager_game(manager_game&& other) = delete;
         manager_game& operator=(manager_game&& other) = delete;
 
+        manager_window window = {};
         manager_input input = {};
         manager_assets objects = {};
         manager_scenes scenes = {};
-        manager_window window = {};
         system_dynamics dynamics = {};
         system_motion motion = {};
         system_mixer mixer = {};
@@ -45,6 +48,13 @@ namespace detail {
 #if !defined(LUCARIA_DISABLE_RELOAD)
         [[nodiscard]] bool hot_reload(const std::filesystem::path& snapshot_path);
         void clear_runtime_for_reload();
+#endif
+
+    private:
+#if defined(LUCARIA_PLATFORM_ANDROID)
+        void run(android_app* app);
+#else
+        void run();
 #endif
     };
 

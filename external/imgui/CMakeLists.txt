@@ -7,14 +7,24 @@ if(NOT LUCARIA_BUILD_COMPILERS)
 		"upstream/imgui_1897/imgui_draw.cpp"
 		"upstream/imgui_1897/imgui_demo.cpp"
 		"upstream/imgui_1897/misc/cpp/imgui_stdlib.cpp")
-	if(ANDROID)
+	if(LUCARIA_BACKEND STREQUAL "VULKAN")
+		list(APPEND imgui_sources
+			"upstream/imgui_1897/backends/imgui_impl_vulkan.cpp")
+		if(ANDROID)
+			list(APPEND imgui_sources
+				"upstream/imgui_1897/backends/imgui_impl_android.cpp")
+		elseif(WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
+			list(APPEND imgui_sources
+				"upstream/imgui_1897/backends/imgui_impl_glfw.cpp")
+		endif()
+	elseif(ANDROID)
 		list(APPEND imgui_sources
 			"upstream/imgui_1897/backends/imgui_impl_android.cpp"
 			"upstream/imgui_1897/backends/imgui_impl_opengl3.cpp")		
 	elseif(EMSCRIPTEN)
 		list(APPEND imgui_sources
 			"upstream/imgui_1897/backends/imgui_impl_opengl3.cpp")
-	elseif(WIN32)
+	elseif(WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
 		list(APPEND imgui_sources
 			"upstream/imgui_1897/backends/imgui_impl_glfw.cpp"
 			"upstream/imgui_1897/backends/imgui_impl_opengl3.cpp")
@@ -28,14 +38,17 @@ if(NOT LUCARIA_BUILD_COMPILERS)
 	target_include_directories(lucaria_external_imgui PUBLIC "config")
 	target_include_directories(lucaria_external_imgui PUBLIC "upstream/imgui_1897")
 	target_compile_definitions(lucaria_external_imgui PUBLIC -DIMGUI_USER_CONFIG="lucaria_imconfig.h")
+	if(LUCARIA_BACKEND STREQUAL "VULKAN")
+		target_compile_definitions(lucaria_external_imgui PUBLIC -DLUCARIA_BACKEND_VULKAN)
+	endif()
 
-	if(ANDROID)
+	if(ANDROID AND NOT (LUCARIA_BACKEND STREQUAL "VULKAN"))
 		target_link_libraries(lucaria_external_imgui PUBLIC GLESv3)
 	endif()
 	if(PSP)
 		target_include_directories(lucaria_external_imgui PUBLIC "upstream/imgui_psp/include")
 	endif()
-	if(WIN32)
+	if(WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
 		target_link_libraries(lucaria_external_imgui PRIVATE lucaria_external_glfw)
 	endif()
 

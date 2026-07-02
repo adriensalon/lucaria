@@ -3,4 +3,8 @@
 #define GLAD_GL_IMPLEMENTATION
 #include <glad/gl.h>
 #endif
+#if defined(LUCARIA_BACKEND_VULKAN)
+#define GLAD_VULKAN_IMPLEMENTATION
+#include <glad/vulkan.h>
+#endif
 #endif

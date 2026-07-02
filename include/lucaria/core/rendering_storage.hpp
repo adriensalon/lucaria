@@ -56,6 +56,13 @@ namespace detail {
         GLuint vertices_id = 0;
         GLuint elements_id = 0;
 #endif
+
+#if defined(LUCARIA_BACKEND_VULKAN)
+        VkBuffer vertices_buffer = VK_NULL_HANDLE;
+        VkDeviceMemory vertices_memory = VK_NULL_HANDLE;
+        VkBuffer elements_buffer = VK_NULL_HANDLE;
+        VkDeviceMemory elements_memory = VK_NULL_HANDLE;
+#endif
     };
 
     struct rendering_textures_page {
@@ -66,6 +73,16 @@ namespace detail {
 
 #if defined(LUCARIA_BACKEND_OPENGL)
         GLuint texture_id = 0;
+#endif
+
+#if defined(LUCARIA_BACKEND_VULKAN)
+        VkImage image = VK_NULL_HANDLE;
+        VkDeviceMemory memory = VK_NULL_HANDLE;
+        VkImageView image_view = VK_NULL_HANDLE;
+        VkSampler sampler = VK_NULL_HANDLE;
+        VkDescriptorSet descriptor = VK_NULL_HANDLE;
+        VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+        VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 #endif
 
         [[nodiscard]] std::optional<rendering_texture_allocation> allocate(const uint32x2 size);

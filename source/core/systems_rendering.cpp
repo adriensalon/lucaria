@@ -4,6 +4,11 @@
 #include <backends/imgui_impl_opengl3.h>
 #endif
 
+#if defined(LUCARIA_BACKEND_VULKAN)
+#include <backends/imgui_impl_vulkan.h>
+#include <lucaria/core/rendering_vulkan.hpp>
+#endif
+
 #if defined(LUCARIA_BACKEND_PSPGU)
 #include <backends/imgui_impl_psp.h>
 #endif
@@ -15,6 +20,10 @@
 #include <lucaria/engine/component_model.hpp>
 #include <lucaria/engine/component_rigidbody.hpp>
 #include <lucaria/engine/component_transform.hpp>
+
+#if defined(LUCARIA_BACKEND_VULKAN)
+#include <glm/ext/matrix_clip_space.hpp>
+#endif
 
 namespace lucaria {
 namespace detail {
@@ -37,6 +46,249 @@ namespace detail {
 
     namespace {
 
+#if defined(LUCARIA_BACKEND_VULKAN)
+        static const std::string unlit_vertex = R"(#version 450
+    layout(location = 0) in vec3 vert_position;
+    layout(location = 1) in vec2 vert_texcoord;
+    layout(push_constant) uniform lucaria_push {
+        mat4 uniform_matrix;
+        vec4 uniform_color;
+        vec4 uniform_color_uv_rect;
+        vec4 uniform_texel_size_fxaa;
+        vec4 uniform_fxaa_params;
+    };
+    layout(location = 0) out vec2 frag_texcoord;
+    void main() {
+        frag_texcoord = vert_texcoord;
+        gl_Position = uniform_matrix * vec4(vert_position, 1);
+    })";
+
+        static const std::string unlit_skinned_vertex = R"(#version 450
+    layout(location = 0) in vec3 vert_position;
+    layout(location = 1) in vec2 vert_texcoord;
+    layout(location = 3) in ivec4 vert_bones;
+    layout(location = 4) in vec4 vert_weights;
+    layout(push_constant) uniform lucaria_push {
+        mat4 uniform_matrix;
+        vec4 uniform_color;
+        vec4 uniform_color_uv_rect;
+        vec4 uniform_texel_size_fxaa;
+        vec4 uniform_fxaa_params;
+    };
+    layout(set = 1, binding = 0) uniform lucaria_bones {
+        mat4 uniform_bones_transforms[100];
+        mat4 uniform_bones_invposes[100];
+    };
+    layout(location = 0) out vec2 frag_texcoord;
+    void main() {
+        frag_texcoord = vert_texcoord;
+        vec4 skinned_position = vec4(0.0);
+        for (int i = 0; i < 4; ++i) {
+            if (vert_weights[i] > 0.0) {
+                int _index = vert_bones[i];
+                skinned_position += vert_weights[i] * uniform_bones_transforms[_index] * uniform_bones_invposes[_index] * vec4(vert_position, 1.0);
+            }
+        }
+        gl_Position = uniform_matrix * skinned_position;
+    })";
+
+        static const std::string unlit_fragment = R"(#version 450
+    layout(location = 0) in vec2 frag_texcoord;
+    layout(set = 0, binding = 0) uniform sampler2D uniform_color;
+    layout(push_constant) uniform lucaria_push {
+        mat4 uniform_matrix;
+        vec4 uniform_color_tint;
+        vec4 uniform_color_uv_rect;
+        vec4 uniform_texel_size_fxaa;
+        vec4 uniform_fxaa_params;
+    };
+    layout(location = 0) out vec4 output_color;
+    void main() {
+        vec2 _atlas_texcoord = uniform_color_uv_rect.xy + frag_texcoord * uniform_color_uv_rect.zw;
+        output_color = texture(uniform_color, _atlas_texcoord) * uniform_color_tint;
+    })";
+
+        static const std::string blockout_vertex = R"(#version 450
+    layout(location = 0) in vec3 vert_position;
+    layout(location = 2) in vec3 vert_normal;
+    layout(push_constant) uniform lucaria_push {
+        mat4 uniform_matrix;
+        vec4 uniform_color;
+        vec4 uniform_color_uv_rect;
+        vec4 uniform_texel_size_fxaa;
+        vec4 uniform_fxaa_params;
+    };
+    layout(location = 0) out vec3 frag_position;
+    layout(location = 1) out vec3 frag_normal;
+    layout(location = 2) out vec3 uv_x;
+    layout(location = 3) out vec3 uv_y;
+    layout(location = 4) out vec3 uv_z;
+    void main() {
+        frag_position = vert_position;
+        frag_normal = normalize(vert_normal);
+        vec3 abs_normal = abs(frag_normal);
+        vec3 uv = frag_position;
+        uv_x = vec3(uv.y, uv.z, abs_normal.x);
+        uv_y = vec3(uv.x, uv.z, abs_normal.y);
+        uv_z = vec3(uv.x, uv.y, abs_normal.z);
+        gl_Position = uniform_matrix * vec4(vert_position, 1.0);
+    })";
+
+        static const std::string blockout_fragment = R"(#version 450
+    layout(location = 0) in vec3 frag_position;
+    layout(location = 1) in vec3 frag_normal;
+    layout(location = 2) in vec3 uv_x;
+    layout(location = 3) in vec3 uv_y;
+    layout(location = 4) in vec3 uv_z;
+    layout(location = 0) out vec4 output_color;
+    void main() {
+        vec3 abs_normal = abs(frag_normal);
+        float total = abs_normal.x + abs_normal.y + abs_normal.z;
+        vec3 blend_weights = abs_normal / total;
+        float grid_scale = 1.0;
+        float line_thickness = 0.02;
+        vec2 uv_x2 = uv_x.xy / uv_x.z;
+        vec2 uv_y2 = uv_y.xy / uv_y.z;
+        vec2 uv_z2 = uv_z.xy / uv_z.z;
+        vec2 grid_x = abs(fract(uv_x2 / grid_scale) - 0.5);
+        vec2 grid_y = abs(fract(uv_y2 / grid_scale) - 0.5);
+        vec2 grid_z = abs(fract(uv_z2 / grid_scale) - 0.5);
+        float grid_x_factor = min(grid_x.x, grid_x.y);
+        float grid_y_factor = min(grid_y.x, grid_y.y);
+        float grid_z_factor = min(grid_z.x, grid_z.y);
+        float grid_factor = min(min(grid_x_factor, grid_y_factor), grid_z_factor);
+        float grid_line = smoothstep(0.0, line_thickness, grid_factor);
+        vec3 base_color = vec3(0.8);
+        vec3 line_color = vec3(0.5);
+        vec3 final_color = mix(base_color, line_color, grid_line);
+        output_color = vec4(final_color, 1.0);
+    })";
+
+        static const std::string pbr_vertex = R"(#version 450
+    )";
+
+        static const std::string pbr_skinned_vertex = R"(#version 450
+    )";
+
+        static const std::string pbr_fragment = R"(#version 450
+    )";
+
+        static const std::string skybox_vertex = R"(#version 450
+    layout(location = 0) in vec3 vert_position;
+    layout(push_constant) uniform lucaria_push {
+        mat4 uniform_matrix;
+        vec4 uniform_color;
+        vec4 uniform_color_uv_rect;
+        vec4 uniform_texel_size_fxaa;
+        vec4 uniform_fxaa_params;
+    };
+    layout(location = 0) out vec3 frag_texcoord;
+    void main() {
+        frag_texcoord = vert_position;
+        vec4 projected = uniform_matrix * vec4(vert_position, 1);
+        gl_Position = vec4(projected.xy, projected.w, projected.w);
+    })";
+
+        static const std::string skybox_fragment = R"(#version 450
+    layout(location = 0) in vec3 frag_texcoord;
+    layout(set = 0, binding = 0) uniform samplerCube uniform_color;
+    layout(location = 0) out vec4 output_color;
+    void main() {
+        output_color = texture(uniform_color, frag_texcoord);
+    })";
+
+#if defined(LUCARIA_DEBUG)
+        static const std::string guizmo_vertex = R"(#version 450
+    layout(location = 0) in vec3 vert_position;
+    layout(push_constant) uniform lucaria_push {
+        mat4 uniform_matrix;
+        vec4 uniform_color;
+        vec4 uniform_color_uv_rect;
+        vec4 uniform_texel_size_fxaa;
+        vec4 uniform_fxaa_params;
+    };
+    void main() {
+        gl_Position = uniform_matrix * vec4(vert_position, 1.0);
+    })";
+
+        static const std::string guizmo_fragment = R"(#version 450
+    layout(push_constant) uniform lucaria_push {
+        mat4 uniform_matrix;
+        vec4 uniform_color;
+        vec4 uniform_color_uv_rect;
+        vec4 uniform_texel_size_fxaa;
+        vec4 uniform_fxaa_params;
+    };
+    layout(location = 0) out vec4 output_color;
+    void main() {
+        output_color = vec4(uniform_color.xyz, 1.0);
+    })";
+#endif
+
+        static const std::string post_processing_vertex = R"(#version 450
+    layout(location = 0) in vec3 vert_position;
+    layout(location = 0) out vec2 frag_texcoord;
+    void main() {
+        gl_Position = vec4(vert_position, 1.0);
+        frag_texcoord = vert_position.xy * 0.5 + 0.5;
+    })";
+
+        static const std::string post_processing_fragment = R"(#version 450
+    layout(location = 0) in vec2 frag_texcoord;
+    layout(set = 0, binding = 0) uniform sampler2D uniform_color;
+    layout(push_constant) uniform lucaria_push {
+        mat4 uniform_matrix;
+        vec4 uniform_color_tint;
+        vec4 uniform_color_uv_rect;
+        vec4 uniform_texel_size_fxaa;
+        vec4 uniform_fxaa_params;
+    };
+    layout(location = 0) out vec4 output_color;
+
+    float fxaa_luma(vec3 c) {
+        return dot(c, vec3(0.299, 0.587, 0.114));
+    }
+
+    void main()
+    {
+        vec2 uniform_texel_size = uniform_texel_size_fxaa.xy;
+        float uniform_fxaa_enable = uniform_texel_size_fxaa.z;
+        float uniform_fxaa_contrast_threshold = uniform_fxaa_params.x;
+        float uniform_fxaa_relative_threshold = uniform_fxaa_params.y;
+        float uniform_fxaa_edge_sharpness = uniform_fxaa_params.z;
+        vec2 _texcoord = uniform_color_uv_rect.xy + frag_texcoord * uniform_color_uv_rect.zw;
+        vec3 _rgb_m = texture(uniform_color, _texcoord).rgb;
+        float _luma_m = fxaa_luma(_rgb_m);
+        vec2 _texel_size = uniform_texel_size * abs(uniform_color_uv_rect.zw);
+        vec3 _rgb_n = texture(uniform_color, _texcoord + vec2(0.0, -_texel_size.y)).rgb;
+        vec3 _rgb_s = texture(uniform_color, _texcoord + vec2(0.0, _texel_size.y)).rgb;
+        vec3 _rgb_w = texture(uniform_color, _texcoord + vec2(-_texel_size.x, 0.0)).rgb;
+        vec3 _rgb_e = texture(uniform_color, _texcoord + vec2( _texel_size.x, 0.0)).rgb;
+        float _luma_n = fxaa_luma(_rgb_n);
+        float _luma_s = fxaa_luma(_rgb_s);
+        float _luma_w = fxaa_luma(_rgb_w);
+        float _luma_e = fxaa_luma(_rgb_e);
+        float _luma_min = min(_luma_m, min(min(_luma_n, _luma_s), min(_luma_w, _luma_e)));
+        float _luma_max = max(_luma_m, max(max(_luma_n, _luma_s), max(_luma_w, _luma_e)));
+        float _contrast = _luma_max - _luma_min;
+        float _threshold = max(uniform_fxaa_contrast_threshold, _luma_max * uniform_fxaa_relative_threshold);
+        if (_contrast < _threshold) {
+            output_color = vec4(_rgb_m, 1.0);
+            return;
+        }
+        vec2 _direction;
+        _direction.x = (_luma_w - _luma_e);
+        _direction.y = (_luma_n - _luma_s);
+        float _direction_reduce = (abs(_direction.x) + abs(_direction.y)) + 1e-4;
+        _direction /= _direction_reduce;
+        _direction *= _texel_size * uniform_fxaa_edge_sharpness;
+        vec3 _rgb_a = texture(uniform_color, _texcoord + _direction * 0.5).rgb;
+        vec3 _rgb_b = texture(uniform_color, _texcoord - _direction * 0.5).rgb;
+        vec3 _aa_color = (_rgb_a + _rgb_b + _rgb_m) / 3.0;
+        vec3 _final_color = mix(_rgb_m, _aa_color, uniform_fxaa_enable);
+        output_color = vec4(_final_color, 1.0);
+    })";
+#else
         static const std::string unlit_vertex = R"(#version 300 es
     in vec3 vert_position;
     in vec2 vert_texcoord;
@@ -262,6 +514,7 @@ namespace detail {
 
         output_color = vec4(_final_color, 1.0);
     })";
+#endif
 
         struct raycast_data {
             float32x3 origin;
@@ -425,6 +678,9 @@ namespace detail {
 #if defined(LUCARIA_BACKEND_OPENGL)
             scene_depth_renderbuffer = rendering_renderbuffer(window.screen_size, GL_DEPTH_COMPONENT24);
 #endif
+#if defined(LUCARIA_BACKEND_VULKAN)
+            scene_depth_renderbuffer = rendering_renderbuffer(window.screen_size, VK_FORMAT_D32_SFLOAT);
+#endif
 #if defined(LUCARIA_BACKEND_PSPGU)
             // scene_depth_renderbuffer = rendering_renderbuffer(window.screen_size, GL_DEPTH_COMPONENT24); TODO
 #endif
@@ -443,7 +699,11 @@ namespace detail {
         float32x2 _screen_size = window.screen_size;
         float _fov_rad = glm::radians(camera_fov);
         float _aspect_ratio = _screen_size.x / _screen_size.y;
+#if defined(LUCARIA_BACKEND_VULKAN)
+        camera_projection = glm::perspectiveRH_ZO(_fov_rad, _aspect_ratio, camera_far, camera_near);
+#else
         camera_projection = glm::perspective(_fov_rad, _aspect_ratio, camera_near, camera_far);
+#endif
     }
 
     void system_rendering::update_apply_camera_rotation(manager_scenes& scenes)
@@ -732,6 +992,9 @@ namespace detail {
 #if defined(LUCARIA_BACKEND_OPENGL)
                 ImGui_ImplOpenGL3_NewFrame();
 #endif
+#if defined(LUCARIA_BACKEND_VULKAN)
+                ImGui_ImplVulkan_NewFrame();
+#endif
 #if defined(LUCARIA_BACKEND_PSPGU)
                 ImGui_ImplPSP_NewFrame();
 #endif
@@ -762,6 +1025,9 @@ namespace detail {
 #if defined(LUCARIA_BACKEND_OPENGL)
                 ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 #endif
+#if defined(LUCARIA_BACKEND_VULKAN)
+                rendering_vulkan_render_imgui(ImGui::GetDrawData());
+#endif
 #if defined(LUCARIA_BACKEND_PSPGU)
                 ImGui_ImplPSP_RenderDrawData(ImGui::GetDrawData());
 #endif
@@ -790,6 +1056,9 @@ namespace detail {
 #if defined(LUCARIA_BACKEND_OPENGL)
         ImGui_ImplOpenGL3_NewFrame();
 #endif
+#if defined(LUCARIA_BACKEND_VULKAN)
+        ImGui_ImplVulkan_NewFrame();
+#endif
 #if defined(LUCARIA_BACKEND_PSPGU)
         ImGui_ImplPSP_NewFrame();
 #endif
@@ -805,6 +1074,9 @@ namespace detail {
         ImGui::Render();
 #if defined(LUCARIA_BACKEND_OPENGL)
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+#endif
+#if defined(LUCARIA_BACKEND_VULKAN)
+        rendering_vulkan_render_imgui(ImGui::GetDrawData());
 #endif
 #if defined(LUCARIA_BACKEND_PSPGU)
         ImGui_ImplPSP_RenderDrawData(ImGui::GetDrawData());

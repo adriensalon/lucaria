@@ -30,6 +30,24 @@ namespace detail {
 
     manager_game::manager_game()
     {
+#if defined(LUCARIA_PLATFORM_ANDROID)
+        run(nullptr);
+#else
+        run();
+#endif
+    }
+
+#if defined(LUCARIA_PLATFORM_ANDROID)
+    manager_game::manager_game(android_app* app)
+    {
+        run(app);
+    }
+
+    void manager_game::run(android_app* app)
+#else
+    void manager_game::run()
+#endif
+    {
         context_game _game;
         context = &_game;
 
@@ -49,7 +67,11 @@ namespace detail {
         __lucaria_plugin_register(this);
 #endif
 
+#if defined(LUCARIA_PLATFORM_ANDROID)
+        window.run(app, input, objects,
+#else
         window.run(input, objects,
+#endif
 
             [this, &_game]() {
 

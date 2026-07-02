@@ -3,6 +3,7 @@
 #include <lucaria/core/manager_app.hpp>
 #include <lucaria/core/manager_assets.hpp>
 #include <lucaria/core/manager_input.hpp>
+#include <lucaria/core/rendering_vulkan.hpp>
 #include <lucaria/core/utils_math.hpp>
 
 namespace lucaria {
@@ -146,8 +147,9 @@ namespace detail {
             }
         }
 
-        void _initialize_backend(bool& is_s3tc_supported)
+        void _initialize_backend(manager_window& window, bool& is_s3tc_supported)
         {
+#if defined(LUCARIA_BACKEND_OPENGL)
             GLint _found_extensions_count = 0;
             glGetIntegerv(GL_NUM_EXTENSIONS, &_found_extensions_count);
             for (GLint _extension_index = 0; _extension_index < _found_extensions_count; ++_extension_index) {
@@ -156,6 +158,11 @@ namespace detail {
                     is_s3tc_supported = true;
                 }
             }
+#endif
+#if defined(LUCARIA_BACKEND_VULKAN)
+            is_s3tc_supported = true;
+            rendering_vulkan_initialize(window.window);
+#endif
         }
 
         void _update_loop(manager_window& window, manager_input& input)
@@ -187,9 +194,16 @@ namespace detail {
             ImGui_ImplGlfw_NewFrame();
             ImGui::GetIO().DisplaySize = convert_imgui(window.screen_size);
 
+#if defined(LUCARIA_BACKEND_VULKAN)
+            rendering_vulkan_begin_frame(window.screen_size);
+#endif
             window.stored_update_callback();
-
+#if defined(LUCARIA_BACKEND_VULKAN)
+            rendering_vulkan_end_frame();
+#endif
+#if defined(LUCARIA_BACKEND_OPENGL)
             glfwSwapBuffers(window.window);
+#endif
         }
     }
 
@@ -210,9 +224,14 @@ namespace detail {
             exit(EXIT_FAILURE);
         }
 
+#if defined(LUCARIA_BACKEND_OPENGL)
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#endif
+#if defined(LUCARIA_BACKEND_VULKAN)
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+#endif
         window = glfwCreateWindow(1600, 900, "Lucaria", nullptr, nullptr);
         if (!window) {
             glfwTerminate();
@@ -226,11 +245,13 @@ namespace detail {
         glfwSetMouseButtonCallback(window, _glfw_mouse_button_callback);
         glfwSetWindowFocusCallback(window, _glfw_window_focus_callback);
 
+#if defined(LUCARIA_BACKEND_OPENGL)
         glfwMakeContextCurrent(window);
         gladLoadGL(glfwGetProcAddress);
         glfwSwapInterval(0);
+#endif
 
-        _initialize_backend(objects.is_s3tc_supported);
+        _initialize_backend(*this, objects.is_s3tc_supported);
         initialize_imgui();
         initialize_openal();
 
@@ -240,8 +261,7 @@ namespace detail {
             ZoneScopedN("Frame");
             _update_loop(*this, input);
         }
-        glfwDestroyWindow(window);
-        glfwTerminate();
+        glfwSetWindowUserPointer(window, nullptr);
     }
 
 }
