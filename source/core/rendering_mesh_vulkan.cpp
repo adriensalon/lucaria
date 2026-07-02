@@ -4,6 +4,7 @@
 #include <cstring>
 #include <set>
 
+#include <lucaria/core/app_error.hpp>
 #include <lucaria/core/rendering_mesh.hpp>
 #include <lucaria/core/rendering_vulkan.hpp>
 
@@ -167,10 +168,83 @@ namespace detail {
             return _packed;
         }
 
+        void _create_line_mesh_buffer(const VkDeviceSize size, const VkBufferUsageFlags usage, const VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& memory)
+        {
+            rendering_vulkan_context& _vulkan = rendering_vulkan();
+
+            VkBufferCreateInfo _create = {};
+            _create.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+            _create.size = size;
+            _create.usage = usage;
+            _create.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            if (vkCreateBuffer(_vulkan.device, &_create, nullptr, &buffer) != VK_SUCCESS) {
+                LUCARIA_DEBUG_ERROR("Failed to create Vulkan line mesh buffer")
+                return;
+            }
+
+            VkMemoryRequirements _requirements = {};
+            vkGetBufferMemoryRequirements(_vulkan.device, buffer, &_requirements);
+
+            VkMemoryAllocateInfo _allocate = {};
+            _allocate.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+            _allocate.allocationSize = _requirements.size;
+            _allocate.memoryTypeIndex = rendering_vulkan_find_memory_type(_requirements.memoryTypeBits, properties);
+            if (vkAllocateMemory(_vulkan.device, &_allocate, nullptr, &memory) != VK_SUCCESS) {
+                LUCARIA_DEBUG_ERROR("Failed to allocate Vulkan line mesh buffer memory")
+                return;
+            }
+            vkBindBufferMemory(_vulkan.device, buffer, memory, 0);
+        }
+
+        void _destroy_line_mesh_buffer(VkBuffer& buffer, VkDeviceMemory& memory)
+        {
+            rendering_vulkan_context& _vulkan = rendering_vulkan();
+            if (_vulkan.device == VK_NULL_HANDLE) {
+                buffer = VK_NULL_HANDLE;
+                memory = VK_NULL_HANDLE;
+                return;
+            }
+            if (buffer != VK_NULL_HANDLE) {
+                vkDestroyBuffer(_vulkan.device, buffer, nullptr);
+                buffer = VK_NULL_HANDLE;
+            }
+            if (memory != VK_NULL_HANDLE) {
+                vkFreeMemory(_vulkan.device, memory, nullptr);
+                memory = VK_NULL_HANDLE;
+            }
+        }
+
+        void _upload_line_mesh_buffer(const VkBuffer destination, const VkDeviceSize destination_offset, const void* data, const VkDeviceSize size)
+        {
+            if (destination == VK_NULL_HANDLE || data == nullptr || size == 0) {
+                return;
+            }
+            rendering_vulkan_context& _vulkan = rendering_vulkan();
+
+            VkBuffer _staging_buffer = VK_NULL_HANDLE;
+            VkDeviceMemory _staging_memory = VK_NULL_HANDLE;
+            _create_line_mesh_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, _staging_buffer, _staging_memory);
+
+            void* _mapped = nullptr;
+            vkMapMemory(_vulkan.device, _staging_memory, 0, size, 0, &_mapped);
+            std::memcpy(_mapped, data, static_cast<std::size_t>(size));
+            vkUnmapMemory(_vulkan.device, _staging_memory);
+
+            VkCommandBuffer _commands = rendering_vulkan_begin_upload_commands();
+            VkBufferCopy _copy = {};
+            _copy.srcOffset = 0;
+            _copy.dstOffset = destination_offset;
+            _copy.size = size;
+            vkCmdCopyBuffer(_commands, _staging_buffer, destination, 1, &_copy);
+            rendering_vulkan_end_upload_commands(_commands);
+
+            _destroy_line_mesh_buffer(_staging_buffer, _staging_memory);
+        }
+
         void _destroy_line_mesh(rendering_mesh_line& mesh)
         {
-            rendering_vulkan_destroy_buffer(mesh.positions_buffer, mesh.positions_memory);
-            rendering_vulkan_destroy_buffer(mesh.elements_buffer, mesh.elements_memory);
+            _destroy_line_mesh_buffer(mesh.positions_buffer, mesh.positions_memory);
+            _destroy_line_mesh_buffer(mesh.elements_buffer, mesh.elements_memory);
         }
 
         void _upload_line_mesh(rendering_mesh_line& mesh, const std::vector<float32x3>& positions, const std::vector<uint32x2>& indices)
@@ -183,10 +257,10 @@ namespace detail {
             if (_positions_size == 0 || _elements_size == 0) {
                 return;
             }
-            rendering_vulkan_create_buffer(_positions_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mesh.positions_buffer, mesh.positions_memory);
-            rendering_vulkan_create_buffer(_elements_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mesh.elements_buffer, mesh.elements_memory);
-            rendering_vulkan_upload_buffer(mesh.positions_buffer, 0, positions.data(), _positions_size);
-            rendering_vulkan_upload_buffer(mesh.elements_buffer, 0, _elements.data(), _elements_size);
+            _create_line_mesh_buffer(_positions_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mesh.positions_buffer, mesh.positions_memory);
+            _create_line_mesh_buffer(_elements_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mesh.elements_buffer, mesh.elements_memory);
+            _upload_line_mesh_buffer(mesh.positions_buffer, 0, positions.data(), _positions_size);
+            _upload_line_mesh_buffer(mesh.elements_buffer, 0, _elements.data(), _elements_size);
         }
 
     }

@@ -4,6 +4,7 @@
 #include <array>
 #include <cstring>
 
+#include <backends/imgui_impl_vulkan.h>
 #include <glslang/Public/ResourceLimits.h>
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
@@ -30,6 +31,66 @@ namespace detail {
         constexpr VkDeviceSize _bones_transforms_offset = 0;
         constexpr VkDeviceSize _bones_invposes_offset = sizeof(float32x4x4) * _max_bones;
         constexpr VkDeviceSize _bones_buffer_size = sizeof(float32x4x4) * _max_bones * 2;
+
+        [[nodiscard]] bool _imgui_vulkan_renderer_ready()
+        {
+            return ImGui::GetCurrentContext() != nullptr
+                && ImGui::GetIO().BackendRendererUserData != nullptr;
+        }
+
+        [[nodiscard]] VkDescriptorSet _add_imgui_texture(const VkSampler sampler, const VkImageView image_view, const VkImageLayout image_layout)
+        {
+            if (sampler == VK_NULL_HANDLE || image_view == VK_NULL_HANDLE || !_imgui_vulkan_renderer_ready()) {
+                return VK_NULL_HANDLE;
+            }
+            return ImGui_ImplVulkan_AddTexture(sampler, image_view, image_layout);
+        }
+
+        void _create_program_buffer(const VkDeviceSize size, const VkBufferUsageFlags usage, const VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& memory)
+        {
+            rendering_vulkan_context& _vulkan = rendering_vulkan();
+
+            VkBufferCreateInfo _create = {};
+            _create.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+            _create.size = size;
+            _create.usage = usage;
+            _create.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            if (vkCreateBuffer(_vulkan.device, &_create, nullptr, &buffer) != VK_SUCCESS) {
+                LUCARIA_DEBUG_ERROR("Failed to create Vulkan program buffer")
+                return;
+            }
+
+            VkMemoryRequirements _requirements = {};
+            vkGetBufferMemoryRequirements(_vulkan.device, buffer, &_requirements);
+
+            VkMemoryAllocateInfo _allocate = {};
+            _allocate.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+            _allocate.allocationSize = _requirements.size;
+            _allocate.memoryTypeIndex = rendering_vulkan_find_memory_type(_requirements.memoryTypeBits, properties);
+            if (vkAllocateMemory(_vulkan.device, &_allocate, nullptr, &memory) != VK_SUCCESS) {
+                LUCARIA_DEBUG_ERROR("Failed to allocate Vulkan program buffer memory")
+                return;
+            }
+            vkBindBufferMemory(_vulkan.device, buffer, memory, 0);
+        }
+
+        void _destroy_program_buffer(VkBuffer& buffer, VkDeviceMemory& memory)
+        {
+            rendering_vulkan_context& _vulkan = rendering_vulkan();
+            if (_vulkan.device == VK_NULL_HANDLE) {
+                buffer = VK_NULL_HANDLE;
+                memory = VK_NULL_HANDLE;
+                return;
+            }
+            if (buffer != VK_NULL_HANDLE) {
+                vkDestroyBuffer(_vulkan.device, buffer, nullptr);
+                buffer = VK_NULL_HANDLE;
+            }
+            if (memory != VK_NULL_HANDLE) {
+                vkFreeMemory(_vulkan.device, memory, nullptr);
+                memory = VK_NULL_HANDLE;
+            }
+        }
 
         [[nodiscard]] std::vector<uint32> _compile_spirv(const EShLanguage stage, const char* source)
         {
@@ -122,14 +183,14 @@ namespace detail {
                 return;
             }
             rendering_vulkan_context& _vulkan = rendering_vulkan();
-            rendering_vulkan_create_buffer(
+            _create_program_buffer(
                 _bones_buffer_size,
                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                 program.bones_buffer,
                 program.bones_memory);
             if (program.bones_buffer == VK_NULL_HANDLE || program.bones_memory == VK_NULL_HANDLE) {
-                rendering_vulkan_destroy_buffer(program.bones_buffer, program.bones_memory);
+                _destroy_program_buffer(program.bones_buffer, program.bones_memory);
                 return;
             }
 
@@ -251,7 +312,7 @@ namespace detail {
                 program.descriptor_set_layout = VK_NULL_HANDLE;
             }
             program.bones_descriptor_set = VK_NULL_HANDLE;
-            rendering_vulkan_destroy_buffer(program.bones_buffer, program.bones_memory);
+            _destroy_program_buffer(program.bones_buffer, program.bones_memory);
             if (program.bones_descriptor_set_layout != VK_NULL_HANDLE) {
                 vkDestroyDescriptorSetLayout(_vulkan.device, program.bones_descriptor_set_layout, nullptr);
                 program.bones_descriptor_set_layout = VK_NULL_HANDLE;
@@ -523,7 +584,7 @@ namespace detail {
     {
         rendering_texture& _texture = const_cast<rendering_texture&>(texture);
         if (_texture.imgui_descriptor == VK_NULL_HANDLE && _texture.sampler != VK_NULL_HANDLE && _texture.image_view != VK_NULL_HANDLE && _texture.layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-            _texture.imgui_descriptor = rendering_vulkan_add_imgui_texture(_texture.sampler, _texture.image_view, _texture.layout);
+            _texture.imgui_descriptor = _add_imgui_texture(_texture.sampler, _texture.image_view, _texture.layout);
         }
         bound_texture = &texture;
         bound_cubemap = nullptr;

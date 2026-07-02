@@ -1,6 +1,9 @@
 #if defined(LUCARIA_BACKEND_VULKAN)
 
 #include <algorithm>
+#include <cstring>
+
+#include <backends/imgui_impl_vulkan.h>
 
 #include <lucaria/core/app_error.hpp>
 #include <lucaria/core/rendering_mesh.hpp>
@@ -41,6 +44,310 @@ namespace detail {
             default:
                 return image.channels;
             }
+        }
+
+        [[nodiscard]] bool _imgui_vulkan_renderer_ready()
+        {
+            return ImGui::GetCurrentContext() != nullptr
+                && ImGui::GetIO().BackendRendererUserData != nullptr;
+        }
+
+        [[nodiscard]] VkDescriptorSet _add_imgui_texture(const VkSampler sampler, const VkImageView image_view, const VkImageLayout image_layout)
+        {
+            if (sampler == VK_NULL_HANDLE || image_view == VK_NULL_HANDLE || !_imgui_vulkan_renderer_ready()) {
+                return VK_NULL_HANDLE;
+            }
+            return ImGui_ImplVulkan_AddTexture(sampler, image_view, image_layout);
+        }
+
+        void _remove_imgui_texture(VkDescriptorSet& descriptor)
+        {
+            if (descriptor != VK_NULL_HANDLE) {
+                if (_imgui_vulkan_renderer_ready()) {
+                    ImGui_ImplVulkan_RemoveTexture(descriptor);
+                }
+                descriptor = VK_NULL_HANDLE;
+            }
+        }
+
+        void _create_storage_buffer(const VkDeviceSize size, const VkBufferUsageFlags usage, const VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& memory)
+        {
+            rendering_vulkan_context& _vulkan = rendering_vulkan();
+
+            VkBufferCreateInfo _create = {};
+            _create.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+            _create.size = size;
+            _create.usage = usage;
+            _create.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            if (vkCreateBuffer(_vulkan.device, &_create, nullptr, &buffer) != VK_SUCCESS) {
+                LUCARIA_DEBUG_ERROR("Failed to create Vulkan storage buffer")
+                return;
+            }
+
+            VkMemoryRequirements _requirements = {};
+            vkGetBufferMemoryRequirements(_vulkan.device, buffer, &_requirements);
+
+            VkMemoryAllocateInfo _allocate = {};
+            _allocate.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+            _allocate.allocationSize = _requirements.size;
+            _allocate.memoryTypeIndex = rendering_vulkan_find_memory_type(_requirements.memoryTypeBits, properties);
+            if (vkAllocateMemory(_vulkan.device, &_allocate, nullptr, &memory) != VK_SUCCESS) {
+                LUCARIA_DEBUG_ERROR("Failed to allocate Vulkan storage buffer memory")
+                return;
+            }
+            vkBindBufferMemory(_vulkan.device, buffer, memory, 0);
+        }
+
+        void _destroy_storage_buffer(VkBuffer& buffer, VkDeviceMemory& memory)
+        {
+            rendering_vulkan_context& _vulkan = rendering_vulkan();
+            if (_vulkan.device == VK_NULL_HANDLE) {
+                buffer = VK_NULL_HANDLE;
+                memory = VK_NULL_HANDLE;
+                return;
+            }
+            if (buffer != VK_NULL_HANDLE) {
+                vkDestroyBuffer(_vulkan.device, buffer, nullptr);
+                buffer = VK_NULL_HANDLE;
+            }
+            if (memory != VK_NULL_HANDLE) {
+                vkFreeMemory(_vulkan.device, memory, nullptr);
+                memory = VK_NULL_HANDLE;
+            }
+        }
+
+        void _upload_storage_buffer(const VkBuffer destination, const VkDeviceSize destination_offset, const void* data, const VkDeviceSize size)
+        {
+            if (destination == VK_NULL_HANDLE || data == nullptr || size == 0) {
+                return;
+            }
+            rendering_vulkan_context& _vulkan = rendering_vulkan();
+
+            VkBuffer _staging_buffer = VK_NULL_HANDLE;
+            VkDeviceMemory _staging_memory = VK_NULL_HANDLE;
+            _create_storage_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, _staging_buffer, _staging_memory);
+
+            void* _mapped = nullptr;
+            vkMapMemory(_vulkan.device, _staging_memory, 0, size, 0, &_mapped);
+            std::memcpy(_mapped, data, static_cast<std::size_t>(size));
+            vkUnmapMemory(_vulkan.device, _staging_memory);
+
+            VkCommandBuffer _commands = rendering_vulkan_begin_upload_commands();
+            VkBufferCopy _copy = {};
+            _copy.srcOffset = 0;
+            _copy.dstOffset = destination_offset;
+            _copy.size = size;
+            vkCmdCopyBuffer(_commands, _staging_buffer, destination, 1, &_copy);
+            rendering_vulkan_end_upload_commands(_commands);
+
+            _destroy_storage_buffer(_staging_buffer, _staging_memory);
+        }
+
+        [[nodiscard]] VkFormat _texture_page_format(const data_image_profile profile)
+        {
+            switch (profile) {
+            case data_image_profile::rgb565:
+                return VK_FORMAT_R5G6B5_UNORM_PACK16;
+            case data_image_profile::rgba5551:
+                return VK_FORMAT_R5G5B5A1_UNORM_PACK16;
+            case data_image_profile::rgba4444:
+                return VK_FORMAT_R4G4B4A4_UNORM_PACK16;
+            case data_image_profile::s3tc_rgb4:
+                return VK_FORMAT_BC1_RGB_UNORM_BLOCK;
+            case data_image_profile::s3tc_rgba8:
+                return VK_FORMAT_BC3_UNORM_BLOCK;
+            case data_image_profile::etc2_rgb4:
+                return VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK;
+            case data_image_profile::etc2_rgba8:
+                return VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK;
+            default:
+                return VK_FORMAT_R8G8B8A8_UNORM;
+            }
+        }
+
+        void _create_texture_page_image(rendering_textures_page& page)
+        {
+            rendering_vulkan_context& _vulkan = rendering_vulkan();
+
+            VkImageCreateInfo _create = {};
+            _create.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+            _create.imageType = VK_IMAGE_TYPE_2D;
+            _create.format = page.format;
+            _create.extent = { page.capacity.x, page.capacity.y, 1 };
+            _create.mipLevels = 1;
+            _create.arrayLayers = 1;
+            _create.samples = VK_SAMPLE_COUNT_1_BIT;
+            _create.tiling = VK_IMAGE_TILING_OPTIMAL;
+            _create.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+            _create.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            _create.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            if (vkCreateImage(_vulkan.device, &_create, nullptr, &page.image) != VK_SUCCESS) {
+                LUCARIA_DEBUG_ERROR("Failed to create Vulkan texture page image")
+                return;
+            }
+
+            VkMemoryRequirements _requirements = {};
+            vkGetImageMemoryRequirements(_vulkan.device, page.image, &_requirements);
+
+            VkMemoryAllocateInfo _allocate = {};
+            _allocate.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+            _allocate.allocationSize = _requirements.size;
+            _allocate.memoryTypeIndex = rendering_vulkan_find_memory_type(_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            if (vkAllocateMemory(_vulkan.device, &_allocate, nullptr, &page.memory) != VK_SUCCESS) {
+                LUCARIA_DEBUG_ERROR("Failed to allocate Vulkan texture page image memory")
+                return;
+            }
+            vkBindImageMemory(_vulkan.device, page.image, page.memory, 0);
+
+            VkImageViewCreateInfo _view = {};
+            _view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            _view.image = page.image;
+            _view.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            _view.format = page.format;
+            _view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            _view.subresourceRange.baseMipLevel = 0;
+            _view.subresourceRange.levelCount = 1;
+            _view.subresourceRange.baseArrayLayer = 0;
+            _view.subresourceRange.layerCount = 1;
+            if (vkCreateImageView(_vulkan.device, &_view, nullptr, &page.image_view) != VK_SUCCESS) {
+                LUCARIA_DEBUG_ERROR("Failed to create Vulkan texture page image view")
+            }
+            page.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+        }
+
+        void _destroy_texture_page_image(rendering_textures_page& page)
+        {
+            rendering_vulkan_context& _vulkan = rendering_vulkan();
+            if (_vulkan.device == VK_NULL_HANDLE) {
+                page.image = VK_NULL_HANDLE;
+                page.memory = VK_NULL_HANDLE;
+                page.image_view = VK_NULL_HANDLE;
+                return;
+            }
+            if (page.image_view != VK_NULL_HANDLE) {
+                vkDestroyImageView(_vulkan.device, page.image_view, nullptr);
+                page.image_view = VK_NULL_HANDLE;
+            }
+            if (page.image != VK_NULL_HANDLE) {
+                vkDestroyImage(_vulkan.device, page.image, nullptr);
+                page.image = VK_NULL_HANDLE;
+            }
+            if (page.memory != VK_NULL_HANDLE) {
+                vkFreeMemory(_vulkan.device, page.memory, nullptr);
+                page.memory = VK_NULL_HANDLE;
+            }
+        }
+
+        void _create_texture_page_sampler(rendering_textures_page& page)
+        {
+            rendering_vulkan_context& _vulkan = rendering_vulkan();
+
+            VkSamplerCreateInfo _create = {};
+            _create.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+            _create.magFilter = VK_FILTER_LINEAR;
+            _create.minFilter = VK_FILTER_LINEAR;
+            _create.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+            _create.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            _create.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            _create.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            _create.maxLod = 1.0f;
+            if (vkCreateSampler(_vulkan.device, &_create, nullptr, &page.sampler) != VK_SUCCESS) {
+                LUCARIA_DEBUG_ERROR("Failed to create Vulkan texture page sampler")
+            }
+        }
+
+        void _destroy_texture_page_sampler(rendering_textures_page& page)
+        {
+            rendering_vulkan_context& _vulkan = rendering_vulkan();
+            if (_vulkan.device == VK_NULL_HANDLE) {
+                page.sampler = VK_NULL_HANDLE;
+                return;
+            }
+            if (page.sampler != VK_NULL_HANDLE) {
+                vkDestroySampler(_vulkan.device, page.sampler, nullptr);
+                page.sampler = VK_NULL_HANDLE;
+            }
+        }
+
+        void _transition_texture_page_layout(rendering_textures_page& page, const VkImageLayout new_layout)
+        {
+            if (page.image == VK_NULL_HANDLE || page.layout == new_layout) {
+                return;
+            }
+
+            VkCommandBuffer _commands = rendering_vulkan_begin_upload_commands();
+            if (_commands == VK_NULL_HANDLE) {
+                return;
+            }
+
+            VkImageMemoryBarrier _barrier = {};
+            _barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            _barrier.oldLayout = page.layout;
+            _barrier.newLayout = new_layout;
+            _barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            _barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            _barrier.image = page.image;
+            _barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            _barrier.subresourceRange.baseMipLevel = 0;
+            _barrier.subresourceRange.levelCount = 1;
+            _barrier.subresourceRange.baseArrayLayer = 0;
+            _barrier.subresourceRange.layerCount = 1;
+
+            VkPipelineStageFlags _source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            VkPipelineStageFlags _destination_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            if (page.layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+                _barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                _barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                _source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                _destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            } else if (page.layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+                _barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                _barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                _source_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+                _destination_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            } else if (new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+                _barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            }
+
+            vkCmdPipelineBarrier(_commands, _source_stage, _destination_stage, 0, 0, nullptr, 0, nullptr, 1, &_barrier);
+            rendering_vulkan_end_upload_commands(_commands);
+            page.layout = new_layout;
+        }
+
+        void _upload_texture_page_region(rendering_textures_page& page, const uint32x2 offset, const uint32x2 size, const void* data, const VkDeviceSize size_bytes)
+        {
+            if (page.image == VK_NULL_HANDLE || data == nullptr || size_bytes == 0) {
+                return;
+            }
+            rendering_vulkan_context& _vulkan = rendering_vulkan();
+
+            VkBuffer _staging_buffer = VK_NULL_HANDLE;
+            VkDeviceMemory _staging_memory = VK_NULL_HANDLE;
+            _create_storage_buffer(size_bytes, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, _staging_buffer, _staging_memory);
+
+            void* _mapped = nullptr;
+            vkMapMemory(_vulkan.device, _staging_memory, 0, size_bytes, 0, &_mapped);
+            std::memcpy(_mapped, data, static_cast<std::size_t>(size_bytes));
+            vkUnmapMemory(_vulkan.device, _staging_memory);
+
+            _transition_texture_page_layout(page, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+            VkCommandBuffer _commands = rendering_vulkan_begin_upload_commands();
+            VkBufferImageCopy _copy = {};
+            _copy.bufferOffset = 0;
+            _copy.bufferRowLength = 0;
+            _copy.bufferImageHeight = 0;
+            _copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            _copy.imageSubresource.mipLevel = 0;
+            _copy.imageSubresource.baseArrayLayer = 0;
+            _copy.imageSubresource.layerCount = 1;
+            _copy.imageOffset = { static_cast<int32>(offset.x), static_cast<int32>(offset.y), 0 };
+            _copy.imageExtent = { size.x, size.y, 1 };
+            vkCmdCopyBufferToImage(_commands, _staging_buffer, page.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &_copy);
+            rendering_vulkan_end_upload_commands(_commands);
+
+            _transition_texture_page_layout(page, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+            _destroy_storage_buffer(_staging_buffer, _staging_memory);
         }
 
         [[nodiscard]] std::vector<uint8> _make_padded_pixels(const data_image& image)
@@ -84,8 +391,8 @@ namespace detail {
             rendering_meshes_page _page = {};
             _page.vertex_capacity = rendering_meshes_align_up(std::max(required_vertex_size, _default_vertex_page_size), _buffer_page_alignment);
             _page.element_capacity = rendering_meshes_align_up(std::max(required_element_size, _default_element_page_size), _buffer_page_alignment);
-            rendering_vulkan_create_buffer(_page.vertex_capacity, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _page.vertices_buffer, _page.vertices_memory);
-            rendering_vulkan_create_buffer(_page.element_capacity, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _page.elements_buffer, _page.elements_memory);
+            _create_storage_buffer(_page.vertex_capacity, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _page.vertices_buffer, _page.vertices_memory);
+            _create_storage_buffer(_page.element_capacity, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _page.elements_buffer, _page.elements_memory);
             _page.free_vertices.free({ 0, _page.vertex_capacity });
             _page.free_elements.free({ 0, _page.element_capacity });
             return _page;
@@ -96,9 +403,9 @@ namespace detail {
             rendering_textures_page _page = {};
             _page.profile = profile;
             _page.capacity = { std::max(required_size.x, _default_texture_page_width), std::max(required_size.y, _default_texture_page_height) };
-            _page.format = rendering_vulkan_image_format(profile);
-            rendering_vulkan_create_image(_page.capacity, _page.format, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_ASPECT_COLOR_BIT, _page.image, _page.memory, _page.image_view, _page.layout);
-            rendering_vulkan_create_sampler(_page.sampler);
+            _page.format = _texture_page_format(profile);
+            _create_texture_page_image(_page);
+            _create_texture_page_sampler(_page);
             _page.free_pixels.push_back({ { 0, 0 }, _page.capacity });
             return _page;
         }
@@ -110,8 +417,8 @@ namespace detail {
         for (std::pair<const data_geometry_profile, rendering_meshes_buffer>& _pair : buffers) {
             rendering_meshes_buffer& _pool = _pair.second;
             for (rendering_meshes_page& _page : _pool.pages) {
-                rendering_vulkan_destroy_buffer(_page.vertices_buffer, _page.vertices_memory);
-                rendering_vulkan_destroy_buffer(_page.elements_buffer, _page.elements_memory);
+                _destroy_storage_buffer(_page.vertices_buffer, _page.vertices_memory);
+                _destroy_storage_buffer(_page.elements_buffer, _page.elements_memory);
             }
         }
     }
@@ -131,8 +438,8 @@ namespace detail {
             return;
         }
         rendering_meshes_page& _page = _pool.pages[_allocation->page];
-        rendering_vulkan_upload_buffer(_page.vertices_buffer, _allocation->vertices.offset, vertices.data(), _allocation->vertices.size);
-        rendering_vulkan_upload_buffer(_page.elements_buffer, _allocation->elements.offset, elements.data(), _allocation->elements.size);
+        _upload_storage_buffer(_page.vertices_buffer, _allocation->vertices.offset, vertices.data(), _allocation->vertices.size);
+        _upload_storage_buffer(_page.elements_buffer, _allocation->elements.offset, elements.data(), _allocation->elements.size);
         mesh.vertices_buffer = _page.vertices_buffer;
         mesh.elements_buffer = _page.elements_buffer;
         mesh.allocation = *_allocation;
@@ -154,9 +461,9 @@ namespace detail {
         for (std::pair<const data_image_profile, rendering_textures_buffer>& _pair : buffers) {
             rendering_textures_buffer& _buffer = _pair.second;
             for (rendering_textures_page& _page : _buffer.pages) {
-                rendering_vulkan_remove_imgui_texture(_page.descriptor);
-                rendering_vulkan_destroy_sampler(_page.sampler);
-                rendering_vulkan_destroy_image(_page.image, _page.memory, _page.image_view);
+                _remove_imgui_texture(_page.descriptor);
+                _destroy_texture_page_sampler(_page);
+                _destroy_texture_page_image(_page);
             }
         }
     }
@@ -181,9 +488,9 @@ namespace detail {
             return;
         }
         rendering_textures_page& _page = _buffer.pages[_allocation->page];
-        rendering_vulkan_upload_image_region(_page.image, _allocation->pixels.offset, _padded_size, _padded_pixels.data(), static_cast<VkDeviceSize>(_padded_pixels.size()), VK_IMAGE_ASPECT_COLOR_BIT, _page.layout);
+        _upload_texture_page_region(_page, _allocation->pixels.offset, _padded_size, _padded_pixels.data(), static_cast<VkDeviceSize>(_padded_pixels.size()));
         if (_page.descriptor == VK_NULL_HANDLE) {
-            _page.descriptor = rendering_vulkan_add_imgui_texture(_page.sampler, _page.image_view, _page.layout);
+            _page.descriptor = _add_imgui_texture(_page.sampler, _page.image_view, _page.layout);
         }
         texture.profile = image.profile;
         texture.size = _size;

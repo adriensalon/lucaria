@@ -7,7 +7,6 @@
 #endif
 
 #include <lucaria/core/rendering_backend.hpp>
-#include <lucaria/bin/data_image.hpp>
 #include <lucaria/core/utils_math.hpp>
 
 #include <vector>
@@ -78,18 +77,8 @@ namespace detail {
     [[nodiscard]] VkFormat rendering_vulkan_current_depth_format();
     [[nodiscard]] uint32x2 rendering_vulkan_current_target_size();
     [[nodiscard]] uint32 rendering_vulkan_find_memory_type(uint32 type_filter, VkMemoryPropertyFlags properties);
-    void rendering_vulkan_create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& memory);
-    void rendering_vulkan_destroy_buffer(VkBuffer& buffer, VkDeviceMemory& memory);
-    void rendering_vulkan_upload_buffer(VkBuffer destination, VkDeviceSize destination_offset, const void* data, VkDeviceSize size);
-    [[nodiscard]] VkFormat rendering_vulkan_image_format(data_image_profile profile);
-    void rendering_vulkan_create_image(uint32x2 size, VkFormat format, VkImageUsageFlags usage, VkImageAspectFlags aspect, VkImage& image, VkDeviceMemory& memory, VkImageView& view, VkImageLayout& layout, uint32 layers = 1, VkImageCreateFlags flags = 0);
-    void rendering_vulkan_destroy_image(VkImage& image, VkDeviceMemory& memory, VkImageView& view);
-    void rendering_vulkan_create_sampler(VkSampler& sampler);
-    void rendering_vulkan_destroy_sampler(VkSampler& sampler);
-    void rendering_vulkan_upload_image_region(VkImage image, uint32x2 offset, uint32x2 size, const void* data, VkDeviceSize size_bytes, VkImageAspectFlags aspect, VkImageLayout& layout, uint32 layer = 0, uint32 layers = 1);
-    void rendering_vulkan_upload_image(VkImage image, uint32x2 size, const void* data, VkDeviceSize size_bytes, VkImageAspectFlags aspect, VkImageLayout& layout, uint32 layer = 0, uint32 layers = 1);
-    [[nodiscard]] VkDescriptorSet rendering_vulkan_add_imgui_texture(VkSampler sampler, VkImageView image_view, VkImageLayout image_layout);
-    void rendering_vulkan_remove_imgui_texture(VkDescriptorSet& descriptor);
+    [[nodiscard]] VkCommandBuffer rendering_vulkan_begin_upload_commands();
+    void rendering_vulkan_end_upload_commands(VkCommandBuffer command_buffer);
 
 }
 }

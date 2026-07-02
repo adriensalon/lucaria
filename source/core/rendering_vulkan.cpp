@@ -364,87 +364,6 @@ namespace detail {
             }
         }
 
-        [[nodiscard]] VkCommandBuffer _begin_upload_commands()
-        {
-            VkCommandBufferAllocateInfo _allocate = {};
-            _allocate.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-            _allocate.commandPool = g_vulkan.upload_command_pool;
-            _allocate.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-            _allocate.commandBufferCount = 1;
-
-            VkCommandBuffer _command_buffer = VK_NULL_HANDLE;
-            if (vkAllocateCommandBuffers(g_vulkan.device, &_allocate, &_command_buffer) != VK_SUCCESS) {
-                LUCARIA_DEBUG_ERROR("Failed to allocate Vulkan upload command buffer")
-                return VK_NULL_HANDLE;
-            }
-
-            VkCommandBufferBeginInfo _begin = {};
-            _begin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-            _begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-            vkBeginCommandBuffer(_command_buffer, &_begin);
-            return _command_buffer;
-        }
-
-        void _end_upload_commands(VkCommandBuffer command_buffer)
-        {
-            if (command_buffer == VK_NULL_HANDLE) {
-                return;
-            }
-            vkEndCommandBuffer(command_buffer);
-
-            VkSubmitInfo _submit = {};
-            _submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-            _submit.commandBufferCount = 1;
-            _submit.pCommandBuffers = &command_buffer;
-            vkQueueSubmit(g_vulkan.graphics_queue, 1, &_submit, VK_NULL_HANDLE);
-            vkQueueWaitIdle(g_vulkan.graphics_queue);
-            vkFreeCommandBuffers(g_vulkan.device, g_vulkan.upload_command_pool, 1, &command_buffer);
-        }
-
-        void _transition_image_layout(VkImage image, VkImageAspectFlags aspect, VkImageLayout old_layout, VkImageLayout new_layout, uint32 layers)
-        {
-            if (old_layout == new_layout) {
-                return;
-            }
-            VkCommandBuffer _commands = _begin_upload_commands();
-            if (_commands == VK_NULL_HANDLE) {
-                return;
-            }
-
-            VkImageMemoryBarrier _barrier = {};
-            _barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-            _barrier.oldLayout = old_layout;
-            _barrier.newLayout = new_layout;
-            _barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            _barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            _barrier.image = image;
-            _barrier.subresourceRange.aspectMask = aspect;
-            _barrier.subresourceRange.baseMipLevel = 0;
-            _barrier.subresourceRange.levelCount = 1;
-            _barrier.subresourceRange.baseArrayLayer = 0;
-            _barrier.subresourceRange.layerCount = layers;
-
-            VkPipelineStageFlags _source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            VkPipelineStageFlags _destination_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-                _barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                _barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-                _source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-                _destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-            } else if (old_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-                _barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-                _barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                _source_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-                _destination_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            } else if (new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-                _barrier.srcAccessMask = 0;
-                _barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            }
-
-            vkCmdPipelineBarrier(_commands, _source_stage, _destination_stage, 0, 0, nullptr, 0, nullptr, 1, &_barrier);
-            _end_upload_commands(_commands);
-        }
-
         void _cmd_transition_image_layout(VkCommandBuffer command_buffer, VkImage image, VkImageAspectFlags aspect, VkImageLayout old_layout, VkImageLayout new_layout)
         {
             if (command_buffer == VK_NULL_HANDLE || image == VK_NULL_HANDLE || old_layout == new_layout) {
@@ -831,254 +750,41 @@ namespace detail {
         return 0;
     }
 
-    void rendering_vulkan_create_buffer(const VkDeviceSize size, const VkBufferUsageFlags usage, const VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& memory)
+    VkCommandBuffer rendering_vulkan_begin_upload_commands()
     {
-        VkBufferCreateInfo _create = {};
-        _create.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        _create.size = size;
-        _create.usage = usage;
-        _create.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        if (vkCreateBuffer(g_vulkan.device, &_create, nullptr, &buffer) != VK_SUCCESS) {
-            LUCARIA_DEBUG_ERROR("Failed to create Vulkan buffer")
-            return;
-        }
+        VkCommandBufferAllocateInfo _allocate = {};
+        _allocate.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        _allocate.commandPool = g_vulkan.upload_command_pool;
+        _allocate.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        _allocate.commandBufferCount = 1;
 
-        VkMemoryRequirements _requirements = {};
-        vkGetBufferMemoryRequirements(g_vulkan.device, buffer, &_requirements);
-
-        VkMemoryAllocateInfo _allocate = {};
-        _allocate.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        _allocate.allocationSize = _requirements.size;
-        _allocate.memoryTypeIndex = rendering_vulkan_find_memory_type(_requirements.memoryTypeBits, properties);
-        if (vkAllocateMemory(g_vulkan.device, &_allocate, nullptr, &memory) != VK_SUCCESS) {
-            LUCARIA_DEBUG_ERROR("Failed to allocate Vulkan buffer memory")
-            return;
-        }
-        vkBindBufferMemory(g_vulkan.device, buffer, memory, 0);
-    }
-
-    void rendering_vulkan_destroy_buffer(VkBuffer& buffer, VkDeviceMemory& memory)
-    {
-        if (g_vulkan.device == VK_NULL_HANDLE) {
-            buffer = VK_NULL_HANDLE;
-            memory = VK_NULL_HANDLE;
-            return;
-        }
-        if (buffer != VK_NULL_HANDLE) {
-            vkDestroyBuffer(g_vulkan.device, buffer, nullptr);
-            buffer = VK_NULL_HANDLE;
-        }
-        if (memory != VK_NULL_HANDLE) {
-            vkFreeMemory(g_vulkan.device, memory, nullptr);
-            memory = VK_NULL_HANDLE;
-        }
-    }
-
-    void rendering_vulkan_upload_buffer(const VkBuffer destination, const VkDeviceSize destination_offset, const void* data, const VkDeviceSize size)
-    {
-        if (destination == VK_NULL_HANDLE || data == nullptr || size == 0) {
-            return;
-        }
-
-        VkBuffer _staging_buffer = VK_NULL_HANDLE;
-        VkDeviceMemory _staging_memory = VK_NULL_HANDLE;
-        rendering_vulkan_create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, _staging_buffer, _staging_memory);
-
-        void* _mapped = nullptr;
-        vkMapMemory(g_vulkan.device, _staging_memory, 0, size, 0, &_mapped);
-        std::memcpy(_mapped, data, static_cast<std::size_t>(size));
-        vkUnmapMemory(g_vulkan.device, _staging_memory);
-
-        VkCommandBuffer _commands = _begin_upload_commands();
-        VkBufferCopy _copy = {};
-        _copy.srcOffset = 0;
-        _copy.dstOffset = destination_offset;
-        _copy.size = size;
-        vkCmdCopyBuffer(_commands, _staging_buffer, destination, 1, &_copy);
-        _end_upload_commands(_commands);
-
-        rendering_vulkan_destroy_buffer(_staging_buffer, _staging_memory);
-    }
-
-    VkFormat rendering_vulkan_image_format(const data_image_profile profile)
-    {
-        switch (profile) {
-        case data_image_profile::rgb565:
-            return VK_FORMAT_R5G6B5_UNORM_PACK16;
-        case data_image_profile::rgba5551:
-            return VK_FORMAT_R5G5B5A1_UNORM_PACK16;
-        case data_image_profile::rgba4444:
-            return VK_FORMAT_R4G4B4A4_UNORM_PACK16;
-        case data_image_profile::s3tc_rgb4:
-            return VK_FORMAT_BC1_RGB_UNORM_BLOCK;
-        case data_image_profile::s3tc_rgba8:
-            return VK_FORMAT_BC3_UNORM_BLOCK;
-        case data_image_profile::etc2_rgb4:
-            return VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK;
-        case data_image_profile::etc2_rgba8:
-            return VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK;
-        default:
-            return VK_FORMAT_R8G8B8A8_UNORM;
-        }
-    }
-
-    void rendering_vulkan_create_image(const uint32x2 size, const VkFormat format, const VkImageUsageFlags usage, const VkImageAspectFlags aspect, VkImage& image, VkDeviceMemory& memory, VkImageView& view, VkImageLayout& layout, const uint32 layers, const VkImageCreateFlags flags)
-    {
-        VkImageCreateInfo _create = {};
-        _create.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        _create.flags = flags;
-        _create.imageType = VK_IMAGE_TYPE_2D;
-        _create.format = format;
-        _create.extent = { size.x, size.y, 1 };
-        _create.mipLevels = 1;
-        _create.arrayLayers = layers;
-        _create.samples = VK_SAMPLE_COUNT_1_BIT;
-        _create.tiling = VK_IMAGE_TILING_OPTIMAL;
-        _create.usage = usage;
-        _create.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        _create.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        if (vkCreateImage(g_vulkan.device, &_create, nullptr, &image) != VK_SUCCESS) {
-            LUCARIA_DEBUG_ERROR("Failed to create Vulkan image")
-            return;
-        }
-
-        VkMemoryRequirements _requirements = {};
-        vkGetImageMemoryRequirements(g_vulkan.device, image, &_requirements);
-
-        VkMemoryAllocateInfo _allocate = {};
-        _allocate.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        _allocate.allocationSize = _requirements.size;
-        _allocate.memoryTypeIndex = rendering_vulkan_find_memory_type(_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-        if (vkAllocateMemory(g_vulkan.device, &_allocate, nullptr, &memory) != VK_SUCCESS) {
-            LUCARIA_DEBUG_ERROR("Failed to allocate Vulkan image memory")
-            return;
-        }
-        vkBindImageMemory(g_vulkan.device, image, memory, 0);
-
-        VkImageViewCreateInfo _view = {};
-        _view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        _view.image = image;
-        _view.viewType = layers == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
-        _view.format = format;
-        _view.subresourceRange.aspectMask = aspect;
-        _view.subresourceRange.baseMipLevel = 0;
-        _view.subresourceRange.levelCount = 1;
-        _view.subresourceRange.baseArrayLayer = 0;
-        _view.subresourceRange.layerCount = layers;
-        if (vkCreateImageView(g_vulkan.device, &_view, nullptr, &view) != VK_SUCCESS) {
-            LUCARIA_DEBUG_ERROR("Failed to create Vulkan image view")
-        }
-        layout = VK_IMAGE_LAYOUT_UNDEFINED;
-    }
-
-    void rendering_vulkan_destroy_image(VkImage& image, VkDeviceMemory& memory, VkImageView& view)
-    {
-        if (g_vulkan.device == VK_NULL_HANDLE) {
-            image = VK_NULL_HANDLE;
-            memory = VK_NULL_HANDLE;
-            view = VK_NULL_HANDLE;
-            return;
-        }
-        if (view != VK_NULL_HANDLE) {
-            vkDestroyImageView(g_vulkan.device, view, nullptr);
-            view = VK_NULL_HANDLE;
-        }
-        if (image != VK_NULL_HANDLE) {
-            vkDestroyImage(g_vulkan.device, image, nullptr);
-            image = VK_NULL_HANDLE;
-        }
-        if (memory != VK_NULL_HANDLE) {
-            vkFreeMemory(g_vulkan.device, memory, nullptr);
-            memory = VK_NULL_HANDLE;
-        }
-    }
-
-    void rendering_vulkan_create_sampler(VkSampler& sampler)
-    {
-        VkSamplerCreateInfo _create = {};
-        _create.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        _create.magFilter = VK_FILTER_LINEAR;
-        _create.minFilter = VK_FILTER_LINEAR;
-        _create.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-        _create.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        _create.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        _create.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        _create.maxLod = 1.0f;
-        if (vkCreateSampler(g_vulkan.device, &_create, nullptr, &sampler) != VK_SUCCESS) {
-            LUCARIA_DEBUG_ERROR("Failed to create Vulkan sampler")
-        }
-    }
-
-    void rendering_vulkan_destroy_sampler(VkSampler& sampler)
-    {
-        if (g_vulkan.device == VK_NULL_HANDLE) {
-            sampler = VK_NULL_HANDLE;
-            return;
-        }
-        if (sampler != VK_NULL_HANDLE) {
-            vkDestroySampler(g_vulkan.device, sampler, nullptr);
-            sampler = VK_NULL_HANDLE;
-        }
-    }
-
-    void rendering_vulkan_upload_image_region(VkImage image, const uint32x2 offset, const uint32x2 size, const void* data, const VkDeviceSize size_bytes, const VkImageAspectFlags aspect, VkImageLayout& layout, const uint32 layer, const uint32 layers)
-    {
-        if (image == VK_NULL_HANDLE || data == nullptr || size_bytes == 0) {
-            return;
-        }
-
-        VkBuffer _staging_buffer = VK_NULL_HANDLE;
-        VkDeviceMemory _staging_memory = VK_NULL_HANDLE;
-        rendering_vulkan_create_buffer(size_bytes, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, _staging_buffer, _staging_memory);
-
-        void* _mapped = nullptr;
-        vkMapMemory(g_vulkan.device, _staging_memory, 0, size_bytes, 0, &_mapped);
-        std::memcpy(_mapped, data, static_cast<std::size_t>(size_bytes));
-        vkUnmapMemory(g_vulkan.device, _staging_memory);
-
-        _transition_image_layout(image, aspect, layout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layers);
-        layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-
-        VkCommandBuffer _commands = _begin_upload_commands();
-        VkBufferImageCopy _copy = {};
-        _copy.bufferOffset = 0;
-        _copy.bufferRowLength = 0;
-        _copy.bufferImageHeight = 0;
-        _copy.imageSubresource.aspectMask = aspect;
-        _copy.imageSubresource.mipLevel = 0;
-        _copy.imageSubresource.baseArrayLayer = layer;
-        _copy.imageSubresource.layerCount = 1;
-        _copy.imageOffset = { static_cast<int32>(offset.x), static_cast<int32>(offset.y), 0 };
-        _copy.imageExtent = { size.x, size.y, 1 };
-        vkCmdCopyBufferToImage(_commands, _staging_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &_copy);
-        _end_upload_commands(_commands);
-
-        _transition_image_layout(image, aspect, layout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, layers);
-        layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        rendering_vulkan_destroy_buffer(_staging_buffer, _staging_memory);
-    }
-
-    void rendering_vulkan_upload_image(VkImage image, const uint32x2 size, const void* data, const VkDeviceSize size_bytes, const VkImageAspectFlags aspect, VkImageLayout& layout, const uint32 layer, const uint32 layers)
-    {
-        rendering_vulkan_upload_image_region(image, {}, size, data, size_bytes, aspect, layout, layer, layers);
-    }
-
-    VkDescriptorSet rendering_vulkan_add_imgui_texture(const VkSampler sampler, const VkImageView image_view, const VkImageLayout image_layout)
-    {
-        if (sampler == VK_NULL_HANDLE || image_view == VK_NULL_HANDLE || !_imgui_vulkan_renderer_ready()) {
+        VkCommandBuffer _command_buffer = VK_NULL_HANDLE;
+        if (vkAllocateCommandBuffers(g_vulkan.device, &_allocate, &_command_buffer) != VK_SUCCESS) {
+            LUCARIA_DEBUG_ERROR("Failed to allocate Vulkan upload command buffer")
             return VK_NULL_HANDLE;
         }
-        return ImGui_ImplVulkan_AddTexture(sampler, image_view, image_layout);
+
+        VkCommandBufferBeginInfo _begin = {};
+        _begin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        _begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        vkBeginCommandBuffer(_command_buffer, &_begin);
+        return _command_buffer;
     }
 
-    void rendering_vulkan_remove_imgui_texture(VkDescriptorSet& descriptor)
+    void rendering_vulkan_end_upload_commands(VkCommandBuffer command_buffer)
     {
-        if (descriptor != VK_NULL_HANDLE) {
-            if (_imgui_vulkan_renderer_ready()) {
-                ImGui_ImplVulkan_RemoveTexture(descriptor);
-            }
-            descriptor = VK_NULL_HANDLE;
+        if (command_buffer == VK_NULL_HANDLE) {
+            return;
         }
+        vkEndCommandBuffer(command_buffer);
+
+        VkSubmitInfo _submit = {};
+        _submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        _submit.commandBufferCount = 1;
+        _submit.pCommandBuffers = &command_buffer;
+        vkQueueSubmit(g_vulkan.graphics_queue, 1, &_submit, VK_NULL_HANDLE);
+        vkQueueWaitIdle(g_vulkan.graphics_queue);
+        vkFreeCommandBuffers(g_vulkan.device, g_vulkan.upload_command_pool, 1, &command_buffer);
     }
 
 }
