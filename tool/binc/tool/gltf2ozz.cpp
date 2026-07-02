@@ -1,8 +1,9 @@
-#include <fstream>
 #include <iostream>
 #include <string>
 
 #include "gltf2ozz.hpp"
+
+int lucaria_gltf2ozz_main(int argc, const char** argv);
 
 namespace detail {
 
@@ -82,24 +83,21 @@ static const std::string gltf2ozz_config = R"({
 
 }
 
-void execute_gltf2ozz(const std::filesystem::path& gltf2ozz_path, const std::filesystem::path& input_path, const std::filesystem::path& output_directory)
+void execute_gltf2ozz(const std::filesystem::path& input_path, const std::filesystem::path& output_directory)
 {
-    const std::filesystem::path _config_path = gltf2ozz_path.parent_path() / "gltf2ozz_config.json";
-    if (!std::filesystem::exists(_config_path)) {
-        std::ofstream _config_stream(_config_path);
-        _config_stream << detail::gltf2ozz_config;
-        _config_stream.close();
-    }
-    std::string _command = gltf2ozz_path.string() + " --file=" + input_path.string() + " --config_file=\"" + _config_path.string() + "\"";
-#if _WIN32
-    _command += " > NUL 2>&1";
-#elif __LINUX__
-    _command += " > /dev/null 2>&1";
-#endif
-    // std::cout << _command << std::endl;
-    const int _result = std::system(_command.c_str());
+    const std::string _file_arg = "--file=" + input_path.string();
+    const std::string _config_arg = "--config=" + detail::gltf2ozz_config;
+    const std::string _log_arg = "--log_level=silent";
+    const char* _arguments[] = {
+        "lucaria_gltf2ozz",
+        _file_arg.c_str(),
+        _config_arg.c_str(),
+        _log_arg.c_str()
+    };
+
+    const int _result = lucaria_gltf2ozz_main(static_cast<int>(sizeof(_arguments) / sizeof(_arguments[0])), _arguments);
     if (_result != 0) {
-        std::cout << "Error: gltf2ozz command failed with exit code " << _result << std::endl;
+        std::cout << "Error: gltf2ozz conversion failed with exit code " << _result << std::endl;
         std::terminate();
     }
     const std::filesystem::path _current_path = std::filesystem::current_path();

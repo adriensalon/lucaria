@@ -19,16 +19,9 @@
 #include "tool/oggenc.hpp"
 #include "tool/woff2compress.hpp"
 
-#include "profiler/profiler_tracy.hpp"
-
 namespace detail {
 
 using commands_map = std::unordered_map<std::string, std::vector<std::string>>;
-
-static std::filesystem::path etcpak_executable;
-static std::filesystem::path gltf2ozz_executable;
-static std::filesystem::path oggenc_executable;
-static std::filesystem::path woff2compress_executable;
 
 std::vector<std::string> get_ignore_codes(const std::filesystem::path& input_dir)
 {
@@ -98,82 +91,6 @@ bool process_help_command(const commands_map& commands)
     std::cout << "HELP DISPLAY" << std::endl;
     // TODO
     return true;
-}
-
-std::filesystem::path process_etcpak_command(const commands_map& commands)
-{
-    if (commands.find("-etcpak") == commands.end()) {
-        std::cout << "Command -etcpak must be provided" << std::endl;
-        std::terminate();
-    }
-    if (commands.at("-etcpak").size() != 1) {
-        std::cout << "Only one file must be provided with option -etcpak" << std::endl;
-        std::terminate();
-    }
-    std::filesystem::path _etcpak_executable = commands.at("-etcpak").at(0);
-    if (!std::filesystem::exists(_etcpak_executable)) {
-        std::cout << "The path provided with option -etcpak must be an existing application" << std::endl;
-        std::terminate();
-    }
-    std::cout << "-- Tool etcpak provided at " << _etcpak_executable << std::endl;
-    return _etcpak_executable;
-}
-
-std::filesystem::path process_gltf2ozz_command(const commands_map& commands)
-{
-    if (commands.find("-gltf2ozz") == commands.end()) {
-        std::cout << "Command -gltf2ozz must be provided" << std::endl;
-        std::terminate();
-    }
-    if (commands.at("-gltf2ozz").size() != 1) {
-        std::cout << "Only one file must be provided with option -gltf2ozz" << std::endl;
-        std::terminate();
-    }
-    std::filesystem::path _gltf2ozz_executable = commands.at("-gltf2ozz").at(0);
-    if (!std::filesystem::exists(_gltf2ozz_executable)) {
-        std::cout << "The path provided with option -gltf2ozz must be an existing application" << std::endl;
-        std::terminate();
-    }
-    std::cout << "-- Tool gltf2ozz provided at " << _gltf2ozz_executable << std::endl;
-    return _gltf2ozz_executable;
-}
-
-std::filesystem::path process_oggenc_command(const commands_map& commands)
-{
-    if (commands.find("-oggenc") == commands.end()) {
-        std::cout << "Command -oggenc must be provided" << std::endl;
-        std::terminate();
-    }
-    if (commands.at("-oggenc").size() != 1) {
-        std::cout << "Only one file must be provided with option -oggenc" << std::endl;
-        std::terminate();
-    }
-    std::filesystem::path _oggenc_executable = commands.at("-oggenc").at(0);
-    if (!std::filesystem::exists(_oggenc_executable)) {
-        std::cout << "The path provided with option -oggenc must be an existing application" << std::endl;
-        std::terminate();
-    }
-    std::cout << "-- Tool oggenc provided at " << _oggenc_executable << std::endl;
-    return _oggenc_executable;
-}
-
-std::filesystem::path process_woff2compress_command(const commands_map& commands)
-{
-    if (commands.find("-woff2compress") == commands.end()) {
-        std::cout << "Command -woff2compress must be provided" << std::endl;
-        std::terminate();
-    }
-    if (commands.at("-woff2compress").size() != 1) {
-        std::cout << "Only one file must be provided with option -woff2compress" << std::endl;
-        std::terminate();
-    }
-    std::filesystem::path _woff2compress_executable = commands.at("-woff2compress").at(0);
-    if (!std::filesystem::exists(_woff2compress_executable)) {
-        std::cout << "The path provided with option -woff2compress must be an existing application" << std::endl;
-        std::terminate();
-    }
-    std::cout << "-- Tool woff2compress provided at " << _woff2compress_executable << std::endl;
-    return _woff2compress_executable;
 }
 
 std::filesystem::path process_input_command(const commands_map& commands)
@@ -262,12 +179,12 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
 {
     const std::string _extension = input_file.extension().generic_string();
     if (_extension == ".ttf") {
-        execute_woff2compress(woff2compress_executable, input_file, output_file);
+        execute_woff2compress(input_file, output_file);
 
     } else if (_extension == ".glb" || _extension == ".gltf") {
         if (assimp_has_skeleton(input_file)) {
             const std::filesystem::path _skeleton_path = output_file.parent_path() / (input_file.stem().string() + "_skeleton.bin");
-            execute_gltf2ozz(gltf2ozz_executable, input_file, output_file.parent_path());
+            execute_gltf2ozz(input_file, output_file.parent_path());
             export_binary(import_assimp(input_file, _skeleton_path), output_file);
         } else {
             export_binary(import_assimp(input_file, std::nullopt), output_file);
@@ -276,8 +193,8 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
     } else if (_extension == ".jpg" || _extension == ".png" || _extension == ".bmp") {
         export_binary(import_stb(input_file), output_file);
         if (_extension == ".png") {
-            execute_etcpak(etcpak_mode::etc, etcpak_executable, input_file, output_file.parent_path() / (output_file.stem().string() + "_etc.bin"));
-            execute_etcpak(etcpak_mode::s3tc, etcpak_executable, input_file, output_file.parent_path() / (output_file.stem().string() + "_s3tc.bin"));
+            execute_etcpak(etcpak_mode::etc, input_file, output_file.parent_path() / (output_file.stem().string() + "_etc.bin"));
+            execute_etcpak(etcpak_mode::s3tc, input_file, output_file.parent_path() / (output_file.stem().string() + "_s3tc.bin"));
         } else {
             std::cout << "   Not exporting to etc/s3tc because image file must be .png" << std::endl;
         }
@@ -286,7 +203,7 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
         export_binary(import_text(input_file), output_file);
 
     } else if (_extension == ".wav" || _extension == ".aiff") {
-        execute_oggenc(oggenc_executable, input_file, output_file.parent_path());
+        execute_oggenc(input_file, output_file);
 
     } else if (_extension == ".evtt") {
         export_binary(import_event_track(input_file), output_file);
@@ -308,10 +225,6 @@ int main(int argc, char* argv[])
     }
     std::filesystem::path _input_dir = detail::process_input_command(_commands);
     std::filesystem::path _output_dir = detail::process_output_command(_commands);
-    detail::etcpak_executable = detail::process_etcpak_command(_commands);
-    detail::gltf2ozz_executable = detail::process_gltf2ozz_command(_commands);
-    detail::oggenc_executable = detail::process_oggenc_command(_commands);
-    detail::woff2compress_executable = detail::process_woff2compress_command(_commands);
     std::vector<std::string> _patterns = detail::get_ignore_codes(_input_dir);
 
     detail::iterate_recursive(_patterns, _input_dir, [&](const std::filesystem::path& _input_file) {

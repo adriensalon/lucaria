@@ -34,7 +34,7 @@ if(MSVC)
     target_compile_options(lucaria_external_ozz PRIVATE /wd4996)
 else()
     # target_compile_options(lucaria_external_ozz PRIVATE "-Wno-#pragma-messages")
-    
+
 endif()
 
 ##
@@ -49,7 +49,7 @@ if(LUCARIA_BUILD_COMPILERS)
     set(ozz_options_sources
         "upstream/ozz/src/options/options.cc")
 
-    set(ozz_offline_sources 
+    set(ozz_offline_sources
         "upstream/ozz/src/animation/offline/additive_animation_builder.cc"
         "upstream/ozz/src/animation/offline/animation_builder.cc"
         "upstream/ozz/src/animation/offline/animation_optimizer.cc"
@@ -82,7 +82,11 @@ if(LUCARIA_BUILD_COMPILERS)
         ${ozz_tools_sources}
         ${ozz_gltf_sources})
 
-    add_executable(lucaria_external_gltf2ozz ${gltf2ozz_sources})
+    set_source_files_properties(
+        "upstream/ozz/src/animation/offline/gltf/gltf2ozz.cc"
+        PROPERTIES COMPILE_DEFINITIONS main=lucaria_gltf2ozz_main)
+
+    add_library(lucaria_external_gltf2ozz STATIC ${gltf2ozz_sources})
     target_include_directories(lucaria_external_gltf2ozz PRIVATE "upstream/ozz/extern/jsoncpp/dist")
     target_include_directories(lucaria_external_gltf2ozz PRIVATE "upstream/ozz/include")
     target_include_directories(lucaria_external_gltf2ozz PRIVATE "upstream/ozz/src")

@@ -8,13 +8,16 @@ set(ASSIMP_VERSION_PATCH 1)
 set(ASSIMP_VERSION ${ASSIMP_VERSION_MAJOR}.${ASSIMP_VERSION_MINOR}.${ASSIMP_VERSION_PATCH})
 set(ASSIMP_SOVERSION 5)
 
+set(lucaria_assimp_generated_include_dir "${CMAKE_CURRENT_BINARY_DIR}/include")
+file(MAKE_DIRECTORY "${lucaria_assimp_generated_include_dir}/assimp")
+
 configure_file(
   "upstream/assimp/include/assimp/revision.h.in"
-  "${CMAKE_CURRENT_LIST_DIR}/include/assimp/revision.h")
+  "${lucaria_assimp_generated_include_dir}/assimp/revision.h")
 
 configure_file(
   "upstream/assimp/include/assimp/config.h.in"
-  "${CMAKE_CURRENT_LIST_DIR}/include/assimp/config.h")
+  "${lucaria_assimp_generated_include_dir}/assimp/config.h")
 
 file(GLOB_RECURSE assimp_asset_lib_fbx_sources "upstream/assimp/code/AssetLib/FBX/*.cpp")
 file(GLOB_RECURSE assimp_asset_lib_gltf_sources "upstream/assimp/code/AssetLib/glTF/*.cpp")
@@ -124,8 +127,9 @@ target_include_directories(lucaria_external_assimp PRIVATE "upstream/assimp/cont
 target_include_directories(lucaria_external_assimp PRIVATE "upstream/assimp/contrib/zlib")
 target_include_directories(lucaria_external_assimp PRIVATE "upstream/assimp/code")
 
-target_include_directories(lucaria_external_assimp PUBLIC "include")
+target_include_directories(lucaria_external_assimp PUBLIC "${lucaria_assimp_generated_include_dir}")
 target_include_directories(lucaria_external_assimp PUBLIC "upstream/assimp/include")
+target_include_directories(lucaria_external_assimp PUBLIC "include")
 
 if(MSVC)
     target_compile_options(lucaria_external_assimp PRIVATE /wd4244)

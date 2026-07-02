@@ -1,25 +1,15 @@
-set(vorbistools_share_sources 
-    "upstream/vorbistools/share/base64.c"
-    "upstream/vorbistools/share/getopt.c"
-    "upstream/vorbistools/share/getopt1.c"
-    "upstream/vorbistools/share/utf8.c")
-
-set(vorbistools_oggenc_sources 
-    "upstream/vorbistools/oggenc/oggenc.c"
+set(vorbistools_oggencoder_sources
     "upstream/vorbistools/oggenc/audio.c"
     "upstream/vorbistools/oggenc/encode.c"
-    "upstream/vorbistools/oggenc/platform.c"
     "upstream/vorbistools/oggenc/resample.c"
-    "upstream/vorbistools/oggenc/skeleton.c")
+    "upstream/vorbistools/oggenc/skeleton.c"
+    "oggenc_timer.c")
 
-set(oggenc_sources
-    ${vorbistools_share_sources}
-    ${vorbistools_oggenc_sources})
-
-add_executable(lucaria_external_oggenc ${oggenc_sources})
-target_include_directories(lucaria_external_oggenc PRIVATE "upstream/vorbistools")
-target_include_directories(lucaria_external_oggenc PRIVATE "upstream/vorbistools/include")
-target_link_libraries(lucaria_external_oggenc PRIVATE lucaria_external_vorbis)
+add_library(lucaria_external_oggenc STATIC ${vorbistools_oggencoder_sources})
+target_include_directories(lucaria_external_oggenc PUBLIC "upstream/vorbistools")
+target_include_directories(lucaria_external_oggenc PUBLIC "upstream/vorbistools/include")
+target_include_directories(lucaria_external_oggenc PUBLIC "upstream/vorbistools/oggenc")
+target_link_libraries(lucaria_external_oggenc PUBLIC lucaria_external_vorbis)
 
 if(MSVC)
     target_compile_options(lucaria_external_oggenc PRIVATE /wd4018)

@@ -122,7 +122,7 @@ function(embed_gslc target gslc_file)
         @ONLY)
     set(LUCARIA_GSLC_EMBED_HPP "${embed_hpp}")
     configure_file(
-        "${LUCARIA_SOURCE_DIR}/runtime/core/gsl_template.cpp.in"
+        "${LUCARIA_SOURCE_DIR}/core/gsl_template.cpp.in"
         "${wrapper_cpp}"
         @ONLY)
     target_sources(${target} PRIVATE "${wrapper_cpp}")
@@ -142,8 +142,28 @@ if(NOT LUCARIA_GAME_DEBUG)
 endif()
 
 # lucaria engine/core library, no main() here
-file(GLOB lucaria_runtime_core_sources "${LUCARIA_SOURCE_DIR}/runtime/core/*.cpp")
-file(GLOB lucaria_runtime_engine_sources "${LUCARIA_SOURCE_DIR}/runtime/engine/*.cpp")
+set(lucaria_runtime_core_sources 
+	"${LUCARIA_SOURCE_DIR}/core/gsl_compiler.cpp"
+	"${LUCARIA_SOURCE_DIR}/core/manager_assets.cpp"
+	"${LUCARIA_SOURCE_DIR}/core/manager_game.cpp"
+	"${LUCARIA_SOURCE_DIR}/core/manager_scenes.cpp"
+	"${LUCARIA_SOURCE_DIR}/core/manager_window.cpp"
+	"${LUCARIA_SOURCE_DIR}/core/rendering_program.cpp"
+	"${LUCARIA_SOURCE_DIR}/core/rendering_shader.cpp"
+	"${LUCARIA_SOURCE_DIR}/core/rendering_storage.cpp"
+	"${LUCARIA_SOURCE_DIR}/core/systems_dynamics.cpp"
+	"${LUCARIA_SOURCE_DIR}/core/systems_mixer.cpp"
+	"${LUCARIA_SOURCE_DIR}/core/systems_motion.cpp"
+	"${LUCARIA_SOURCE_DIR}/core/systems_rendering.cpp"
+	"${LUCARIA_SOURCE_DIR}/core/utils_access.cpp"
+	"${LUCARIA_SOURCE_DIR}/core/utils_error.cpp"
+	"${LUCARIA_SOURCE_DIR}/core/utils_filewatch.cpp"
+	"${LUCARIA_SOURCE_DIR}/core/utils_owning.cpp"
+	"${LUCARIA_SOURCE_DIR}/core/utils_math.cpp"
+	"${LUCARIA_SOURCE_DIR}/core/utils_refcount.cpp"
+	"${LUCARIA_SOURCE_DIR}/core/utils_reload.cpp"
+	"${LUCARIA_SOURCE_DIR}/core/utils_stream.cpp")
+file(GLOB lucaria_runtime_engine_sources "${LUCARIA_SOURCE_DIR}/engine/*.cpp")
 set(lucaria_runtime_sources
     ${lucaria_runtime_core_sources}
     ${lucaria_runtime_engine_sources})
@@ -201,23 +221,23 @@ if(ANDROID)
     add_library(android_native_app_glue STATIC ${NATIVE_APP_GLUE_DIR}/android_native_app_glue.c)
     target_include_directories(android_native_app_glue PUBLIC ${NATIVE_APP_GLUE_DIR})
     target_link_libraries(lucaria_runtime PUBLIC EGL android log android_native_app_glue)
-    list(APPEND lucaria_runtime_platform_sources "${LUCARIA_SOURCE_DIR}/runtime/core/platform/manager_window_android.cpp")
-    set(lucaria_runtime_main_sources "${LUCARIA_SOURCE_DIR}/runtime/core/platform/main_android.cpp")
+    list(APPEND lucaria_runtime_platform_sources "${LUCARIA_SOURCE_DIR}/core/manager_window_android.cpp")
+    set(lucaria_runtime_main_sources "${LUCARIA_SOURCE_DIR}/core/main_android.cpp")
 elseif(EMSCRIPTEN)
     message("-- Configuring Lucaria engine for Web platform")
     target_compile_definitions(lucaria_runtime PUBLIC 
 		-DLUCARIA_PLATFORM_WEB 
         -DLUCARIA_DISABLE_COMPUTE_SPIRV)
-    list(APPEND lucaria_runtime_platform_sources "${LUCARIA_SOURCE_DIR}/runtime/core/platform/manager_window_web.cpp")
-    set(lucaria_runtime_main_sources "${LUCARIA_SOURCE_DIR}/runtime/core/platform/main_web.cpp")
+    list(APPEND lucaria_runtime_platform_sources "${LUCARIA_SOURCE_DIR}/core/manager_window_web.cpp")
+    set(lucaria_runtime_main_sources "${LUCARIA_SOURCE_DIR}/core/main_web.cpp")
 elseif(WIN32)
     message("-- Configuring Lucaria engine for Win32/MacOS/Linux platform")
     target_compile_definitions(lucaria_runtime PUBLIC -DLUCARIA_PLATFORM_WIN32)
     list(APPEND lucaria_runtime_platform_sources
-        "${LUCARIA_SOURCE_DIR}/runtime/core/platform/manager_window_glfw.cpp"
-        "${LUCARIA_SOURCE_DIR}/runtime/core/platform/utils_reload_win32.cpp"
-        "${LUCARIA_SOURCE_DIR}/runtime/core/platform/utils_glfw.cpp")
-    set(lucaria_runtime_main_sources "${LUCARIA_SOURCE_DIR}/runtime/core/platform/main_glfw.cpp")
+        "${LUCARIA_SOURCE_DIR}/core/manager_window_glfw.cpp"
+        "${LUCARIA_SOURCE_DIR}/core/utils_reload_win32.cpp"
+        "${LUCARIA_SOURCE_DIR}/core/utils_glfw.cpp")
+    set(lucaria_runtime_main_sources "${LUCARIA_SOURCE_DIR}/core/main_glfw.cpp")
 elseif(PSP)
     message("-- Configuring Lucaria engine for PlayStation Portable platform")
     target_compile_definitions(lucaria_runtime PUBLIC 
@@ -233,8 +253,8 @@ elseif(PSP)
         pspdisplay
         pspgum
         pspgu)
-    list(APPEND lucaria_runtime_platform_sources "${LUCARIA_SOURCE_DIR}/runtime/core/platform/manager_window_psp.cpp")
-    set(lucaria_runtime_main_sources "${LUCARIA_SOURCE_DIR}/runtime/core/platform/main_psp.cpp")
+    list(APPEND lucaria_runtime_platform_sources "${LUCARIA_SOURCE_DIR}/core/manager_window_psp.cpp")
+    set(lucaria_runtime_main_sources "${LUCARIA_SOURCE_DIR}/core/main_psp.cpp")
 endif()
 target_sources(lucaria_runtime PRIVATE ${lucaria_runtime_platform_sources})
 
@@ -284,23 +304,23 @@ if(PSP)
     message("-- Configuring Lucaria engine with PSPGU graphics backend")
     target_compile_definitions(lucaria_runtime PUBLIC -DLUCARIA_BACKEND_PSPGU)
     target_sources(lucaria_runtime PRIVATE
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_cubemap_pspgu.cpp"
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_framebuffer_pspgu.cpp"
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_mesh_pspgu.cpp"
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_program_pspgu.cpp"
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_texture_pspgu.cpp"
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_renderbuffer_pspgu.cpp")
+        "${LUCARIA_SOURCE_DIR}/core/rendering_cubemap_pspgu.cpp"
+        "${LUCARIA_SOURCE_DIR}/core/rendering_framebuffer_pspgu.cpp"
+        "${LUCARIA_SOURCE_DIR}/core/rendering_mesh_pspgu.cpp"
+        "${LUCARIA_SOURCE_DIR}/core/rendering_program_pspgu.cpp"
+        "${LUCARIA_SOURCE_DIR}/core/rendering_texture_pspgu.cpp"
+        "${LUCARIA_SOURCE_DIR}/core/rendering_renderbuffer_pspgu.cpp")
 else()
     message("-- Configuring Lucaria engine with OpenGL graphics backend")
     target_compile_definitions(lucaria_runtime PUBLIC -DLUCARIA_BACKEND_OPENGL)
     target_sources(lucaria_runtime PRIVATE
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_storage_opengl.cpp"
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_cubemap_opengl.cpp"
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_framebuffer_opengl.cpp"
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_mesh_opengl.cpp"
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_program_opengl.cpp"
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_texture_opengl.cpp"
-        "${LUCARIA_SOURCE_DIR}/runtime/core/backend/rendering_renderbuffer_opengl.cpp")
+        "${LUCARIA_SOURCE_DIR}/core/rendering_storage_opengl.cpp"
+        "${LUCARIA_SOURCE_DIR}/core/rendering_cubemap_opengl.cpp"
+        "${LUCARIA_SOURCE_DIR}/core/rendering_framebuffer_opengl.cpp"
+        "${LUCARIA_SOURCE_DIR}/core/rendering_mesh_opengl.cpp"
+        "${LUCARIA_SOURCE_DIR}/core/rendering_program_opengl.cpp"
+        "${LUCARIA_SOURCE_DIR}/core/rendering_texture_opengl.cpp"
+        "${LUCARIA_SOURCE_DIR}/core/rendering_renderbuffer_opengl.cpp")
 endif()
 
 # simd
@@ -469,6 +489,15 @@ if(WIN32)
 			"$<TARGET_FILE:lucaria_main>"
 			"${LUCARIA_INSTALL_DIR}/$<TARGET_FILE_NAME:lucaria_main>"
 		VERBATIM)
+	if(NOT LUCARIA_DISABLE_RELOAD)
+		add_custom_command(
+			TARGET lucaria_main
+			POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+				"$<TARGET_FILE:lucaria_runtime>"
+				"${LUCARIA_INSTALL_DIR}/$<TARGET_FILE_NAME:lucaria_runtime>"
+			VERBATIM)
+	endif()
 	if(MSVC)
 		add_custom_command(
 			TARGET lucaria_main
@@ -477,6 +506,15 @@ if(WIN32)
 				"$<TARGET_PDB_FILE:lucaria_main>"
 				"${LUCARIA_INSTALL_DIR}/$<TARGET_PDB_FILE_NAME:lucaria_main>"
 			VERBATIM)
+		if(NOT LUCARIA_DISABLE_RELOAD)
+			add_custom_command(
+				TARGET lucaria_main
+				POST_BUILD
+				COMMAND ${CMAKE_COMMAND} -E copy_if_different
+					"$<TARGET_FILE:lucaria_runtime>"
+					"${LUCARIA_INSTALL_DIR}/$<TARGET_PDB_FILE_NAME:lucaria_runtime>"
+				VERBATIM)
+		endif()
 	endif()
 endif()
 
@@ -502,7 +540,7 @@ endif()
 # Web final link options
 if(EMSCRIPTEN)
 	if(NOT LUCARIA_HTML_SHELL)
-		set(LUCARIA_HTML_SHELL "${LUCARIA_SOURCE_DIR}/game/web/shell.html")
+		set(LUCARIA_HTML_SHELL "${LUCARIA_SOURCE_DIR}/platform/web/shell.html")
 	endif()
 	set_target_properties(lucaria_main PROPERTIES SUFFIX ".html")
 	target_link_options(lucaria_main PRIVATE

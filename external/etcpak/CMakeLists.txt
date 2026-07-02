@@ -61,7 +61,11 @@ set(etcpack_sources
     "upstream/zlib/zutil.c"
 )
 
-add_executable(lucaria_external_etcpak ${etcpack_sources})
+set_source_files_properties(
+    "upstream/Application.cpp"
+    PROPERTIES COMPILE_DEFINITIONS main=lucaria_etcpak_main)
+
+add_library(lucaria_external_etcpak STATIC ${etcpack_sources})
 target_include_directories(lucaria_external_etcpak PRIVATE "${CMAKE_CURRENT_LIST_DIR}/upstream")
 target_include_directories(lucaria_external_etcpak PRIVATE "${CMAKE_CURRENT_LIST_DIR}/upstream/zlib")
 target_include_directories(lucaria_external_etcpak PRIVATE "${CMAKE_CURRENT_LIST_DIR}/upstream/libpng")
@@ -79,8 +83,6 @@ if(MSVC)
     target_compile_definitions(lucaria_external_etcpak PRIVATE __AVX2__)
     target_compile_options(lucaria_external_etcpak PRIVATE /arch:AVX2)
     target_compile_options(lucaria_external_etcpak PRIVATE /GL)
-    target_link_options(lucaria_external_etcpak PRIVATE /LTCG:incremental)
-    list(APPEND etcpack_sources "upstream/getopt/getopt.c")
 else()
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm" OR CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
         add_compile_options(-mcpu=native)

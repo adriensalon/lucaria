@@ -45,30 +45,29 @@ if(LUCARIA_BUILD_COMPILERS)
 
     file(GLOB_RECURSE brotli_encoder_sources "upstream/woff/brotli/c/enc/*.c")
 
-    set(woff2_compress_sources
-        "upstream/woff/src/woff2_compress.cc"
+    set(woff2_encoder_sources
         "upstream/woff/src/font.cc"
         "upstream/woff/src/glyph.cc"
         "upstream/woff/src/normalize.cc"
         "upstream/woff/src/transform.cc"
         "upstream/woff/src/woff2_enc.cc")
 
-    set(woff2compress_sources
+    set(woff2_encoder_library_sources
         ${brotli_common_sources}
         ${brotli_encoder_sources}
         ${woff2_common_sources}
-        ${woff2_compress_sources})
+        ${woff2_encoder_sources})
 
-    add_executable(lucaria_external_woff2compress ${woff2compress_sources})
-    target_include_directories(lucaria_external_woff2compress PRIVATE "upstream/woff/brotli/c/include")
-    target_include_directories(lucaria_external_woff2compress PUBLIC "upstream/woff/include")
+    add_library(lucaria_external_woff2enc STATIC ${woff2_encoder_library_sources})
+    target_include_directories(lucaria_external_woff2enc PRIVATE "upstream/woff/brotli/c/include")
+    target_include_directories(lucaria_external_woff2enc PUBLIC "upstream/woff/include")
 
     if (MSVC)
-        target_compile_options(lucaria_external_woff2compress PRIVATE /wd4018)
-        target_compile_options(lucaria_external_woff2compress PRIVATE /wd4267)
-        target_compile_options(lucaria_external_woff2compress PRIVATE /wd4477)
-        target_compile_options(lucaria_external_woff2compress PRIVATE /wd4267)
-        target_compile_options(lucaria_external_woff2compress PRIVATE /wd4244)
+        target_compile_options(lucaria_external_woff2enc PRIVATE /wd4018)
+        target_compile_options(lucaria_external_woff2enc PRIVATE /wd4267)
+        target_compile_options(lucaria_external_woff2enc PRIVATE /wd4477)
+        target_compile_options(lucaria_external_woff2enc PRIVATE /wd4267)
+        target_compile_options(lucaria_external_woff2enc PRIVATE /wd4244)
     endif()
 
 endif()

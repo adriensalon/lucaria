@@ -1,7 +1,6 @@
 #pragma once
 
 #include <limits>
-#include <stdexcept>
 #include <typeindex>
 
 #include <lucaria/core/app_error.hpp>
@@ -218,9 +217,7 @@ namespace detail {
             object_user_scene& scene = scenes.emplace_back();
             const std::type_index _scene_type_index(typeid(SceneType));
             typename std::unordered_map<std::type_index, std::string>::const_iterator _scene_type_id = scene_type_ids.find(_scene_type_index);
-            if (_scene_type_id == scene_type_ids.end()) {
-                throw std::out_of_range(std::string("Unregistered scene type: ") + typeid(SceneType).name());
-            }
+            LUCARIA_DEBUG_ASSERT(_scene_type_id != scene_type_ids.end(), std::string("Unregistered scene type: ") + typeid(SceneType).name());
             scene.type_id = _scene_type_id->second;
             scene.index_for_context = index_for_context;
             SceneType& typed_scene = scene.user_data.emplace<SceneType>();

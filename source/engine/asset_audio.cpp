@@ -1,7 +1,9 @@
 #include <cstring>
 
+#include <cereal/archives/portable_binary.hpp>
 #include <vorbis/vorbisfile.h>
 
+#include <lucaria/core/assets_stream.hpp>
 #include <lucaria/core/manager_assets.hpp>
 #include <lucaria/engine/context_serialize.hpp>
 #include <lucaria/engine/asset_audio.hpp>
@@ -13,7 +15,7 @@ namespace detail {
 
         struct _vorbis_bytes_stream {
 
-            _vorbis_bytes_stream(const std::vector<char>& data)
+            _vorbis_bytes_stream(const std::vector<uint8>& data)
                 : _bytes(data)
                 , _position(0)
             {
@@ -57,7 +59,7 @@ namespace detail {
             }
 
         private:
-            const std::vector<char>& _bytes;
+            const std::vector<uint8>& _bytes;
             std::size_t _position;
         };
 
@@ -83,45 +85,82 @@ namespace detail {
         {
             return 0;
         }
+
+        static void _append_float32_bytes(std::vector<uint8>& bytes, const float32 value)
+        {
+            const uint8* _value_bytes = reinterpret_cast<const uint8*>(&value);
+            bytes.insert(bytes.end(), _value_bytes, _value_bytes + sizeof(float32));
+        }
+
+        static void _decode_ogg_vorbis(data_audio& data)
+        {
+            _vorbis_bytes_stream _stream(data.samples);
+            OggVorbis_File _vorbis;
+            ov_callbacks _callbacks;
+            _callbacks.read_func = _vorbis_read_callback;
+            _callbacks.seek_func = _vorbis_seek_callback;
+            _callbacks.tell_func = _vorbis_tell_callback;
+            _callbacks.close_func = _vorbis_close_callback;
+            if (ov_open_callbacks(&_stream, &_vorbis, nullptr, 0, _callbacks) != 0) {
+                LUCARIA_DEBUG_ERROR("Failed to open OGG file")
+            }
+            vorbis_info* _info = ov_info(&_vorbis, -1);
+            if (_info->channels != 1) {
+                ov_clear(&_vorbis);
+                LUCARIA_DEBUG_ERROR("Failed to open OGG file, only mono files are supported")
+            }
+
+            std::vector<uint8> _decoded_samples;
+            data.sample_rate = _info->rate;
+            data.channels = _info->channels;
+            data.count = 0;
+
+            float** _pcm_channels;
+            int _bitstream;
+            long _samples;
+            while ((_samples = ov_read_float(&_vorbis, &_pcm_channels, 512, &_bitstream)) > 0) {
+                for (long i = 0; i < _samples; ++i) {
+                    _append_float32_bytes(_decoded_samples, _pcm_channels[0][i]);
+                }
+                data.count += static_cast<uint32>(_samples);
+            }
+            if (_samples < 0) {
+                LUCARIA_DEBUG_ERROR("Failed to read OGG file")
+            }
+            ov_clear(&_vorbis);
+
+            data.profile = data_audio_profile::float32;
+            data.samples = std::move(_decoded_samples);
+        }
+
+        static void _normalize(data_audio& data)
+        {
+            if (data.profile == data_audio_profile::ogg_vorbis) {
+                _decode_ogg_vorbis(data);
+            }
+            if (data.profile != data_audio_profile::float32) {
+                LUCARIA_DEBUG_ERROR("Unsupported audio profile")
+            }
+            if (data.channels != 1) {
+                LUCARIA_DEBUG_ERROR("Only mono audio is supported")
+            }
+        }
     }
 
     asset_audio::asset_audio(const std::vector<char>& bytes)
         : origin(object_audio_origin::path)
     {
-        _vorbis_bytes_stream _stream(bytes);
-        OggVorbis_File _vorbis;
-        ov_callbacks _callbacks;
-        _callbacks.read_func = _vorbis_read_callback;
-        _callbacks.seek_func = _vorbis_seek_callback;
-        _callbacks.tell_func = _vorbis_tell_callback;
-        _callbacks.close_func = _vorbis_close_callback;
-        if (ov_open_callbacks(&_stream, &_vorbis, nullptr, 0, _callbacks) != 0) {
-            LUCARIA_DEBUG_ERROR("Failed to open OGG file")
-        }
-        vorbis_info* _info = ov_info(&_vorbis, -1);
-        if (_info->channels != 1) {
-            ov_clear(&_vorbis);
-            LUCARIA_DEBUG_ERROR("Failed to open OGG file, only mono files are supported")
-        }
-        data.sample_rate = _info->rate;
-        float** _pcm_channels;
-        int _bitstream;
-        long _samples;
-        while ((_samples = ov_read_float(&_vorbis, &_pcm_channels, 512, &_bitstream)) > 0) {
-            for (long i = 0; i < _samples; ++i) {
-                data.samples.push_back(_pcm_channels[0][i]);
-            }
-        }
-        if (_samples < 0) {
-            LUCARIA_DEBUG_ERROR("Failed to read OGG file")
-        }
-        ov_clear(&_vorbis);
+        assets_bytes_stream _stream(bytes);
+        cereal::PortableBinaryInputArchive _archive(_stream);
+        _archive(data);
+        _normalize(data);
     }
 
     asset_audio::asset_audio(data_audio&& data)
         : origin(object_audio_origin::data)
         , data(std::move(data))
     {
+        _normalize(this->data);
     }
 
     void asset_audio::save(context_save_storage& context) const
@@ -148,6 +187,7 @@ namespace detail {
         }
         if (origin == object_audio_origin::data) {
             context.field("origin_data", data);
+            _normalize(data);
         }
     }
 

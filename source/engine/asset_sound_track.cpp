@@ -20,14 +20,14 @@ namespace detail {
     {
         id = 0;
         sample_rate = from.data.sample_rate;
-        samples_count = static_cast<glm::uint>(from.data.samples.size());
+        samples_count = from.data.count;
         alGenBuffers(1, &id);
 #if defined(LUCARIA_DEBUG)
         if (id == 0) {
             LUCARIA_DEBUG_ERROR("Failed to generate OpenAL buffer")
         }
 #endif
-        alBufferData(id, alGetEnumValue("AL_FORMAT_MONO_FLOAT32"), from.data.samples.data(), static_cast<ALsizei>(from.data.samples.size() * sizeof(glm::float32)), from.data.sample_rate);
+        alBufferData(id, alGetEnumValue("AL_FORMAT_MONO_FLOAT32"), from.data.samples.data(), static_cast<ALsizei>(from.data.samples.size()), from.data.sample_rate);
         ownership.emplace();
     }
 

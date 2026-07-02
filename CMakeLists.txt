@@ -11,8 +11,8 @@ include("${LUCARIA_CMAKE_DIR}/xplatform_android.cmake")
 include("${LUCARIA_CMAKE_DIR}/xplatform_psp.cmake")
 include("${LUCARIA_CMAKE_DIR}/xplatform_web.cmake")
 
-set(LUCARIA_BUILD_COMPILERS ON)
-add_subdirectory("source/compiler")
+add_subdirectory("tool/binc")
+# add_subdirectory("tool/tracyp")
 
 function(_lucaria_read_json_platform_bool OUT_VAR PLATFORM FIELD DEFAULT_VALUE)
     string(JSON value_type ERROR_VARIABLE value_type_error
@@ -103,7 +103,7 @@ function(_lucaria_make_configure)
         ${_all_arg}
         COMMAND "${_cmake_command}"
             -Wno-dev
-            -S "${LUCARIA_SOURCE_DIR}/game"
+            -S "${LUCARIA_SOURCE_DIR}"
             -B "${LCP_GAME_BINARY_DIR}"
             -G "${_generator}"
             ${_toolchain_args}
