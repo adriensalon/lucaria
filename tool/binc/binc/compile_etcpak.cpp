@@ -5,10 +5,9 @@
 #include <string>
 #include <vector>
 
+#include <binc/compile_bin.hpp>
+#include <binc/compile_etcpak.hpp>
 #include <lucaria/bin/data_image.hpp>
-
-#include "../export/binary.hpp"
-#include "etcpak.hpp"
 
 int lucaria_etcpak_main(int argc, char** argv);
 

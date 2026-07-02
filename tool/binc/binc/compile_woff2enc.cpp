@@ -6,7 +6,7 @@
 
 #include <woff2/encode.h>
 
-#include "woff2compress.hpp"
+#include <binc/compile_woff2enc.hpp>
 
 namespace {
 

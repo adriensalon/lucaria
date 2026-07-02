@@ -1,11 +1,10 @@
-#include "json.hpp"
-
 #include <fstream>
 #include <sstream>
 
 #include <cereal/external/rapidjson/document.h>
 #include <cereal/external/rapidjson/rapidjson.h>
 
+#include <binc/import_json.hpp>
 
 static std::string read_file(const std::filesystem::path& p)
 {

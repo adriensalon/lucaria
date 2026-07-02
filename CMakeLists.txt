@@ -14,35 +14,38 @@ include("${LUCARIA_CMAKE_DIR}/xplatform_web.cmake")
 add_subdirectory("tool/binc")
 # add_subdirectory("tool/tracyp")
 
-function(_lucaria_read_json_platform_bool OUT_VAR PLATFORM FIELD DEFAULT_VALUE)
-    string(JSON value_type ERROR_VARIABLE value_type_error
-        TYPE "${LUCARIA_GAME_JSON}" platform ${PLATFORM} ${FIELD})
-    if(value_type_error)
-        set(${OUT_VAR} "${DEFAULT_VALUE}" PARENT_SCOPE)
-        return()
-    endif()
-    if(NOT value_type STREQUAL "BOOLEAN")
-        message(FATAL_ERROR "build.json field platform.${PLATFORM}.${FIELD} must be a boolean")
-    endif()
-    string(JSON value ERROR_VARIABLE value_error
-        GET "${LUCARIA_GAME_JSON}" platform ${PLATFORM} ${FIELD})
-    if(value_error)
-        message(FATAL_ERROR
-            "Could not read build.json field platform.${PLATFORM}.${FIELD}: ${value_error}")
-    endif()
-    set(${OUT_VAR} "${value}" PARENT_SCOPE)
-endfunction()
-
 function(_lucaria_make_configure)
     set(options EXCLUDE_FROM_ALL)
-    set(one_value_args PLATFORM GAME_DIR GAME_BINARY_DIR)
-    set(multi_value_args EXTRA_CMAKE_ARGS)
+    set(one_value_args
+        PLATFORM
+        GAME_DIR
+        GAME_BINARY_DIR
+        NAME
+        INSTALL_DIR
+        PACKAGE
+        PSP_PRX
+        PSP_ENCRYPT)
+    set(multi_value_args
+        SOURCES
+        INCLUDE_DIRS
+        COMPILE_DEFINITIONS
+        COMPILE_OPTIONS
+        EXTRA_CMAKE_ARGS)
     cmake_parse_arguments(PARSE_ARGV 0 LCP "${options}" "${one_value_args}" "${multi_value_args}")
     if(NOT LCP_PLATFORM)
         message(FATAL_ERROR "lucaria_make_configure requires PLATFORM")
     endif()
     if(NOT LCP_GAME_DIR)
         message(FATAL_ERROR "lucaria_make_configure requires GAME_DIR")
+    endif()
+    if(NOT LCP_NAME)
+        message(FATAL_ERROR "lucaria_make_configure requires NAME")
+    endif()
+    if(NOT LCP_INSTALL_DIR)
+        message(FATAL_ERROR "lucaria_make_configure requires INSTALL_DIR")
+    endif()
+    if(NOT LCP_SOURCES)
+        message(FATAL_ERROR "lucaria_make_configure requires SOURCES")
     endif()
     if(NOT LCP_GAME_BINARY_DIR)
         set(LCP_GAME_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/lucaria/${LCP_PLATFORM}")
@@ -83,11 +86,10 @@ function(_lucaria_make_configure)
             return()
         endif()
         set(_cmake_command "${lucaria_xplatform_psp_cmake_executable}")
-        file(READ "${LCP_GAME_DIR}/build.json" LUCARIA_GAME_JSON)
-        _lucaria_read_json_platform_bool(_psp_encrypt_prx psp encrypt ON)
-        _lucaria_read_json_platform_bool(_psp_build_prx psp prx "${_psp_encrypt_prx}")
+        set(_psp_encrypt_prx "${LCP_PSP_ENCRYPT}")
+        set(_psp_build_prx "${LCP_PSP_PRX}")
         if(_psp_encrypt_prx AND NOT _psp_build_prx)
-            message(FATAL_ERROR "build.json field platform.psp.encrypt requires platform.psp.prx to be true")
+            message(FATAL_ERROR "PSP_ENCRYPT requires PSP_PRX to be true")
         endif()
 		list(APPEND _platform_args
 			"-DBUILD_PRX=${_psp_build_prx}"
@@ -115,6 +117,13 @@ function(_lucaria_make_configure)
 
             "-DLUCARIA_GAME_DIR=${LCP_GAME_DIR}"
             "-DLUCARIA_GAME_DEBUG=$<IF:$<CONFIG:Debug>,ON,OFF>"
+            "-DLUCARIA_TARGET=${LCP_NAME}"
+            "-DLUCARIA_INSTALL_DIR=${LCP_INSTALL_DIR}"
+            "-DLUCARIA_PACKAGE=${LCP_PACKAGE}"
+            "-DLUCARIA_TARGET_SOURCE_PATTERNS=${LCP_SOURCES}"
+            "-DLUCARIA_TARGET_INCLUDE_DIRS=${LCP_INCLUDE_DIRS}"
+            "-DLUCARIA_TARGET_COMPILE_DEFINITIONS=${LCP_COMPILE_DEFINITIONS}"
+            "-DLUCARIA_TARGET_COMPILE_OPTIONS=${LCP_COMPILE_OPTIONS}"
 
             ${_platform_args}
             ${LCP_EXTRA_CMAKE_ARGS}
@@ -129,14 +138,45 @@ function(_lucaria_make_configure)
 endfunction()
 
 # entry point
-function(lucaria_superbuild GAME_DIR)
-    get_filename_component(GAME_DIR "${GAME_DIR}" ABSOLUTE)
+function(add_game)
     set(options)
-    set(one_value_args BINARY_DIR)
-    set(multi_value_args PLATFORMS)
-    cmake_parse_arguments(PARSE_ARGV 1 LSB "${options}" "${one_value_args}" "${multi_value_args}")
-    if(NOT EXISTS "${GAME_DIR}/build.json")
-        message(FATAL_ERROR "Missing Lucaria game config: ${GAME_DIR}/build.json")
+    set(one_value_args
+        NAME
+        GAME_DIR
+        BINARY_DIR
+        INSTALL_DIR
+        PACKAGE
+        PSP_PRX
+        PSP_ENCRYPT)
+    set(multi_value_args
+        PLATFORMS
+        SOURCES
+        INCLUDE_DIRS
+        COMPILE_DEFINITIONS
+        COMPILE_OPTIONS
+        EXTRA_CMAKE_ARGS)
+    cmake_parse_arguments(PARSE_ARGV 0 LSB "${options}" "${one_value_args}" "${multi_value_args}")
+    if(NOT LSB_NAME)
+        message(FATAL_ERROR "add_game requires NAME")
+    endif()
+    if(NOT LSB_GAME_DIR)
+        set(LSB_GAME_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+    endif()
+    get_filename_component(LSB_GAME_DIR "${LSB_GAME_DIR}" ABSOLUTE)
+    if(NOT LSB_INSTALL_DIR)
+        message(FATAL_ERROR "add_game requires INSTALL_DIR")
+    endif()
+    if(NOT LSB_SOURCES)
+        message(FATAL_ERROR "add_game requires SOURCES")
+    endif()
+    if("${LSB_PACKAGE}" STREQUAL "")
+        set(LSB_PACKAGE OFF)
+    endif()
+    if("${LSB_PSP_ENCRYPT}" STREQUAL "")
+        set(LSB_PSP_ENCRYPT ON)
+    endif()
+    if("${LSB_PSP_PRX}" STREQUAL "")
+        set(LSB_PSP_PRX "${LSB_PSP_ENCRYPT}")
     endif()
     if(NOT LSB_BINARY_DIR)
         set(LSB_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/lucaria")
@@ -162,7 +202,17 @@ function(lucaria_superbuild GAME_DIR)
     foreach(platform IN LISTS LSB_PLATFORMS)
         _lucaria_make_configure(
             PLATFORM "${platform}"
-            GAME_DIR "${GAME_DIR}"
-            GAME_BINARY_DIR "${LSB_BINARY_DIR}/${platform}")
+            GAME_DIR "${LSB_GAME_DIR}"
+            GAME_BINARY_DIR "${LSB_BINARY_DIR}/${platform}"
+            NAME "${LSB_NAME}"
+            INSTALL_DIR "${LSB_INSTALL_DIR}"
+            PACKAGE "${LSB_PACKAGE}"
+            PSP_PRX "${LSB_PSP_PRX}"
+            PSP_ENCRYPT "${LSB_PSP_ENCRYPT}"
+            SOURCES ${LSB_SOURCES}
+            INCLUDE_DIRS ${LSB_INCLUDE_DIRS}
+            COMPILE_DEFINITIONS ${LSB_COMPILE_DEFINITIONS}
+            COMPILE_OPTIONS ${LSB_COMPILE_OPTIONS}
+            EXTRA_CMAKE_ARGS ${LSB_EXTRA_CMAKE_ARGS})
     endforeach()
 endfunction()

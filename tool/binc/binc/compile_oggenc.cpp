@@ -11,8 +11,8 @@ extern "C" {
 #include <encode.h>
 }
 
-#include "../export/binary.hpp"
-#include "oggenc.hpp"
+#include <binc/compile_bin.hpp>
+#include <binc/compile_oggenc.hpp>
 
 namespace {
 

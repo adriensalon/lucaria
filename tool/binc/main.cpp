@@ -7,17 +7,14 @@
 #include <unordered_map>
 #include <vector>
 
-#include "import/assimp.hpp"
-#include "import/json.hpp"
-#include "import/stb.hpp"
-#include "import/text.hpp"
-
-#include "export/binary.hpp"
-
-#include "tool/etcpak.hpp"
-#include "tool/gltf2ozz.hpp"
-#include "tool/oggenc.hpp"
-#include "tool/woff2compress.hpp"
+#include <binc/import_assimp.hpp>
+#include <binc/import_json.hpp>
+#include <binc/import_stb.hpp>
+#include <binc/compile_bin.hpp>
+#include <binc/compile_etcpak.hpp>
+#include <binc/compile_gltf2ozz.hpp>
+#include <binc/compile_oggenc.hpp>
+#include <binc/compile_woff2enc.hpp>
 
 namespace detail {
 
@@ -199,9 +196,6 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
             std::cout << "   Not exporting to etc/s3tc because image file must be .png" << std::endl;
         }
 
-    } else if (_extension == ".glsl" || _extension == ".txt" || _extension == ".vert" || _extension == ".frag") {
-        export_binary(import_text(input_file), output_file);
-
     } else if (_extension == ".wav" || _extension == ".aiff") {
         execute_oggenc(input_file, output_file);
 
@@ -218,7 +212,6 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
 
 int main(int argc, char* argv[])
 {
-	// lucaria::detail::run_tracy_profiler_window("127.0.0.1", 8086);
     detail::commands_map _commands = detail::extract_args(argc, argv);
     if (detail::process_help_command(_commands)) {
         return 0;

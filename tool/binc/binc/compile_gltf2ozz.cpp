@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 
-#include "gltf2ozz.hpp"
+#include <binc/compile_gltf2ozz.hpp>
 
 int lucaria_gltf2ozz_main(int argc, const char** argv);
 

@@ -3,7 +3,7 @@
 
 #include <cereal/archives/portable_binary.hpp>
 
-#include "binary.hpp"
+#include <binc/compile_bin.hpp>
 
 namespace detail {
 

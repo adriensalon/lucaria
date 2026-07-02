@@ -2,7 +2,7 @@
 
 #include <stb_image.h>
 
-#include "stb.hpp"
+#include <binc/import_stb.hpp>
 
 lucaria::data_image import_stb(const std::filesystem::path& stb_path)
 {
