@@ -33,8 +33,8 @@ endif()
 if(MSVC)
     target_compile_options(lucaria_external_ozz PRIVATE /wd4996)
 else()
-    # target_compile_options(lucaria_external_ozz PRIVATE "-Wno-#pragma-messages")
-
+    target_compile_options(lucaria_external_ozz PRIVATE
+        "$<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wno-ignored-attributes>")
 endif()
 
 ##

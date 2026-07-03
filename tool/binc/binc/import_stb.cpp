@@ -45,7 +45,7 @@ lucaria::data_image import_stb(const std::filesystem::path& stb_path)
 {
     lucaria::data_image _data;
     int _width, _height, _channels;
-    unsigned char* _pixels = stbi_load(stb_path.string().c_str(), &_width, &_height, &_channels, NULL);
+    unsigned char* _pixels = stbi_load(stb_path.string().c_str(), &_width, &_height, &_channels, 0);
     if (_pixels == nullptr) {
         std::cout << "Impossible to import texture '" << stb_path << "'" << std::endl;
         std::terminate();

@@ -97,4 +97,8 @@ if (MSVC)
     target_compile_options(lucaria_external_etcpak PRIVATE /wd4996)
     target_compile_options(lucaria_external_etcpak PRIVATE /wd4267)
     target_compile_options(lucaria_external_etcpak PRIVATE /wd4715)
+else()
+    target_compile_options(lucaria_external_etcpak PRIVATE
+        "$<$<COMPILE_LANG_AND_ID:C,GNU,Clang>:-Wno-implicit-function-declaration>"
+        "$<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wno-unused-result>")
 endif()

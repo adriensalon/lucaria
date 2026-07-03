@@ -134,4 +134,7 @@ target_include_directories(lucaria_external_assimp PUBLIC "include")
 if(MSVC)
     target_compile_options(lucaria_external_assimp PRIVATE /wd4244)
     target_compile_options(lucaria_external_assimp PRIVATE /wd4996)
+else()
+    target_compile_options(lucaria_external_assimp PRIVATE
+        "$<$<COMPILE_LANG_AND_ID:C,GNU,Clang>:-Wno-implicit-function-declaration>")
 endif()

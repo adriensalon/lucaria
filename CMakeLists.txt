@@ -134,10 +134,8 @@ function(_lucaria_make_configure)
             -G "${_generator}"
             ${_toolchain_args}
             "-DLUCARIA_SOURCE_DIR=${LUCARIA_SOURCE_DIR}"
-            "-DLUCARIA_CMAKE_DIR=${LUCARIA_CMAKE_DIR}"
             "-DLUCARIA_EXTERNAL_DIR=${LUCARIA_EXTERNAL_DIR}"
             "-DLUCARIA_INCLUDE_DIR=${LUCARIA_INCLUDE_DIR}"
-            "-DLUCARIA_BINARY_DIR=${LCP_GAME_BINARY_DIR}"
 
             "-DLUCARIA_GAME_DIR=${LCP_GAME_DIR}"
             "-DLUCARIA_DEBUG=$<IF:$<CONFIG:Debug>,ON,OFF>"
