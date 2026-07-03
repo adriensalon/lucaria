@@ -40,14 +40,6 @@
 namespace lucaria {
 namespace detail {
 
-#if defined(LUCARIA_PLATFORM_PSP)
-    constexpr uint32 default_texture_size = 256;
-#elif defined(LUCARIA_PLATFORM_ANDROID) || defined(LUCARIA_PLATFORM_WEB)
-    constexpr uint32 default_texture_size = 1024;
-#else
-    constexpr uint32 default_texture_size = 2048;
-#endif
-
     struct manager_assets;
     struct manager_window;
 
@@ -113,7 +105,6 @@ namespace detail {
 
         bool is_etc2_supported = false;
         bool is_s3tc_supported = false;
-        uint32 texture_size = default_texture_size;
         data_image_profile supported_image_profiles = {}; // TODO replace bools with bitfields
 
         std::atomic<uint32> async_fetches_waiting = 0;

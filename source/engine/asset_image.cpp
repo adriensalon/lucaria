@@ -11,13 +11,12 @@ namespace detail {
 
     namespace {
 
-        std::filesystem::path resolve_texture_size(
+        std::filesystem::path resolve_texture_lod0(
             const std::filesystem::path& path,
-            const uint32 texture_size,
             const std::string& profile)
         {
             std::filesystem::path _path = path;
-            _path = _path.replace_extension().string() + "." + std::to_string(texture_size) + profile + ".bin";
+            _path = _path.replace_extension().string() + ".lod0" + profile + ".bin";
             return _path;
         }
 
@@ -38,18 +37,18 @@ namespace detail {
         const std::optional<data_image_profile> profile)
     {
         if ((profile == data_image_profile::etc2_rgb4) || (profile == data_image_profile::etc2_rgba8) || object.is_etc2_supported) {
-            std::filesystem::path _etc2_path = resolve_texture_size(path, object.texture_size, ".etc");
+            std::filesystem::path _etc2_path = resolve_texture_lod0(path, ".etc");
             if (std::filesystem::exists(object.resolve_fetch_path(_etc2_path))) {
                 return _etc2_path;
             }
         }
         if ((profile == data_image_profile::s3tc_rgb4) || (profile == data_image_profile::s3tc_rgba8) || object.is_s3tc_supported) {
-            std::filesystem::path _s3tc_path = resolve_texture_size(path, object.texture_size, ".s3tc");
+            std::filesystem::path _s3tc_path = resolve_texture_lod0(path, ".s3tc");
             if (std::filesystem::exists(object.resolve_fetch_path(_s3tc_path))) {
                 return _s3tc_path;
             }
         }
-        return resolve_texture_size(path, object.texture_size, "");
+        return resolve_texture_lod0(path, "");
     }
 
     std::array<std::filesystem::path, 6> resolve_profile(
@@ -60,7 +59,7 @@ namespace detail {
         if ((profile == data_image_profile::etc2_rgb4) || (profile == data_image_profile::etc2_rgba8) || object.is_etc2_supported) {
             std::array<std::filesystem::path, 6> _etc2_paths = paths;
             for (std::size_t _index = 0; _index < 6; ++_index) {
-                _etc2_paths[_index] = resolve_texture_size(_etc2_paths[_index], object.texture_size, ".etc");
+                _etc2_paths[_index] = resolve_texture_lod0(_etc2_paths[_index], ".etc");
             }
             if (all_exist(object, _etc2_paths)) {
                 return _etc2_paths;
@@ -69,7 +68,7 @@ namespace detail {
         if ((profile == data_image_profile::s3tc_rgb4) || (profile == data_image_profile::s3tc_rgba8) || object.is_s3tc_supported) {
             std::array<std::filesystem::path, 6> _s3tc_paths = paths;
             for (std::size_t _index = 0; _index < 6; ++_index) {
-                _s3tc_paths[_index] = resolve_texture_size(_s3tc_paths[_index], object.texture_size, ".s3tc");
+                _s3tc_paths[_index] = resolve_texture_lod0(_s3tc_paths[_index], ".s3tc");
             }
             if (all_exist(object, _s3tc_paths)) {
                 return _s3tc_paths;
@@ -77,7 +76,7 @@ namespace detail {
         }
         std::array<std::filesystem::path, 6> _raw_paths = paths;
         for (std::size_t _index = 0; _index < 6; ++_index) {
-            _raw_paths[_index] = resolve_texture_size(_raw_paths[_index], object.texture_size, "");
+            _raw_paths[_index] = resolve_texture_lod0(_raw_paths[_index], "");
         }
         return _raw_paths;
     }

@@ -15,6 +15,7 @@
 #include <binc/import_stb.hpp>
 #include <binc/compile_bin.hpp>
 #include <binc/compile_etcpak.hpp>
+#include <binc/compile_geometry.hpp>
 #include <binc/compile_gltf2ozz.hpp>
 #include <binc/compile_oggenc.hpp>
 #include <binc/compile_woff2enc.hpp>
@@ -137,7 +138,7 @@ asset_profiles process_platform_command(const commands_map& commands)
 {
     if (commands.find("-p") == commands.end()) {
         std::cout << "-- Assets platform all" << std::endl;
-        return asset_profiles { true, true, true, 2048 };
+        return asset_profiles { true, true, true, 2048, 0 };
     }
     if (commands.at("-p").size() != 1) {
         std::cout << "Only one platform must be provided with option -p" << std::endl;
@@ -146,27 +147,27 @@ asset_profiles process_platform_command(const commands_map& commands)
     const std::string _platform = commands.at("-p").at(0);
     std::cout << "-- Assets platform " << _platform << std::endl;
     if (_platform == "all") {
-        return asset_profiles { true, true, true, 2048 };
+        return asset_profiles { true, true, true, 2048, 0 };
     }
     if (_platform == "psp") {
-        return asset_profiles { true, false, true, 256 };
+        return asset_profiles { true, false, true, 256, 8192 };
     }
     if (_platform == "win32" || _platform == "linux") {
-        return asset_profiles { true, false, true, 2048 };
+        return asset_profiles { true, false, true, 2048, 0 };
     }
     if (_platform == "android") {
-        return asset_profiles { true, true, false, 1024 };
+        return asset_profiles { true, true, false, 1024, 65535 };
     }
     if (_platform == "web") {
-        return asset_profiles { true, true, true, 1024 };
+        return asset_profiles { true, true, true, 1024, 65535 };
     }
     std::cout << "Unknown platform '" << _platform << "' provided with option -p" << std::endl;
     std::terminate();
 }
 
-std::filesystem::path texture_output_path(const std::filesystem::path& output_file, const asset_profiles profiles, const std::string& suffix)
+std::filesystem::path texture_output_path(const std::filesystem::path& output_file, const std::string& suffix)
 {
-    return output_file.parent_path() / (output_file.stem().string() + "." + std::to_string(profiles.texture_size) + suffix + ".bin");
+    return output_file.parent_path() / (output_file.stem().string() + ".lod0" + suffix + ".bin");
 }
 
 std::optional<std::filesystem::path> process_manifest_command(const commands_map& commands)
@@ -245,24 +246,24 @@ void compile_resource(const asset_profiles profiles, const std::filesystem::path
         if (_has_skeleton) {
             const std::filesystem::path _skeleton_path = output_file.parent_path() / (input_file.stem().string() + "_skeleton.bin");
             execute_gltf2ozz(input_file, output_file.parent_path());
-            export_binary(import_assimp(input_file, _skeleton_path), output_file);
+            export_binary(compile_geometry_lod0(import_assimp(input_file, _skeleton_path), profiles.geometry_max_vertices), geometry_output_path(output_file));
         } else {
-            export_binary(import_assimp(input_file, std::nullopt), output_file);
+            export_binary(compile_geometry_lod0(import_assimp(input_file, std::nullopt), profiles.geometry_max_vertices), geometry_output_path(output_file));
         }
 
     } else if (_extension == ".jpg" || _extension == ".png" || _extension == ".bmp") {
         const lucaria::data_image _image = import_stb(input_file, profiles.texture_size);
         if (profiles.raw) {
-            export_binary(_image, texture_output_path(output_file, profiles, ""));
+            export_binary(_image, texture_output_path(output_file, ""));
         }
         if (_extension == ".png") {
             const std::filesystem::path _resized_path = output_file.string() + ".resize.tmp.png";
             write_stb_png(_image, _resized_path);
             if (profiles.etc) {
-                execute_etcpak(etcpak_mode::etc, _resized_path, texture_output_path(output_file, profiles, ".etc"));
+                execute_etcpak(etcpak_mode::etc, _resized_path, texture_output_path(output_file, ".etc"));
             }
             if (profiles.s3tc) {
-                execute_etcpak(etcpak_mode::s3tc, _resized_path, texture_output_path(output_file, profiles, ".s3tc"));
+                execute_etcpak(etcpak_mode::s3tc, _resized_path, texture_output_path(output_file, ".s3tc"));
             }
             std::filesystem::remove(_resized_path);
         } else {

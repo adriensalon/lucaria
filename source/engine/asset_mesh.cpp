@@ -26,7 +26,7 @@ namespace detail {
         if (origin == asset_mesh_origin::path) {
             context.field("origin_path", origin_path);
             const std::filesystem::path _path = origin_path;
-            context.fetch(_path, [this, _path](const std::vector<char>& bytes) {
+            context.fetch(resolve_geometry_lod0(_path), [this, _path](const std::vector<char>& bytes) {
                 asset_geometry _geometry(bytes);
                 *this = asset_mesh(_geometry);
                 origin_path = _path;

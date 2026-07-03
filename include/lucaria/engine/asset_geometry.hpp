@@ -10,6 +10,8 @@ struct context_load_storage;
 
 namespace detail {
 
+    [[nodiscard]] std::filesystem::path resolve_geometry_lod0(const std::filesystem::path& path);
+
     enum struct object_geometry_origin {
         path,
         data

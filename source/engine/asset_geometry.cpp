@@ -8,6 +8,12 @@
 namespace lucaria {
 namespace detail {
 
+    std::filesystem::path resolve_geometry_lod0(const std::filesystem::path& path)
+    {
+        std::filesystem::path _path = path;
+        return _path.replace_extension().string() + ".lod0.bin";
+    }
+
     asset_geometry::asset_geometry(const std::vector<char>& bytes)
         : origin(object_geometry_origin::path)
     {
@@ -39,7 +45,7 @@ namespace detail {
         if (origin == object_geometry_origin::path) {
             context.field("origin_path", origin_path);
             const std::filesystem::path _path = origin_path;
-            context.fetch(_path, [this, _path](const std::vector<char>& bytes) {
+            context.fetch(resolve_geometry_lod0(_path), [this, _path](const std::vector<char>& bytes) {
                 *this = asset_geometry(bytes);
                 origin_path = _path;
             });

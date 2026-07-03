@@ -80,7 +80,7 @@ namespace detail {
                 context.field("algorithm", algorithm);
                 const std::filesystem::path _path = origin_path;
                 const object_shape_algorithm _algorithm = algorithm;
-                context.fetch(_path, [this, _path, _algorithm](const std::vector<char>& bytes) {
+                context.fetch(resolve_geometry_lod0(_path), [this, _path, _algorithm](const std::vector<char>& bytes) {
                     asset_geometry _geometry(bytes);
                     *this = object_shape(_geometry, _algorithm);
                     origin_path = _path;

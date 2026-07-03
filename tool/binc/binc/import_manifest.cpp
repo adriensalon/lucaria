@@ -8,6 +8,7 @@
 #include <cereal/external/rapidjson/stringbuffer.h>
 #include <cereal/external/rapidjson/writer.h>
 
+#include <binc/compile_geometry.hpp>
 #include <binc/import_manifest.hpp>
 
 namespace detail {
@@ -56,6 +57,8 @@ std::string profile_key(const asset_profiles profiles)
     std::string _key;
     _key += "texture";
     _key += std::to_string(profiles.texture_size);
+    _key += "+geometry";
+    _key += std::to_string(profiles.geometry_max_vertices);
     if (profiles.raw) {
         if (!_key.empty()) {
             _key += "+";
@@ -77,9 +80,9 @@ std::string profile_key(const asset_profiles profiles)
     return _key;
 }
 
-std::filesystem::path texture_output_path(const std::filesystem::path& output_file, const asset_profiles profiles, const std::string_view suffix)
+std::filesystem::path texture_output_path(const std::filesystem::path& output_file, const std::string_view suffix)
 {
-    return output_file.parent_path() / (output_file.stem().string() + "." + std::to_string(profiles.texture_size) + std::string(suffix) + ".bin");
+    return output_file.parent_path() / (output_file.stem().string() + ".lod0" + std::string(suffix) + ".bin");
 }
 
 std::vector<std::filesystem::path> expected_outputs(const asset_profiles profiles, const std::filesystem::path& input_file, const std::filesystem::path& output_file)
@@ -87,22 +90,22 @@ std::vector<std::filesystem::path> expected_outputs(const asset_profiles profile
     const std::string _extension = input_file.extension().generic_string();
     std::vector<std::filesystem::path> _outputs;
     if (_extension == ".ttf"
-        || _extension == ".glb"
-        || _extension == ".gltf"
         || _extension == ".evtt") {
         _outputs.emplace_back(output_file);
+    } else if (_extension == ".glb" || _extension == ".gltf") {
+        _outputs.emplace_back(geometry_output_path(output_file));
     } else if (_extension == ".wav" || _extension == ".aiff") {
         _outputs.emplace_back(output_file.parent_path() / (output_file.stem().string() + ".ogg.bin"));
     } else if (_extension == ".jpg" || _extension == ".png" || _extension == ".bmp") {
         if (profiles.raw) {
-            _outputs.emplace_back(texture_output_path(output_file, profiles, ""));
+            _outputs.emplace_back(texture_output_path(output_file, ""));
         }
         if (_extension == ".png") {
             if (profiles.etc) {
-                _outputs.emplace_back(texture_output_path(output_file, profiles, ".etc"));
+                _outputs.emplace_back(texture_output_path(output_file, ".etc"));
             }
             if (profiles.s3tc) {
-                _outputs.emplace_back(texture_output_path(output_file, profiles, ".s3tc"));
+                _outputs.emplace_back(texture_output_path(output_file, ".s3tc"));
             }
         }
     }
