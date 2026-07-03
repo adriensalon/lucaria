@@ -14,6 +14,14 @@ include("${LUCARIA_CMAKE_DIR}/xplatform_web.cmake")
 add_subdirectory("tool/binc")
 # add_subdirectory("tool/tracyp")
 
+function(_lucaria_make_game_path OUT_VAR GAME_DIR VALUE)
+    if(IS_ABSOLUTE "${VALUE}")
+        set(${OUT_VAR} "${VALUE}" PARENT_SCOPE)
+    else()
+        set(${OUT_VAR} "${GAME_DIR}/${VALUE}" PARENT_SCOPE)
+    endif()
+endfunction()
+
 function(_lucaria_make_configure)
     set(options EXCLUDE_FROM_ALL)
     set(one_value_args
@@ -31,6 +39,7 @@ function(_lucaria_make_configure)
         INCLUDE_DIRS
         COMPILE_DEFINITIONS
         COMPILE_OPTIONS
+        DEPENDS
         EXTRA_CMAKE_ARGS)
     cmake_parse_arguments(PARSE_ARGV 0 LCP "${options}" "${one_value_args}" "${multi_value_args}")
     if(NOT LCP_PLATFORM)
@@ -134,6 +143,7 @@ function(_lucaria_make_configure)
         COMMAND "${CMAKE_COMMAND}"
             --build "${LCP_GAME_BINARY_DIR}"
             --config $<CONFIG>
+        DEPENDS ${LCP_DEPENDS}
         WORKING_DIRECTORY "${LCP_GAME_DIR}"
         COMMENT "Building Lucaria game for ${LCP_PLATFORM}"
         VERBATIM
@@ -149,6 +159,7 @@ function(add_game)
         GAME_DIR
         BINARY_DIR
         INSTALL_DIR
+        ASSETS_DIR
         PACKAGE
         WIN32_BACKEND
         PSP_PRX
@@ -171,6 +182,10 @@ function(add_game)
     if(NOT LSB_INSTALL_DIR)
         message(FATAL_ERROR "add_game requires INSTALL_DIR")
     endif()
+    _lucaria_make_game_path(LSB_INSTALL_DIR "${LSB_GAME_DIR}" "${LSB_INSTALL_DIR}")
+    if(LSB_ASSETS_DIR)
+        _lucaria_make_game_path(LSB_ASSETS_DIR "${LSB_GAME_DIR}" "${LSB_ASSETS_DIR}")
+    endif()
     if(NOT LSB_SOURCES)
         message(FATAL_ERROR "add_game requires SOURCES")
     endif()
@@ -185,6 +200,28 @@ function(add_game)
     endif()
     if(NOT LSB_BINARY_DIR)
         set(LSB_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/lucaria")
+    endif()
+    set(_asset_inputs)
+    if(LSB_ASSETS_DIR)
+        file(GLOB_RECURSE _asset_inputs CONFIGURE_DEPENDS LIST_DIRECTORIES false "${LSB_ASSETS_DIR}/*")
+        if(EXISTS "${LSB_ASSETS_DIR}/.assetignore")
+            list(APPEND _asset_inputs "${LSB_ASSETS_DIR}/.assetignore")
+        endif()
+        set(_asset_inputs_file "${LSB_BINARY_DIR}/assets/lucaria_asset_inputs.txt")
+        set(_asset_inputs_content)
+        foreach(_asset_input IN LISTS _asset_inputs)
+            string(APPEND _asset_inputs_content "${_asset_input}\n")
+        endforeach()
+        if(EXISTS "${_asset_inputs_file}")
+            file(READ "${_asset_inputs_file}" _asset_inputs_existing)
+        else()
+            set(_asset_inputs_existing)
+        endif()
+        if(NOT _asset_inputs_existing STREQUAL _asset_inputs_content)
+            file(MAKE_DIRECTORY "${LSB_BINARY_DIR}/assets")
+            file(WRITE "${_asset_inputs_file}" "${_asset_inputs_content}")
+        endif()
+        list(APPEND _asset_inputs "${_asset_inputs_file}")
     endif()
     _lucaria_find_xplatform_android()
     _lucaria_find_xplatform_psp()
@@ -205,6 +242,30 @@ function(add_game)
         endif()
     endif()
     foreach(platform IN LISTS LSB_PLATFORMS)
+        set(_platform_install_dir "${LSB_INSTALL_DIR}/${platform}")
+        set(_platform_depends)
+        if(LSB_ASSETS_DIR)
+            set(_assets_binary_dir "${LSB_BINARY_DIR}/${platform}/assets")
+            set(_assets_stamp "${_assets_binary_dir}/lucaria_assets.stamp")
+            set(_assets_manifest "${_assets_binary_dir}/lucaria_assets.json")
+            add_custom_command(
+                OUTPUT "${_assets_stamp}"
+                COMMAND ${CMAKE_COMMAND} -E make_directory "${_platform_install_dir}/assets"
+                COMMAND ${CMAKE_COMMAND} -E make_directory "${_assets_binary_dir}"
+                COMMAND $<TARGET_FILE:lucaria_binc>
+                    -p "${platform}"
+                    -i "${LSB_ASSETS_DIR}"
+                    -o "${_platform_install_dir}/assets"
+                    -m "${_assets_manifest}"
+                COMMAND ${CMAKE_COMMAND} -E touch "${_assets_stamp}"
+                DEPENDS lucaria_binc ${_asset_inputs}
+                BYPRODUCTS "${_assets_manifest}"
+                WORKING_DIRECTORY "${LSB_GAME_DIR}"
+                COMMENT "Compiling Lucaria assets for ${platform}"
+                VERBATIM
+                USES_TERMINAL)
+            list(APPEND _platform_depends "${_assets_stamp}")
+        endif()
         set(_backend_args)
         if(platform STREQUAL "win32" AND LSB_WIN32_BACKEND)
             list(APPEND _backend_args BACKEND "${LSB_WIN32_BACKEND}")
@@ -214,7 +275,7 @@ function(add_game)
             GAME_DIR "${LSB_GAME_DIR}"
             GAME_BINARY_DIR "${LSB_BINARY_DIR}/${platform}"
             NAME "${LSB_NAME}"
-            INSTALL_DIR "${LSB_INSTALL_DIR}"
+            INSTALL_DIR "${_platform_install_dir}"
             PACKAGE "${LSB_PACKAGE}"
             ${_backend_args}
             PSP_PRX "${LSB_PSP_PRX}"
@@ -223,6 +284,7 @@ function(add_game)
             INCLUDE_DIRS ${LSB_INCLUDE_DIRS}
             COMPILE_DEFINITIONS ${LSB_COMPILE_DEFINITIONS}
             COMPILE_OPTIONS ${LSB_COMPILE_OPTIONS}
+            DEPENDS ${_platform_depends}
             EXTRA_CMAKE_ARGS ${LSB_EXTRA_CMAKE_ARGS})
     endforeach()
 endfunction()

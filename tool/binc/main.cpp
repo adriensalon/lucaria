@@ -2,13 +2,16 @@
 #include <fstream>
 #include <functional>
 #include <iostream>
+#include <optional>
 #include <regex>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <binc/import_assimp.hpp>
 #include <binc/import_json.hpp>
+#include <binc/import_manifest.hpp>
 #include <binc/import_stb.hpp>
 #include <binc/compile_bin.hpp>
 #include <binc/compile_etcpak.hpp>
@@ -85,8 +88,9 @@ bool process_help_command(const commands_map& commands)
     if (commands.find("-h") == commands.end()) {
         return false;
     }
-    std::cout << "HELP DISPLAY" << std::endl;
-    // TODO
+    std::cout << "Usage: lucaria_binc -i <input-dir> -o <output-dir> [-p <platform>]" << std::endl;
+    std::cout << "                         [-m <manifest-json>]" << std::endl;
+    std::cout << "Platforms: all, win32, linux, web, android, psp" << std::endl;
     return true;
 }
 
@@ -120,15 +124,62 @@ std::filesystem::path process_output_command(const commands_map& commands)
         std::terminate();
     }
     std::filesystem::path _output_dir = commands.at("-o").at(0);
-    if (!std::filesystem::is_directory(_output_dir)) {
-        std::cout << "The path provided with option -o must be an existing directory" << std::endl;
+    if (std::filesystem::exists(_output_dir) && !std::filesystem::is_directory(_output_dir)) {
+        std::cout << "The path provided with option -o must be a directory" << std::endl;
         std::terminate();
     }
+    std::filesystem::create_directories(_output_dir);
     std::cout << "-- Assets output directory at " << _output_dir << std::endl;
     return _output_dir;
 }
 
-void iterate_recursive(const std::vector<std::string>& ignore_patterns, const std::filesystem::path base_dir, const std::function<void(const std::filesystem::path&)> callback)
+asset_profiles process_platform_command(const commands_map& commands)
+{
+    if (commands.find("-p") == commands.end()) {
+        std::cout << "-- Assets platform all" << std::endl;
+        return asset_profiles { true, true, true };
+    }
+    if (commands.at("-p").size() != 1) {
+        std::cout << "Only one platform must be provided with option -p" << std::endl;
+        std::terminate();
+    }
+    const std::string _platform = commands.at("-p").at(0);
+    std::cout << "-- Assets platform " << _platform << std::endl;
+    if (_platform == "all") {
+        return asset_profiles { true, true, true };
+    }
+    if (_platform == "psp" || _platform == "win32" || _platform == "linux") {
+        return asset_profiles { true, false, true };
+    }
+    if (_platform == "android") {
+        return asset_profiles { true, true, false };
+    }
+    if (_platform == "web") {
+        return asset_profiles { true, true, true };
+    }
+    std::cout << "Unknown platform '" << _platform << "' provided with option -p" << std::endl;
+    std::terminate();
+}
+
+std::optional<std::filesystem::path> process_manifest_command(const commands_map& commands)
+{
+    if (commands.find("-m") == commands.end()) {
+        return std::nullopt;
+    }
+    if (commands.at("-m").size() != 1) {
+        std::cout << "Only one manifest path must be provided with option -m" << std::endl;
+        std::terminate();
+    }
+    std::filesystem::path _manifest_path = commands.at("-m").at(0);
+    if (std::filesystem::exists(_manifest_path) && !std::filesystem::is_regular_file(_manifest_path)) {
+        std::cout << "The path provided with option -m must be a file" << std::endl;
+        std::terminate();
+    }
+    std::cout << "-- Assets manifest at " << _manifest_path << std::endl;
+    return _manifest_path;
+}
+
+void iterate_recursive(const std::vector<std::string>& ignore_patterns, const std::filesystem::path base_dir, const std::function<bool(const std::filesystem::path&)> callback)
 {
     try {
         for (const std::filesystem::directory_entry& _entry : std::filesystem::recursive_directory_iterator(base_dir)) {
@@ -136,8 +187,11 @@ void iterate_recursive(const std::vector<std::string>& ignore_patterns, const st
                 if (detail::matches_regex(_entry.path(), ignore_patterns)) {
                     continue;
                 }
-                callback(_entry.path());
-                std::cout << "   Compiled " << _entry.path() << std::endl;
+                if (callback(_entry.path())) {
+                    std::cout << "   Compiled " << _entry.path() << std::endl;
+                } else {
+                    std::cout << "   Skipped " << _entry.path() << std::endl;
+                }
             }
         }
     } catch (const std::filesystem::filesystem_error& e) {
@@ -172,7 +226,7 @@ std::filesystem::path substract_relative(const std::filesystem::path base_dir, c
     }
 }
 
-void compile_resource(const std::filesystem::path& input_file, const std::filesystem::path& output_file)
+void compile_resource(const asset_profiles profiles, const std::filesystem::path& input_file, const std::filesystem::path& output_file)
 {
     const std::string _extension = input_file.extension().generic_string();
     if (_extension == ".ttf") {
@@ -188,10 +242,16 @@ void compile_resource(const std::filesystem::path& input_file, const std::filesy
         }
 
     } else if (_extension == ".jpg" || _extension == ".png" || _extension == ".bmp") {
-        export_binary(import_stb(input_file), output_file);
+        if (profiles.raw) {
+            export_binary(import_stb(input_file), output_file);
+        }
         if (_extension == ".png") {
-            execute_etcpak(etcpak_mode::etc, input_file, output_file.parent_path() / (output_file.stem().string() + "_etc.bin"));
-            execute_etcpak(etcpak_mode::s3tc, input_file, output_file.parent_path() / (output_file.stem().string() + "_s3tc.bin"));
+            if (profiles.etc) {
+                execute_etcpak(etcpak_mode::etc, input_file, output_file.parent_path() / (output_file.stem().string() + "_etc.bin"));
+            }
+            if (profiles.s3tc) {
+                execute_etcpak(etcpak_mode::s3tc, input_file, output_file.parent_path() / (output_file.stem().string() + "_s3tc.bin"));
+            }
         } else {
             std::cout << "   Not exporting to etc/s3tc because image file must be .png" << std::endl;
         }
@@ -218,6 +278,11 @@ int main(int argc, char* argv[])
     }
     std::filesystem::path _input_dir = detail::process_input_command(_commands);
     std::filesystem::path _output_dir = detail::process_output_command(_commands);
+    detail::asset_profiles _profiles = detail::process_platform_command(_commands);
+    std::optional<std::filesystem::path> _manifest_path = detail::process_manifest_command(_commands);
+    detail::asset_manifest _manifest = detail::load_manifest(_manifest_path);
+    std::unordered_set<std::string> _seen_inputs;
+    const std::string _profile_key = detail::profile_key(_profiles);
     std::vector<std::string> _patterns = detail::get_ignore_codes(_input_dir);
 
     detail::iterate_recursive(_patterns, _input_dir, [&](const std::filesystem::path& _input_file) {
@@ -228,9 +293,34 @@ int main(int argc, char* argv[])
         std::filesystem::path _output_file = _output_dir / _relative_output_file;
         std::filesystem::path _parent_path = _output_file.parent_path();
         if (!std::filesystem::exists(_parent_path)) {
-            std::filesystem::create_directory(_parent_path);
+            std::filesystem::create_directories(_parent_path);
         }
-        detail::compile_resource(_input_file, _output_file);
+        const std::string _input_manifest_path = detail::manifest_path(_input_file);
+        const std::int64_t _input_timestamp = detail::file_timestamp(_input_file);
+        const std::vector<std::filesystem::path> _expected_outputs = detail::expected_outputs(_profiles, _input_file, _output_file);
+        _seen_inputs.emplace(_input_manifest_path);
+        if (_manifest_path && detail::is_up_to_date(_manifest, _input_manifest_path, _input_timestamp, _profile_key, _expected_outputs)) {
+            return false;
+        }
+        detail::compile_resource(_profiles, _input_file, _output_file);
+        if (_manifest_path) {
+            _manifest[_input_manifest_path] = detail::asset_manifest_entry {
+                _input_timestamp,
+                _profile_key,
+                detail::manifest_outputs(_expected_outputs)
+            };
+        }
+        return true;
     });
+    if (_manifest_path) {
+        for (auto _entry = _manifest.begin(); _entry != _manifest.end();) {
+            if (_seen_inputs.find(_entry->first) == _seen_inputs.end()) {
+                _entry = _manifest.erase(_entry);
+            } else {
+                ++_entry;
+            }
+        }
+        detail::write_manifest(_manifest_path, _manifest);
+    }
     return 0;
 }

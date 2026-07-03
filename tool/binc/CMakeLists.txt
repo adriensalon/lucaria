@@ -16,7 +16,14 @@ file(GLOB_RECURSE lucaria_binc_source "*.cpp")
 add_executable(lucaria_binc ${lucaria_binc_source})
 target_include_directories(lucaria_binc PRIVATE "${LUCARIA_INCLUDE_DIR}")
 target_include_directories(lucaria_binc PRIVATE "${CMAKE_CURRENT_LIST_DIR}")
-set_target_properties(lucaria_binc PROPERTIES CXX_STANDARD 17)
+set_target_properties(lucaria_binc PROPERTIES
+    CXX_STANDARD 17
+    INTERPROCEDURAL_OPTIMIZATION FALSE
+    INTERPROCEDURAL_OPTIMIZATION_DEBUG FALSE
+    INTERPROCEDURAL_OPTIMIZATION_RELEASE FALSE
+    INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO FALSE
+    INTERPROCEDURAL_OPTIMIZATION_MINSIZEREL FALSE)
+target_link_options(lucaria_binc PRIVATE "$<$<CXX_COMPILER_ID:MSVC>:/INCREMENTAL:NO>")
 
 target_link_libraries(lucaria_binc PRIVATE lucaria_external_assimp)
 target_link_libraries(lucaria_binc PRIVATE lucaria_external_cereal)
