@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <string_view>
 
 #include <cereal/external/rapidjson/document.h>
 #include <cereal/external/rapidjson/stringbuffer.h>
@@ -53,7 +54,12 @@ std::int64_t file_timestamp(const std::filesystem::path& path)
 std::string profile_key(const asset_profiles profiles)
 {
     std::string _key;
+    _key += "texture";
+    _key += std::to_string(profiles.texture_size);
     if (profiles.raw) {
+        if (!_key.empty()) {
+            _key += "+";
+        }
         _key += "raw";
     }
     if (profiles.etc) {
@@ -71,6 +77,11 @@ std::string profile_key(const asset_profiles profiles)
     return _key;
 }
 
+std::filesystem::path texture_output_path(const std::filesystem::path& output_file, const asset_profiles profiles, const std::string_view suffix)
+{
+    return output_file.parent_path() / (output_file.stem().string() + "." + std::to_string(profiles.texture_size) + std::string(suffix) + ".bin");
+}
+
 std::vector<std::filesystem::path> expected_outputs(const asset_profiles profiles, const std::filesystem::path& input_file, const std::filesystem::path& output_file)
 {
     const std::string _extension = input_file.extension().generic_string();
@@ -78,20 +89,20 @@ std::vector<std::filesystem::path> expected_outputs(const asset_profiles profile
     if (_extension == ".ttf"
         || _extension == ".glb"
         || _extension == ".gltf"
-        || _extension == ".wav"
-        || _extension == ".aiff"
         || _extension == ".evtt") {
         _outputs.emplace_back(output_file);
+    } else if (_extension == ".wav" || _extension == ".aiff") {
+        _outputs.emplace_back(output_file.parent_path() / (output_file.stem().string() + ".ogg.bin"));
     } else if (_extension == ".jpg" || _extension == ".png" || _extension == ".bmp") {
         if (profiles.raw) {
-            _outputs.emplace_back(output_file);
+            _outputs.emplace_back(texture_output_path(output_file, profiles, ""));
         }
         if (_extension == ".png") {
             if (profiles.etc) {
-                _outputs.emplace_back(output_file.parent_path() / (output_file.stem().string() + "_etc.bin"));
+                _outputs.emplace_back(texture_output_path(output_file, profiles, ".etc"));
             }
             if (profiles.s3tc) {
-                _outputs.emplace_back(output_file.parent_path() / (output_file.stem().string() + "_s3tc.bin"));
+                _outputs.emplace_back(texture_output_path(output_file, profiles, ".s3tc"));
             }
         }
     }

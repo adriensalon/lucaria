@@ -148,12 +148,21 @@ bool assimp_has_skeleton(const std::filesystem::path& assimp_path)
         std::cout << "Error importing armature file '" << assimp_path << "': " << _importer.GetErrorString() << std::endl;
         std::terminate();
     }
-    if (_scene->mNumMeshes == 0) {
+    if (_scene->mNumMeshes == 0 || _scene->mMeshes == nullptr) {
         std::cout << "No mesh found in armature file '" << assimp_path << "'. " << std::endl;
         std::terminate();
     }
-    const aiMesh* _mesh = _scene->mMeshes[0];
-    return _mesh->mNumBones > 0;
+    for (unsigned int _mesh_index = 0; _mesh_index < _scene->mNumMeshes; ++_mesh_index) {
+        const aiMesh* _mesh = _scene->mMeshes[_mesh_index];
+        if (_mesh == nullptr) {
+            std::cout << "Null mesh found in armature file '" << assimp_path << "'." << std::endl;
+            std::terminate();
+        }
+        if (_mesh->mNumBones > 0) {
+            return true;
+        }
+    }
+    return false;
 }
 
 lucaria::data_geometry import_assimp(const std::filesystem::path& assimp_path, const std::optional<std::filesystem::path>& skeleton_path)
@@ -163,7 +172,13 @@ lucaria::data_geometry import_assimp(const std::filesystem::path& assimp_path, c
     const aiScene* _scene = _importer.ReadFile(
         assimp_path.string(),
         aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType);
-    if (!_scene || _scene->mNumMeshes == 0) { /* ...errors... */
+    if (!_scene) {
+        std::cout << "Error importing geometry file '" << assimp_path << "': " << _importer.GetErrorString() << std::endl;
+        std::terminate();
+    }
+    if (_scene->mNumMeshes == 0 || _scene->mMeshes == nullptr) {
+        std::cout << "No mesh found in geometry file '" << assimp_path << "'." << std::endl;
+        std::terminate();
     }
 
     // Build skeleton-name -> index map (from ozz skeleton file if provided)
@@ -191,6 +206,10 @@ lucaria::data_geometry import_assimp(const std::filesystem::path& assimp_path, c
     uint32_t base = 0;
     for (unsigned _mesh_index = 0; _mesh_index < _scene->mNumMeshes; ++_mesh_index) {
         const aiMesh* _mesh = _scene->mMeshes[_mesh_index];
+        if (_mesh == nullptr) {
+            std::cout << "Null mesh found in geometry file '" << assimp_path << "'." << std::endl;
+            std::terminate();
+        }
 
         for (uint32_t i = 0; i < _mesh->mNumVertices; ++i) {
             if (_mesh->HasPositions()) {

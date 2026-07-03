@@ -137,7 +137,7 @@ asset_profiles process_platform_command(const commands_map& commands)
 {
     if (commands.find("-p") == commands.end()) {
         std::cout << "-- Assets platform all" << std::endl;
-        return asset_profiles { true, true, true };
+        return asset_profiles { true, true, true, 2048 };
     }
     if (commands.at("-p").size() != 1) {
         std::cout << "Only one platform must be provided with option -p" << std::endl;
@@ -146,19 +146,27 @@ asset_profiles process_platform_command(const commands_map& commands)
     const std::string _platform = commands.at("-p").at(0);
     std::cout << "-- Assets platform " << _platform << std::endl;
     if (_platform == "all") {
-        return asset_profiles { true, true, true };
+        return asset_profiles { true, true, true, 2048 };
     }
-    if (_platform == "psp" || _platform == "win32" || _platform == "linux") {
-        return asset_profiles { true, false, true };
+    if (_platform == "psp") {
+        return asset_profiles { true, false, true, 256 };
+    }
+    if (_platform == "win32" || _platform == "linux") {
+        return asset_profiles { true, false, true, 2048 };
     }
     if (_platform == "android") {
-        return asset_profiles { true, true, false };
+        return asset_profiles { true, true, false, 1024 };
     }
     if (_platform == "web") {
-        return asset_profiles { true, true, true };
+        return asset_profiles { true, true, true, 1024 };
     }
     std::cout << "Unknown platform '" << _platform << "' provided with option -p" << std::endl;
     std::terminate();
+}
+
+std::filesystem::path texture_output_path(const std::filesystem::path& output_file, const asset_profiles profiles, const std::string& suffix)
+{
+    return output_file.parent_path() / (output_file.stem().string() + "." + std::to_string(profiles.texture_size) + suffix + ".bin");
 }
 
 std::optional<std::filesystem::path> process_manifest_command(const commands_map& commands)
@@ -233,7 +241,8 @@ void compile_resource(const asset_profiles profiles, const std::filesystem::path
         execute_woff2compress(input_file, output_file);
 
     } else if (_extension == ".glb" || _extension == ".gltf") {
-        if (assimp_has_skeleton(input_file)) {
+        const bool _has_skeleton = assimp_has_skeleton(input_file);
+        if (_has_skeleton) {
             const std::filesystem::path _skeleton_path = output_file.parent_path() / (input_file.stem().string() + "_skeleton.bin");
             execute_gltf2ozz(input_file, output_file.parent_path());
             export_binary(import_assimp(input_file, _skeleton_path), output_file);
@@ -242,22 +251,26 @@ void compile_resource(const asset_profiles profiles, const std::filesystem::path
         }
 
     } else if (_extension == ".jpg" || _extension == ".png" || _extension == ".bmp") {
+        const lucaria::data_image _image = import_stb(input_file, profiles.texture_size);
         if (profiles.raw) {
-            export_binary(import_stb(input_file), output_file);
+            export_binary(_image, texture_output_path(output_file, profiles, ""));
         }
         if (_extension == ".png") {
+            const std::filesystem::path _resized_path = output_file.string() + ".resize.tmp.png";
+            write_stb_png(_image, _resized_path);
             if (profiles.etc) {
-                execute_etcpak(etcpak_mode::etc, input_file, output_file.parent_path() / (output_file.stem().string() + "_etc.bin"));
+                execute_etcpak(etcpak_mode::etc, _resized_path, texture_output_path(output_file, profiles, ".etc"));
             }
             if (profiles.s3tc) {
-                execute_etcpak(etcpak_mode::s3tc, input_file, output_file.parent_path() / (output_file.stem().string() + "_s3tc.bin"));
+                execute_etcpak(etcpak_mode::s3tc, _resized_path, texture_output_path(output_file, profiles, ".s3tc"));
             }
+            std::filesystem::remove(_resized_path);
         } else {
             std::cout << "   Not exporting to etc/s3tc because image file must be .png" << std::endl;
         }
 
     } else if (_extension == ".wav" || _extension == ".aiff") {
-        execute_oggenc(input_file, output_file);
+        execute_oggenc(input_file, output_file.parent_path() / (output_file.stem().string() + ".ogg.bin"));
 
     } else if (_extension == ".evtt") {
         export_binary(import_event_track(input_file), output_file);
@@ -286,7 +299,7 @@ int main(int argc, char* argv[])
     std::vector<std::string> _patterns = detail::get_ignore_codes(_input_dir);
 
     detail::iterate_recursive(_patterns, _input_dir, [&](const std::filesystem::path& _input_file) {
-        std::cout << std::endl;
+        std::cout << std::endl << "   Processing " << _input_file << std::endl;
         std::filesystem::path _relative_input_file = detail::substract_relative(_input_dir, _input_file);
         std::filesystem::path _relative_output_file = _relative_input_file;
         _relative_output_file.replace_extension(".bin");

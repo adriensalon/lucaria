@@ -1,3 +1,11 @@
+cmake_minimum_required(VERSION 3.19)
+project(lucaria_binc)
+
+get_filename_component(_lucaria_root_dir "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
+set(LUCARIA_EXTERNAL_DIR "${_lucaria_root_dir}/external" CACHE PATH "Lucaria external directory")
+set(LUCARIA_INCLUDE_DIR "${_lucaria_root_dir}/include" CACHE PATH "Lucaria include directory")
+set(LUCARIA_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}" CACHE PATH "Lucaria binary directory")
+
 set(LUCARIA_BUILD_COMPILERS ON)
 add_subdirectory(${LUCARIA_EXTERNAL_DIR}/assimp ${CMAKE_CURRENT_BINARY_DIR}/external/assimp)
 add_subdirectory(${LUCARIA_EXTERNAL_DIR}/cereal ${CMAKE_CURRENT_BINARY_DIR}/external/cereal)
@@ -12,12 +20,21 @@ add_subdirectory(${LUCARIA_EXTERNAL_DIR}/vorbis ${CMAKE_CURRENT_BINARY_DIR}/exte
 add_subdirectory(${LUCARIA_EXTERNAL_DIR}/vorbistools ${CMAKE_CURRENT_BINARY_DIR}/external/vorbistools)
 add_subdirectory(${LUCARIA_EXTERNAL_DIR}/woff ${CMAKE_CURRENT_BINARY_DIR}/external/woff)
 
+if(MSVC)
+    target_compile_options(lucaria_external_assimp PRIVATE "$<$<CONFIG:Release>:/Od>")
+endif()
+
 file(GLOB_RECURSE lucaria_binc_source "*.cpp")
 add_executable(lucaria_binc ${lucaria_binc_source})
 target_include_directories(lucaria_binc PRIVATE "${LUCARIA_INCLUDE_DIR}")
 target_include_directories(lucaria_binc PRIVATE "${CMAKE_CURRENT_LIST_DIR}")
 set_target_properties(lucaria_binc PROPERTIES
     CXX_STANDARD 17
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin"
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_CURRENT_BINARY_DIR}/bin"
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_BINARY_DIR}/bin"
+    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_CURRENT_BINARY_DIR}/bin"
+    RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${CMAKE_CURRENT_BINARY_DIR}/bin"
     INTERPROCEDURAL_OPTIMIZATION FALSE
     INTERPROCEDURAL_OPTIMIZATION_DEBUG FALSE
     INTERPROCEDURAL_OPTIMIZATION_RELEASE FALSE

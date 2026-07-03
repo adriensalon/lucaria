@@ -11,6 +11,21 @@
 namespace lucaria {
 namespace detail {
 
+    std::filesystem::path resolve_profile(
+        manager_assets& object,
+        const std::filesystem::path& path,
+        const std::optional<data_audio_profile> profile)
+    {
+        if (!profile || profile == data_audio_profile::ogg_vorbis) {
+            std::filesystem::path _ogg_path = path;
+            _ogg_path = _ogg_path.replace_extension().string() + ".ogg.bin";
+            if (std::filesystem::exists(object.resolve_fetch_path(_ogg_path))) {
+                return _ogg_path;
+            }
+        }
+        return path;
+    }
+
     namespace {
 
         struct _vorbis_bytes_stream {
@@ -180,7 +195,8 @@ namespace detail {
         if (origin == object_audio_origin::path) {
             context.field("origin_path", origin_path);
             const std::filesystem::path _path = origin_path;
-            context.fetch_worker(_path, [this, _path](const std::vector<char>& bytes) {
+            const std::filesystem::path _resolved_path = resolve_profile(context.objects, _path, std::optional<data_audio_profile> {});
+            context.fetch_worker(_resolved_path, [this, _path](const std::vector<char>& bytes) {
                 *this = asset_audio(bytes);
                 origin_path = _path;
             });

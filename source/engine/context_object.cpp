@@ -148,11 +148,6 @@ handle_shape context_object::create_shape_capsule(const float32 radius, const fl
     return create_asset<detail::object_shape, handle_shape>(new btCapsuleShape(radius, height), radius + height * 0.5f);
 }
 
-void context_object::set_prefix_path(const std::filesystem::path& prefix_path)
-{
-    _manager->async_prefix_path = prefix_path;
-}
-
 uint32 context_object::async_fetches_waiting()
 {
     return _manager->async_fetches_waiting;

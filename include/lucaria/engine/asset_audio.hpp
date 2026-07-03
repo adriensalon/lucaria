@@ -1,5 +1,8 @@
 #pragma once
 
+#include <filesystem>
+#include <optional>
+
 #include <lucaria/bin/data_audio.hpp>
 #include <lucaria/engine/handle_asset.hpp>
 
@@ -9,6 +12,13 @@ struct context_save_storage;
 struct context_load_storage;
 
 namespace detail {
+
+    struct manager_assets;
+
+    [[nodiscard]] std::filesystem::path resolve_profile(
+        manager_assets& object,
+        const std::filesystem::path& path,
+        const std::optional<data_audio_profile> profile);
 
     enum struct object_audio_origin {
         path,

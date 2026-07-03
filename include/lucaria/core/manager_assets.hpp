@@ -40,6 +40,14 @@
 namespace lucaria {
 namespace detail {
 
+#if defined(LUCARIA_PLATFORM_PSP)
+    constexpr uint32 default_texture_size = 256;
+#elif defined(LUCARIA_PLATFORM_ANDROID) || defined(LUCARIA_PLATFORM_WEB)
+    constexpr uint32 default_texture_size = 1024;
+#else
+    constexpr uint32 default_texture_size = 2048;
+#endif
+
     struct manager_assets;
     struct manager_window;
 
@@ -105,10 +113,10 @@ namespace detail {
 
         bool is_etc2_supported = false;
         bool is_s3tc_supported = false;
+        uint32 texture_size = default_texture_size;
         data_image_profile supported_image_profiles = {}; // TODO replace bools with bitfields
 
         std::atomic<uint32> async_fetches_waiting = 0;
-        std::filesystem::path async_prefix_path = {};
         assets_registry assets = {};
         std::unordered_map<std::string, user_asset_type_callbacks> user_asset_types = {};
         std::unordered_map<std::type_index, std::string> user_asset_type_ids = {};
@@ -168,11 +176,11 @@ namespace detail {
 
         [[nodiscard]] std::filesystem::path resolve_fetch_path(const std::filesystem::path& path) const
         {
-#if !defined(LUCARIA_PACKAGED_ASSETS)
-            return async_prefix_path / path;
-#else
-            return path;
-#endif
+            std::filesystem::path _path = path;
+            if (!_path.has_extension()) {
+                _path += ".bin";
+            }
+            return std::filesystem::path("assets") / _path;
         }
 
         void clear_runtime_for_reload()

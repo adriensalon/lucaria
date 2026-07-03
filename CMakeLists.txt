@@ -11,7 +11,18 @@ include("${LUCARIA_CMAKE_DIR}/xplatform_android.cmake")
 include("${LUCARIA_CMAKE_DIR}/xplatform_psp.cmake")
 include("${LUCARIA_CMAKE_DIR}/xplatform_web.cmake")
 
-add_subdirectory("tool/binc")
+set(LUCARIA_BINC_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/tool/binc" CACHE INTERNAL "Lucaria asset compiler source directory" FORCE)
+set(LUCARIA_BINC_BINARY_DIR "${LUCARIA_BINARY_DIR}/tool/binc" CACHE INTERNAL "Lucaria asset compiler binary directory" FORCE)
+set(_lucaria_binc_runtime_dir "${LUCARIA_BINC_BINARY_DIR}/bin")
+if(CMAKE_HOST_WIN32)
+    set(_lucaria_binc_executable "${_lucaria_binc_runtime_dir}/lucaria_binc.exe")
+else()
+    set(_lucaria_binc_executable "${_lucaria_binc_runtime_dir}/lucaria_binc")
+endif()
+
+add_executable(lucaria_binc IMPORTED GLOBAL)
+set_target_properties(lucaria_binc PROPERTIES
+    IMPORTED_LOCATION "${_lucaria_binc_executable}")
 # add_subdirectory("tool/tracyp")
 
 function(_lucaria_make_game_path OUT_VAR GAME_DIR VALUE)
@@ -243,22 +254,43 @@ function(add_game)
     endif()
     foreach(platform IN LISTS LSB_PLATFORMS)
         set(_platform_install_dir "${LSB_INSTALL_DIR}/${platform}")
+        set(_platform_assets_dir "${_platform_install_dir}/assets")
         set(_platform_depends)
         if(LSB_ASSETS_DIR)
             set(_assets_binary_dir "${LSB_BINARY_DIR}/${platform}/assets")
             set(_assets_stamp "${_assets_binary_dir}/lucaria_assets.stamp")
             set(_assets_manifest "${_assets_binary_dir}/lucaria_assets.json")
+            set(_lucaria_binc_generator_args -G "${CMAKE_GENERATOR}")
+            if(CMAKE_GENERATOR_PLATFORM)
+                list(APPEND _lucaria_binc_generator_args -A "${CMAKE_GENERATOR_PLATFORM}")
+            endif()
+            if(CMAKE_GENERATOR_TOOLSET)
+                list(APPEND _lucaria_binc_generator_args -T "${CMAKE_GENERATOR_TOOLSET}")
+            endif()
             add_custom_command(
                 OUTPUT "${_assets_stamp}"
-                COMMAND ${CMAKE_COMMAND} -E make_directory "${_platform_install_dir}/assets"
+                COMMAND ${CMAKE_COMMAND} -E make_directory "${_platform_assets_dir}"
                 COMMAND ${CMAKE_COMMAND} -E make_directory "${_assets_binary_dir}"
+                COMMAND "${CMAKE_COMMAND}"
+                    -Wno-dev
+                    -S "${LUCARIA_BINC_SOURCE_DIR}"
+                    -B "${LUCARIA_BINC_BINARY_DIR}"
+                    ${_lucaria_binc_generator_args}
+                    "-DCMAKE_BUILD_TYPE=Release"
+                    "-DLUCARIA_EXTERNAL_DIR=${LUCARIA_EXTERNAL_DIR}"
+                    "-DLUCARIA_INCLUDE_DIR=${LUCARIA_INCLUDE_DIR}"
+                    "-DLUCARIA_BINARY_DIR=${LUCARIA_BINC_BINARY_DIR}"
+                COMMAND "${CMAKE_COMMAND}"
+                    --build "${LUCARIA_BINC_BINARY_DIR}"
+                    --config Release
+                    --target lucaria_binc
                 COMMAND $<TARGET_FILE:lucaria_binc>
                     -p "${platform}"
                     -i "${LSB_ASSETS_DIR}"
-                    -o "${_platform_install_dir}/assets"
+                    -o "${_platform_assets_dir}"
                     -m "${_assets_manifest}"
                 COMMAND ${CMAKE_COMMAND} -E touch "${_assets_stamp}"
-                DEPENDS lucaria_binc ${_asset_inputs}
+                DEPENDS ${_asset_inputs}
                 BYPRODUCTS "${_assets_manifest}"
                 WORKING_DIRECTORY "${LSB_GAME_DIR}"
                 COMMENT "Compiling Lucaria assets for ${platform}"

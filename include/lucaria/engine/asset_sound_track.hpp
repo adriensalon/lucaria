@@ -52,7 +52,8 @@ namespace detail {
             if (origin == object_sound_track_origin::path) {
                 context.field("origin_path", origin_path);
                 const std::filesystem::path _path = origin_path;
-                context.fetch(_path, [this, _path](const std::vector<char>& bytes) {
+                const std::filesystem::path _resolved_path = resolve_profile(context.objects, _path, std::optional<data_audio_profile> {});
+                context.fetch(_resolved_path, [this, _path](const std::vector<char>& bytes) {
                     asset_audio _audio(bytes);
                     *this = object_sound_track(_audio);
                     origin_path = _path;

@@ -13,6 +13,7 @@ struct asset_profiles {
     bool raw = true;
     bool etc = false;
     bool s3tc = false;
+    std::uint32_t texture_size = 1024;
 };
 
 struct asset_manifest_entry {
