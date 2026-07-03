@@ -295,7 +295,8 @@ function(add_game)
                 WORKING_DIRECTORY "${LSB_GAME_DIR}"
                 COMMENT "Compiling Lucaria assets for ${platform}"
                 VERBATIM
-                USES_TERMINAL)
+                USES_TERMINAL
+				JOB_SERVER_AWARE TRUE)
             list(APPEND _platform_depends "${_assets_stamp}")
         endif()
         set(_backend_args)
