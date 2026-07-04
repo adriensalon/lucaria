@@ -29,7 +29,8 @@ namespace detail {
 
     void rendering_program::use() const
     {
-        sceGuEnable(GU_CULL_FACE);
+        sceGuDisable(GU_CULL_FACE);
+        sceGuDisable(GU_BLEND);
         sceGuFrontFace(GU_CCW);
         sceGuColor(0xffffffff);
         texture = nullptr;
@@ -142,6 +143,7 @@ namespace detail {
         }
         if (use_depth && depth_enabled) {
             sceGuEnable(GU_DEPTH_TEST);
+            sceGuDepthFunc(GU_GEQUAL);
             sceGuDepthMask(GU_FALSE);
         } else {
             sceGuDisable(GU_DEPTH_TEST);
@@ -154,7 +156,7 @@ namespace detail {
             sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
             sceGuTexFilter(GU_LINEAR, GU_LINEAR);
             sceGuTexWrap(GU_CLAMP, GU_CLAMP);
-            sceGuTexScale(static_cast<float32>(texture->size.x), static_cast<float32>(texture->size.y));
+            sceGuTexScale(1.f, 1.f);
             sceGuTexOffset(0.f, 0.f);
         } else {
             sceGuDisable(GU_TEXTURE_2D);
@@ -181,6 +183,7 @@ namespace detail {
     {
         sceGuOffset(2048 - static_cast<int>(size.x / 2), 2048 - static_cast<int>(size.y / 2));
         sceGuViewport(2048, 2048, static_cast<int>(size.x), static_cast<int>(size.y));
+        sceGuDepthRange(65535, 0);
         sceGuScissor(0, 0, static_cast<int>(size.x), static_cast<int>(size.y));
     }
 

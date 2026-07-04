@@ -19,7 +19,6 @@
 
 #if defined(LUCARIA_PLATFORM_PSP)
 #include <pspkernel.h>
-#include <pspiofilemgr.h>
 #endif
 
 #if defined(LUCARIA_PLATFORM_ANDROID)
@@ -47,22 +46,6 @@ namespace detail {
         static SceUID _psp_fetch_semaphore = -1;
         static SceUID _psp_fetch_thread_id = -1;
 
-        static void _psp_log(const char* message)
-        {
-            const SceUID _file = sceIoOpen("ms0:/lucaria_psp.log", PSP_O_WRONLY | PSP_O_CREAT | PSP_O_APPEND, 0777);
-            if (_file >= 0) {
-                sceIoWrite(_file, message, std::strlen(message));
-                sceIoWrite(_file, "\n", 1);
-                sceIoClose(_file);
-            }
-        }
-
-        static void _psp_log_path(const char* prefix, const std::filesystem::path& path)
-        {
-            const std::string _message = std::string(prefix) + path.string();
-            _psp_log(_message.c_str());
-        }
-
         static int _psp_fetch_thread(SceSize, void*)
         {
             while (true) {
@@ -81,16 +64,9 @@ namespace detail {
                 }
 
                 try {
-                    _psp_log_path("lucaria: fetch begin ", _context->file_path);
                     _context->assets->load_bytes(_context->file_path, _context->callback);
-                    _psp_log_path("lucaria: fetch end ", _context->file_path);
-                }
-                catch (const std::exception& exception) {
-                    _psp_log_path("lucaria: fetch exception ", _context->file_path);
-                    _psp_log(exception.what());
                 }
                 catch (...) {
-                    _psp_log_path("lucaria: fetch unknown exception ", _context->file_path);
                 }
 
                 _context->assets->async_fetches_waiting--;
@@ -108,23 +84,19 @@ namespace detail {
             if (_psp_fetch_semaphore < 0) {
                 _psp_fetch_semaphore = sceKernelCreateSema("lucaria_fetch_sema", 0, 0, 256, nullptr);
                 if (_psp_fetch_semaphore < 0) {
-                    _psp_log("lucaria: fetch semaphore create failed");
                     return false;
                 }
             }
 
             _psp_fetch_thread_id = sceKernelCreateThread("lucaria_fetch", _psp_fetch_thread, 0x18, 0x10000, PSP_THREAD_ATTR_USER, nullptr);
             if (_psp_fetch_thread_id < 0) {
-                _psp_log("lucaria: fetch thread create failed");
                 return false;
             }
             if (sceKernelStartThread(_psp_fetch_thread_id, 0, nullptr) < 0) {
-                _psp_log("lucaria: fetch thread start failed");
                 sceKernelDeleteThread(_psp_fetch_thread_id);
                 _psp_fetch_thread_id = -1;
                 return false;
             }
-            _psp_log("lucaria: fetch worker started");
             return true;
         }
 

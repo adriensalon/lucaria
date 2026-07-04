@@ -21,7 +21,7 @@
 #include <lucaria/engine/component_rigidbody.hpp>
 #include <lucaria/engine/component_transform.hpp>
 
-#if defined(LUCARIA_BACKEND_VULKAN)
+#if defined(LUCARIA_BACKEND_VULKAN) || defined(LUCARIA_BACKEND_PSPGU)
 #include <glm/ext/matrix_clip_space.hpp>
 #endif
 
@@ -701,6 +701,8 @@ namespace detail {
         float _aspect_ratio = _screen_size.x / _screen_size.y;
 #if defined(LUCARIA_BACKEND_VULKAN)
         camera_projection = glm::perspectiveRH_ZO(_fov_rad, _aspect_ratio, camera_far, camera_near);
+#elif defined(LUCARIA_BACKEND_PSPGU)
+        camera_projection = glm::perspectiveRH_ZO(_fov_rad, _aspect_ratio, camera_near, camera_far);
 #else
         camera_projection = glm::perspective(_fov_rad, _aspect_ratio, camera_near, camera_far);
 #endif
@@ -738,7 +740,8 @@ namespace detail {
     void system_rendering::update_compute_view_projection(manager_scenes& scenes)
     {
         resolve_runtime_references(scenes);
-        if (_follow && _follow_animator && !_follow_bone_name.empty()) {
+        camera_view = glm::lookAt(player_position, player_position + player_forward, player_up);
+        if (_follow) {
             const float32x4x4 followW = _follow->_transform;
             const float32quat qFollow = extract_world_rotation(followW);
             const float32x3 camF_local = forward_from_yaw_pitch(0.f, player_pitch);
@@ -750,14 +753,18 @@ namespace detail {
             float32x3 camRight, camUp;
             camera_basis_from_forward(camForward, worldUp, camRight, camUp);
 
-            const float32x4x4 boneLocal = _follow_animator->get_bone_transform(_follow_bone_name);
-            const float32x3 boneWorld = float32x3((followW * boneLocal)[3]);
-            // const float32x3 boneWorld = float32x3(followW[3]);
+            player_position = float32x3(followW[3]) + worldUp * 1.8f;
 
-            const float boomDist = -0.23f;
-            const float camHeight = 0.f;
+            if (_follow_animator && !_follow_bone_name.empty() && _follow_animator->_skeleton && _follow_animator->_skeleton._cached->fetched.has_value()) {
+                const float32x4x4 boneLocal = _follow_animator->get_bone_transform(_follow_bone_name);
+                const float32x3 boneWorld = float32x3((followW * boneLocal)[3]);
+                // const float32x3 boneWorld = float32x3(followW[3]);
 
-            player_position = boneWorld - groundF * boomDist + worldUp * camHeight;
+                const float boomDist = -0.23f;
+                const float camHeight = 0.f;
+
+                player_position = boneWorld - groundF * boomDist + worldUp * camHeight;
+            }
             camera_view = glm::lookAt(player_position, player_position + camForward, camUp);
         }
 
@@ -969,18 +976,26 @@ namespace detail {
                 const uint32x2 _imgui_render_size = interface._imgui_render_size == uint32x2(0)
                     ? interface._viewport_size
                     : interface._imgui_render_size;
-                ImGui::GetIO().DisplaySize = ImVec2(static_cast<float32>(_imgui_render_size.x), static_cast<float32>(_imgui_render_size.y));
+                ImGuiIO& _imgui_io = ImGui::GetIO();
+#if defined(LUCARIA_BACKEND_PSPGU)
+                _imgui_io.DisplaySize = ImVec2(static_cast<float32>(interface._viewport_size.x), static_cast<float32>(interface._viewport_size.y));
+                _imgui_io.DisplayFramebufferScale = ImVec2(
+                    static_cast<float32>(_imgui_render_size.x) / static_cast<float32>(interface._viewport_size.x),
+                    static_cast<float32>(_imgui_render_size.y) / static_cast<float32>(interface._viewport_size.y));
+#else
+                _imgui_io.DisplaySize = ImVec2(static_cast<float32>(_imgui_render_size.x), static_cast<float32>(_imgui_render_size.y));
+#endif
 
                 std::optional<float32x2> _raycasted_uvs;
                 if (interface._use_interaction) {
                     _raycasted_uvs = viewport_raycast(camera_view, interface._viewport_geometry.value());
                     if (_raycasted_uvs) {
                         interface._interaction_screen_position = {
-                            (_raycasted_uvs.value().x) * _imgui_render_size.x,
-                            (1.f - _raycasted_uvs.value().y) * _imgui_render_size.y
+                            (_raycasted_uvs.value().x) * interface._viewport_size.x,
+                            (1.f - _raycasted_uvs.value().y) * interface._viewport_size.y
                         };
-                        ImGui::GetIO().MousePos = ImVec2(interface._interaction_screen_position.value().x, interface._interaction_screen_position.value().y);
-                        ImGui::GetIO().MouseDown[0] = input.key_events[input_key::mouse_left].state;
+                        _imgui_io.MousePos = ImVec2(interface._interaction_screen_position.value().x, interface._interaction_screen_position.value().y);
+                        _imgui_io.MouseDown[0] = input.key_events[input_key::mouse_left].state;
                     } else {
                         interface._interaction_screen_position = std::nullopt;
                     }

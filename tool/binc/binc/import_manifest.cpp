@@ -76,6 +76,9 @@ std::string profile_key(const asset_profiles profiles)
             _key += "+";
         }
         _key += "s3tc";
+        if (profiles.s3tc_psp_layout) {
+            _key += "-psp";
+        }
     }
     return _key;
 }

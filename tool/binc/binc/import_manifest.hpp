@@ -15,6 +15,7 @@ struct asset_profiles {
     bool s3tc = false;
     std::uint32_t texture_size = 1024;
     std::uint32_t geometry_max_vertices = 0;
+    bool s3tc_psp_layout = false;
 };
 
 struct asset_manifest_entry {

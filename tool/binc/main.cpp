@@ -150,7 +150,7 @@ asset_profiles process_platform_command(const commands_map& commands)
         return asset_profiles { true, true, true, 2048, 0 };
     }
     if (_platform == "psp") {
-        return asset_profiles { true, false, true, 256, 8192 };
+        return asset_profiles { true, false, true, 256, 8192, true };
     }
     if (_platform == "win32" || _platform == "linux") {
         return asset_profiles { true, false, true, 2048, 0 };
@@ -263,7 +263,10 @@ void compile_resource(const asset_profiles profiles, const std::filesystem::path
                 execute_etcpak(etcpak_mode::etc, _resized_path, texture_output_path(output_file, ".etc"));
             }
             if (profiles.s3tc) {
-                execute_etcpak(etcpak_mode::s3tc, _resized_path, texture_output_path(output_file, ".s3tc"));
+                execute_etcpak(
+                    profiles.s3tc_psp_layout ? etcpak_mode::s3tc_psp : etcpak_mode::s3tc,
+                    _resized_path,
+                    texture_output_path(output_file, ".s3tc"));
             }
             std::filesystem::remove(_resized_path);
         } else {

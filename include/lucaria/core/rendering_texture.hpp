@@ -1,6 +1,9 @@
 #pragma once
 
 #include <imgui.h>
+#if defined(LUCARIA_BACKEND_PSPGU)
+#include <backends/imgui_impl_psp.h>
+#endif
 
 #include <lucaria/bin/data_image.hpp>
 #include <lucaria/core/rendering_storage.hpp>
@@ -50,6 +53,7 @@ namespace detail {
         int psm = GU_PSM_8888;
         int tbw = 0;
         uint32x2 texture_capacity = {};
+        ImGui_ImplPSP_Texture imgui_descriptor = {};
 #endif
 
     private:

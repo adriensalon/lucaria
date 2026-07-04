@@ -145,6 +145,13 @@ namespace detail {
                 return;
             }
             std::memset(texture.pixels, 0, _bytes);
+            texture.imgui_descriptor.pixels = texture.pixels;
+            texture.imgui_descriptor.psm = texture.psm;
+            texture.imgui_descriptor.width = static_cast<int>(texture.size.x);
+            texture.imgui_descriptor.height = static_cast<int>(texture.size.y);
+            texture.imgui_descriptor.buffer_width = static_cast<int>(texture.texture_capacity.x);
+            texture.imgui_descriptor.buffer_height = static_cast<int>(texture.texture_capacity.y);
+            texture.imgui_descriptor.tbw = texture.tbw;
             texture.is_dedicated_storage = true;
             texture.uv_rect = { 0.f, 0.f, 1.f, 1.f };
             sceKernelDcacheWritebackInvalidateAll();
@@ -180,6 +187,7 @@ namespace detail {
         }
         texture_capacity = {};
         tbw = 0;
+        imgui_descriptor = {};
     }
 
     rendering_texture::rendering_texture(rendering_textures_registry& registry, const data_image& from)
@@ -218,7 +226,7 @@ namespace detail {
 
     ImTextureID rendering_texture::imgui_texture() const
     {
-        return reinterpret_cast<ImTextureID>(pixels);
+        return reinterpret_cast<ImTextureID>(const_cast<ImGui_ImplPSP_Texture*>(&imgui_descriptor));
     }
 
     ImVec2 rendering_texture::imgui_uv0() const

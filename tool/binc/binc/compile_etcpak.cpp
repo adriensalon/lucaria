@@ -139,6 +139,42 @@ lucaria::data_image import_etcpak_output(const std::filesystem::path& path)
     std::terminate();
 }
 
+void convert_dxt1_to_psp(std::vector<lucaria::uint8>& pixels)
+{
+    for (std::size_t _offset = 0; _offset + 8 <= pixels.size(); _offset += 8) {
+        lucaria::uint8 _block[8] = {};
+        std::memcpy(_block, pixels.data() + _offset, sizeof(_block));
+        std::memcpy(pixels.data() + _offset + 0, _block + 4, 4);
+        std::memcpy(pixels.data() + _offset + 4, _block + 0, 4);
+    }
+}
+
+void convert_dxt5_to_psp(std::vector<lucaria::uint8>& pixels)
+{
+    for (std::size_t _offset = 0; _offset + 16 <= pixels.size(); _offset += 16) {
+        lucaria::uint8 _block[16] = {};
+        std::memcpy(_block, pixels.data() + _offset, sizeof(_block));
+        std::memcpy(pixels.data() + _offset + 0, _block + 12, 4);
+        std::memcpy(pixels.data() + _offset + 4, _block + 8, 4);
+        std::memcpy(pixels.data() + _offset + 8, _block + 2, 6);
+        std::memcpy(pixels.data() + _offset + 14, _block + 0, 2);
+    }
+}
+
+void convert_s3tc_to_psp(lucaria::data_image& data)
+{
+    switch (data.profile) {
+    case lucaria::data_image_profile::s3tc_rgb4:
+        convert_dxt1_to_psp(data.pixels);
+        break;
+    case lucaria::data_image_profile::s3tc_rgba8:
+        convert_dxt5_to_psp(data.pixels);
+        break;
+    default:
+        break;
+    }
+}
+
 }
 
 void execute_etcpak(const etcpak_mode mode, const std::filesystem::path& input_path, const std::filesystem::path& output_path)
@@ -148,7 +184,7 @@ void execute_etcpak(const etcpak_mode mode, const std::filesystem::path& input_p
         "lucaria_etcpak",
         "--disable-heuristics" // better quality
     };
-    if (mode == etcpak_mode::s3tc) { // no --etc2 (its ETC2 by default)
+    if (mode == etcpak_mode::s3tc || mode == etcpak_mode::s3tc_psp) { // no --etc2 (its ETC2 by default)
         _arguments_storage.emplace_back("--dxtc");
     }
     _arguments_storage.emplace_back(input_path.string());
@@ -170,7 +206,10 @@ void execute_etcpak(const etcpak_mode mode, const std::filesystem::path& input_p
         std::cout << "Etcpak conversion failed with exit code " << _result << "." << std::endl;
         std::terminate();
     }
-    const lucaria::data_image _data = detail::import_etcpak_output(_temporary_output_path);
+    lucaria::data_image _data = detail::import_etcpak_output(_temporary_output_path);
+    if (mode == etcpak_mode::s3tc_psp) {
+        detail::convert_s3tc_to_psp(_data);
+    }
     std::filesystem::remove(_temporary_output_path);
     export_binary(_data, output_path);
 }

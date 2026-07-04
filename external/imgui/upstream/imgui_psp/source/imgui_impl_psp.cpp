@@ -27,6 +27,7 @@ static int _font_texture_width = 0;
 static int _font_texture_height = 0;
 static int _font_texture_pot_width = 0;
 static int _font_texture_pot_height = 0;
+static ImGui_ImplPSP_Texture _font_texture_descriptor = {};
 static ImVec2 _mouse_position(240, 136); // Center
 
 static int _next_pot(const int v)
@@ -72,7 +73,14 @@ static bool _upload_font_texture(ImFontAtlas* atlas)
             _width * 4);
     }
     sceKernelDcacheWritebackInvalidateAll();
-    atlas->TexID = (ImTextureID)_font_texture;
+    _font_texture_descriptor.pixels = _font_texture;
+    _font_texture_descriptor.psm = GU_PSM_8888;
+    _font_texture_descriptor.width = _font_texture_width;
+    _font_texture_descriptor.height = _font_texture_height;
+    _font_texture_descriptor.buffer_width = _font_texture_pot_width;
+    _font_texture_descriptor.buffer_height = _font_texture_pot_height;
+    _font_texture_descriptor.tbw = _font_texture_pot_width;
+    atlas->TexID = (ImTextureID)&_font_texture_descriptor;
     return true;
 }
 }
@@ -108,6 +116,7 @@ IMGUI_IMPL_API void ImGui_ImplPSP_Shutdown()
         free(_font_texture);
         _font_texture = nullptr;
     }
+    _font_texture_descriptor = {};
 }
 
 IMGUI_IMPL_API bool ImGui_ImplPSP_UpdateFontsTexture(ImFontAtlas* atlas)
@@ -184,19 +193,12 @@ IMGUI_IMPL_API void ImGui_ImplPSP_RenderDrawData(ImDrawData* draw_data)
     sceGuEnable(GU_BLEND);
     sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
     sceGuEnable(GU_TEXTURE_2D);
-    sceGuTexMode(GU_PSM_8888, 0, 0, GU_FALSE);
     sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
     sceGuTexFilter(GU_LINEAR, GU_LINEAR);
 
     // No extra scaling/offset on texture
     sceGuTexScale(1.0f, 1.0f);
     sceGuTexOffset(0.0f, 0.0f);
-    sceGuTexImage(
-        0,
-        _font_texture_pot_width,
-        _font_texture_pot_height,
-        _font_texture_pot_width,
-        _font_texture);
 
     for (int n = 0; n < draw_data->CmdListsCount; n++) {
         const ImDrawList* _draw_list = draw_data->CmdLists[n];
@@ -211,6 +213,23 @@ IMGUI_IMPL_API void ImGui_ImplPSP_RenderDrawData(ImDrawData* draw_data)
                 _index_offset += _draw_command->ElemCount;
                 continue;
             }
+
+            const ImGui_ImplPSP_Texture* _texture = (const ImGui_ImplPSP_Texture*)_draw_command->TextureId;
+            if (!_texture || !_texture->pixels) {
+                _texture = &_font_texture_descriptor;
+            }
+            if (!_texture->pixels) {
+                _index_offset += _draw_command->ElemCount;
+                continue;
+            }
+
+            sceGuTexMode(_texture->psm, 0, 0, GU_FALSE);
+            sceGuTexImage(
+                0,
+                _texture->buffer_width,
+                _texture->buffer_height,
+                _texture->tbw,
+                _texture->pixels);
 
             // Clip rectangle directly in screen space
             ImVec4 _clip_rectangle = _draw_command->ClipRect;
@@ -252,8 +271,8 @@ IMGUI_IMPL_API void ImGui_ImplPSP_RenderDrawData(ImDrawData* draw_data)
                 _vertices[_index].z = 0.0f;
 
                 // UV in texels
-                _vertices[_index].u = _vertex.uv.x * (float)_font_texture_width;
-                _vertices[_index].v = _vertex.uv.y * (float)_font_texture_height;
+                _vertices[_index].u = _vertex.uv.x * (float)_texture->width;
+                _vertices[_index].v = _vertex.uv.y * (float)_texture->height;
 
                 _vertices[_index].color = _vertex.col;
             }
