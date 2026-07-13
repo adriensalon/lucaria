@@ -197,7 +197,7 @@ namespace detail {
             return assets.has_filewatch_changes();
         }
 
-        void load_bytes(const std::filesystem::path& path, const std::function<void(const std::vector<char>&)>& callback);
+        void load_bytes(const std::filesystem::path& path, std::function<void(std::vector<char>)> callback);
         [[nodiscard]] std::future<std::vector<char>> fetch_bytes_future(const std::filesystem::path& path, bool must_persist = true);
         [[nodiscard]] std::future<std::vector<std::vector<char>>> fetch_bytes_future(const std::vector<std::filesystem::path>& paths, bool must_persist = true);
         [[nodiscard]] std::future<std::vector<std::vector<char>>> fetch_bytes_future(const std::array<std::filesystem::path, 6>& paths, bool must_persist = true);

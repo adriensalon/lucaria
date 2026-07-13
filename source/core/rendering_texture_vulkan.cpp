@@ -1,5 +1,3 @@
-#if defined(LUCARIA_BACKEND_VULKAN)
-
 #include <algorithm>
 #include <cstring>
 
@@ -53,8 +51,7 @@ namespace detail {
 
         [[nodiscard]] bool _imgui_vulkan_renderer_ready()
         {
-            return ImGui::GetCurrentContext() != nullptr
-                && ImGui::GetIO().BackendRendererUserData != nullptr;
+            return (ImGui::GetCurrentContext() != nullptr) && (ImGui::GetIO().BackendRendererUserData != nullptr);
         }
 
         [[nodiscard]] VkDescriptorSet _add_imgui_texture(const VkSampler sampler, const VkImageView image_view, const VkImageLayout image_layout)
@@ -84,22 +81,14 @@ namespace detail {
             _create.size = size;
             _create.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
             _create.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-            if (vkCreateBuffer(_vulkan.device, &_create, nullptr, &buffer) != VK_SUCCESS) {
-                LUCARIA_DEBUG_ERROR("Failed to create Vulkan texture upload buffer")
-                return;
-            }
-
+			LUCARIA_DEBUG_ASSERT(vkCreateBuffer(_vulkan.device, &_create, nullptr, &buffer) == VK_SUCCESS, "Failed to create Vulkan texture upload buffer")
             VkMemoryRequirements _requirements = {};
             vkGetBufferMemoryRequirements(_vulkan.device, buffer, &_requirements);
-
             VkMemoryAllocateInfo _allocate = {};
             _allocate.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
             _allocate.allocationSize = _requirements.size;
             _allocate.memoryTypeIndex = rendering_vulkan_find_memory_type(_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-            if (vkAllocateMemory(_vulkan.device, &_allocate, nullptr, &memory) != VK_SUCCESS) {
-                LUCARIA_DEBUG_ERROR("Failed to allocate Vulkan texture upload buffer memory")
-                return;
-            }
+			LUCARIA_DEBUG_ASSERT(vkAllocateMemory(_vulkan.device, &_allocate, nullptr, &memory) == VK_SUCCESS, "Failed to allocate Vulkan texture upload buffer memory")
             vkBindBufferMemory(_vulkan.device, buffer, memory, 0);
         }
 
@@ -146,7 +135,6 @@ namespace detail {
         void _create_texture_image(const uint32x2 size, const VkFormat format, const VkImageUsageFlags usage, VkImage& image, VkDeviceMemory& memory, VkImageView& view, VkImageLayout& layout)
         {
             rendering_vulkan_context& _vulkan = rendering_vulkan();
-
             VkImageCreateInfo _create = {};
             _create.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
             _create.imageType = VK_IMAGE_TYPE_2D;
@@ -159,24 +147,15 @@ namespace detail {
             _create.usage = usage;
             _create.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
             _create.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            if (vkCreateImage(_vulkan.device, &_create, nullptr, &image) != VK_SUCCESS) {
-                LUCARIA_DEBUG_ERROR("Failed to create Vulkan texture image")
-                return;
-            }
-
+			LUCARIA_DEBUG_ASSERT(vkCreateImage(_vulkan.device, &_create, nullptr, &image) == VK_SUCCESS, "Failed to create Vulkan texture image")
             VkMemoryRequirements _requirements = {};
             vkGetImageMemoryRequirements(_vulkan.device, image, &_requirements);
-
             VkMemoryAllocateInfo _allocate = {};
             _allocate.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
             _allocate.allocationSize = _requirements.size;
             _allocate.memoryTypeIndex = rendering_vulkan_find_memory_type(_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-            if (vkAllocateMemory(_vulkan.device, &_allocate, nullptr, &memory) != VK_SUCCESS) {
-                LUCARIA_DEBUG_ERROR("Failed to allocate Vulkan texture image memory")
-                return;
-            }
+			LUCARIA_DEBUG_ASSERT(vkAllocateMemory(_vulkan.device, &_allocate, nullptr, &memory) == VK_SUCCESS, "Failed to allocate Vulkan texture image memory")
             vkBindImageMemory(_vulkan.device, image, memory, 0);
-
             VkImageViewCreateInfo _view = {};
             _view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
             _view.image = image;
@@ -187,9 +166,7 @@ namespace detail {
             _view.subresourceRange.levelCount = 1;
             _view.subresourceRange.baseArrayLayer = 0;
             _view.subresourceRange.layerCount = 1;
-            if (vkCreateImageView(_vulkan.device, &_view, nullptr, &view) != VK_SUCCESS) {
-                LUCARIA_DEBUG_ERROR("Failed to create Vulkan texture image view")
-            }
+			LUCARIA_DEBUG_ASSERT(vkCreateImageView(_vulkan.device, &_view, nullptr, &view) == VK_SUCCESS, "Failed to create Vulkan texture image view")
             layout = VK_IMAGE_LAYOUT_UNDEFINED;
         }
 
@@ -219,7 +196,6 @@ namespace detail {
         void _create_texture_sampler(VkSampler& sampler)
         {
             rendering_vulkan_context& _vulkan = rendering_vulkan();
-
             VkSamplerCreateInfo _create = {};
             _create.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
             _create.magFilter = VK_FILTER_LINEAR;
@@ -229,9 +205,7 @@ namespace detail {
             _create.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
             _create.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
             _create.maxLod = 1.0f;
-            if (vkCreateSampler(_vulkan.device, &_create, nullptr, &sampler) != VK_SUCCESS) {
-                LUCARIA_DEBUG_ERROR("Failed to create Vulkan texture sampler")
-            }
+			LUCARIA_DEBUG_ASSERT(vkCreateSampler(_vulkan.device, &_create, nullptr, &sampler) == VK_SUCCESS, "Failed to create Vulkan texture sampler")
         }
 
         void _destroy_texture_sampler(VkSampler& sampler)
@@ -252,12 +226,10 @@ namespace detail {
             if (texture.image == VK_NULL_HANDLE || texture.layout == new_layout) {
                 return;
             }
-
             VkCommandBuffer _commands = rendering_vulkan_begin_upload_commands();
             if (_commands == VK_NULL_HANDLE) {
                 return;
             }
-
             VkImageMemoryBarrier _barrier = {};
             _barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
             _barrier.oldLayout = texture.layout;
@@ -270,7 +242,6 @@ namespace detail {
             _barrier.subresourceRange.levelCount = 1;
             _barrier.subresourceRange.baseArrayLayer = 0;
             _barrier.subresourceRange.layerCount = 1;
-
             VkPipelineStageFlags _source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             VkPipelineStageFlags _destination_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
             if (texture.layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
@@ -286,7 +257,6 @@ namespace detail {
             } else if (new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
                 _barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
             }
-
             vkCmdPipelineBarrier(_commands, _source_stage, _destination_stage, 0, 0, nullptr, 0, nullptr, 1, &_barrier);
             rendering_vulkan_end_upload_commands(_commands);
             texture.layout = new_layout;
@@ -298,18 +268,14 @@ namespace detail {
                 return;
             }
             rendering_vulkan_context& _vulkan = rendering_vulkan();
-
             VkBuffer _staging_buffer = VK_NULL_HANDLE;
             VkDeviceMemory _staging_memory = VK_NULL_HANDLE;
             _create_texture_upload_buffer(size_bytes, _staging_buffer, _staging_memory);
-
             void* _mapped = nullptr;
             vkMapMemory(_vulkan.device, _staging_memory, 0, size_bytes, 0, &_mapped);
             std::memcpy(_mapped, data, static_cast<std::size_t>(size_bytes));
             vkUnmapMemory(_vulkan.device, _staging_memory);
-
             _transition_texture_layout(texture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-
             VkCommandBuffer _commands = rendering_vulkan_begin_upload_commands();
             VkBufferImageCopy _copy = {};
             _copy.bufferOffset = 0;
@@ -322,7 +288,6 @@ namespace detail {
             _copy.imageExtent = { texture.size.x, texture.size.y, 1 };
             vkCmdCopyBufferToImage(_commands, _staging_buffer, texture.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &_copy);
             rendering_vulkan_end_upload_commands(_commands);
-
             _transition_texture_layout(texture, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
             _destroy_texture_upload_buffer(_staging_buffer, _staging_memory);
         }
@@ -335,17 +300,11 @@ namespace detail {
             const uint32 _source_bytes_per_pixel = image.channels;
             const uint32 _bytes_per_pixel = _texture_bytes_per_pixel(image);
             const std::size_t _required_bytes = static_cast<std::size_t>(image.width) * image.height * _source_bytes_per_pixel;
-            if (image.pixels.size() < _required_bytes) {
-                LUCARIA_DEBUG_ERROR("Texture pixel data is smaller than its dimensions and profile require")
-                return {};
-            }
+			LUCARIA_DEBUG_ASSERT(image.pixels.size() >= _required_bytes, "Texture pixel data is smaller than its dimensions and profile require")
             if (_source_bytes_per_pixel == _bytes_per_pixel) {
                 return image.pixels;
             }
-            if (image.profile != data_image_profile::rgba8888 || image.channels != 3) {
-                LUCARIA_DEBUG_ERROR("Texture pixel data cannot be converted to its storage profile")
-                return {};
-            }
+			LUCARIA_DEBUG_ASSERT((image.profile == data_image_profile::rgba8888) && (image.channels == 3), "Texture pixel data cannot be converted to its storage profile")
             std::vector<uint8> _pixels(static_cast<std::size_t>(image.width) * image.height * 4);
             for (uint32 _index = 0; _index < image.width * image.height; ++_index) {
                 const std::size_t _source = static_cast<std::size_t>(_index) * 3;
@@ -378,10 +337,7 @@ namespace detail {
         void _upload_dedicated_texture(rendering_texture& texture, const data_image& image)
         {
             const std::vector<uint8> _pixels = _make_upload_pixels(image);
-            if (_pixels.empty()) {
-                LUCARIA_DEBUG_ERROR("Failed to prepare dedicated Vulkan texture")
-                return;
-            }
+			LUCARIA_DEBUG_ASSERT(!_pixels.empty(), "Failed to prepare dedicated Vulkan texture")
             _destroy_dedicated_texture(texture);
             texture.profile = image.profile;
             texture.size = { image.width, image.height };
@@ -490,5 +446,3 @@ namespace detail {
 
 }
 }
-
-#endif

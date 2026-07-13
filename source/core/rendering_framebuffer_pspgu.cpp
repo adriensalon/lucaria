@@ -30,9 +30,10 @@ namespace detail {
         }
     }
 
-    void rendering_framebuffer::bind_color(const rendering_texture& from)
+    void rendering_framebuffer::bind_color(rendering_texture& from)
     {
-        color = from.pixels;
+        from._setup_render_target();
+        color = from.framebuffer_pixels;
         size = from.size;
         psm = from.psm;
         fbw = from.tbw;
@@ -50,7 +51,7 @@ namespace detail {
 
     void rendering_framebuffer::bind_depth(rendering_texture& from)
     {
-        depth = from.pixels;
+        depth = from.framebuffer_pixels;
         has_depth = depth != nullptr;
     }
 

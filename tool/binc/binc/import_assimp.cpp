@@ -199,9 +199,12 @@ lucaria::data_geometry import_assimp(const std::filesystem::path& assimp_path, c
     }
 
     _data.vertices_count = static_cast<uint32_t>(total_vertices);
-    _data.bones.resize(_data.vertices_count, glm::ivec4(0));
-    _data.weights.resize(_data.vertices_count, glm::vec4(0.0f));
-    _data.invposes.resize(_skeleton_reindex.size(), glm::mat4(1.0f));
+    const bool _has_skinning = skeleton_path.has_value();
+    if (_has_skinning) {
+        _data.bones.resize(_data.vertices_count, glm::ivec4(0));
+        _data.weights.resize(_data.vertices_count, glm::vec4(0.0f));
+        _data.invposes.resize(_skeleton_reindex.size(), glm::mat4(1.0f));
+    }
     std::vector<uint8_t> invpose_written(_skeleton_reindex.size(), 0);
     uint32_t base = 0;
     for (unsigned _mesh_index = 0; _mesh_index < _scene->mNumMeshes; ++_mesh_index) {
@@ -249,36 +252,32 @@ lucaria::data_geometry import_assimp(const std::filesystem::path& assimp_path, c
                 base + face.mIndices[2]);
         }
 
-        // -------- FIX 2: apply bone weights for THIS mesh using the same base
-        for (uint32_t b = 0; b < _mesh->mNumBones; ++b) {
-            const aiBone* bone = _mesh->mBones[b];
-            const auto it = _skeleton_reindex.find(bone->mName.C_Str());
-            if (it == _skeleton_reindex.end()) {
-                // Bone not found in provided skeleton: skip or handle as needed.
-                continue;
-            }
-            const glm::int32 bone_idx = it->second;
+        if (_has_skinning) {
+            for (uint32_t b = 0; b < _mesh->mNumBones; ++b) {
+                const aiBone* bone = _mesh->mBones[b];
+                const auto it = _skeleton_reindex.find(bone->mName.C_Str());
+                if (it == _skeleton_reindex.end()) {
+                    continue;
+                }
+                const glm::int32 bone_idx = it->second;
 
-            // write inverse bind pose once
-            if (bone_idx >= 0 && bone_idx < (glm::int32)_data.invposes.size() && !invpose_written[bone_idx]) {
-                _data.invposes[bone_idx] = glm::transpose(*reinterpret_cast<const glm::mat4*>(&bone->mOffsetMatrix));
-                invpose_written[bone_idx] = 1;
-            }
+                if (bone_idx >= 0 && bone_idx < static_cast<glm::int32>(_data.invposes.size()) && !invpose_written[bone_idx]) {
+                    _data.invposes[bone_idx] = glm::transpose(*reinterpret_cast<const glm::mat4*>(&bone->mOffsetMatrix));
+                    invpose_written[bone_idx] = 1;
+                }
 
-            // assign weights with base offset
-            for (uint32_t w = 0; w < bone->mNumWeights; ++w) {
-                const uint32_t v_global = base + bone->mWeights[w].mVertexId;
-                const float weight = bone->mWeights[w].mWeight;
+                for (uint32_t w = 0; w < bone->mNumWeights; ++w) {
+                    const uint32_t v_global = base + bone->mWeights[w].mVertexId;
+                    const float weight = bone->mWeights[w].mWeight;
 
-                // find a free slot (0..3)
-                for (int slot = 0; slot < 4; ++slot) {
-                    if (_data.weights[v_global][slot] == 0.0f) {
-                        _data.bones[v_global][slot] = bone_idx;
-                        _data.weights[v_global][slot] = weight;
-                        break;
+                    for (int slot = 0; slot < 4; ++slot) {
+                        if (_data.weights[v_global][slot] == 0.0f) {
+                            _data.bones[v_global][slot] = bone_idx;
+                            _data.weights[v_global][slot] = weight;
+                            break;
+                        }
                     }
                 }
-                // (optional) if all 4 taken, you might keep the top-4 by weight here
             }
         }
 
@@ -286,11 +285,13 @@ lucaria::data_geometry import_assimp(const std::filesystem::path& assimp_path, c
         base += _mesh->mNumVertices;
     }
 
-    // (optional) normalize weights per vertex
-    for (uint32_t v = 0; v < _data.vertices_count; ++v) {
-        float s = _data.weights[v].x + _data.weights[v].y + _data.weights[v].z + _data.weights[v].w;
-        if (s > 0.0f)
-            _data.weights[v] /= s;
+    if (_has_skinning) {
+        for (uint32_t v = 0; v < _data.vertices_count; ++v) {
+            float s = _data.weights[v].x + _data.weights[v].y + _data.weights[v].z + _data.weights[v].w;
+            if (s > 0.0f) {
+                _data.weights[v] /= s;
+            }
+        }
     }
 
     return _data;

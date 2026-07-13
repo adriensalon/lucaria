@@ -28,6 +28,10 @@
 namespace lucaria {
 namespace detail {
 
+#if defined(LUCARIA_BACKEND_PSPGU)
+    void psp_restart_command_list();
+#endif
+
 	system_rendering::system_rendering()
 	{
 		asset_mesh::meshes_registry = &meshes_registry;
@@ -560,7 +564,7 @@ namespace detail {
 
             const float32x3 _q = glm::cross(_s, _ab);
             collision_position.z = glm::dot(raycast.direction, _q) * _inv_det;
-            if (collision_position.z < 0.f || collision_position.x + collision_position.z > 1.f) {
+            if (collision_position.z < 0.f || collision_position.y + collision_position.z > 1.f) {
                 return false;
             }
 
@@ -966,7 +970,6 @@ namespace detail {
                 && interface._imgui_color_texture
                 && interface._imgui_framebuffer
                 && interface._imgui_callback) {
-
                 if (interface._setup_callback) {
                     interface._setup_callback(window);
                     interface._setup_callback = nullptr;
@@ -1045,6 +1048,7 @@ namespace detail {
 #endif
 #if defined(LUCARIA_BACKEND_PSPGU)
                 ImGui_ImplPSP_RenderDrawData(ImGui::GetDrawData());
+                psp_restart_command_list();
 #endif
 
 #if defined(LUCARIA_BACKEND_PSPGU)

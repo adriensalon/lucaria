@@ -16,8 +16,8 @@ namespace {
 #if defined(LUCARIA_BACKEND_PSPGU)
     static uint32x2 _psp_spatial_render_size(const uint32x2 size)
     {
-        constexpr float32 _max_width = 480.f;
-        constexpr float32 _max_height = 272.f;
+        constexpr float32 _max_width = 256.f;
+        constexpr float32 _max_height = 144.f;
         if (size.x == 0 || size.y == 0) {
             return uint32x2(1, 1);
         }
@@ -55,7 +55,9 @@ component_interface_spatial& component_interface_spatial::use_viewport(const han
 {
     _viewport_geometry = geometry;
     _viewport_geometry._cached->fetched.on_ready([this](detail::asset_geometry& _on_ready_geometry) {
+#if !defined(LUCARIA_BACKEND_PSPGU)
         _invert_texcoords(_on_ready_geometry.data.texcoords);
+#endif
         _viewport_mesh.emplace(_viewport_geometry.value());
     });
 

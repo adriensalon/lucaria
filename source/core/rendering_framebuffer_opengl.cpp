@@ -48,7 +48,7 @@ namespace detail {
         glBindFramebuffer(GL_FRAMEBUFFER, id);
     }
 
-    void rendering_framebuffer::bind_color(const rendering_texture& color)
+    void rendering_framebuffer::bind_color(rendering_texture& color)
     {
         const GLuint _texture_handle = static_cast<GLuint>(color.texture_id);
 

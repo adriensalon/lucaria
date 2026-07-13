@@ -12,6 +12,8 @@
 namespace lucaria {
 namespace detail {
 
+    struct rendering_framebuffer;
+
     struct rendering_texture {
         rendering_texture() = default;
         rendering_texture(const rendering_texture& other) = delete;
@@ -50,6 +52,7 @@ namespace detail {
 
 #if defined(LUCARIA_BACKEND_PSPGU)
         void* pixels = nullptr;
+        void* framebuffer_pixels = nullptr;
         int psm = GU_PSM_8888;
         int tbw = 0;
         uint32x2 texture_capacity = {};
@@ -58,6 +61,10 @@ namespace detail {
 
     private:
         void _release() noexcept;
+#if defined(LUCARIA_BACKEND_PSPGU)
+        void _setup_render_target();
+        friend struct rendering_framebuffer;
+#endif
 
         rendering_textures_registry* _registry = nullptr;
         flag_owning _ownership = {};

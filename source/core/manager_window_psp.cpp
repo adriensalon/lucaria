@@ -32,6 +32,13 @@ namespace detail {
         return BUFFER_WIDTH;
     }
 
+    void psp_restart_command_list()
+    {
+        sceGuFinish();
+        sceGuSync(0, 0);
+        sceGuStart(GU_DIRECT, _gu_command_list);
+    }
+
     namespace {
 
         void _psp_present_error(const bool has_active_list)

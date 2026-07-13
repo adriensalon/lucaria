@@ -16,7 +16,7 @@ namespace detail {
         rendering_framebuffer();
         static void use_default();
         void use();
-        void bind_color(const rendering_texture& color);
+        void bind_color(rendering_texture& color);
         void bind_color(rendering_renderbuffer& color);
         void bind_depth(rendering_texture& depth);
         void bind_depth(rendering_renderbuffer& depth);

@@ -2,7 +2,6 @@
 #include <deque>
 #include <exception>
 #include <fstream>
-#include <iostream>
 #include <mutex>
 
 #include <lucaria/core/assets_async.hpp>
@@ -45,6 +44,7 @@ namespace detail {
         static std::mutex _psp_fetch_queue_mutex;
         static SceUID _psp_fetch_semaphore = -1;
         static SceUID _psp_fetch_thread_id = -1;
+        static constexpr int _psp_fetch_thread_priority = 0x28;
 
         static int _psp_fetch_thread(SceSize, void*)
         {
@@ -64,9 +64,10 @@ namespace detail {
                 }
 
                 try {
-                    _context->assets->load_bytes(_context->file_path, _context->callback);
+                    _context->assets->load_bytes(_context->file_path, std::move(_context->callback));
                 }
                 catch (...) {
+                    std::terminate();
                 }
 
                 _context->assets->async_fetches_waiting--;
@@ -88,7 +89,7 @@ namespace detail {
                 }
             }
 
-            _psp_fetch_thread_id = sceKernelCreateThread("lucaria_fetch", _psp_fetch_thread, 0x18, 0x10000, PSP_THREAD_ATTR_USER, nullptr);
+            _psp_fetch_thread_id = sceKernelCreateThread("lucaria_fetch", _psp_fetch_thread, _psp_fetch_thread_priority, 0x10000, PSP_THREAD_ATTR_USER, nullptr);
             if (_psp_fetch_thread_id < 0) {
                 return false;
             }
@@ -155,17 +156,17 @@ namespace detail {
             struct _fetch_context {
                 manager_assets* assets;
                 std::filesystem::path context_path;
-                std::function<void(const std::vector<char>&)> context_callback;
+                std::function<void(std::vector<char>)> context_callback;
             };
             emscripten_async_call(+[](void* user_data) {
                 _fetch_context* _context = static_cast<_fetch_context*>(user_data);
-                _context->assets->load_bytes(_context->context_path, _context->context_callback);
+                _context->assets->load_bytes(_context->context_path, std::move(_context->context_callback));
                 _context->assets->async_fetches_waiting--; }, new _fetch_context { &assets, _fetch_file_path, std::move(callback) }, 0);
 #endif
 
 #if defined(LUCARIA_PLATFORM_ANDROID) || defined(LUCARIA_PLATFORM_WIN32) || defined(LUCARIA_PLATFORM_LINUX)
-            std::thread([&assets, _fetch_file_path, callback]() {
-                assets.load_bytes(_fetch_file_path, callback);
+            std::thread([&assets, _fetch_file_path, callback = std::move(callback)]() mutable {
+                assets.load_bytes(_fetch_file_path, std::move(callback));
                 assets.async_fetches_waiting--;
             }).detach();
 #endif
@@ -176,7 +177,7 @@ namespace detail {
                 return;
             }
 
-            _context->assets->load_bytes(_context->file_path, _context->callback);
+            _context->assets->load_bytes(_context->file_path, std::move(_context->callback));
             _context->assets->async_fetches_waiting--;
             delete _context;
 #endif
@@ -184,7 +185,7 @@ namespace detail {
 
     }
 
-    void manager_assets::load_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback)
+    void manager_assets::load_bytes(const std::filesystem::path& file_path, std::function<void(std::vector<char>)> callback)
     {
         std::string _path_str = file_path.string();
 
@@ -201,7 +202,7 @@ namespace detail {
         if (_read != _length) {
             LUCARIA_DEBUG_ERROR("read failed: " + _path_str)
         }
-        callback(buffer);
+        callback(std::move(buffer));
 #endif
 
 #if !defined(LUCARIA_PLATFORM_ANDROID)

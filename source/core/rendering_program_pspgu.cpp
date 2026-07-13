@@ -151,9 +151,12 @@ namespace detail {
         }
         if (texture_enabled && texture != nullptr && texture->pixels != nullptr) {
             sceGuEnable(GU_TEXTURE_2D);
+            if (texture->framebuffer_pixels != nullptr) {
+                sceGuTexFlush();
+            }
             sceGuTexMode(texture->psm, 0, 0, GU_FALSE);
             sceGuTexImage(0, texture->texture_capacity.x, texture->texture_capacity.y, texture->tbw, texture->pixels);
-            sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
+            sceGuTexFunc(texture->framebuffer_pixels != nullptr ? GU_TFX_REPLACE : GU_TFX_MODULATE, GU_TCC_RGBA);
             sceGuTexFilter(GU_LINEAR, GU_LINEAR);
             sceGuTexWrap(GU_CLAMP, GU_CLAMP);
             sceGuTexScale(1.f, 1.f);

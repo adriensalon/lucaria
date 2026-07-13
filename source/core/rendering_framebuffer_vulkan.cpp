@@ -42,7 +42,7 @@ namespace detail {
         }
     }
 
-    void rendering_framebuffer::bind_color(const rendering_texture& color)
+    void rendering_framebuffer::bind_color(rendering_texture& color)
     {
         texture_color = &color;
         renderbuffer_color = nullptr;

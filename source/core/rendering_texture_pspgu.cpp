@@ -1,7 +1,10 @@
 #include <algorithm>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <malloc.h>
+
+#include <pspge.h>
 
 #include <lucaria/core/app_error.hpp>
 #include <lucaria/core/rendering_texture.hpp>
@@ -23,6 +26,25 @@ namespace detail {
         {
             return profile == data_image_profile::s3tc_rgb4
                 || profile == data_image_profile::s3tc_rgba8;
+        }
+
+        [[nodiscard]] static std::size_t _psp_render_target_bytes_available()
+        {
+            constexpr std::size_t _vram_bytes = 2u * 1024u * 1024u;
+            constexpr std::size_t _buffer_width = 512u;
+            constexpr std::size_t _screen_height = 272u;
+            constexpr std::size_t _bytes_per_pixel = 4u;
+            constexpr std::size_t _default_buffers_bytes = 3u * _buffer_width * _screen_height * _bytes_per_pixel;
+            return _vram_bytes - _default_buffers_bytes;
+        }
+
+        [[nodiscard]] static void* _psp_render_target_buffer()
+        {
+            constexpr std::uintptr_t _buffer_width = 512u;
+            constexpr std::uintptr_t _screen_height = 272u;
+            constexpr std::uintptr_t _bytes_per_pixel = 4u;
+            constexpr std::uintptr_t _default_buffers_bytes = 3u * _buffer_width * _screen_height * _bytes_per_pixel;
+            return reinterpret_cast<void*>(_default_buffers_bytes);
         }
 
         [[nodiscard]] static int _texture_psm(const data_image_profile profile, const uint32 channels)
@@ -83,15 +105,9 @@ namespace detail {
             if (texture.pixels == nullptr || image.width == 0 || image.height == 0) {
                 return;
             }
-            if (_source_bpp == 0 || _destination_bpp == 0) {
-                LUCARIA_DEBUG_ERROR("Invalid PSP texture pixel format")
-                return;
-            }
+            LUCARIA_DEBUG_ASSERT(_source_bpp != 0 && _destination_bpp != 0, "Invalid PSP texture pixel format")
             const std::size_t _required_bytes = static_cast<std::size_t>(image.width) * image.height * _source_bpp;
-            if (image.pixels.size() < _required_bytes) {
-                LUCARIA_DEBUG_ERROR("Texture pixel data is smaller than its dimensions and profile require")
-                return;
-            }
+            LUCARIA_DEBUG_ASSERT(image.pixels.size() >= _required_bytes, "Texture pixel data is smaller than its dimensions and profile require")
             for (uint32 _y = 0; _y < image.height; ++_y) {
                 uint8* _destination = static_cast<uint8*>(texture.pixels) + static_cast<std::size_t>(_y) * texture.tbw * _destination_bpp;
                 const uint8* _source = image.pixels.data() + static_cast<std::size_t>(_y) * image.width * _source_bpp;
@@ -103,27 +119,22 @@ namespace detail {
                         _destination[_x * 4 + 3] = 255;
                     }
                 } else {
-                    if (_source_bpp != _destination_bpp) {
-                        LUCARIA_DEBUG_ERROR("Texture pixel data cannot be converted to its PSP storage profile")
-                        return;
-                    }
+                    LUCARIA_DEBUG_ASSERT(_source_bpp == _destination_bpp, "Texture pixel data cannot be converted to its PSP storage profile")
                     std::memcpy(_destination, _source, static_cast<std::size_t>(image.width) * _destination_bpp);
                 }
             }
             sceKernelDcacheWritebackInvalidateAll();
         }
 
-        static void _allocate(
-            rendering_texture& texture,
-            const uint32x2 size,
-            const data_image_profile profile,
-            const uint32 channels = 4,
-            const std::size_t compressed_bytes = 0)
+        static void _allocate(rendering_texture& texture, const uint32x2 size, const data_image_profile profile, const uint32 channels = 4, const std::size_t compressed_bytes = 0, const bool render_target = false)
         {
             if (texture.pixels != nullptr) {
-                std::free(texture.pixels);
+                if (texture.framebuffer_pixels == nullptr) {
+                    std::free(texture.pixels);
+                }
                 texture.pixels = nullptr;
             }
+            texture.framebuffer_pixels = nullptr;
             texture.profile = profile;
             texture.size = size;
             texture.psm = _texture_psm(profile, channels);
@@ -132,19 +143,18 @@ namespace detail {
                 static_cast<uint32>(texture.tbw),
                 _next_pow2(std::max<uint32>(size.y, 1))
             };
-            const std::size_t _bytes = _is_compressed(profile)
-                ? compressed_bytes
-                : static_cast<std::size_t>(texture.texture_capacity.x) * texture.texture_capacity.y * _texture_bytes_per_pixel(profile);
-            if (_bytes == 0) {
-                LUCARIA_DEBUG_ERROR("Invalid PSP texture allocation size")
-                return;
+            const std::size_t _bytes = _is_compressed(profile) ? compressed_bytes : static_cast<std::size_t>(texture.texture_capacity.x) * texture.texture_capacity.y * _texture_bytes_per_pixel(profile);
+            LUCARIA_DEBUG_ASSERT(_bytes > 0, "Invalid PSP texture allocation size")
+            if (render_target) {
+                LUCARIA_DEBUG_ASSERT(!_is_compressed(profile), "Compressed PSP textures cannot be used as render targets")
+                LUCARIA_DEBUG_ASSERT(_bytes <= _psp_render_target_bytes_available(), "PSP render target does not fit in VRAM")
+                texture.framebuffer_pixels = _psp_render_target_buffer();
+                texture.pixels = static_cast<uint8*>(sceGeEdramGetAddr()) + reinterpret_cast<std::uintptr_t>(texture.framebuffer_pixels);
+            } else {
+                texture.pixels = memalign(16, _bytes);
+                LUCARIA_DEBUG_ASSERT(texture.pixels != nullptr, "Failed to allocate PSP texture")
+                std::memset(texture.pixels, 0, _bytes);
             }
-            texture.pixels = memalign(16, _bytes);
-            if (texture.pixels == nullptr) {
-                LUCARIA_DEBUG_ERROR("Failed to allocate PSP texture")
-                return;
-            }
-            std::memset(texture.pixels, 0, _bytes);
             texture.imgui_descriptor.pixels = texture.pixels;
             texture.imgui_descriptor.psm = texture.psm;
             texture.imgui_descriptor.width = static_cast<int>(texture.size.x);
@@ -182,9 +192,12 @@ namespace detail {
             return;
         }
         if (pixels != nullptr) {
-            std::free(pixels);
+            if (framebuffer_pixels == nullptr) {
+                std::free(pixels);
+            }
             pixels = nullptr;
         }
+        framebuffer_pixels = nullptr;
         texture_capacity = {};
         tbw = 0;
         imgui_descriptor = {};
@@ -208,12 +221,21 @@ namespace detail {
         _ownership.emplace();
     }
 
+    void rendering_texture::_setup_render_target()
+    {
+        if (framebuffer_pixels != nullptr) {
+            return;
+        }
+        _allocate(*this, size, profile, 4, 0, true);
+    }
+
     void rendering_texture::resize(const uint32x2 new_size)
     {
         if (size == new_size) {
             return;
         }
-        _allocate(*this, new_size, data_image_profile::rgba8888);
+        const bool _render_target = framebuffer_pixels != nullptr;
+        _allocate(*this, new_size, data_image_profile::rgba8888, 4, 0, _render_target);
     }
 
     void rendering_texture::update(const data_image& from)

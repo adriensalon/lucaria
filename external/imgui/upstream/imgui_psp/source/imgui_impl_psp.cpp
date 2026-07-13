@@ -200,6 +200,9 @@ IMGUI_IMPL_API void ImGui_ImplPSP_RenderDrawData(ImDrawData* draw_data)
     sceGuTexScale(1.0f, 1.0f);
     sceGuTexOffset(0.0f, 0.0f);
 
+    const int _framebuffer_width = (int)(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
+    const int _framebuffer_height = (int)(draw_data->DisplaySize.y * draw_data->FramebufferScale.y);
+
     for (int n = 0; n < draw_data->CmdListsCount; n++) {
         const ImDrawList* _draw_list = draw_data->CmdLists[n];
         const ImDrawVert* _vertex_buffer = _draw_list->VtxBuffer.Data;
@@ -231,23 +234,22 @@ IMGUI_IMPL_API void ImGui_ImplPSP_RenderDrawData(ImDrawData* draw_data)
                 _texture->tbw,
                 _texture->pixels);
 
-            // Clip rectangle directly in screen space
-            ImVec4 _clip_rectangle = _draw_command->ClipRect;
-            int _clip_x1 = (int)_clip_rectangle.x;
-            int _clip_y1 = (int)_clip_rectangle.y;
-            int _clip_x2 = (int)_clip_rectangle.z;
-            int _clip_y2 = (int)_clip_rectangle.w;
+            const ImVec4 _clip_rectangle = _draw_command->ClipRect;
+            int _clip_x1 = (int)((_clip_rectangle.x - draw_data->DisplayPos.x) * draw_data->FramebufferScale.x);
+            int _clip_y1 = (int)((_clip_rectangle.y - draw_data->DisplayPos.y) * draw_data->FramebufferScale.y);
+            int _clip_x2 = (int)((_clip_rectangle.z - draw_data->DisplayPos.x) * draw_data->FramebufferScale.x);
+            int _clip_y2 = (int)((_clip_rectangle.w - draw_data->DisplayPos.y) * draw_data->FramebufferScale.y);
             if (_clip_x1 < 0) {
                 _clip_x1 = 0;
             }
             if (_clip_y1 < 0) {
                 _clip_y1 = 0;
             }
-            if (_clip_x2 > _psp_screen_width) {
-                _clip_x2 = _psp_screen_width;
+            if (_clip_x2 > _framebuffer_width) {
+                _clip_x2 = _framebuffer_width;
             }
-            if (_clip_y2 > _psp_screen_height) {
-                _clip_y2 = _psp_screen_height;
+            if (_clip_y2 > _framebuffer_height) {
+                _clip_y2 = _framebuffer_height;
             }
             if (_clip_x2 <= _clip_x1 || _clip_y2 <= _clip_y1) {
                 _index_offset += _draw_command->ElemCount;
